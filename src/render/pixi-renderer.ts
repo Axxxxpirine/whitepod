@@ -27,21 +27,19 @@ const DEFAULT_CONFIG: PixiRendererConfig = {
 }
 
 export class PixiRenderer {
-  private app: Application = null!
+  private app: Application | null = null
   private config: PixiRendererConfig
-  private container: Container = null!
+  private container: Container | null = null
   
-  private depositLayer: Graphics = null!
-  private stationLayer: Graphics = null!
-  private tokenLayer: Graphics = null!
+  private cellLayer: Graphics | null = null
+  private tokenLayer: Graphics | null = null
   
   private lastExportData: PixiExport | null = null
 
   constructor(config?: Partial<PixiRendererConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config }
-    
+
     void this.initApplication()
-    this.createLayers()
   }
 
   private async initApplication(): Promise<void> {
@@ -62,18 +60,20 @@ export class PixiRenderer {
     if (container) {
       container.appendChild(this.app.canvas)
     }
+
+    this.createLayers()
   }
 
   private createLayers(): void {
+    if (!this.app) return
+
     this.container = new Container()
     this.app.stage.addChild(this.container)
 
-    this.depositLayer = new Graphics()
-    this.stationLayer = new Graphics()
+    this.cellLayer = new Graphics()
     this.tokenLayer = new Graphics()
 
-    this.container.addChild(this.depositLayer)
-    this.container.addChild(this.stationLayer)
+    this.container.addChild(this.cellLayer)
     this.container.addChild(this.tokenLayer)
   }
 
@@ -84,16 +84,14 @@ export class PixiRenderer {
 
     this.lastExportData = exportData
 
-    this.depositLayer.clear()
-    this.stationLayer.clear()
+    if (!this.cellLayer || !this.tokenLayer) return
+
+    this.cellLayer.clear()
     this.tokenLayer.clear()
 
     this.updatePhase()
 
-    if (exportData.grid) {
-      this.renderDeposits(exportData.grid.deposits)
-      this.renderStations(exportData.grid.stations)
-    }
+    this.renderCells(exportData.grid.cells)
 
     if (exportData.layerTokens) {
       this.renderTokens(exportData.layerTokens)
@@ -103,61 +101,31 @@ export class PixiRenderer {
   private isSameGrid(exportData: PixiExport): boolean {
     if (!this.lastExportData) return false
     if (exportData.timestamp === this.lastExportData.timestamp) return true
-    
-    if (!exportData.grid || !this.lastExportData.grid) return false
-    
-    const depositsEqual =
-      exportData.grid.deposits.length === this.lastExportData.grid.deposits.length &&
-      exportData.grid.deposits.every((d, i) => d.id === this.lastExportData!.grid.deposits[i].id)
-    
-    const stationsEqual =
-      exportData.grid.stations.length === this.lastExportData.grid.stations.length &&
-      exportData.grid.stations.every((s, i) => s.id === this.lastExportData!.grid.stations[i].id)
 
-    return depositsEqual && stationsEqual
+    return JSON.stringify(exportData.grid.cells) === JSON.stringify(this.lastExportData.grid.cells)
   }
 
   private updatePhase(): void {
     // Background color update handled by container
   }
 
-  private renderDeposits(deposits: PixiExport['grid']['deposits']): void {
+  private renderCells(cells: PixiExport['grid']['cells']): void {
+    if (!this.cellLayer) return
+
     const { cellSize } = this.config
-    const circleSize = cellSize * 0.7
+    for (const cell of cells) {
+      const x = cell.x * cellSize
+      const y = cell.y * cellSize
 
-    for (const deposit of deposits) {
-      const x = deposit.x * cellSize
-      const y = deposit.y * cellSize
-      const centerX = x + cellSize / 2
-      const centerY = y + cellSize / 2
+      if (cell.kind === 'deposit' && cell.resourceId) {
+        const color = this.config.depositColors[cell.resourceId]
+        this.cellLayer.circle(x + cellSize / 2, y + cellSize / 2, cellSize * 0.35).fill(color)
+        continue
+      }
 
-      const color = this.config.depositColors[deposit.resourceId]
-
-      this.depositLayer
-        .circle(centerX, centerY, circleSize / 2)
-        .fill(color)
-        .stroke({ width: 1, color: 0xffffff })
-
-      const capacityBarWidth = cellSize * 0.6
-      const capacityBarHeight = (deposit.remaining / 5) * cellSize * 0.3
-      const barX = x + cellSize * 0.2
-      const barY = y + cellSize - capacityBarHeight
-
-      this.depositLayer.rect(barX, barY, capacityBarWidth, capacityBarHeight).fill(0x00ff00)
-    }
-  }
-
-  private renderStations(stations: PixiExport['grid']['stations']): void {
-    const { cellSize } = this.config
-
-    for (const station of stations) {
-      const x = station.x * cellSize
-      const y = station.y * cellSize
-
-      this.stationLayer
-        .rect(x, y, cellSize, cellSize)
-        .fill(0x666666)
-        .stroke({ width: 1, color: 0x00ff00 })
+      if (cell.kind === 'station') {
+        this.cellLayer.rect(x, y, cellSize, cellSize).fill(0x666666).stroke({ width: 1, color: 0x00ff00 })
+      }
     }
   }
 
@@ -175,6 +143,8 @@ export class PixiRenderer {
       label: string,
       x: number
     ) => {
+      if (!this.tokenLayer) return
+
       const labelText = new Text(label, { ...textStyle, fontSize: 12, fill: 0xffff00 })
       labelText.x = x
       labelText.y = yOffset
@@ -199,7 +169,7 @@ export class PixiRenderer {
   }
 
   public destroy(): void {
-    this.container.destroy()
-    this.app.destroy()
+    this.container?.destroy()
+    this.app?.destroy()
   }
 }

@@ -69,6 +69,17 @@ export interface PixiGridStation {
   x: number
   y: number
   transitionId: string
+  active: boolean
+}
+
+export interface PixiGridCell {
+  x: number
+  y: number
+  kind: 'deposit' | 'station'
+  id: string
+  resourceId?: ResourceId
+  remaining?: number
+  transitionId?: string
 }
 
 export interface PixiExport {
@@ -78,6 +89,7 @@ export interface PixiExport {
   grid: {
     width: 128
     height: 128
+    cells: PixiGridCell[]
     deposits: PixiGridDeposit[]
     stations: PixiGridStation[]
   }

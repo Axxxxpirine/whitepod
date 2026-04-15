@@ -158,7 +158,7 @@ Auto-save (30s) → Launch rocket → Done → Terminate
 
 ### 2.1 Types Core (`src/core/types.ts`)
 
-Note: l'implémentation réelle de `src/core/types.ts` est plus concise que l'exemple ci-dessous (et `PixiExport` est actuellement minimal: `timestamp`, `phase`, `tokens`). L'extension de `PixiExport` pour PixiJS fait partie des prochaines étapes.
+Note: l'implémentation réelle de `src/core/types.ts` expose déjà un `PixiExport` complet pour le renderer: `timestamp`, `phase`, `tokens`, `grid.cells`, `grid.deposits`, `grid.stations` et `layerTokens`.
 
 ```typescript
 // Transition simplifiée pour moteur interne
@@ -886,7 +886,7 @@ echo "Directory: public/assets/"
 - [x] Game loop fonctionnel (1s tick)
 - [x] Callback PixiJS configuré (`window.__whitepodOnPixiUpdate`)
 - [x] Application React mountée
-- [ ] Export JSON complet pour Pixi (grid/dépôts/stations/animations)
+- [x] Export JSON Pixi sparse complet (grid/cells, dépôts, stations, layerTokens)
 
 ### Phase 4: Asset Pipeline (Priorité Moyenne)
 
@@ -1063,7 +1063,7 @@ whitepod/
 - [x] Game loop démarré: 1s tick fonctionnel
 - [x] Callback PixiJS configuré
 - [x] Application React mountée
-- [ ] Export Pixi complet: grid/dépôts/stations/animations
+- [x] Export Pixi sparse: grid/cells, dépôts, stations, layerTokens
 
 ### Phase 4: Asset Pipeline
 - [ ] Extraction ressources: 61 ressources extraites
@@ -1186,8 +1186,8 @@ Ce plan exhaustif couvre l'ensemble de l'implémentation du moteur Whitepod, de 
 
 1. **Phase 1**: ✅ Types core + PetriNet engine + Grid manager
 2. **Phase 2**: ✅ Store Zustand + loaders + persistance + autosave
-3. **Phase 3**: ✅ Game loop + intégration React (UI minimale)
+3. **Phase 3**: ✅ Game loop + intégration React + export Pixi sparse
 4. **Phase 4**: ⏳ Asset pipeline + scripts (non implémenté)
-5. **Phase 5**: ⏳ PixiJS renderer + export Pixi complet
+5. **Phase 5**: ⏳ PixiJS renderer + raffinage visuel
 
 Le plan est prêt pour l'implémentation.

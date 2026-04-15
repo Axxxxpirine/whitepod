@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "generate:lunar-chemistry": "node scripts/generate-lunar-chemistry.js"
+    "generate:lunar-chemistry": "node scripts/generate-lunar-chemistry.js",
+    "assets:extract": "node scripts/extract-resources.mjs",
+    "assets:prompts": "node scripts/generate-asset-prompts.mjs",
+    "assets:generate": "node scripts/generate-images.mjs",
+    "assets:build": "bash scripts/build-assets.sh"
   },
   "dependencies": {
     "clsx": "^2.1.1",
