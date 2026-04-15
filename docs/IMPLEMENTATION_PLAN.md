@@ -68,10 +68,11 @@ Pour repartir de zéro côté sauvegarde :
 
 ### 0.3 Prochaines étapes prioritaires
 
-- **Exporter l'état complet pour Pixi** (dépôts + stations + grid sparse) dans `PixiExport`.
-- **Implémenter un premier renderer PixiJS** (Phase 5) consommant l'export.
-- Ajouter un UI de placement sur grille (au lieu du placement automatique).
-- Améliorer le debug PetriNet (inspecteur transition + raisons disable + perf/UX).
+- **Stabiliser le contrat PixiExport/renderer** : diffing strategy, cleanup, resize behavior, update policy.
+- **Compléter l'intégration PixiJS** : tests d'intégration, performances, animation playback.
+- **Clarifier l'UI de placement sur grille** : définir les règles de validation, l'interaction (click vs dropdown), et l'interaction avec les flux existants.
+- **Améliorer le debug PetriNet** : inspecteur de transition, raisons de disable, perf/UX.
+- **Finaliser la pipeline d'assets** : mapping asset-ID ↔ resource, versioning, fallback behavior.
 
 ### 0.4 Notes Debug PetriNet (important)
 
@@ -902,19 +903,25 @@ echo "Directory: public/assets/"
 - [ ] Prompts générés (180+ ressources × 3 = 540+ prompts)
 - [ ] Structure assets prête
 - [ ] Documentation complète
+- [ ] Mapping asset-ID ↔ ResourceId défini
 
-### Phase 5: PixiJS Renderer (Priorité Basse - Future)
+### Phase 5: PixiJS Renderer (Priorité Moyenne - Partiellement implémenté)
 
 **Fichiers**:
-16. `src/render/pixi-renderer.ts` - Renderer PixiJS
-17. `src/components/PixiCanvas.tsx` - Composant React
+16. `src/render/pixi-renderer.ts` - Renderer PixiJS ✅
+17. `src/components/PixiCanvas.tsx` - Composant React ✅
 18. `src/assets/sprite-sheets.ts` - Loader sprite sheets
+19. `src/render/pixi-renderer.test.ts` - Tests integration
 
 **Délivrables**:
-- [ ] Renderer PixiJS fonctionnel
+- [x] Renderer PixiJS de base fonctionnel
 - [ ] Sprite sheets chargés (4x4 animation)
 - [ ] Animations fluides (60 FPS)
-- [ ] Visualisation tokens/grid
+- [x] Visualisation basique tokens/grid
+- [ ] Integration tests (update, cleanup, resize)
+- [ ] Diffing strategy optimisée (dirty-tracking au lieu de JSON.stringify)
+- [ ] Resize behavior et viewport scaling
+- [ ] Performance budget (update frequency, export diffing)
 
 ---
 
@@ -1071,11 +1078,13 @@ whitepod/
 - [ ] Structure assets: répertoires créés
 - [ ] Documentation: README.md complet
 
-### Phase 5: PixiJS Renderer (Future)
-- [ ] Renderer monté: canvas PixiJS actif
+### Phase 5: PixiJS Renderer (Partiellement implémenté)
+- [x] Renderer monté: canvas PixiJS actif
 - [ ] Sprite sheets chargés: 61+ ressources
 - [ ] Animations: 60 FPS stable
-- [ ] Visualisation: grid + tokens visibles
+- [x] Visualisation: grid + tokens visibles
+- [ ] Tests d'intégration: update, cleanup, resize
+- [ ] Diffing strategy optimisée (éviter JSON.stringify)
 
 ---
 

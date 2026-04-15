@@ -35,6 +35,7 @@ export class PixiRenderer {
   private tokenLayer: Graphics | null = null
   
   private lastExportData: PixiExport | null = null
+  private lastCellsHash: string | null = null
 
   constructor(config?: Partial<PixiRendererConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -83,6 +84,7 @@ export class PixiRenderer {
     }
 
     this.lastExportData = exportData
+    this.lastCellsHash = this.computeCellsHash(exportData.grid.cells)
 
     if (!this.cellLayer || !this.tokenLayer) return
 
@@ -98,11 +100,24 @@ export class PixiRenderer {
     }
   }
 
+  private computeCellsHash(cells: PixiExport['grid']['cells']): string {
+    let hash = 0
+    for (const cell of cells) {
+      const str = `${cell.x},${cell.y},${cell.kind},${cell.id}`
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i)
+        hash = hash & hash
+      }
+    }
+    return String(hash)
+  }
+
   private isSameGrid(exportData: PixiExport): boolean {
     if (!this.lastExportData) return false
     if (exportData.timestamp === this.lastExportData.timestamp) return true
 
-    return JSON.stringify(exportData.grid.cells) === JSON.stringify(this.lastExportData.grid.cells)
+    const currentHash = this.computeCellsHash(exportData.grid.cells)
+    return currentHash === this.lastCellsHash
   }
 
   private updatePhase(): void {
