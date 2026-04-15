@@ -78,7 +78,6 @@ export class GridRenderer {
           }
         }
       }
-      grid.clearDirty();
     }
   }
 

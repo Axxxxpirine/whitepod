@@ -1,5 +1,5 @@
 import { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT } from '../constants';
-import type { TileType } from '../types';
+import type { TileType, ResourceType } from '../types';
 import { toIndex, isInBounds } from './coords';
 
 interface DirtyRegion {
@@ -13,6 +13,7 @@ export class TileGrid {
   readonly tileType: Uint8Array;
   readonly elevation: Uint8Array;
   readonly flags: Uint8Array;
+  readonly resourceType: Uint8Array;
   readonly metadata: Map<number, Record<string, unknown>>;
 
   private dirtyRegion: DirtyRegion | null = null;
@@ -21,6 +22,7 @@ export class TileGrid {
     this.tileType = new Uint8Array(GRID_SIZE);
     this.elevation = new Uint8Array(GRID_SIZE);
     this.flags = new Uint8Array(GRID_SIZE);
+    this.resourceType = new Uint8Array(GRID_SIZE);
     this.metadata = new Map();
   }
 
@@ -31,6 +33,16 @@ export class TileGrid {
   setType(x: number, y: number, type: TileType): void {
     if (!isInBounds(x, y)) return;
     this.tileType[toIndex(x, y)] = type;
+    this.markDirty(x, y);
+  }
+
+  getResource(x: number, y: number): ResourceType {
+    return this.resourceType[toIndex(x, y)] as ResourceType;
+  }
+
+  setResource(x: number, y: number, resource: ResourceType): void {
+    if (!isInBounds(x, y)) return;
+    this.resourceType[toIndex(x, y)] = resource;
     this.markDirty(x, y);
   }
 
@@ -74,10 +86,11 @@ export class TileGrid {
   }
 
   serialize(): ArrayBuffer {
-    const combined = new Uint8Array(GRID_SIZE * 3);
+    const combined = new Uint8Array(GRID_SIZE * 4);
     combined.set(this.tileType, 0);
     combined.set(this.elevation, GRID_SIZE);
     combined.set(this.flags, GRID_SIZE * 2);
+    combined.set(this.resourceType, GRID_SIZE * 3);
     return combined.buffer;
   }
 
@@ -87,6 +100,10 @@ export class TileGrid {
     grid.tileType.set(data.subarray(0, GRID_SIZE));
     grid.elevation.set(data.subarray(GRID_SIZE, GRID_SIZE * 2));
     grid.flags.set(data.subarray(GRID_SIZE * 2, GRID_SIZE * 3));
+    // Backward compatibility: old saves have 3 arrays, new ones have 4
+    if (buffer.byteLength >= GRID_SIZE * 4) {
+      grid.resourceType.set(data.subarray(GRID_SIZE * 3, GRID_SIZE * 4));
+    }
     return grid;
   }
 }

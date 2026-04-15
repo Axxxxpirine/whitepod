@@ -16,6 +16,14 @@ export const Direction = {
 } as const;
 export type Direction = (typeof Direction)[keyof typeof Direction];
 
+export const ResourceType = {
+  None: 0,
+  Coal: 1,
+  IronOre: 2,
+  CopperOre: 3,
+} as const;
+export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
+
 export interface TileCoord {
   readonly x: number;
   readonly y: number;
