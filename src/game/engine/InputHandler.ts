@@ -8,9 +8,14 @@ export class InputHandler {
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
+  private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
 
   constructor(engine: GameEngine) {
     this.engine = engine;
+  }
+
+  setHoverCallback(cb: (tile: { x: number; y: number } | null) => void): void {
+    this.onHoverChange = cb;
   }
 
   onPointerDown(screenX: number, screenY: number, button: number): void {
@@ -33,6 +38,15 @@ export class InputHandler {
       this.engine.viewport.pan(-dx, -dy);
       this.lastPanX = screenX;
       this.lastPanY = screenY;
+    }
+
+    if (this.onHoverChange) {
+      const coord = screenToGrid(this.engine.viewport, screenX, screenY);
+      if (isInBounds(coord.x, coord.y)) {
+        this.onHoverChange(coord);
+      } else {
+        this.onHoverChange(null);
+      }
     }
   }
 

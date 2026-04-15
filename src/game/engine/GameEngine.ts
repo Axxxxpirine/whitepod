@@ -5,15 +5,19 @@ import { Viewport } from './Viewport';
 import type { VisibleTileRange } from './Viewport';
 import {
   Direction,
+  ResourceType,
+  TileType as TileTypeConst,
   type Building,
   type BuildingId,
   type BuildingTypeId,
   type PlacementResult,
+  type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
 } from '../types';
 import { isInBounds } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
+import { generateResources } from '../data/ResourceGenerator';
 
 export class GameEngine {
   readonly grid: TileGrid;
@@ -89,6 +93,28 @@ export class GameEngine {
 
   getBuildings(): ReadonlyMap<BuildingId, Building> {
     return this.buildings.getAll();
+  }
+
+  placeResource(x: number, y: number, resource: ResourceTypeT): boolean {
+    if (!isInBounds(x, y)) return false;
+    const tile = this.grid.getType(x, y);
+    if (tile === TileTypeConst.Water || tile === TileTypeConst.Empty) return false;
+    this.grid.setResource(x, y, resource);
+    return true;
+  }
+
+  removeResource(x: number, y: number): boolean {
+    if (!isInBounds(x, y)) return false;
+    this.grid.setResource(x, y, ResourceType.None);
+    return true;
+  }
+
+  getResourceAt(x: number, y: number): ResourceTypeT {
+    return this.grid.getResource(x, y);
+  }
+
+  generateMap(seed: number): void {
+    generateResources(this.grid, seed);
   }
 
   getVisibleTiles(): VisibleTileRange {
