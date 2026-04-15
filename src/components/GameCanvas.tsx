@@ -9,6 +9,7 @@ import { BeltRenderer } from '@/game/renderer/BeltRenderer';
 import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
 import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
+import { BuildingHighlightRenderer } from '@/game/renderer/BuildingHighlightRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
@@ -88,6 +89,7 @@ export function GameCanvas() {
     let beltRenderer: BeltRenderer | null = null;
     let beltFlowAnimator: BeltFlowAnimator | null = null;
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
+    let buildingHighlightRenderer: BuildingHighlightRenderer | null = null;
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
@@ -180,13 +182,20 @@ export function GameCanvas() {
       buildingRenderer = new BuildingRenderer(app, engine);
       beltRenderer = new BeltRenderer(app, engine);
       beltFlowAnimator = new BeltFlowAnimator(app, engine);
+      buildingHighlightRenderer = new BuildingHighlightRenderer(app, engine, () => {
+        const { selectedTool } = useGameStore.getState();
+        return { selectedTool };
+      });
       placementPreviewRenderer = new PlacementPreviewRenderer(app, engine, () => {
         const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = useGameStore.getState();
         return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
       });
       energyLinkRenderer = new EnergyLinkRenderer(app, engine, () => {
-        const { selectedBuildingId } = useGameStore.getState();
-        return { inspectedBuildingId: selectedBuildingId };
+        const { selectedBuildingId, selectedTool } = useGameStore.getState();
+        return {
+          inspectedBuildingId: selectedBuildingId,
+          showAllNetworks: selectedTool.kind === 'energy_link',
+        };
       });
 
       const currentInputHandler = new InputHandler(
@@ -326,6 +335,7 @@ export function GameCanvas() {
         buildingRenderer!.render();
         beltRenderer!.render();
         beltFlowAnimator!.render();
+        buildingHighlightRenderer!.render();
         placementPreviewRenderer!.render();
         energyLinkRenderer!.render();
         engine.grid.clearDirty();
@@ -356,6 +366,7 @@ export function GameCanvas() {
         if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
         useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
+        buildingHighlightRenderer?.destroy();
         beltFlowAnimator?.destroy();
         beltRenderer?.destroy();
         energyLinkRenderer?.destroy();

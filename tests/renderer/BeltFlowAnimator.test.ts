@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { Container, type Application } from 'pixi.js';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
-import { ResourceType, TileType } from '@/game/types';
+import { ResourceType, TileType, type BuildingId } from '@/game/types';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
+
+type AnimatorTestApi = { resolveResourceForBelt(id: BuildingId): ResourceType };
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -36,12 +38,12 @@ describe('BeltFlowAnimator', () => {
     const animator = createAnimator(engine);
     const firstSegmentId = belt.segmentIds[0]!;
 
-    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.None);
+    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.None);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
 
-    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.IronOre);
+    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.IronOre);
 
     animator.destroy();
   });
@@ -66,11 +68,11 @@ describe('BeltFlowAnimator', () => {
     const firstSegmentId = belt.segmentIds[0]!;
     const animator = createAnimator(engine);
 
-    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
+    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
 
     engine.grid.resourceAmount.fill(0);
 
-    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
+    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
 
     animator.destroy();
   });

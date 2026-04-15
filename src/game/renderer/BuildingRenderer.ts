@@ -14,10 +14,15 @@ import { drawBuildingPortMarkers } from './buildingPortMarkers';
 const BUILDING_INSET = 2;
 const POWER_INDICATOR_RADIUS = 4;
 const POWER_INDICATOR_OFFSET = 7;
+// Palette note: each building family owns a hue slot that's distinct from the
+// map tiles (ground=moss, rock=grey, water=deep blue). Storage moved to cyan so
+// it doesn't blend into nearby water; solar saturated away from the mossy
+// ground. Highlight pulses are brighter siblings of these (see
+// buildingPresentation.ts) so family identity reads at a glance.
 const BUILDING_TINTS: Record<string, number> = {
-  [EXTRACTOR_BUILDING_TYPE_ID]: 0xf5b041,
-  [STORAGE_BUILDING_TYPE_ID]: 0x5dade2,
-  [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x82e0aa,
+  [EXTRACTOR_BUILDING_TYPE_ID]: 0xf59e0b,
+  [STORAGE_BUILDING_TYPE_ID]: 0x06b6d4,
+  [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x22c55e,
 };
 const DEFAULT_BUILDING_ALPHA = 0.95;
 const EXTRACTOR_BUILDING_ALPHA = 0.52;
