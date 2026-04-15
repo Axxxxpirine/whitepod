@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { getBuildingType, isBeltTypeId } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
@@ -11,6 +12,15 @@ export function SelectedBuildingPanel() {
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
+  const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
+
+  const [worldTick, setWorldTick] = useState(0);
+  useEffect(() => {
+    if (!engine) return;
+    return engine.subscribe((kind) => {
+      if (kind === 'world') setWorldTick((t) => t + 1);
+    });
+  }, [engine]);
   if (!engine || selectedBuildingId === null || !selectedBuildingAnchor) return null;
   const building = engine.getBuildings().get(selectedBuildingId);
   if (!building) return null;
@@ -55,7 +65,7 @@ export function SelectedBuildingPanel() {
             <Trash2 size={16} />
           </button>
         </div>
-        <BuildingStatsPanel building={building} engine={engine} />
+        <BuildingStatsPanel building={building} engine={engine} worldTick={worldTick} energyVersion={energyVersion} />
       </div>
     </div>
   );

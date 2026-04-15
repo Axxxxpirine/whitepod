@@ -46,15 +46,14 @@ const resetSession = useGameStore((s) => s.resetSession);
   }, [engine, pendingEnergyLinkSource]);
 const globalEnergy = useMemo(() => {
     void energyVersion;
-    void simulationTime;
+    void worldTick;
     return engine ? engine.getEnergyGlobalStats() : null;
-  }, [engine, energyVersion, simulationTime]);
+  }, [engine, energyVersion, worldTick]);
   const energyStorage = useMemo(() => {
     void energyVersion;
-    void simulationTime;
     void worldTick;
     return engine ? engine.getEnergyStorageTotals() : null;
-  }, [engine, energyVersion, simulationTime, worldTick]);
+  }, [engine, energyVersion, worldTick]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
