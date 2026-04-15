@@ -7,6 +7,7 @@ import {
 } from '../types';
 
 export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
+export const EXTRACTOR_RATE_PER_MIN = 30;
 export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
 export const BELT_STRAIGHT_BUILDING_TYPE_ID = 'belt_straight' as const;
 export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;

@@ -8,7 +8,13 @@ import {
   worldSideOf,
   worldTileOf,
 } from '../data/ConnectionRegistry';
-import { getBuildingType, isBeltTypeId, validateCatalog } from '../data/buildingCatalog';
+import {
+  getBuildingType,
+  isBeltTypeId,
+  validateCatalog,
+  EXTRACTOR_BUILDING_TYPE_ID,
+  EXTRACTOR_RATE_PER_MIN,
+} from '../data/buildingCatalog';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -35,7 +41,7 @@ import {
   type TileType,
 } from '../types';
 import { DEFAULT_MAP_SEED } from '../constants';
-import { isInBounds } from '../data/coords';
+import { isInBounds, toIndex } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
 import { planBelt } from './BeltRouter';
@@ -53,6 +59,12 @@ interface ResolvedPort {
 
 export type GameEngineChangeKind = 'world' | 'viewport';
 
+export interface ResourceStock {
+  coal: number;
+  ironOre: number;
+  copperOre: number;
+}
+
 export interface SerializedGameWorld {
   readonly version: number;
   readonly mapSeed: number;
@@ -60,6 +72,7 @@ export interface SerializedGameWorld {
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
   readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
+  readonly playerStock?: ResourceStock;
 }
 
 interface GameEngineOptions {
@@ -72,13 +85,17 @@ interface GameEngineOptions {
 const SERIALIZE_VERSION = 1;
 
 export class GameEngine {
+  private static readonly EXTRACTION_INTERVAL_MS = 60_000 / EXTRACTOR_RATE_PER_MIN;
+
   readonly grid: TileGrid;
   readonly viewport: Viewport;
   readonly buildings: BuildingRegistry;
   readonly connections: ConnectionRegistry;
   readonly energyNetwork: EnergyNetwork;
   mapSeed: number;
+  readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
+  private extractionAccumulator = 0;
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -91,8 +108,38 @@ export class GameEngine {
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
   }
 
-  update(_dt: number): void {
-    // Simulation tick — will grow with future features
+  update(dt: number): void {
+    this.extractionAccumulator += dt;
+    if (this.extractionAccumulator >= GameEngine.EXTRACTION_INTERVAL_MS) {
+      this.extractionAccumulator -= GameEngine.EXTRACTION_INTERVAL_MS;
+      this.processExtraction();
+    }
+  }
+
+  private processExtraction(): void {
+    let changed = false;
+    for (const [id, building] of this.buildings.getAll().entries()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      const { x, y } = building.origin;
+      const idx = toIndex(x, y);
+      const resourceType = this.grid.resourceType[idx];
+      const amount = this.grid.resourceAmount[idx];
+      if (amount <= 0 || resourceType === ResourceType.None) continue;
+      const newAmount = amount - 1;
+      this.grid.resourceAmount[idx] = newAmount;
+      if (resourceType === ResourceType.Coal) this.playerStock.coal++;
+      else if (resourceType === ResourceType.IronOre) this.playerStock.ironOre++;
+      else if (resourceType === ResourceType.CopperOre) this.playerStock.copperOre++;
+      if (newAmount === 0) {
+        this.grid.resourceType[idx] = ResourceType.None;
+      }
+      this.grid.markDirty(x, y);
+      changed = true;
+    }
+    if (changed) {
+      this.notify('world');
+    }
   }
 
   placeTile(x: number, y: number, type: TileType): boolean {
@@ -258,6 +305,23 @@ export class GameEngine {
       onlineConsumers,
       offlineConsumers,
     };
+  }
+
+  getResourceCounts(): ResourceStock {
+    return { ...this.playerStock };
+  }
+
+  getResourceRates(): { coal: number; ironOre: number; copperOre: number } {
+    let coal = 0, ironOre = 0, copperOre = 0;
+    for (const [id, building] of this.buildings.getAll().entries()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      const resource = this.grid.getResource(building.origin.x, building.origin.y);
+      if (resource === ResourceType.Coal) coal += EXTRACTOR_RATE_PER_MIN;
+      else if (resource === ResourceType.IronOre) ironOre += EXTRACTOR_RATE_PER_MIN;
+      else if (resource === ResourceType.CopperOre) copperOre += EXTRACTOR_RATE_PER_MIN;
+    }
+    return { coal, ironOre, copperOre };
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -533,6 +597,7 @@ export class GameEngine {
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
       energyLinks,
+      playerStock: { ...this.playerStock },
     };
   }
 
@@ -561,6 +626,12 @@ export class GameEngine {
       if (engine.buildings.get(link.a) && engine.buildings.get(link.b)) {
         engine.energyNetwork.connect(link.a, link.b);
       }
+    }
+
+    if (snapshot.playerStock) {
+      engine.playerStock.coal = snapshot.playerStock.coal;
+      engine.playerStock.ironOre = snapshot.playerStock.ironOre;
+      engine.playerStock.copperOre = snapshot.playerStock.copperOre;
     }
 
     return engine;

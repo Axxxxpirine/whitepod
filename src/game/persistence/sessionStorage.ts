@@ -8,7 +8,7 @@ import {
 export const WORLD_STORAGE_KEY = 'whitepod:session:world:v1';
 export const VIEW_STORAGE_KEY = 'whitepod:session:view:v1';
 const STORAGE_VERSION = 1;
-const GRID_BYTE_LENGTH = GRID_SIZE * 4;
+const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
 interface PersistedWorldState {
   readonly version: number;
@@ -18,6 +18,7 @@ interface PersistedWorldState {
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
+  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
 }
 
 interface PersistedViewState {
@@ -190,6 +191,7 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
     buildings: snapshot.buildings,
     connections: snapshot.connections,
     energyLinks: snapshot.energyLinks,
+    playerStock: snapshot.playerStock,
   };
 
   storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
@@ -228,7 +230,7 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
     }
 
     const grid = base64ToArrayBuffer(parsedWorld.gridBase64);
-    if (grid.byteLength !== GRID_BYTE_LENGTH) {
+    if (grid.byteLength < GRID_MIN_BYTE_LENGTH) {
       clearPersistedSession();
       return null;
     }
@@ -241,6 +243,7 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
         buildings: parsedWorld.buildings,
         connections: parsedWorld.connections,
         energyLinks: parsedWorld.energyLinks,
+        playerStock: parsedWorld.playerStock,
       },
       screenWidth,
       screenHeight,

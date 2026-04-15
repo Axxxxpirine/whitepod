@@ -210,7 +210,7 @@ describe('GameHUD', () => {
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('shows global electricity card in the top-right area', () => {
+  it('shows global electricity in the top-left HUD panel', () => {
     const engine = makeEngine();
     const solar = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     engine.grid.setResource(2, 1, ResourceType.IronOre);
@@ -222,8 +222,8 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine });
     render(<GameHUD />);
 
-    expect(screen.getByText('Production électrique: 8kWh')).toBeInTheDocument();
-    expect(screen.getByText('Consommation électrique: 5kWh')).toBeInTheDocument();
-    expect(screen.getByText('Bilan énergétique: -2kWh')).toBeInTheDocument();
+    expect(screen.getByText('-2 kWh')).toBeInTheDocument();
+    expect(screen.getByText('8 kWh')).toBeInTheDocument();
+    expect(screen.getByText('5 kWh')).toBeInTheDocument();
   });
 });

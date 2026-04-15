@@ -155,6 +155,7 @@ export function GameCanvas() {
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
           worldSaver?.schedule();
+          useGameStore.getState().bumpWorldVersion();
           return;
         }
         viewSaver?.schedule();
@@ -267,6 +268,7 @@ export function GameCanvas() {
       resizeObserver.observe(container);
 
       app.ticker.add((ticker) => {
+        engine.update(ticker.deltaMS);
         beltFlowAnimator!.update(ticker.deltaMS);
         const state = useGameStore.getState();
         const { selectedBuildingAnchor, selectedBuildingId } = state;

@@ -18,6 +18,7 @@ interface GameState {
   beltPreview: BeltPlacementPreviewModel | null;
   currentBuildingRotation: Direction;
   sessionEpoch: number;
+  worldVersion: number;
   pendingEnergyLinkSource: BuildingId | null;
   linkSolarOnPlacement: boolean;
   setEngine: (engine: GameEngine | null) => void;
@@ -30,6 +31,7 @@ interface GameState {
   setCurrentBuildingRotation: (rotation: Direction) => void;
   rotateBuildingRotation: () => void;
   resetSession: () => void;
+  bumpWorldVersion: () => void;
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
 }
@@ -43,6 +45,7 @@ export const useGameStore = create<GameState>((set) => ({
   beltPreview: null,
   currentBuildingRotation: Direction.North,
   sessionEpoch: 0,
+  worldVersion: 0,
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
   setEngine: (engine) => set({ engine }),
@@ -74,6 +77,7 @@ export const useGameStore = create<GameState>((set) => ({
       sessionEpoch: state.sessionEpoch + 1,
     }));
   },
+  bumpWorldVersion: () => set((state) => ({ worldVersion: state.worldVersion + 1 })),
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
   setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
 }));
