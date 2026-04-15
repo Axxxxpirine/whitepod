@@ -9,11 +9,9 @@ import { ResourceType, type BuildingId, type ResourceType as ResourceTypeT } fro
 
 export interface BeltFlowEntry {
   readonly resourceType: ResourceTypeT;
-  readonly ratePerSecond: number;
+  readonly ratePerMinute: number;
   readonly sources: ReadonlyArray<BuildingId>;
 }
-
-const EXTRACTOR_RATE_PER_SECOND = EXTRACTOR_RATE_PER_MIN / 60;
 
 /**
  * Walk upstream from a belt through belts + mergers, collect every powered
@@ -48,7 +46,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         }
         if (!entry.sources.has(upstream.id)) {
           entry.sources.add(upstream.id);
-          entry.rate += EXTRACTOR_RATE_PER_SECOND;
+          entry.rate += EXTRACTOR_RATE_PER_MIN;
         }
         continue;
       }
@@ -61,7 +59,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
 
   return [...byResource.entries()].map(([resourceType, { rate, sources }]) => ({
     resourceType,
-    ratePerSecond: rate,
+    ratePerMinute: rate,
     sources: [...sources],
   }));
 }

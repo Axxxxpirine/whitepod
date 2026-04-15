@@ -34,16 +34,16 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
     <div className="flex flex-col gap-1 pt-0.5">
       <div className="h-px bg-white/10" />
       {entries.map((entry) => (
-        <FlowRow key={entry.resourceType} resourceType={entry.resourceType} ratePerSecond={entry.ratePerSecond} />
+        <FlowRow key={entry.resourceType} resourceType={entry.resourceType} ratePerMinute={entry.ratePerMinute} />
       ))}
     </div>
   );
 }
 
-function FlowRow({ resourceType, ratePerSecond }: { resourceType: ResourceTypeT; ratePerSecond: number }) {
+function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT; ratePerMinute: number }) {
   const sprite = SPRITE_BY_RESOURCE[resourceType];
   const label = resourceTypeLabel(resourceType);
-  const rateText = `${ratePerSecond.toFixed(2)}/s`;
+  const rateText = `${ratePerMinute}/min`;
 
   return (
     <div className="flex items-center gap-1.5">
