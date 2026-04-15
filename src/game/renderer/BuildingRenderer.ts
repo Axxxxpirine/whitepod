@@ -2,6 +2,7 @@ import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js'
 import { TILE_SIZE } from '../constants';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
@@ -24,6 +25,7 @@ const BUILDING_TINTS: Record<string, number> = {
   [EXTRACTOR_BUILDING_TYPE_ID]: 0xf59e0b,
   [STORAGE_BUILDING_TYPE_ID]: 0x06b6d4,
   [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x22c55e,
+  [MERGER_BASIC_BUILDING_TYPE_ID]: 0xc084fc, // violet — distinct from belts (pink) and storage (cyan)
 };
 const DEFAULT_BUILDING_ALPHA = 0.95;
 const EXTRACTOR_BUILDING_ALPHA = 0.52;
