@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TileGrid } from '@/game/data/TileGrid';
-import { TileType } from '@/game/types';
-import { GRID_SIZE } from '@/game/constants';
+import { ResourceType, TileType } from '@/game/types';
+import { GRID_SIZE, GRID_WIDTH } from '@/game/constants';
 
 describe('TileGrid', () => {
   it('initializes with all Empty tiles', () => {
@@ -19,7 +19,7 @@ describe('TileGrid', () => {
     const grid = new TileGrid();
     grid.setType(-1, 0, TileType.Ground);
     grid.setType(0, -1, TileType.Ground);
-    grid.setType(500, 0, TileType.Ground);
+    grid.setType(GRID_WIDTH, 0, TileType.Ground);
     expect(grid.tileType.every((v) => v === TileType.Empty)).toBe(true);
   });
 
@@ -77,13 +77,14 @@ describe('TileGrid', () => {
   describe('serialization', () => {
     it('produces a buffer of the correct size', () => {
       const grid = new TileGrid();
-      expect(grid.serialize().byteLength).toBe(GRID_SIZE * 3);
+      expect(grid.serialize().byteLength).toBe(GRID_SIZE * 4);
     });
 
     it('round-trips data via serialize / deserialize', () => {
       const grid = new TileGrid();
       grid.fill(TileType.Ground);
       grid.setType(0, 0, TileType.Water);
+      grid.setResource(1, 0, ResourceType.Coal);
       grid.elevation[0] = 42;
       grid.flags[100] = 7;
 
@@ -91,6 +92,7 @@ describe('TileGrid', () => {
 
       expect(restored.getType(0, 0)).toBe(TileType.Water);
       expect(restored.getType(1, 0)).toBe(TileType.Ground);
+      expect(restored.getResource(1, 0)).toBe(ResourceType.Coal);
       expect(restored.elevation[0]).toBe(42);
       expect(restored.flags[100]).toBe(7);
     });

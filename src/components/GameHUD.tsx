@@ -1,13 +1,19 @@
 import { useState, useRef, useCallback } from 'react';
+import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import { TileType } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
   const engine = useGameStore((s) => s.engine);
+  const selectedTool = useGameStore((s) => s.selectedTool);
+  const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const extractorSelected =
+    selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -44,11 +50,18 @@ export function GameHUD() {
     }
   };
 
+  const toggleExtractorTool = () => {
+    setSelectedTool(
+      extractorSelected
+        ? { kind: 'tile', tile: TileType.Ground }
+        : { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+    );
+  };
+
   return (
-    <div className="fixed bottom-3 right-3 flex items-end gap-2 z-50 select-none">
-      {/* Console panel */}
+    <div className="fixed inset-x-0 bottom-0 z-50 p-3 select-none">
       {consoleOpen && (
-        <div className="w-96 bg-black/85 border border-white/20 rounded-lg overflow-hidden font-mono text-xs backdrop-blur-sm">
+        <div className="absolute bottom-full right-3 mb-2 w-96 max-w-[calc(100vw-1.5rem)] bg-black/85 border border-white/20 rounded-xl overflow-hidden font-mono text-xs backdrop-blur-sm shadow-2xl">
           <div
             ref={scrollRef}
             className="h-48 overflow-y-auto p-2 space-y-0.5"
@@ -88,20 +101,39 @@ export function GameHUD() {
         </div>
       )}
 
-      {/* Bottom bar: coordinates + console toggle */}
-      <div className="flex items-center gap-2">
-        {hoverTile && (
-          <div className="bg-black/70 text-white/80 font-mono text-xs px-2 py-1 rounded backdrop-blur-sm">
-            {hoverTile.x}, {hoverTile.y}
-          </div>
-        )}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-3 py-2 text-white/85 backdrop-blur-md shadow-2xl">
+        <div className="justify-self-start min-w-0">
+          {hoverTile && (
+            <div className="inline-flex bg-black/40 text-white/80 font-mono text-xs px-2 py-1 rounded-md">
+              {hoverTile.x}, {hoverTile.y}
+            </div>
+          )}
+        </div>
+
         <button
-          onClick={() => setConsoleOpen((o) => !o)}
-          className="bg-black/70 hover:bg-black/90 text-white/80 font-mono text-xs px-2.5 py-1 rounded backdrop-blur-sm transition-colors cursor-pointer"
-          title="Toggle console"
+          type="button"
+          onClick={toggleExtractorTool}
+          aria-pressed={extractorSelected}
+          className={
+            extractorSelected
+              ? 'rounded-xl bg-amber-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
+              : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
+          }
         >
-          {consoleOpen ? 'Close' : '>_'}
+          Extracteur
         </button>
+
+        <div className="justify-self-end flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setConsoleOpen((o) => !o)}
+            aria-expanded={consoleOpen}
+            className="bg-white/10 hover:bg-white/20 text-white/90 font-mono text-xs px-3 py-2 rounded-xl transition-colors cursor-pointer"
+            title="Toggle console"
+          >
+            {consoleOpen ? 'Close' : '>_'}
+          </button>
+        </div>
       </div>
     </div>
   );

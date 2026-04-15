@@ -88,6 +88,9 @@ export class GameEngine {
       if (!type.allowedTiles.includes(this.grid.getType(x, y))) {
         return { ok: false, reason: 'tile_type_invalid' };
       }
+      if (type.requiresResourceDeposit && this.grid.getResource(x, y) === ResourceType.None) {
+        return { ok: false, reason: 'resource_required' };
+      }
     }
     return { ok: true };
   }

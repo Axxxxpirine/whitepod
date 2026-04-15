@@ -32,6 +32,10 @@ export interface TileCoord {
 export type BuildingId = number;
 export type BuildingTypeId = string;
 
+export type SelectedTool =
+  | { readonly kind: 'tile'; readonly tile: TileType }
+  | { readonly kind: 'building'; readonly buildingType: BuildingTypeId };
+
 export interface Footprint {
   readonly w: number;
   readonly h: number;
@@ -57,6 +61,7 @@ export interface BuildingType {
   readonly id: BuildingTypeId;
   readonly footprint: Footprint;
   readonly allowedTiles: readonly TileType[];
+  readonly requiresResourceDeposit?: boolean;
   readonly ports: readonly Port[];
 }
 
@@ -71,6 +76,7 @@ export type PlacementFailure =
   | 'out_of_bounds'
   | 'tile_occupied'
   | 'tile_type_invalid'
+  | 'resource_required'
   | 'unknown_type'
   | 'id_overflow';
 

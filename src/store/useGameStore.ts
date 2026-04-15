@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import { TileType, type BuildingTypeId } from '@/game/types';
-
-export type SelectedTool =
-  | { readonly kind: 'tile'; readonly tile: TileType }
-  | { readonly kind: 'building'; readonly buildingType: BuildingTypeId };
+import { TileType, type SelectedTool } from '@/game/types';
 
 interface GameState {
   engine: GameEngine | null;
