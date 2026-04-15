@@ -36,6 +36,7 @@ export function popCancelStack(
 
   if (state.selectedBuildingId !== null) {
     state.setSelectedBuilding(null);
+    state.setSelectedBuildingAnchor(null);
     return true;
   }
 
