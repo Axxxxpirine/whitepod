@@ -159,11 +159,6 @@ export function GameCanvas() {
         }
         viewSaver?.schedule();
       });
-      unsubscribeTool = useGameStore.subscribe((nextState, previousState) => {
-        if (!selectedToolsEqual(nextState.selectedTool, previousState.selectedTool)) {
-          viewSaver?.schedule();
-        }
-      });
 
       if (import.meta.env.DEV) {
         (window as unknown as { engine: GameEngine }).engine = engine;
@@ -193,6 +188,14 @@ export function GameCanvas() {
         () => useGameStore.getState().selectedTool,
         useGameStore.getState().setBeltPreview,
       );
+      unsubscribeTool = useGameStore.subscribe((nextState, previousState) => {
+        if (!selectedToolsEqual(nextState.selectedTool, previousState.selectedTool)) {
+          viewSaver?.schedule();
+          if (previousState.selectedTool.kind === 'belt' && nextState.selectedTool.kind !== 'belt') {
+            currentBeltToolController.clearPendingPlacement();
+          }
+        }
+      });
 
       currentInputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
       currentInputHandler.setBuildingSelectedCallback((buildingId) => {

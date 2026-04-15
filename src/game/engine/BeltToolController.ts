@@ -96,6 +96,10 @@ export class BeltToolController {
     }
   }
 
+  clearPendingPlacement(): void {
+    this.cancel();
+  }
+
   private cancel(): void {
     this.pendingFrom = null;
     this.setPreview(null);

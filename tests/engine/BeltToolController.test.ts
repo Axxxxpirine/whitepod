@@ -78,4 +78,25 @@ describe('BeltToolController', () => {
     expect(storageConnections).toHaveLength(1);
     expect(storageConnections[0].to).toEqual({ building: storage, port: 'in_east' });
   });
+
+  it('clears the pending source when leaving the belt tool', () => {
+    const engine = makeEngine();
+    placeExtractor(engine, 5, 13);
+    const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+
+    let selectedTool: SelectedTool = { kind: 'belt' };
+    const controller = new BeltToolController(engine, () => selectedTool, () => {});
+
+    const sourcePoint = screenPointForTile(engine, 5, 13);
+    const eastSidePoint = screenPointForTile(engine, 12, 11);
+
+    controller.onPointerDown(sourcePoint.sx, sourcePoint.sy, 0);
+    selectedTool = { kind: 'select' };
+    controller.clearPendingPlacement();
+    selectedTool = { kind: 'belt' };
+
+    controller.onPointerDown(eastSidePoint.sx, eastSidePoint.sy, 0);
+
+    expect(engine.getConnectionsOf(storage)).toHaveLength(0);
+  });
 });
