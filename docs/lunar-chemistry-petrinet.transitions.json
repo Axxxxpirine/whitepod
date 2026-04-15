@@ -1,0 +1,2138 @@
+[
+  {
+    "id": "air_filtration",
+    "line": 311,
+    "transitionMeta": {
+      "name_fr": "Filtration d'air"
+    },
+    "consumes": [
+      {
+        "place": "life_support_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Gaz de support vie",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "air_filtration",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Filtration d'air",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "aluminum_ingots",
+    "line": 228,
+    "transitionMeta": {
+      "name_fr": "Réduction"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde d'aluminium",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "aluminum_oxide",
+    "line": 196,
+    "transitionMeta": {
+      "name_fr": "Oxydation du régolithe"
+    },
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Régolithe lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde d'aluminium",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "ammonia_synthesis",
+    "line": 187,
+    "transitionMeta": {
+      "name_fr": "Synthèse d'ammoniac"
+    },
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 3,
+        "placeMeta": {
+          "name_fr": "Hydrogène lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 2,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "ammonia",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Ammoniac",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "assemble_rocket",
+    "line": 372,
+    "transitionMeta": {
+      "name_fr": "Assemblage complet"
+    },
+    "consumes": [
+      {
+        "place": "air_filtration",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Filtration d'air",
+          "tier": 3
+        }
+      },
+      {
+        "place": "cargo_container",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Conteneur cargo",
+          "tier": 3
+        }
+      },
+      {
+        "place": "combustion_chamber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Chambre de combustion",
+          "tier": 3
+        }
+      },
+      {
+        "place": "communication_antenna",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Antenne de communication",
+          "tier": 3
+        }
+      },
+      {
+        "place": "crew_module",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Module équipage",
+          "tier": 3
+        }
+      },
+      {
+        "place": "emergency_system",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Système d'urgence",
+          "tier": 3
+        }
+      },
+      {
+        "place": "escape_rocket",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fusée de sauvetage",
+          "tier": 3
+        }
+      },
+      {
+        "place": "flight_computer",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Ordinateur de bord",
+          "tier": 3
+        }
+      },
+      {
+        "place": "fuel_injector",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Injecteur de carburant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "fuel_pump",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Pompe à carburant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "fuel_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir de carburant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "fuel_valve",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Valve de carburant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "hatch_doors",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Portes d'écoutille",
+          "tier": 3
+        }
+      },
+      {
+        "place": "heat_shield",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Bouclier thermique",
+          "tier": 3
+        }
+      },
+      {
+        "place": "instrumentation",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Instrumentation",
+          "tier": 3
+        }
+      },
+      {
+        "place": "landing_gear",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Train d'atterrissage",
+          "tier": 3
+        }
+      },
+      {
+        "place": "launch_adapter",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Adaptateur de lancement",
+          "tier": 3
+        }
+      },
+      {
+        "place": "life_support_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir support vie",
+          "tier": 3
+        }
+      },
+      {
+        "place": "navigation_system",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Système de navigation",
+          "tier": 3
+        }
+      },
+      {
+        "place": "nozzle",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Tuyère",
+          "tier": 3
+        }
+      },
+      {
+        "place": "oxidizer_pump",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Pompe d'oxydant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "oxidizer_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir d'oxydant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "oxidizer_valve",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Valve d'oxydant",
+          "tier": 3
+        }
+      },
+      {
+        "place": "power_batteries",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Batteries",
+          "tier": 3
+        }
+      },
+      {
+        "place": "seals_gaskets",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Joints et garnitures",
+          "tier": 3
+        }
+      },
+      {
+        "place": "solar_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux solaires",
+          "tier": 3
+        }
+      },
+      {
+        "place": "structural_frame",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Structure principale",
+          "tier": 3
+        }
+      },
+      {
+        "place": "thermal_control",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Contrôle thermique",
+          "tier": 3
+        }
+      },
+      {
+        "place": "thrust_controller",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Contrôleur de poussée",
+          "tier": 3
+        }
+      },
+      {
+        "place": "water_recycler",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Recycleur d'eau",
+          "tier": 3
+        }
+      },
+      {
+        "place": "windows",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Hublots",
+          "tier": 3
+        }
+      },
+      {
+        "place": "wiring_harness",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Faisceau de câbles",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "rocket_ready",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fusée prête",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "carbon_dioxide",
+    "line": 199,
+    "transitionMeta": {
+      "name_fr": "Synthèse de CO2"
+    },
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Hydrogène lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "carbon_dioxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Dioxyde de carbone",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "carbon_fiber",
+    "line": 243,
+    "transitionMeta": {
+      "name_fr": "Composite"
+    },
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Graphite",
+          "tier": 2
+        }
+      },
+      {
+        "place": "nitrogen_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Azote (gaz)",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fibre de carbone",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "cargo_container",
+    "line": 337,
+    "transitionMeta": {
+      "name_fr": "Conteneur cargo"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "cargo_container",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Conteneur cargo",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "ceramic_plates",
+    "line": 240,
+    "transitionMeta": {
+      "name_fr": "Céramique"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde d'aluminium",
+          "tier": 1
+        }
+      },
+      {
+        "place": "iron_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde de fer",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "combustion_chamber",
+    "line": 286,
+    "transitionMeta": {
+      "name_fr": "Chambre de combustion"
+    },
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "combustion_chamber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Chambre de combustion",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "communication_antenna",
+    "line": 303,
+    "transitionMeta": {
+      "name_fr": "Antenne de communication"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "carbon_fiber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fibre de carbone",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "communication_antenna",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Antenne de communication",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "crew_module",
+    "line": 340,
+    "transitionMeta": {
+      "name_fr": "Module équipage"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "glass_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux de verre",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "crew_module",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Module équipage",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "emergency_system",
+    "line": 358,
+    "transitionMeta": {
+      "name_fr": "Système d'urgence"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "emergency_system",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Système d'urgence",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "escape_rocket",
+    "line": 361,
+    "transitionMeta": {
+      "name_fr": "Fusée de sauvetage"
+    },
+    "consumes": [
+      {
+        "place": "rocket_fuel",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Propergol",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "escape_rocket",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fusée de sauvetage",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "fertilizer_pellets",
+    "line": 249,
+    "transitionMeta": {
+      "name_fr": "Granulation"
+    },
+    "consumes": [
+      {
+        "place": "nitrogen_fertilizer",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Engrais azoté",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "fertilizer_pellets",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Pellets d'engrais",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "flight_computer",
+    "line": 297,
+    "transitionMeta": {
+      "name_fr": "Ordinateur de bord"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "flight_computer",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Ordinateur de bord",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "fuel_injector",
+    "line": 274,
+    "transitionMeta": {
+      "name_fr": "Injecteur carburant"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_injector",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Injecteur de carburant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "fuel_pump",
+    "line": 268,
+    "transitionMeta": {
+      "name_fr": "Pompe carburant"
+    },
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Graphite",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_pump",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Pompe à carburant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "fuel_tank",
+    "line": 265,
+    "transitionMeta": {
+      "name_fr": "Réservoir de carburant"
+    },
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir de carburant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "fuel_valve",
+    "line": 271,
+    "transitionMeta": {
+      "name_fr": "Valve carburant"
+    },
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_valve",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Valve de carburant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "glass_panels",
+    "line": 237,
+    "transitionMeta": {
+      "name_fr": "Fabrication"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "glass_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux de verre",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "graphite",
+    "line": 231,
+    "transitionMeta": {
+      "name_fr": "Extraction carbone"
+    },
+    "consumes": [
+      {
+        "place": "carbon_dioxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Dioxyde de carbone",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "graphite",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Graphite",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "hatch_doors",
+    "line": 343,
+    "transitionMeta": {
+      "name_fr": "Porte d'écoutille"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "hatch_doors",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Portes d'écoutille",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "heat_shield",
+    "line": 317,
+    "transitionMeta": {
+      "name_fr": "Bouclier thermique"
+    },
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fibre de carbone",
+          "tier": 3
+        }
+      },
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "heat_shield",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Bouclier thermique",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "hydrogen_fuel",
+    "line": 210,
+    "transitionMeta": {
+      "name_fr": "Traitement de l'eau"
+    },
+    "consumes": [
+      {
+        "place": "water",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Eau",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "hydrogen_fuel",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Carburant hydrogène",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "instrumentation",
+    "line": 355,
+    "transitionMeta": {
+      "name_fr": "Instrumentation"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "instrumentation",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Instrumentation",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "iron_bars",
+    "line": 225,
+    "transitionMeta": {
+      "name_fr": "Réduction"
+    },
+    "consumes": [
+      {
+        "place": "iron_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde de fer",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "iron_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres de fer",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "iron_oxide",
+    "line": 193,
+    "transitionMeta": {
+      "name_fr": "Oxydation du régolithe"
+    },
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Régolithe lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "iron_oxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxyde de fer",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "landing_gear",
+    "line": 334,
+    "transitionMeta": {
+      "name_fr": "Train d'atterrissage"
+    },
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "landing_gear",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Train d'atterrissage",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "launch_adapter",
+    "line": 364,
+    "transitionMeta": {
+      "name_fr": "Adaptateur de lancement"
+    },
+    "consumes": [
+      {
+        "place": "structural_frame",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Structure principale",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "launch_adapter",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Adaptateur de lancement",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "life_support_gas",
+    "line": 255,
+    "transitionMeta": {
+      "name_fr": "Gaz support vie"
+    },
+    "consumes": [
+      {
+        "place": "liquid_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène liquide",
+          "tier": 2
+        }
+      },
+      {
+        "place": "nitrogen_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Azote (gaz)",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "life_support_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Gaz de support vie",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "life_support_tank",
+    "line": 308,
+    "transitionMeta": {
+      "name_fr": "Réservoir support vie"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "life_support_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir support vie",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "liquid_oxygen",
+    "line": 213,
+    "transitionMeta": {
+      "name_fr": "Traitement de l'eau"
+    },
+    "consumes": [
+      {
+        "place": "water",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Eau",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "liquid_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène liquide",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "lunar_helium3_extraction",
+    "line": 165,
+    "transitionMeta": {
+      "name_fr": "Extrait l'hélium-3 présent dans le régolithe lunaire (potentiel pour fusion nucléaire future)"
+    },
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_helium3",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Hélium-3 lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lunar_hydrogen_extraction",
+    "line": 159,
+    "transitionMeta": {
+      "name_fr": "Extrait l'hydrogène lunaire présent dans le régolithe (composant essentiel pour l'eau et le carburant)"
+    },
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Hydrogène lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lunar_oxygen_extraction",
+    "line": 162,
+    "transitionMeta": {
+      "name_fr": "Extrait l'oxygène lunaire présent dans les oxydes minéraux (essentiel pour la vie et l'oxydant)"
+    },
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lunar_regolith_extraction",
+    "line": 168,
+    "transitionMeta": {
+      "name_fr": "Extrait le régolithe lunaire (poussière et roche de surface, base pour matériaux de construction)"
+    },
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Régolithe lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "run",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Exécution",
+          "kind": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "methane_synthesis",
+    "line": 184,
+    "transitionMeta": {
+      "name_fr": "Synthèse de méthane"
+    },
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 4,
+        "placeMeta": {
+          "name_fr": "Hydrogène lunaire",
+          "tier": 0
+        }
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "methane",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Méthane",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "navigation_system",
+    "line": 300,
+    "transitionMeta": {
+      "name_fr": "Système de navigation"
+    },
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fibre de carbone",
+          "tier": 3
+        }
+      },
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "navigation_system",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Système de navigation",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "nitrogen_fertilizer",
+    "line": 219,
+    "transitionMeta": {
+      "name_fr": "Traitement"
+    },
+    "consumes": [
+      {
+        "place": "ammonia",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Ammoniac",
+          "tier": 1
+        }
+      },
+      {
+        "place": "water",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Eau",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "nitrogen_fertilizer",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Engrais azoté",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "nitrogen_gas",
+    "line": 202,
+    "transitionMeta": {
+      "name_fr": "Synthèse d'azote moléculaire"
+    },
+    "consumes": [
+      {
+        "place": "lunar_oxygen",
+        "qty": 3,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "nitrogen_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Azote (gaz)",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "nozzle",
+    "line": 289,
+    "transitionMeta": {
+      "name_fr": "Tuyère"
+    },
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "nozzle",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Tuyère",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_pump",
+    "line": 280,
+    "transitionMeta": {
+      "name_fr": "Pompe oxydant"
+    },
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Graphite",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_pump",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Pompe d'oxydant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_tank",
+    "line": 277,
+    "transitionMeta": {
+      "name_fr": "Réservoir d'oxydant"
+    },
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_tank",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Réservoir d'oxydant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_valve",
+    "line": 283,
+    "transitionMeta": {
+      "name_fr": "Valve oxydant"
+    },
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plaques céramiques",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_valve",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Valve d'oxydant",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "polymer_plastic",
+    "line": 246,
+    "transitionMeta": {
+      "name_fr": "Polymérisation"
+    },
+    "consumes": [
+      {
+        "place": "synthetic_methane",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Méthane synthétique",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "polymer_plastic",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plastique polymère",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "power_batteries",
+    "line": 325,
+    "transitionMeta": {
+      "name_fr": "Batteries principales"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "power_batteries",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Batteries",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "rocket_fuel",
+    "line": 252,
+    "transitionMeta": {
+      "name_fr": "Propergol"
+    },
+    "consumes": [
+      {
+        "place": "hydrogen_fuel",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Carburant hydrogène",
+          "tier": 2
+        }
+      },
+      {
+        "place": "liquid_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène liquide",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "rocket_fuel",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Propergol",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "seals_gaskets",
+    "line": 349,
+    "transitionMeta": {
+      "name_fr": "Joints et garnitures"
+    },
+    "consumes": [
+      {
+        "place": "polymer_plastic",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Plastique polymère",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "seals_gaskets",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Joints et garnitures",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "silicon_dioxide",
+    "line": 190,
+    "transitionMeta": {
+      "name_fr": "Oxydation du régolithe"
+    },
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Régolithe lunaire",
+          "tier": 0
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "silicon_dioxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Dioxyde de silicium",
+          "tier": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "silicon_wafers",
+    "line": 222,
+    "transitionMeta": {
+      "name_fr": "Purification"
+    },
+    "consumes": [
+      {
+        "place": "silicon_dioxide",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Dioxyde de silicium",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "solar_panels",
+    "line": 328,
+    "transitionMeta": {
+      "name_fr": "Panneaux solaires"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "solar_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux solaires",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "steel_bars",
+    "line": 234,
+    "transitionMeta": {
+      "name_fr": "Alliage"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "iron_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres de fer",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "structural_frame",
+    "line": 331,
+    "transitionMeta": {
+      "name_fr": "Structure principale"
+    },
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Lingots d'aluminium",
+          "tier": 2
+        }
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Barres d'acier",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "structural_frame",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Structure principale",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "synthetic_methane",
+    "line": 216,
+    "transitionMeta": {
+      "name_fr": "Raffinage"
+    },
+    "consumes": [
+      {
+        "place": "methane",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Méthane",
+          "tier": 1
+        }
+      },
+      {
+        "place": "water",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Eau",
+          "tier": 1
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "synthetic_methane",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Méthane synthétique",
+          "tier": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "thermal_control",
+    "line": 320,
+    "transitionMeta": {
+      "name_fr": "Contrôle thermique"
+    },
+    "consumes": [
+      {
+        "place": "glass_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux de verre",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "thermal_control",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Contrôle thermique",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "thrust_controller",
+    "line": 294,
+    "transitionMeta": {
+      "name_fr": "Contrôleur de poussée"
+    },
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Wafers de silicium",
+          "tier": 2
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "thrust_controller",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Contrôleur de poussée",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "water_recycler",
+    "line": 314,
+    "transitionMeta": {
+      "name_fr": "Recyclage d'eau"
+    },
+    "consumes": [
+      {
+        "place": "life_support_gas",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Gaz de support vie",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "water_recycler",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Recycleur d'eau",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "water_synthesis",
+    "line": 181,
+    "transitionMeta": {
+      "name_fr": "Synthèse d'eau"
+    },
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 2,
+        "placeMeta": {
+          "name_fr": "Hydrogène lunaire",
+          "tier": 0
+        },
+        "arcMeta": {
+          "role": "réactif"
+        }
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Oxygène lunaire",
+          "tier": 0
+        },
+        "arcMeta": {
+          "role": "réactif"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "water",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Eau",
+          "tier": 1
+        },
+        "arcMeta": {
+          "role": "produit"
+        }
+      }
+    ]
+  },
+  {
+    "id": "windows",
+    "line": 346,
+    "transitionMeta": {
+      "name_fr": "Hublots"
+    },
+    "consumes": [
+      {
+        "place": "glass_panels",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Panneaux de verre",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "windows",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Hublots",
+          "tier": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "wiring_harness",
+    "line": 352,
+    "transitionMeta": {
+      "name_fr": "Câblage électrique"
+    },
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Fibre de carbone",
+          "tier": 3
+        }
+      }
+    ],
+    "produces": [
+      {
+        "place": "wiring_harness",
+        "qty": 1,
+        "placeMeta": {
+          "name_fr": "Faisceau de câbles",
+          "tier": 3
+        }
+      }
+    ]
+  }
+]

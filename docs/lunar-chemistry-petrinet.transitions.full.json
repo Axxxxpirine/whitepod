@@ -1,0 +1,2368 @@
+[
+  {
+    "id": "air_filtration",
+    "consumes": [
+      {
+        "place": "life_support_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "air_filtration",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "aluminum_ingots",
+    "consumes": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "aluminum_oxide",
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "ammonia_synthesis",
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 3
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 2
+      }
+    ],
+    "produces": [
+      {
+        "place": "ammonia",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "assemble_rocket",
+    "consumes": [
+      {
+        "place": "air_filtration",
+        "qty": 1
+      },
+      {
+        "place": "cargo_container",
+        "qty": 1
+      },
+      {
+        "place": "combustion_chamber",
+        "qty": 1
+      },
+      {
+        "place": "communication_antenna",
+        "qty": 1
+      },
+      {
+        "place": "crew_module",
+        "qty": 1
+      },
+      {
+        "place": "emergency_system",
+        "qty": 1
+      },
+      {
+        "place": "escape_rocket",
+        "qty": 1
+      },
+      {
+        "place": "flight_computer",
+        "qty": 1
+      },
+      {
+        "place": "fuel_injector",
+        "qty": 1
+      },
+      {
+        "place": "fuel_pump",
+        "qty": 1
+      },
+      {
+        "place": "fuel_tank",
+        "qty": 1
+      },
+      {
+        "place": "fuel_valve",
+        "qty": 1
+      },
+      {
+        "place": "hatch_doors",
+        "qty": 1
+      },
+      {
+        "place": "heat_shield",
+        "qty": 1
+      },
+      {
+        "place": "instrumentation",
+        "qty": 1
+      },
+      {
+        "place": "landing_gear",
+        "qty": 1
+      },
+      {
+        "place": "launch_adapter",
+        "qty": 1
+      },
+      {
+        "place": "life_support_tank",
+        "qty": 1
+      },
+      {
+        "place": "navigation_system",
+        "qty": 1
+      },
+      {
+        "place": "nozzle",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_pump",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_tank",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_valve",
+        "qty": 1
+      },
+      {
+        "place": "power_batteries",
+        "qty": 1
+      },
+      {
+        "place": "seals_gaskets",
+        "qty": 1
+      },
+      {
+        "place": "solar_panels",
+        "qty": 1
+      },
+      {
+        "place": "structural_frame",
+        "qty": 1
+      },
+      {
+        "place": "thermal_control",
+        "qty": 1
+      },
+      {
+        "place": "thrust_controller",
+        "qty": 1
+      },
+      {
+        "place": "water_recycler",
+        "qty": 1
+      },
+      {
+        "place": "windows",
+        "qty": 1
+      },
+      {
+        "place": "wiring_harness",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "rocket_ready",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "carbon_dioxide",
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 1
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "carbon_dioxide",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "carbon_fiber",
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1
+      },
+      {
+        "place": "nitrogen_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "cargo_container",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "cargo_container",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "ceramic_plates",
+    "consumes": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1
+      },
+      {
+        "place": "iron_oxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "combustion_chamber",
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "combustion_chamber",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "communication_antenna",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "communication_antenna",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "crew_module",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "glass_panels",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "crew_module",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__air_filtration",
+    "consumes": [
+      {
+        "place": "air_filtration",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__aluminum_ingots",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__aluminum_oxide",
+    "consumes": [
+      {
+        "place": "aluminum_oxide",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__ammonia",
+    "consumes": [
+      {
+        "place": "ammonia",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__carbon_dioxide",
+    "consumes": [
+      {
+        "place": "carbon_dioxide",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__carbon_fiber",
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__cargo_container",
+    "consumes": [
+      {
+        "place": "cargo_container",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__ceramic_plates",
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__combustion_chamber",
+    "consumes": [
+      {
+        "place": "combustion_chamber",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__communication_antenna",
+    "consumes": [
+      {
+        "place": "communication_antenna",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__crew_module",
+    "consumes": [
+      {
+        "place": "crew_module",
+        "qty": 1
+      },
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__emergency_system",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "emergency_system",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__escape_rocket",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "escape_rocket",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__fertilizer_pellets",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "fertilizer_pellets",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__flight_computer",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "flight_computer",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__fuel_injector",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "fuel_injector",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__fuel_pump",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "fuel_pump",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__fuel_tank",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "fuel_tank",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__fuel_valve",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "fuel_valve",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__glass_panels",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "glass_panels",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__graphite",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "graphite",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__hatch_doors",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "hatch_doors",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__heat_shield",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "heat_shield",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__hydrogen_fuel",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "hydrogen_fuel",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__instrumentation",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "instrumentation",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__iron_bars",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "iron_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__iron_oxide",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "iron_oxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__landing_gear",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "landing_gear",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__launch_adapter",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "launch_adapter",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__life_support_gas",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "life_support_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__life_support_tank",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "life_support_tank",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__liquid_oxygen",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "liquid_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__lunar_helium3",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "lunar_helium3",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__lunar_hydrogen",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "lunar_hydrogen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__lunar_oxygen",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__lunar_regolith",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "lunar_regolith",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__methane",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "methane",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__navigation_system",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "navigation_system",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__nitrogen_fertilizer",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "nitrogen_fertilizer",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__nitrogen_gas",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "nitrogen_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__nozzle",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "nozzle",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__oxidizer_pump",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_pump",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__oxidizer_tank",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_tank",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__oxidizer_valve",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "oxidizer_valve",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__polymer_plastic",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "polymer_plastic",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__power_batteries",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "power_batteries",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__rocket_fuel",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "rocket_fuel",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__rocket_ready",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "rocket_ready",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__seals_gaskets",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "seals_gaskets",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__silicon_dioxide",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "silicon_dioxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__silicon_wafers",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__solar_panels",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "solar_panels",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__steel_bars",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__structural_frame",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "structural_frame",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__synthetic_methane",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "synthetic_methane",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__thermal_control",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "thermal_control",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__thrust_controller",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "thrust_controller",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__water",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__water_recycler",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "water_recycler",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__windows",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "windows",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "drain__wiring_harness",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "wiring_harness",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "emergency_system",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "emergency_system",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "escape_rocket",
+    "consumes": [
+      {
+        "place": "rocket_fuel",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "escape_rocket",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "fertilizer_pellets",
+    "consumes": [
+      {
+        "place": "nitrogen_fertilizer",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "fertilizer_pellets",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "flight_computer",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "flight_computer",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "fuel_injector",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_injector",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "fuel_pump",
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_pump",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "fuel_tank",
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_tank",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "fuel_valve",
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "fuel_valve",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "glass_panels",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "glass_panels",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "graphite",
+    "consumes": [
+      {
+        "place": "carbon_dioxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "graphite",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "hatch_doors",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "hatch_doors",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "heat_shield",
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      },
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "heat_shield",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "hydrogen_fuel",
+    "consumes": [
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "hydrogen_fuel",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "init",
+    "consumes": [
+      {
+        "place": "start",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "instrumentation",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "instrumentation",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "iron_bars",
+    "consumes": [
+      {
+        "place": "iron_oxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "iron_bars",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "iron_oxide",
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "iron_oxide",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "landing_gear",
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "landing_gear",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "launch",
+    "consumes": [
+      {
+        "place": "rocket_ready",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "launch_adapter",
+    "consumes": [
+      {
+        "place": "structural_frame",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "launch_adapter",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "life_support_gas",
+    "consumes": [
+      {
+        "place": "liquid_oxygen",
+        "qty": 1
+      },
+      {
+        "place": "nitrogen_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "life_support_gas",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "life_support_tank",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "life_support_tank",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "liquid_oxygen",
+    "consumes": [
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "liquid_oxygen",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "lunar_helium3_extraction",
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_helium3",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "lunar_hydrogen_extraction",
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "lunar_oxygen_extraction",
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_oxygen",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "lunar_regolith_extraction",
+    "consumes": [
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "methane_synthesis",
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 4
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "methane",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "navigation_system",
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      },
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "navigation_system",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "nitrogen_fertilizer",
+    "consumes": [
+      {
+        "place": "ammonia",
+        "qty": 1
+      },
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "nitrogen_fertilizer",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "nitrogen_gas",
+    "consumes": [
+      {
+        "place": "lunar_oxygen",
+        "qty": 3
+      }
+    ],
+    "produces": [
+      {
+        "place": "nitrogen_gas",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "nozzle",
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "nozzle",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_pump",
+    "consumes": [
+      {
+        "place": "graphite",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_pump",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_tank",
+    "consumes": [
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_tank",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "oxidizer_valve",
+    "consumes": [
+      {
+        "place": "ceramic_plates",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "oxidizer_valve",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "polymer_plastic",
+    "consumes": [
+      {
+        "place": "synthetic_methane",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "polymer_plastic",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "power_batteries",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "power_batteries",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "rocket_fuel",
+    "consumes": [
+      {
+        "place": "hydrogen_fuel",
+        "qty": 1
+      },
+      {
+        "place": "liquid_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "rocket_fuel",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "seals_gaskets",
+    "consumes": [
+      {
+        "place": "polymer_plastic",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "seals_gaskets",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "silicon_dioxide",
+    "consumes": [
+      {
+        "place": "lunar_regolith",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "silicon_dioxide",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "silicon_wafers",
+    "consumes": [
+      {
+        "place": "silicon_dioxide",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "solar_panels",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "solar_panels",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "steel_bars",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "iron_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "structural_frame",
+    "consumes": [
+      {
+        "place": "aluminum_ingots",
+        "qty": 1
+      },
+      {
+        "place": "steel_bars",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "structural_frame",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "synthetic_methane",
+    "consumes": [
+      {
+        "place": "methane",
+        "qty": 1
+      },
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "synthetic_methane",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "terminate",
+    "consumes": [
+      {
+        "place": "done",
+        "qty": 1
+      },
+      {
+        "place": "run",
+        "qty": 1
+      }
+    ],
+    "produces": []
+  },
+  {
+    "id": "thermal_control",
+    "consumes": [
+      {
+        "place": "glass_panels",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "thermal_control",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "thrust_controller",
+    "consumes": [
+      {
+        "place": "silicon_wafers",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "thrust_controller",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "water_recycler",
+    "consumes": [
+      {
+        "place": "life_support_gas",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "water_recycler",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "water_synthesis",
+    "consumes": [
+      {
+        "place": "lunar_hydrogen",
+        "qty": 2
+      },
+      {
+        "place": "lunar_oxygen",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "water",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "windows",
+    "consumes": [
+      {
+        "place": "glass_panels",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "windows",
+        "qty": 1
+      }
+    ]
+  },
+  {
+    "id": "wiring_harness",
+    "consumes": [
+      {
+        "place": "carbon_fiber",
+        "qty": 1
+      }
+    ],
+    "produces": [
+      {
+        "place": "wiring_harness",
+        "qty": 1
+      }
+    ]
+  }
+]

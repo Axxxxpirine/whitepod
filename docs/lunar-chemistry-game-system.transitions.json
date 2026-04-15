@@ -1,0 +1,8053 @@
+[
+  {
+    "id": "convey__air_filtration",
+    "line": 19,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "air_filtration_surface",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "air_filtration_bus",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__aluminum_ingots",
+    "line": 20,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_surface",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_ingots_bus",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__aluminum_oxide",
+    "line": 21,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "aluminum_oxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_oxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__ammonia",
+    "line": 22,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "ammonia_surface",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ammonia_bus",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__carbon_dioxide",
+    "line": 23,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "carbon_dioxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_dioxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__carbon_fiber",
+    "line": 24,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "carbon_fiber_surface",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_fiber_bus",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__cargo_container",
+    "line": 25,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "cargo_container_surface",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "cargo_container_bus",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__ceramic_plates",
+    "line": 26,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_surface",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ceramic_plates_bus",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__combustion_chamber",
+    "line": 27,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "combustion_chamber_surface",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "combustion_chamber_bus",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__communication_antenna",
+    "line": 28,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "communication_antenna_surface",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "communication_antenna_bus",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__crew_module",
+    "line": 29,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "crew_module_surface",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "crew_module_bus",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__emergency_system",
+    "line": 30,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "emergency_system_surface",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "emergency_system_bus",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__escape_rocket",
+    "line": 31,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "escape_rocket_surface",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "escape_rocket_bus",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__fertilizer_pellets",
+    "line": 32,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "fertilizer_pellets_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fertilizer_pellets",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fertilizer_pellets_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fertilizer_pellets",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__flight_computer",
+    "line": 33,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "flight_computer_surface",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "flight_computer_bus",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__fuel_injector",
+    "line": 34,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "fuel_injector_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_injector_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__fuel_pump",
+    "line": 35,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "fuel_pump_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_pump_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__fuel_tank",
+    "line": 36,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "fuel_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__fuel_valve",
+    "line": 37,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "fuel_valve_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_valve_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__glass_panels",
+    "line": 38,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "glass_panels_surface",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "glass_panels_bus",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__graphite",
+    "line": 39,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "graphite_surface",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "graphite_bus",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__hatch_doors",
+    "line": 40,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "hatch_doors_surface",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hatch_doors_bus",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__heat_shield",
+    "line": 41,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "heat_shield_surface",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "heat_shield_bus",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__hydrogen_fuel",
+    "line": 42,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "hydrogen_fuel_surface",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hydrogen_fuel_bus",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__instrumentation",
+    "line": 43,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "instrumentation_surface",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "instrumentation_bus",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__iron_bars",
+    "line": 44,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "iron_bars_surface",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_bars_bus",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__iron_oxide",
+    "line": 45,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "iron_oxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_oxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__landing_gear",
+    "line": 46,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "landing_gear_surface",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "landing_gear_bus",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__launch_adapter",
+    "line": 47,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "launch_adapter_surface",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "launch_adapter_bus",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__life_support_gas",
+    "line": 48,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "life_support_gas_surface",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_gas_bus",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__life_support_tank",
+    "line": 49,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "life_support_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__liquid_oxygen",
+    "line": 50,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "liquid_oxygen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "liquid_oxygen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__lunar_helium3",
+    "line": 51,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "lunar_helium3_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_helium3_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__lunar_hydrogen",
+    "line": 52,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_hydrogen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__lunar_oxygen",
+    "line": 53,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "lunar_oxygen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_oxygen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__lunar_regolith",
+    "line": 54,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "lunar_regolith_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_regolith_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__methane",
+    "line": 55,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "methane_surface",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "methane_bus",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__navigation_system",
+    "line": 56,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "navigation_system_surface",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "navigation_system_bus",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__nitrogen_fertilizer",
+    "line": 57,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "nitrogen_fertilizer_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_fertilizer_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__nitrogen_gas",
+    "line": 58,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "nitrogen_gas_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_gas_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__nozzle",
+    "line": 59,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "nozzle_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nozzle_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__oxidizer_pump",
+    "line": 60,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "oxidizer_pump_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_pump_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__oxidizer_tank",
+    "line": 61,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "oxidizer_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__oxidizer_valve",
+    "line": 62,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "oxidizer_valve_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_valve_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__polymer_plastic",
+    "line": 63,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "polymer_plastic_surface",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "polymer_plastic_bus",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__power_batteries",
+    "line": 64,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "power_batteries_surface",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "power_batteries_bus",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__rocket_fuel",
+    "line": 65,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "rocket_fuel_surface",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_fuel_bus",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__rocket_ready",
+    "line": 66,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "rocket_ready_surface",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_ready",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_ready_bus",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_ready",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__seals_gaskets",
+    "line": 67,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_surface",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_bus",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__silicon_dioxide",
+    "line": 68,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__silicon_wafers",
+    "line": 69,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_surface",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_bus",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__solar_panels",
+    "line": 70,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "solar_panels_surface",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "solar_panels_bus",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__steel_bars",
+    "line": 71,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_surface",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_bus",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__structural_frame",
+    "line": 72,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_surface",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_bus",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__synthetic_methane",
+    "line": 73,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_surface",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_bus",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__thermal_control",
+    "line": 74,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thermal_control_surface",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thermal_control_bus",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__thrust_controller",
+    "line": 75,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thrust_controller_surface",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thrust_controller_bus",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__water",
+    "line": 76,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_surface",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_bus",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__water_recycler",
+    "line": 77,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_recycler_surface",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_recycler_bus",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__windows",
+    "line": 78,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "windows_surface",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "windows_bus",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "convey__wiring_harness",
+    "line": 79,
+    "category": "convey",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "wiring_harness_surface",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "surface"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "wiring_harness_bus",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "bus"
+        }
+      }
+    ]
+  },
+  {
+    "id": "extract__lunar_helium3",
+    "line": 13,
+    "category": "extract",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_helium3_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "extract__lunar_hydrogen",
+    "line": 14,
+    "category": "extract",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_hydrogen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "extract__lunar_oxygen",
+    "line": 15,
+    "category": "extract",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_oxygen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "extract__lunar_regolith",
+    "line": 16,
+    "category": "extract",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_regolith_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__air_filtration",
+    "line": 145,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "life_support_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "air_filtration_surface",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__aluminum_ingots",
+    "line": 146,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_ingots_surface",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__aluminum_oxide",
+    "line": 147,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_regolith_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_oxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__ammonia_synthesis",
+    "line": 148,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_stock",
+        "qty": 3,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 2,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ammonia_surface",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__assemble_rocket",
+    "line": 149,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "air_filtration_stock",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "cargo_container_stock",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "combustion_chamber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "communication_antenna_stock",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "crew_module_stock",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "emergency_system_stock",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "escape_rocket_stock",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "flight_computer_stock",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "fuel_injector_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "fuel_pump_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "fuel_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "fuel_valve_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "hatch_doors_stock",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "heat_shield_stock",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "instrumentation_stock",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "landing_gear_stock",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "launch_adapter_stock",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "life_support_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "navigation_system_stock",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "nozzle_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "oxidizer_pump_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "oxidizer_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "oxidizer_valve_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "power_batteries_stock",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_stock",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "solar_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "structural_frame_stock",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "thermal_control_stock",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "thrust_controller_stock",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "water_recycler_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "windows_stock",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "wiring_harness_stock",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_ready_surface",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_ready",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__carbon_dioxide",
+    "line": 150,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_dioxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__carbon_fiber",
+    "line": 151,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "graphite_stock",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "nitrogen_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_fiber_surface",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__cargo_container",
+    "line": 152,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "cargo_container_surface",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__ceramic_plates",
+    "line": 153,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "iron_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ceramic_plates_surface",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__combustion_chamber",
+    "line": 154,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "combustion_chamber_surface",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__communication_antenna",
+    "line": 155,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "carbon_fiber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "communication_antenna_surface",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__crew_module",
+    "line": 156,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "glass_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "crew_module_surface",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__emergency_system",
+    "line": 157,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "emergency_system_surface",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__escape_rocket",
+    "line": 158,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "rocket_fuel_stock",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "escape_rocket_surface",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__fertilizer_pellets",
+    "line": 159,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "nitrogen_fertilizer_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fertilizer_pellets_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fertilizer_pellets",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__flight_computer",
+    "line": 160,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "flight_computer_surface",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__fuel_injector",
+    "line": 161,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_injector_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__fuel_pump",
+    "line": 162,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "graphite_stock",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_pump_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__fuel_tank",
+    "line": 163,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__fuel_valve",
+    "line": 164,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_valve_surface",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__glass_panels",
+    "line": 165,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "glass_panels_surface",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__graphite",
+    "line": 166,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "carbon_dioxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "graphite_surface",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__hatch_doors",
+    "line": 167,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hatch_doors_surface",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__heat_shield",
+    "line": 168,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "carbon_fiber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "heat_shield_surface",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__hydrogen_fuel",
+    "line": 169,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hydrogen_fuel_surface",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__instrumentation",
+    "line": 170,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "instrumentation_surface",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__iron_bars",
+    "line": 171,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "iron_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_bars_surface",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__iron_oxide",
+    "line": 172,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_regolith_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_oxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__landing_gear",
+    "line": 173,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "landing_gear_surface",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__launch_adapter",
+    "line": 174,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_stock",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "launch_adapter_surface",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__life_support_gas",
+    "line": 175,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "liquid_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "nitrogen_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_gas_surface",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__life_support_tank",
+    "line": 176,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__liquid_oxygen",
+    "line": 177,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "liquid_oxygen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__lunar_helium3_extraction",
+    "line": 178,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_helium3_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__lunar_hydrogen_extraction",
+    "line": 179,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_hydrogen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__lunar_oxygen_extraction",
+    "line": 180,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_oxygen_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__lunar_regolith_extraction",
+    "line": 181,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_regolith_surface",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__methane_synthesis",
+    "line": 182,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_stock",
+        "qty": 4,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "methane_surface",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__navigation_system",
+    "line": 183,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "carbon_fiber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "navigation_system_surface",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__nitrogen_fertilizer",
+    "line": 184,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "ammonia_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_fertilizer_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__nitrogen_gas",
+    "line": 185,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 3,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_gas_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__nozzle",
+    "line": 186,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nozzle_surface",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__oxidizer_pump",
+    "line": 187,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "graphite_stock",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_pump_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__oxidizer_tank",
+    "line": 188,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_tank_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__oxidizer_valve",
+    "line": 189,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_valve_surface",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__polymer_plastic",
+    "line": 190,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_stock",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "polymer_plastic_surface",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__power_batteries",
+    "line": 191,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "power_batteries_surface",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__rocket_fuel",
+    "line": 192,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "hydrogen_fuel_stock",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "liquid_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_fuel_surface",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "surface"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__seals_gaskets",
+    "line": 193,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "polymer_plastic_stock",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_surface",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__silicon_dioxide",
+    "line": 194,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_regolith_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_surface",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__silicon_wafers",
+    "line": 195,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_surface",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__solar_panels",
+    "line": 196,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "solar_panels_surface",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__steel_bars",
+    "line": 197,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "iron_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_surface",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__structural_frame",
+    "line": 198,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_surface",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__synthetic_methane",
+    "line": 199,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "methane_stock",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_surface",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__thermal_control",
+    "line": 200,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "glass_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thermal_control_surface",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__thrust_controller",
+    "line": 201,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thrust_controller_surface",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__water_recycler",
+    "line": 202,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "life_support_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_recycler_surface",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__water_synthesis",
+    "line": 203,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_stock",
+        "qty": 2,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_surface",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__windows",
+    "line": 204,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "glass_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "windows_surface",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "recipe__wiring_harness",
+    "line": 205,
+    "category": "recipe",
+    "consumes": [
+      {
+        "placeId": "carbon_fiber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "wiring_harness_surface",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "surface"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__air_filtration",
+    "line": 82,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "air_filtration_bus",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "air_filtration_stock",
+        "qty": 1,
+        "place": {
+          "resource": "air_filtration",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__aluminum_ingots",
+    "line": 83,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "aluminum_ingots_bus",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_ingots_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_ingots",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__aluminum_oxide",
+    "line": 84,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "aluminum_oxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "aluminum_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "aluminum_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__ammonia",
+    "line": 85,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "ammonia_bus",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ammonia_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ammonia",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__carbon_dioxide",
+    "line": 86,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "carbon_dioxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_dioxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_dioxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__carbon_fiber",
+    "line": 87,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "carbon_fiber_bus",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "carbon_fiber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "carbon_fiber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__cargo_container",
+    "line": 88,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "cargo_container_bus",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "cargo_container_stock",
+        "qty": 1,
+        "place": {
+          "resource": "cargo_container",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__ceramic_plates",
+    "line": 89,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "ceramic_plates_bus",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "ceramic_plates_stock",
+        "qty": 1,
+        "place": {
+          "resource": "ceramic_plates",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__combustion_chamber",
+    "line": 90,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "combustion_chamber_bus",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "combustion_chamber_stock",
+        "qty": 1,
+        "place": {
+          "resource": "combustion_chamber",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__communication_antenna",
+    "line": 91,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "communication_antenna_bus",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "communication_antenna_stock",
+        "qty": 1,
+        "place": {
+          "resource": "communication_antenna",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__crew_module",
+    "line": 92,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "crew_module_bus",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "crew_module_stock",
+        "qty": 1,
+        "place": {
+          "resource": "crew_module",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__emergency_system",
+    "line": 93,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "emergency_system_bus",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "emergency_system_stock",
+        "qty": 1,
+        "place": {
+          "resource": "emergency_system",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__escape_rocket",
+    "line": 94,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "escape_rocket_bus",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "escape_rocket_stock",
+        "qty": 1,
+        "place": {
+          "resource": "escape_rocket",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__fertilizer_pellets",
+    "line": 95,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "fertilizer_pellets_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fertilizer_pellets",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fertilizer_pellets_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fertilizer_pellets",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__flight_computer",
+    "line": 96,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "flight_computer_bus",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "flight_computer_stock",
+        "qty": 1,
+        "place": {
+          "resource": "flight_computer",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__fuel_injector",
+    "line": 97,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "fuel_injector_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_injector_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_injector",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__fuel_pump",
+    "line": 98,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "fuel_pump_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_pump_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_pump",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__fuel_tank",
+    "line": 99,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "fuel_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__fuel_valve",
+    "line": 100,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "fuel_valve_bus",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "fuel_valve_stock",
+        "qty": 1,
+        "place": {
+          "resource": "fuel_valve",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__glass_panels",
+    "line": 101,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "glass_panels_bus",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "glass_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "glass_panels",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__graphite",
+    "line": 102,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "graphite_bus",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "graphite_stock",
+        "qty": 1,
+        "place": {
+          "resource": "graphite",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__hatch_doors",
+    "line": 103,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "hatch_doors_bus",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hatch_doors_stock",
+        "qty": 1,
+        "place": {
+          "resource": "hatch_doors",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__heat_shield",
+    "line": 104,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "heat_shield_bus",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "heat_shield_stock",
+        "qty": 1,
+        "place": {
+          "resource": "heat_shield",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__hydrogen_fuel",
+    "line": 105,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "hydrogen_fuel_bus",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "hydrogen_fuel_stock",
+        "qty": 1,
+        "place": {
+          "resource": "hydrogen_fuel",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__instrumentation",
+    "line": 106,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "instrumentation_bus",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "instrumentation_stock",
+        "qty": 1,
+        "place": {
+          "resource": "instrumentation",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__iron_bars",
+    "line": 107,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "iron_bars_bus",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "iron_bars",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__iron_oxide",
+    "line": 108,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "iron_oxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "iron_oxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "iron_oxide",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__landing_gear",
+    "line": 109,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "landing_gear_bus",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "landing_gear_stock",
+        "qty": 1,
+        "place": {
+          "resource": "landing_gear",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__launch_adapter",
+    "line": 110,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "launch_adapter_bus",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "launch_adapter_stock",
+        "qty": 1,
+        "place": {
+          "resource": "launch_adapter",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__life_support_gas",
+    "line": 111,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "life_support_gas_bus",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__life_support_tank",
+    "line": 112,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "life_support_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "life_support_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "life_support_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__liquid_oxygen",
+    "line": 113,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "liquid_oxygen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "liquid_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "liquid_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__lunar_helium3",
+    "line": 114,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "lunar_helium3_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_helium3_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_helium3",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__lunar_hydrogen",
+    "line": 115,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "lunar_hydrogen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_hydrogen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_hydrogen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__lunar_oxygen",
+    "line": 116,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "lunar_oxygen_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_oxygen_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_oxygen",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__lunar_regolith",
+    "line": 117,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "lunar_regolith_bus",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "lunar_regolith_stock",
+        "qty": 1,
+        "place": {
+          "resource": "lunar_regolith",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__methane",
+    "line": 118,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "methane_bus",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "methane_stock",
+        "qty": 1,
+        "place": {
+          "resource": "methane",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__navigation_system",
+    "line": 119,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "navigation_system_bus",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "navigation_system_stock",
+        "qty": 1,
+        "place": {
+          "resource": "navigation_system",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__nitrogen_fertilizer",
+    "line": 120,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "nitrogen_fertilizer_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_fertilizer_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_fertilizer",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__nitrogen_gas",
+    "line": 121,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "nitrogen_gas_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nitrogen_gas_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nitrogen_gas",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__nozzle",
+    "line": 122,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "nozzle_bus",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "nozzle_stock",
+        "qty": 1,
+        "place": {
+          "resource": "nozzle",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__oxidizer_pump",
+    "line": 123,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "oxidizer_pump_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_pump_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_pump",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__oxidizer_tank",
+    "line": 124,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "oxidizer_tank_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_tank_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_tank",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__oxidizer_valve",
+    "line": 125,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "oxidizer_valve_bus",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "oxidizer_valve_stock",
+        "qty": 1,
+        "place": {
+          "resource": "oxidizer_valve",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__polymer_plastic",
+    "line": 126,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "polymer_plastic_bus",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "polymer_plastic_stock",
+        "qty": 1,
+        "place": {
+          "resource": "polymer_plastic",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__power_batteries",
+    "line": 127,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "power_batteries_bus",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "power_batteries_stock",
+        "qty": 1,
+        "place": {
+          "resource": "power_batteries",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__rocket_fuel",
+    "line": 128,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "rocket_fuel_bus",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_fuel_stock",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_fuel",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__rocket_ready",
+    "line": 129,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "rocket_ready_bus",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_ready",
+          "layer": "bus"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "rocket_ready_stock",
+        "qty": 1,
+        "place": {
+          "resource": "rocket_ready",
+          "layer": "stock"
+        }
+      },
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__seals_gaskets",
+    "line": 130,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_bus",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "seals_gaskets_stock",
+        "qty": 1,
+        "place": {
+          "resource": "seals_gaskets",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__silicon_dioxide",
+    "line": 131,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_bus",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_dioxide_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_dioxide",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__silicon_wafers",
+    "line": 132,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_bus",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "silicon_wafers_stock",
+        "qty": 1,
+        "place": {
+          "resource": "silicon_wafers",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__solar_panels",
+    "line": 133,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "solar_panels_bus",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "solar_panels_stock",
+        "qty": 1,
+        "place": {
+          "resource": "solar_panels",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__steel_bars",
+    "line": 134,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_bus",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "steel_bars_stock",
+        "qty": 1,
+        "place": {
+          "resource": "steel_bars",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__structural_frame",
+    "line": 135,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_bus",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "structural_frame_stock",
+        "qty": 1,
+        "place": {
+          "resource": "structural_frame",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__synthetic_methane",
+    "line": 136,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_bus",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "synthetic_methane_stock",
+        "qty": 1,
+        "place": {
+          "resource": "synthetic_methane",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__thermal_control",
+    "line": 137,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thermal_control_bus",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thermal_control_stock",
+        "qty": 1,
+        "place": {
+          "resource": "thermal_control",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__thrust_controller",
+    "line": 138,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thrust_controller_bus",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "thrust_controller_stock",
+        "qty": 1,
+        "place": {
+          "resource": "thrust_controller",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__water",
+    "line": 139,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_bus",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__water_recycler",
+    "line": 140,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_recycler_bus",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "water_recycler_stock",
+        "qty": 1,
+        "place": {
+          "resource": "water_recycler",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__windows",
+    "line": 141,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "windows_bus",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "windows_stock",
+        "qty": 1,
+        "place": {
+          "resource": "windows",
+          "layer": "stock"
+        }
+      }
+    ]
+  },
+  {
+    "id": "store__wiring_harness",
+    "line": 142,
+    "category": "store",
+    "consumes": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "wiring_harness_bus",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "bus"
+        }
+      }
+    ],
+    "produces": [
+      {
+        "placeId": "run",
+        "qty": 1,
+        "place": {
+          "resource": "run",
+          "layer": "control"
+        }
+      },
+      {
+        "placeId": "wiring_harness_stock",
+        "qty": 1,
+        "place": {
+          "resource": "wiring_harness",
+          "layer": "stock"
+        }
+      }
+    ]
+  }
+]
