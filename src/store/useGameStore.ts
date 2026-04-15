@@ -11,6 +11,8 @@ interface ScreenPoint {
 
 interface GameState {
   engine: GameEngine | null;
+  simulationTime: number;
+  simulationSpeed: number;
   selectedTool: SelectedTool;
   hoverTile: { x: number; y: number } | null;
   selectedBuildingId: BuildingId | null;
@@ -23,6 +25,8 @@ interface GameState {
   linkSolarOnPlacement: boolean;
   setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
+  setSimulationTime: (value: number) => void;
+  setSimulationSpeed: (value: number) => void;
   setSelectedTool: (tool: SelectedTool) => void;
   setHoverTile: (tile: { x: number; y: number } | null) => void;
   setSelectedBuilding: (id: BuildingId | null) => void;
@@ -38,6 +42,8 @@ interface GameState {
 
 export const useGameStore = create<GameState>((set) => ({
   engine: null,
+  simulationTime: 0,
+  simulationSpeed: 1,
   selectedTool: { kind: 'select' },
   hoverTile: null,
   selectedBuildingId: null,
@@ -50,6 +56,8 @@ export const useGameStore = create<GameState>((set) => ({
   linkSolarOnPlacement: true,
   setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
+  setSimulationTime: (value) => set({ simulationTime: value }),
+  setSimulationSpeed: (value) => set({ simulationSpeed: Math.max(0, value) }),
   setSelectedTool: (tool) =>
     set((state) => ({
       selectedTool: tool,
@@ -68,6 +76,8 @@ export const useGameStore = create<GameState>((set) => ({
     clearPersistedSession();
     set((state) => ({
       engine: null,
+      simulationTime: 0,
+      simulationSpeed: 1,
       selectedTool: { kind: 'select' },
       hoverTile: null,
       selectedBuildingId: null,

@@ -70,6 +70,11 @@ export interface BuildingType {
   readonly energy?: {
     readonly production?: number;
     readonly consumption?: number;
+    readonly battery?: {
+      readonly capacity: number;
+      readonly chargeRate: number;
+      readonly dischargeRate: number;
+    };
   };
 }
 

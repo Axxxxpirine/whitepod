@@ -1,4 +1,5 @@
 import {
+  BATTERY_BASIC_BUILDING_TYPE_ID,
   BELT_CORNER_CCW_BUILDING_TYPE_ID,
   BELT_CORNER_CW_BUILDING_TYPE_ID,
   BELT_STRAIGHT_BUILDING_TYPE_ID,
@@ -97,10 +98,18 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     highlightColor: 0x4ade80,
   },
   {
+    kind: 'building',
+    typeId: BATTERY_BASIC_BUILDING_TYPE_ID,
+    shortcut: '5',
+    activeClass: 'bg-teal-400',
+    highlightFamily: [BATTERY_BASIC_BUILDING_TYPE_ID],
+    highlightColor: 0x2dd4bf,
+  },
+  {
     kind: 'tool',
     tool: 'energy_link',
     label: 'Lien énergie',
-    shortcut: '5',
+    shortcut: '6',
     activeClass: 'bg-purple-400',
     highlightFamily: [],
     highlightColor: 0xa855f7,

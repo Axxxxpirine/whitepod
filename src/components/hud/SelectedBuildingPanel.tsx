@@ -11,7 +11,6 @@ export function SelectedBuildingPanel() {
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
-
   if (!engine || selectedBuildingId === null || !selectedBuildingAnchor) return null;
   const building = engine.getBuildings().get(selectedBuildingId);
   if (!building) return null;
@@ -43,7 +42,7 @@ export function SelectedBuildingPanel() {
       className="pointer-events-auto absolute"
       style={{ left: anchorX, top: anchorY + 12, transform: 'translateX(-50%)' }}
     >
-      <div className="flex min-w-[160px] flex-col gap-1.5 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
+      <div className="flex w-[200px] flex-col gap-1.5 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap text-sm font-medium">{type.name}</span>
           <button

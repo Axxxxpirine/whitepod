@@ -11,10 +11,14 @@ export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
   const engine = useGameStore((s) => s.engine);
   const selectedTool = useGameStore((s) => s.selectedTool);
+  const simulationTime = useGameStore((s) => s.simulationTime);
+  const simulationSpeed = useGameStore((s) => s.simulationSpeed);
   const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
+  const setSimulationTime = useGameStore((s) => s.setSimulationTime);
+  const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
@@ -28,6 +32,7 @@ export function GameHUD() {
   }, [engine]);
 
   const [consoleOpen, setConsoleOpen] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,8 +48,14 @@ export function GameHUD() {
   const buildingRotationLabel = directionLabel(currentBuildingRotation);
   const globalEnergy = useMemo(() => {
     void energyVersion;
+    void simulationTime;
     return engine ? engine.getEnergyGlobalStats() : null;
-  }, [engine, energyVersion]);
+  }, [engine, energyVersion, simulationTime]);
+  const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
+  const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
+  const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
+  const simulationPhase =
+    simulationHour < 6 ? 'Nuit' : simulationHour < 12 ? 'Matin' : simulationHour < 18 ? 'Jour' : 'Soir';
 
   const resourceCounts = useMemo(() => {
     void worldTick;
@@ -56,7 +67,6 @@ export function GameHUD() {
     void energyVersion;
     return engine?.getResourceRates() ?? null;
   }, [engine, worldTick, energyVersion]);
-
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -102,10 +112,19 @@ export function GameHUD() {
     resetSession();
   };
 
+  const applySimulationTime = useCallback(
+    (value: number) => {
+      if (!engine) return;
+      engine.setSimulationTime(value);
+      setSimulationTime(engine.simulationTime);
+    },
+    [engine, setSimulationTime],
+  );
+
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
-      {(resourceCounts || globalEnergy) && (
-        <div className="absolute top-3 left-3">
+      {engine && (
+        <div className="pointer-events-auto absolute top-3 left-3">
           <div className="min-w-[180px] rounded-xl border border-white/15 bg-black/75 px-3 py-2.5 text-sm text-white/90 shadow-xl backdrop-blur-md">
             {resourceCounts && (
               <>
@@ -151,19 +170,112 @@ export function GameHUD() {
                       className={`font-bold ${globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
                     >
                       {globalEnergy.remaining >= 0 ? '+' : ''}
-                      {globalEnergy.remaining} kWh
+                      {Math.round(globalEnergy.remaining * 10) / 10} kWh
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-white/50">
                     <span className="text-emerald-400/70">↑</span>
-                    {globalEnergy.production} kWh
+                    {Math.round(globalEnergy.production * 10) / 10} kWh
                   </div>
                   <div className="flex items-center gap-1 text-xs text-white/50">
                     <span className="text-orange-400/70">↓</span>
-                    {globalEnergy.consumption} kWh
+                    {Math.round(globalEnergy.consumption * 10) / 10} kWh
                   </div>
                 </div>
               </>
+            )}
+
+            <div className="mt-2 border-t border-white/10 pt-1.5 text-xs text-white/60">
+              {simulationClockLabel} ({isDaylight ? 'Jour' : 'Nuit'})
+              <button
+                type="button"
+                onClick={() => setDebugOpen((value) => !value)}
+                aria-expanded={debugOpen}
+                className="ml-2 cursor-pointer rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 transition-colors hover:bg-white/20"
+              >
+                {debugOpen ? '▲' : '▼'}
+              </button>
+            </div>
+
+            {debugOpen && (
+              <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-black/40 px-2 py-1">
+                    <div className="text-white/60">Phase</div>
+                    <div className="font-medium text-white">{simulationPhase}</div>
+                  </div>
+                  <div className="rounded-md bg-black/40 px-2 py-1">
+                    <div className="text-white/60">Consommateurs</div>
+                    <div className="font-medium text-white">
+                      {globalEnergy?.onlineConsumers ?? 0} ON / {globalEnergy?.offlineConsumers ?? 0} OFF
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs text-white/70">Temps (0h-24h)</div>
+                  <input
+                    aria-label="Simulation time"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.001}
+                    value={simulationTime}
+                    onChange={(e) => applySimulationTime(Number(e.target.value))}
+                    className="w-full accent-emerald-400"
+                  />
+                  <div className="flex items-center justify-between gap-1">
+                    <button
+                      type="button"
+                      onClick={() => applySimulationTime(0)}
+                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
+                    >
+                      Nuit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applySimulationTime(0.25)}
+                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
+                    >
+                      Aube
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applySimulationTime(0.5)}
+                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
+                    >
+                      Midi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applySimulationTime(0.75)}
+                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
+                    >
+                      Crépuscule
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs text-white/70">Vitesse simulation</div>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {[0, 0.25, 1, 4, 20].map((speed) => (
+                      <button
+                        key={speed}
+                        type="button"
+                        onClick={() => setSimulationSpeed(speed)}
+                        className={
+                          simulationSpeed === speed
+                            ? 'cursor-pointer rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-black'
+                            : 'cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20'
+                        }
+                      >
+                        {speed === 0 ? 'Pause' : `${speed}x`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -285,4 +397,14 @@ function directionLabel(direction: Direction): string {
     case Direction.West:
       return 'W';
   }
+}
+
+function formatSimulationTime(simulationTime: number): string {
+  const wrapped = ((simulationTime % 1) + 1) % 1;
+  const totalMinutes = Math.floor(wrapped * 24 * 60);
+  const hours = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, '0');
+  const minutes = (totalMinutes % 60).toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
 }

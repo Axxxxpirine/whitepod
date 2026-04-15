@@ -85,6 +85,7 @@ describe('GameEngine session snapshots', () => {
 
   it('restores energy links from a serialized snapshot', () => {
     const engine = new GameEngine(640, 480);
+    engine.simulationTime = 0.5; // noon — full solar production
     engine.grid.fill(TileType.Ground);
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     engine.grid.setResource(2, 1, ResourceType.IronOre);
