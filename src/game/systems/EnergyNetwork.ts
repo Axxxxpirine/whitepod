@@ -2,10 +2,12 @@ import type { BuildingId } from '../types';
 
 export class EnergyNetwork {
   private readonly adjacency = new Map<BuildingId, Set<BuildingId>>();
+  version = 0;
 
   registerBuilding(id: BuildingId): void {
     if (!this.adjacency.has(id)) {
       this.adjacency.set(id, new Set());
+      this.version++;
     }
   }
 
@@ -17,6 +19,7 @@ export class EnergyNetwork {
       this.adjacency.get(neighborId)?.delete(id);
     }
     this.adjacency.delete(id);
+    this.version++;
   }
 
   connect(a: BuildingId, b: BuildingId): boolean {
@@ -29,7 +32,27 @@ export class EnergyNetwork {
     const before = aNeighbors.size;
     aNeighbors.add(b);
     bNeighbors.add(a);
-    return aNeighbors.size !== before;
+    const changed = aNeighbors.size !== before;
+    if (changed) this.version++;
+    return changed;
+  }
+
+  disconnect(a: BuildingId, b: BuildingId): boolean {
+    if (a === b) return false;
+
+    const aNeighbors = this.adjacency.get(a);
+    const bNeighbors = this.adjacency.get(b);
+    if (!aNeighbors || !bNeighbors) return false;
+    if (!aNeighbors.has(b) || !bNeighbors.has(a)) return false;
+
+    aNeighbors.delete(b);
+    bNeighbors.delete(a);
+    this.version++;
+    return true;
+  }
+
+  isConnected(a: BuildingId, b: BuildingId): boolean {
+    return this.adjacency.get(a)?.has(b) ?? false;
   }
 
   getComponentFor(startId: BuildingId): BuildingId[] {

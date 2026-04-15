@@ -55,9 +55,8 @@ export function GameHUD() {
     engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
   );
   const buildingRotationLabel = directionLabel(currentBuildingRotation);
+  const globalEnergy = engine ? engine.getEnergyGlobalStats() : null;
 
-  const selectedNetwork =
-    engine && selectedBuildingId !== null ? engine.getEnergyNetworkForBuilding(selectedBuildingId) : null;
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -153,6 +152,18 @@ export function GameHUD() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
+      {globalEnergy && (
+        <div className="absolute top-3 right-3">
+          <div className="rounded-xl border border-white/15 bg-black/75 px-3 py-2 text-sm text-white/90 shadow-xl backdrop-blur-md">
+            <div>Production électrique: {globalEnergy.production}kwh</div>
+            <div>Consommation électrique: {globalEnergy.consumption}kwh</div>
+            <div className={globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+              Consommation restante: {globalEnergy.remaining}kwh
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSelectedBuildingPanel && selectedBuildingAnchor && (
         <div
           className="pointer-events-auto absolute"
@@ -316,11 +327,6 @@ export function GameHUD() {
             {energyLinkSelected && (
               <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
                 Source: {pendingEnergyLinkSource ?? '-'}
-              </div>
-            )}
-            {selectedBuildingId !== null && selectedNetwork && (
-              <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
-                P:{selectedNetwork.production} C:{selectedNetwork.consumption} R:{selectedNetwork.remaining}
               </div>
             )}
             <button

@@ -17,6 +17,7 @@ interface PersistedWorldState {
   readonly gridBase64: string;
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
+  readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
 }
 
 interface PersistedViewState {
@@ -64,6 +65,9 @@ function isSelectedTool(value: unknown): value is SelectedTool {
   if (value.kind === 'building') {
     return typeof value.buildingType === 'string';
   }
+  if (value.kind === 'energy_link') {
+    return true;
+  }
   return false;
 }
 
@@ -103,6 +107,13 @@ function isSerializedConnectionRegistry(value: unknown): value is SerializedGame
 
 function isPersistedWorldState(value: unknown): value is PersistedWorldState {
   if (!isRecord(value)) return false;
+  const energyLinksValid =
+    value.energyLinks === undefined ||
+    (Array.isArray(value.energyLinks) &&
+      value.energyLinks.every(
+        (link) =>
+          isRecord(link) && isFiniteNumber(link.a) && isFiniteNumber(link.b),
+      ));
   return (
     value.version === STORAGE_VERSION &&
     typeof value.sessionId === 'string' &&
@@ -111,7 +122,8 @@ function isPersistedWorldState(value: unknown): value is PersistedWorldState {
     typeof value.gridBase64 === 'string' &&
     value.gridBase64.length > 0 &&
     isSerializedBuildingRegistry(value.buildings) &&
-    isSerializedConnectionRegistry(value.connections)
+    isSerializedConnectionRegistry(value.connections) &&
+    energyLinksValid
   );
 }
 
@@ -177,6 +189,7 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
     gridBase64: arrayBufferToBase64(snapshot.grid),
     buildings: snapshot.buildings,
     connections: snapshot.connections,
+    energyLinks: snapshot.energyLinks,
   };
 
   storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
@@ -227,6 +240,7 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
         grid,
         buildings: parsedWorld.buildings,
         connections: parsedWorld.connections,
+        energyLinks: parsedWorld.energyLinks,
       },
       screenWidth,
       screenHeight,

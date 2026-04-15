@@ -191,4 +191,21 @@ describe('GameHUD', () => {
     expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
+
+  it('shows global electricity card in the top-right area', () => {
+    const engine = makeEngine();
+    const solar = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    const extractorPowered = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    engine.connectBuildings(solar, extractorPowered);
+    engine.grid.setResource(6, 6, ResourceType.IronOre);
+    engine.placeBuilding('extractor_basic', { x: 6, y: 6 })!;
+
+    useGameStore.setState({ engine });
+    render(<GameHUD />);
+
+    expect(screen.getByText('Production électrique: 8kwh')).toBeInTheDocument();
+    expect(screen.getByText('Consommation électrique: 5kwh')).toBeInTheDocument();
+    expect(screen.getByText('Consommation restante: -2kwh')).toBeInTheDocument();
+  });
 });

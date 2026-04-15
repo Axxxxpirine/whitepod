@@ -172,3 +172,13 @@ export interface EnergyNetworkBalance {
   readonly consumption: number;
   readonly remaining: number;
 }
+
+export type PowerState = 'neutral' | 'powered' | 'unpowered';
+
+export interface EnergyGlobalStats {
+  readonly production: number;
+  readonly consumption: number;
+  readonly remaining: number;
+  readonly onlineConsumers: number;
+  readonly offlineConsumers: number;
+}

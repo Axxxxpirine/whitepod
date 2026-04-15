@@ -22,9 +22,11 @@ import {
   type Connection,
   type ConnectionId,
   type ConnectionResult,
+  type EnergyGlobalStats,
   type PendingEndpoint,
   type PlacementResult,
   type PlaceBeltResult,
+  type PowerState,
   type Port,
   type PortId,
   type EnergyNetworkBalance,
@@ -57,6 +59,7 @@ export interface SerializedGameWorld {
   readonly grid: ArrayBuffer;
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
+  readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
 }
 
 interface GameEngineOptions {
@@ -163,7 +166,25 @@ export class GameEngine {
 
   connectBuildings(a: BuildingId, b: BuildingId): boolean {
     if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
-    return this.energyNetwork.connect(a, b);
+    const connected = this.energyNetwork.connect(a, b);
+    if (connected) {
+      this.notify('world');
+    }
+    return connected;
+  }
+
+  disconnectBuildings(a: BuildingId, b: BuildingId): boolean {
+    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    const disconnected = this.energyNetwork.disconnect(a, b);
+    if (disconnected) {
+      this.notify('world');
+    }
+    return disconnected;
+  }
+
+  areBuildingsEnergyLinked(a: BuildingId, b: BuildingId): boolean {
+    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    return this.energyNetwork.isConnected(a, b);
   }
 
   getEnergyNetworkForBuilding(buildingId: BuildingId): EnergyNetworkBalance | null {
@@ -180,6 +201,58 @@ export class GameEngine {
   getEnergyLinkedBuildings(buildingId: BuildingId): readonly BuildingId[] {
     if (!this.buildings.get(buildingId)) return [];
     return this.energyNetwork.getNeighbors(buildingId);
+  }
+
+  getBuildingPowerState(buildingId: BuildingId): PowerState {
+    const building = this.buildings.get(buildingId);
+    if (!building) return 'neutral';
+    const type = getBuildingType(building.typeId);
+    if (!type?.energy?.consumption || type.energy.consumption <= 0) {
+      return 'neutral';
+    }
+
+    const network = this.getEnergyNetworkForBuilding(buildingId);
+    if (!network) return 'unpowered';
+    return network.remaining >= 0 ? 'powered' : 'unpowered';
+  }
+
+  getEnergyGlobalStats(): EnergyGlobalStats {
+    let production = 0;
+    let consumption = 0;
+    let demandedConsumption = 0;
+    let onlineConsumers = 0;
+    let offlineConsumers = 0;
+
+    for (const network of this.getEnergyNetworkBalances()) {
+      production += network.production;
+      demandedConsumption += network.consumption;
+      const networkIsPowered = network.remaining >= 0;
+      if (networkIsPowered) {
+        // "consumption" is the energy actually supplied (not total requested demand).
+        consumption += network.consumption;
+      }
+      for (const buildingId of network.buildingIds) {
+        const building = this.buildings.get(buildingId);
+        if (!building) continue;
+        const buildingType = getBuildingType(building.typeId);
+        const machineConsumption = buildingType?.energy?.consumption ?? 0;
+        if (machineConsumption <= 0) continue;
+        if (networkIsPowered) {
+          onlineConsumers += 1;
+        } else {
+          offlineConsumers += 1;
+        }
+      }
+    }
+
+    return {
+      production,
+      consumption,
+      // "remaining" is the net electrical balance against total demand.
+      remaining: production - demandedConsumption,
+      onlineConsumers,
+      offlineConsumers,
+    };
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -435,12 +508,26 @@ export class GameEngine {
   }
 
   serializeWorld(): SerializedGameWorld {
+    const energyLinks: Array<{ a: BuildingId; b: BuildingId }> = [];
+    const seen = new Set<string>();
+    for (const buildingId of this.buildings.getAll().keys()) {
+      for (const neighborId of this.energyNetwork.getNeighbors(buildingId)) {
+        const a = Math.min(buildingId, neighborId);
+        const b = Math.max(buildingId, neighborId);
+        const key = `${a}:${b}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        energyLinks.push({ a, b });
+      }
+    }
+
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
       grid: this.grid.serialize(),
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
+      energyLinks,
     };
   }
 
@@ -459,6 +546,15 @@ export class GameEngine {
     for (const connection of engine.connections.getAll().values()) {
       if (!engine.resolvePort(connection.from) || !engine.resolvePort(connection.to)) {
         throw new Error(`Invalid connection in snapshot: ${connection.id}`);
+      }
+    }
+
+    for (const buildingId of engine.buildings.getAll().keys()) {
+      engine.energyNetwork.registerBuilding(buildingId);
+    }
+    for (const link of snapshot.energyLinks ?? []) {
+      if (engine.buildings.get(link.a) && engine.buildings.get(link.b)) {
+        engine.energyNetwork.connect(link.a, link.b);
       }
     }
 
