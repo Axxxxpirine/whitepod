@@ -9,6 +9,13 @@ import {
 } from '../types';
 
 const MAX_CONNECTION_ID = 65535;
+const SERIALIZE_VERSION = 1;
+
+export interface SerializedConnectionRegistry {
+  readonly version: number;
+  readonly nextId: number;
+  readonly connections: readonly Connection[];
+}
 
 // Rotation is a no-op in v1. Helpers exist as a seam so that when rotation
 // becomes effective, every call site already goes through the transform.
@@ -124,6 +131,37 @@ export class ConnectionRegistry {
       if (c) out.push(c);
     }
     return out;
+  }
+
+  serialize(): SerializedConnectionRegistry {
+    return {
+      version: SERIALIZE_VERSION,
+      nextId: this.nextId,
+      connections: Array.from(this.instances.values()),
+    };
+  }
+
+  static deserialize(data: SerializedConnectionRegistry): ConnectionRegistry {
+    if (data.version !== SERIALIZE_VERSION) {
+      throw new Error(`Unsupported ConnectionRegistry version: ${data.version}`);
+    }
+
+    const registry = new ConnectionRegistry();
+    registry.nextId = data.nextId;
+    for (const connection of data.connections) {
+      registry.instances.set(connection.id, connection);
+      registry.byEndpoint.set(
+        endpointKey(connection.from.building, connection.from.port),
+        connection.id,
+      );
+      registry.byEndpoint.set(
+        endpointKey(connection.to.building, connection.to.port),
+        connection.id,
+      );
+      registry.addToBuilding(connection.from.building, connection.id);
+      registry.addToBuilding(connection.to.building, connection.id);
+    }
+    return registry;
   }
 
   private addToBuilding(buildingId: BuildingId, id: ConnectionId): void {

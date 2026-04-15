@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
@@ -16,6 +15,7 @@ export function GameHUD() {
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
+  const resetSession = useGameStore((s) => s.resetSession);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
@@ -92,6 +92,13 @@ export function GameHUD() {
     }
   };
 
+  const handleResetSession = () => {
+    if (!window.confirm('Reset the current session and start a new game?')) {
+      return;
+    }
+    resetSession();
+  };
+
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {showSelectedBuildingPanel && selectedBuildingAnchor && (
@@ -108,11 +115,11 @@ export function GameHUD() {
             <button
               type="button"
               onClick={handleDeleteSelectedBuilding}
-              className="cursor-pointer rounded-lg bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
+              className="cursor-pointer rounded-lg bg-red-500/15 px-2 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
               aria-label="Supprimer le bâtiment"
               title="Supprimer le bâtiment"
             >
-              <Trash2 size={16} strokeWidth={2} />
+              Supprimer
             </button>
           </div>
         </div>
@@ -194,6 +201,13 @@ export function GameHUD() {
           </div>
 
           <div className="flex items-center justify-self-end gap-2">
+            <button
+              type="button"
+              onClick={handleResetSession}
+              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/90 transition-colors hover:bg-white/20"
+            >
+              Reset
+            </button>
             <button
               type="button"
               onClick={() => setConsoleOpen((o) => !o)}

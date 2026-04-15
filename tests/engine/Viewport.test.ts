@@ -109,4 +109,31 @@ describe('Viewport', () => {
       expect(vp.screenHeight).toBe(1080);
     });
   });
+
+  describe('snapshot', () => {
+    it('round-trips through getSnapshot and restore', () => {
+      const source = new Viewport(640, 480);
+      source.pan(120, 80);
+      source.zoomAt(320, 240, 1.5);
+
+      const restored = new Viewport(640, 480);
+      restored.restore(source.getSnapshot());
+
+      expect(restored.getSnapshot()).toEqual(source.getSnapshot());
+    });
+
+    it('clamps restored values to valid bounds', () => {
+      const vp = new Viewport(640, 480);
+
+      vp.restore({
+        centerX: Number.MAX_SAFE_INTEGER,
+        centerY: -100,
+        zoom: 999,
+      });
+
+      expect(vp.centerX).toBeLessThanOrEqual(GRID_WIDTH * TILE_SIZE);
+      expect(vp.centerY).toBeGreaterThanOrEqual(0);
+      expect(vp.zoom).toBe(4);
+    });
+  });
 });

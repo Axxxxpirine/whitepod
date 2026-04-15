@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GameEngine } from '@/game/engine/GameEngine';
+import { clearPersistedSession } from '@/game/persistence/sessionStorage';
 import type { BuildingId, SelectedTool } from '@/game/types';
 
 interface ScreenPoint {
@@ -13,11 +14,14 @@ interface GameState {
   hoverTile: { x: number; y: number } | null;
   selectedBuildingId: BuildingId | null;
   selectedBuildingAnchor: ScreenPoint | null;
+  sessionEpoch: number;
+  setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
   setSelectedTool: (tool: SelectedTool) => void;
   setHoverTile: (tile: { x: number; y: number } | null) => void;
   setSelectedBuilding: (id: BuildingId | null) => void;
   setSelectedBuildingAnchor: (anchor: ScreenPoint | null) => void;
+  resetSession: () => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -26,9 +30,22 @@ export const useGameStore = create<GameState>((set) => ({
   hoverTile: null,
   selectedBuildingId: null,
   selectedBuildingAnchor: null,
+  sessionEpoch: 0,
+  setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
   setSelectedTool: (tool) => set({ selectedTool: tool }),
   setHoverTile: (tile) => set({ hoverTile: tile }),
   setSelectedBuilding: (id) => set({ selectedBuildingId: id }),
   setSelectedBuildingAnchor: (anchor) => set({ selectedBuildingAnchor: anchor }),
+  resetSession: () => {
+    clearPersistedSession();
+    set((state) => ({
+      engine: null,
+      selectedTool: { kind: 'select' },
+      hoverTile: null,
+      selectedBuildingId: null,
+      selectedBuildingAnchor: null,
+      sessionEpoch: state.sessionEpoch + 1,
+    }));
+  },
 }));

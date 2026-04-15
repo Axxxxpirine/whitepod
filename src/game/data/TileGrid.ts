@@ -9,6 +9,8 @@ interface DirtyRegion {
   y1: number;
 }
 
+type TileGridChangeListener = () => void;
+
 export class TileGrid {
   readonly tileType: Uint8Array;
   readonly elevation: Uint8Array;
@@ -17,13 +19,19 @@ export class TileGrid {
   readonly metadata: Map<number, Record<string, unknown>>;
 
   private dirtyRegion: DirtyRegion | null = null;
+  private onChange: TileGridChangeListener | null;
 
-  constructor() {
+  constructor(onChange: TileGridChangeListener | null = null) {
     this.tileType = new Uint8Array(GRID_SIZE);
     this.elevation = new Uint8Array(GRID_SIZE);
     this.flags = new Uint8Array(GRID_SIZE);
     this.resourceType = new Uint8Array(GRID_SIZE);
     this.metadata = new Map();
+    this.onChange = onChange;
+  }
+
+  setOnChange(onChange: TileGridChangeListener | null): void {
+    this.onChange = onChange;
   }
 
   getType(x: number, y: number): TileType {
@@ -34,6 +42,7 @@ export class TileGrid {
     if (!isInBounds(x, y)) return;
     this.tileType[toIndex(x, y)] = type;
     this.markDirty(x, y);
+    this.onChange?.();
   }
 
   getResource(x: number, y: number): ResourceType {
@@ -44,12 +53,14 @@ export class TileGrid {
     if (!isInBounds(x, y)) return;
     this.resourceType[toIndex(x, y)] = resource;
     this.markDirty(x, y);
+    this.onChange?.();
   }
 
   fill(type: TileType): void {
     this.tileType.fill(type);
     this.markDirty(0, 0);
     this.markDirty(GRID_WIDTH - 1, GRID_HEIGHT - 1);
+    this.onChange?.();
   }
 
   fillRect(x0: number, y0: number, w: number, h: number, type: TileType): void {
@@ -63,6 +74,7 @@ export class TileGrid {
     if (w > 0 && h > 0) {
       this.markDirty(x0, y0);
       this.markDirty(x0 + w - 1, y0 + h - 1);
+      this.onChange?.();
     }
   }
 
@@ -94,8 +106,8 @@ export class TileGrid {
     return combined.buffer;
   }
 
-  static deserialize(buffer: ArrayBuffer): TileGrid {
-    const grid = new TileGrid();
+  static deserialize(buffer: ArrayBuffer, onChange: TileGridChangeListener | null = null): TileGrid {
+    const grid = new TileGrid(onChange);
     const data = new Uint8Array(buffer);
     grid.tileType.set(data.subarray(0, GRID_SIZE));
     grid.elevation.set(data.subarray(GRID_SIZE, GRID_SIZE * 2));

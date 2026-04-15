@@ -1,22 +1,72 @@
 import { useEffect, useRef } from 'react';
 import { Application } from 'pixi.js';
+import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
+import {
+  createSessionId,
+  loadPersistedSession,
+  saveViewSession,
+  saveWorldSession,
+} from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
-import { TILE_SIZE } from '@/game/constants';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
 
-const MAP_SEED = 42;
+const WORLD_SAVE_DELAY_MS = 150;
+const VIEW_SAVE_DELAY_MS = 100;
+
+function createDebouncedTask(task: () => void, delayMs: number) {
+  let timeoutId: number | null = null;
+
+  return {
+    schedule() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+        task();
+      }, delayMs);
+    },
+    flush() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      task();
+    },
+    cancel() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    },
+  };
+}
+
+function selectedToolsEqual(
+  left: ReturnType<typeof useGameStore.getState>['selectedTool'],
+  right: ReturnType<typeof useGameStore.getState>['selectedTool'],
+): boolean {
+  if (left.kind !== right.kind) return false;
+  if (left.kind === 'select' && right.kind === 'select') return true;
+  if (left.kind === 'building' && right.kind === 'building') {
+    return left.buildingType === right.buildingType;
+  }
+  return false;
+}
 
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const initEngine = useGameStore((s) => s.initEngine);
+  const sessionEpoch = useGameStore((s) => s.sessionEpoch);
+  const setEngine = useGameStore((s) => s.setEngine);
+  const setSelectedTool = useGameStore((s) => s.setSelectedTool);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -36,6 +86,11 @@ export function GameCanvas() {
     let handleContextMenu: ((e: MouseEvent) => void) | null = null;
     let handleWheel: ((e: WheelEvent) => void) | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let unsubscribeEngine: (() => void) | null = null;
+    let unsubscribeTool: (() => void) | null = null;
+    let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
+    let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
+    let currentEngine: GameEngine | null = null;
 
     const init = async () => {
       app = new Application();
@@ -65,9 +120,51 @@ export function GameCanvas() {
         return;
       }
 
-      const engine = new GameEngine(app.screen.width, app.screen.height);
-      engine.generateMap(MAP_SEED);
-      initEngine(engine);
+      const loadedSession = loadPersistedSession(app.screen.width, app.screen.height);
+      const engine = loadedSession?.engine ?? new GameEngine(app.screen.width, app.screen.height);
+      currentEngine = engine;
+      const sessionId = loadedSession?.sessionId ?? createSessionId();
+      const selectedTool = loadedSession?.selectedTool ?? { kind: 'select' as const };
+
+      if (!loadedSession) {
+        engine.generateMap(DEFAULT_MAP_SEED);
+      }
+
+      const state = useGameStore.getState();
+      state.setSelectedBuilding(null);
+      state.setSelectedBuildingAnchor(null);
+      setSelectedTool(selectedTool);
+      setEngine(engine);
+
+      worldSaver = createDebouncedTask(() => {
+        saveWorldSession(engine, sessionId);
+      }, WORLD_SAVE_DELAY_MS);
+      viewSaver = createDebouncedTask(() => {
+        saveViewSession({
+          engine,
+          selectedTool: useGameStore.getState().selectedTool,
+          sessionId,
+        });
+      }, VIEW_SAVE_DELAY_MS);
+
+      if (!loadedSession) {
+        worldSaver.flush();
+        viewSaver.flush();
+      }
+
+      unsubscribeEngine = engine.subscribe((kind) => {
+        if (kind === 'world') {
+          worldSaver?.schedule();
+          return;
+        }
+        viewSaver?.schedule();
+      });
+      unsubscribeTool = useGameStore.subscribe((nextState, previousState) => {
+        if (!selectedToolsEqual(nextState.selectedTool, previousState.selectedTool)) {
+          viewSaver?.schedule();
+        }
+      });
+
       if (import.meta.env.DEV) {
         (window as unknown as { engine: GameEngine }).engine = engine;
       }
@@ -182,6 +279,15 @@ export function GameCanvas() {
       // Only destroy if init() completed — otherwise the async init() will
       // see destroyed=true and call destroy() itself after app.init() finishes.
       if (initCompleted) {
+        const shouldPersistOnCleanup = useGameStore.getState().engine === currentEngine;
+        if (shouldPersistOnCleanup) {
+          worldSaver?.flush();
+          viewSaver?.flush();
+        }
+        worldSaver?.cancel();
+        viewSaver?.cancel();
+        unsubscribeTool?.();
+        unsubscribeEngine?.();
         resizeObserver?.disconnect();
         if (app?.canvas && handlePointerDown) app.canvas.removeEventListener('pointerdown', handlePointerDown);
         if (app?.canvas && handlePointerMove) app.canvas.removeEventListener('pointermove', handlePointerMove);
@@ -196,7 +302,7 @@ export function GameCanvas() {
         app?.destroy(true);
       }
     };
-  }, [initEngine]);
+  }, [sessionEpoch, setEngine, setSelectedTool]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }

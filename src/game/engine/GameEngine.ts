@@ -2,6 +2,7 @@ import { TileGrid } from '../data/TileGrid';
 import { BuildingRegistry } from '../data/BuildingRegistry';
 import {
   ConnectionRegistry,
+  type SerializedConnectionRegistry,
   oppositeSide,
   unitVector,
   worldSideOf,
@@ -9,7 +10,7 @@ import {
 } from '../data/ConnectionRegistry';
 import { getBuildingType, validateCatalog } from '../data/buildingCatalog';
 import { Viewport } from './Viewport';
-import type { VisibleTileRange } from './Viewport';
+import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
   Direction,
   PortKind,
@@ -28,6 +29,7 @@ import {
   type TileCoord,
   type TileType,
 } from '../types';
+import { DEFAULT_MAP_SEED } from '../constants';
 import { isInBounds } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
@@ -42,18 +44,41 @@ interface ResolvedPort {
   readonly port: Port;
 }
 
+export type GameEngineChangeKind = 'world' | 'viewport';
+
+export interface SerializedGameWorld {
+  readonly version: number;
+  readonly mapSeed: number;
+  readonly grid: ArrayBuffer;
+  readonly buildings: ReturnType<BuildingRegistry['serialize']>;
+  readonly connections: SerializedConnectionRegistry;
+}
+
+interface GameEngineOptions {
+  readonly grid?: TileGrid;
+  readonly buildings?: BuildingRegistry;
+  readonly connections?: ConnectionRegistry;
+  readonly mapSeed?: number;
+}
+
+const SERIALIZE_VERSION = 1;
+
 export class GameEngine {
   readonly grid: TileGrid;
   readonly viewport: Viewport;
   readonly buildings: BuildingRegistry;
   readonly connections: ConnectionRegistry;
+  mapSeed: number;
+  private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
 
-  constructor(screenWidth: number, screenHeight: number) {
+  constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
-    this.grid = new TileGrid();
-    this.viewport = new Viewport(screenWidth, screenHeight);
-    this.buildings = new BuildingRegistry();
-    this.connections = new ConnectionRegistry();
+    this.grid = options.grid ?? new TileGrid();
+    this.grid.setOnChange(() => this.notify('world'));
+    this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
+    this.buildings = options.buildings ?? new BuildingRegistry();
+    this.connections = options.connections ?? new ConnectionRegistry();
+    this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
   }
 
   update(_dt: number): void {
@@ -107,7 +132,11 @@ export class GameEngine {
     if (!result.ok) return null;
 
     const type = getBuildingType(typeId)!;
-    return this.buildings.register({ typeId, origin, rotation }, type.footprint);
+    const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
+    if (id !== null) {
+      this.notify('world');
+    }
+    return id;
   }
 
   removeBuilding(id: BuildingId): boolean {
@@ -116,7 +145,11 @@ export class GameEngine {
     const type = getBuildingType(building.typeId);
     if (!type) return false;
     this.connections.unregisterAllFor(id);
-    return this.buildings.unregister(id, type.footprint);
+    const removed = this.buildings.unregister(id, type.footprint);
+    if (removed) {
+      this.notify('world');
+    }
+    return removed;
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -146,11 +179,19 @@ export class GameEngine {
   connect(from: PortEndpoint, to: PortEndpoint): ConnectionId | null {
     const result = this.canConnect(from, to);
     if (!result.ok) return null;
-    return this.connections.register(from, to);
+    const id = this.connections.register(from, to);
+    if (id !== null) {
+      this.notify('world');
+    }
+    return id;
   }
 
   disconnect(id: ConnectionId): boolean {
-    return this.connections.unregister(id);
+    const disconnected = this.connections.unregister(id);
+    if (disconnected) {
+      this.notify('world');
+    }
+    return disconnected;
   }
 
   getConnectionsOf(buildingId: BuildingId): readonly Connection[] {
@@ -222,6 +263,8 @@ export class GameEngine {
 
   generateMap(seed: number): void {
     generateResources(this.grid, seed);
+    this.mapSeed = seed;
+    this.notify('world');
   }
 
   getVisibleTiles(): VisibleTileRange {
@@ -230,5 +273,53 @@ export class GameEngine {
 
   screenToTile(screenX: number, screenY: number): TileCoord {
     return screenToGrid(this.viewport, screenX, screenY);
+  }
+
+  subscribe(listener: (kind: GameEngineChangeKind) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  serializeWorld(): SerializedGameWorld {
+    return {
+      version: SERIALIZE_VERSION,
+      mapSeed: this.mapSeed,
+      grid: this.grid.serialize(),
+      buildings: this.buildings.serialize(),
+      connections: this.connections.serialize(),
+    };
+  }
+
+  static fromSnapshot(snapshot: SerializedGameWorld, screenWidth: number, screenHeight: number): GameEngine {
+    if (snapshot.version !== SERIALIZE_VERSION) {
+      throw new Error(`Unsupported GameEngine snapshot version: ${snapshot.version}`);
+    }
+
+    const engine = new GameEngine(screenWidth, screenHeight, {
+      grid: TileGrid.deserialize(snapshot.grid),
+      buildings: BuildingRegistry.deserialize(snapshot.buildings, (typeId) => getBuildingType(typeId)?.footprint),
+      connections: ConnectionRegistry.deserialize(snapshot.connections),
+      mapSeed: snapshot.mapSeed,
+    });
+
+    for (const connection of engine.connections.getAll().values()) {
+      if (!engine.resolvePort(connection.from) || !engine.resolvePort(connection.to)) {
+        throw new Error(`Invalid connection in snapshot: ${connection.id}`);
+      }
+    }
+
+    return engine;
+  }
+
+  getViewportSnapshot(): ViewportSnapshot {
+    return this.viewport.getSnapshot();
+  }
+
+  private notify(kind: GameEngineChangeKind): void {
+    for (const listener of this.listeners) {
+      listener(kind);
+    }
   }
 }
