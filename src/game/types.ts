@@ -37,10 +37,27 @@ export interface Footprint {
   readonly h: number;
 }
 
+export type PortId = string;
+export type ConnectionId = number;
+
+export const PortKind = {
+  Input: 0,
+  Output: 1,
+} as const;
+export type PortKind = (typeof PortKind)[keyof typeof PortKind];
+
+export interface Port {
+  readonly id: PortId;
+  readonly kind: PortKind;
+  readonly offset: TileCoord;
+  readonly side: Direction;
+}
+
 export interface BuildingType {
   readonly id: BuildingTypeId;
   readonly footprint: Footprint;
   readonly allowedTiles: readonly TileType[];
+  readonly ports: readonly Port[];
 }
 
 export interface Building {
@@ -60,3 +77,22 @@ export type PlacementFailure =
 export type PlacementResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: PlacementFailure };
+
+export interface Connection {
+  readonly id: ConnectionId;
+  readonly from: { readonly building: BuildingId; readonly port: PortId };
+  readonly to: { readonly building: BuildingId; readonly port: PortId };
+}
+
+export type ConnectionFailure =
+  | 'unknown_building'
+  | 'unknown_port'
+  | 'port_kind_mismatch'
+  | 'port_already_connected'
+  | 'ports_not_adjacent'
+  | 'self_connection'
+  | 'id_overflow';
+
+export type ConnectionResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: ConnectionFailure };

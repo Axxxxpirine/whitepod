@@ -18,6 +18,16 @@ squelette tient debout.
    input et M ports output, chacun positionné relativement à l'origin + côté
    (`Direction`). La rotation du bâtiment fait tourner les ports (signature prête,
    logique no-op tant que rotation est no-op partout ailleurs — cohérence).
+2.a **`PortId = string` stable** (ex: `'in_top'`, `'out_bottom'`). Pas un index
+   numérique: réordonner le tableau `ports` dans `buildingCatalog.ts` ne doit
+   pas silencieusement rediriger des connexions existantes vers un autre port
+   (bombe à retardement à la persistence).
+2.b **`Port.side` et `Port.offset` sont en coordonnées LOCALES** (relatif au
+   bâtiment non-tourné). Deux helpers purs `worldSideOf(port, rotation)` et
+   `worldTileOf(port, origin, rotation, footprint)` font la transformation,
+   utilisés dès v1 même si rotation est identity. Sinon quand rotation
+   deviendra effective, tous les tests d'adjacence basculent et toutes les
+   sauvegardes se cassent.
 3. **Pas de pathfinding, pas de tuiles de convoyeur en v1.** Une connexion est
    une arête logique entre deux ports adjacents. Le "convoyeur" visuel viendra
    avec le rendu, pas avec le modèle. Si les deux ports ne sont pas adjacents
@@ -46,7 +56,7 @@ MOD  src/game/engine/GameEngine.ts        # +connect, +disconnect, +canConnect,
 ## Types ajoutés
 
 ```ts
-export type PortId = number;              // index local au BuildingType, 0-based
+export type PortId = string;              // stable ID déclaré dans le BuildingType
 export type ConnectionId = number;
 
 export const PortKind = {
@@ -56,11 +66,15 @@ export const PortKind = {
 export type PortKind = (typeof PortKind)[keyof typeof PortKind];
 
 export interface Port {
-  readonly id: PortId;                    // unique dans le BuildingType
+  readonly id: PortId;                    // string stable, unique dans le BuildingType
   readonly kind: PortKind;
-  readonly offset: TileCoord;             // relatif à origin (pré-rotation)
-  readonly side: Direction;               // côté de la tuile où sort le port
+  readonly offset: TileCoord;             // LOCAL, relatif à origin (pré-rotation)
+  readonly side: Direction;               // LOCAL, côté de la tuile (pré-rotation)
 }
+
+// Transform helpers (pure, rotation-aware dès v1):
+//   worldSideOf(port, buildingRotation): Direction
+//   worldTileOf(port, origin, rotation, footprint): TileCoord
 
 export interface BuildingType {
   // ...existant
@@ -127,7 +141,24 @@ getConnections(): ReadonlyMap<ConnectionId, Connection>
 8. **Atomicité du connect.** Si `canConnect` passe mais une invariante interne
    casse après (ex: overflow), aucun index n'est pollué.
 
-## Plan de tests (13 cases)
+## Formule d'adjacence (explicite)
+
+Deux ports A (output sur bâtiment Ba) et B (input sur bâtiment Bb) sont
+adjacents face-à-face si, avec rotation actuellement no-op (identity):
+
+```
+wA = worldTileOf(A, Ba.origin, Ba.rotation, footprintA)
+wB = worldTileOf(B, Bb.origin, Bb.rotation, footprintB)
+sA = worldSideOf(A, Ba.rotation)
+sB = worldSideOf(B, Bb.rotation)
+
+wA + unitVector(sA) === wB   AND   sA === opposite(sB)
+```
+
+`unitVector(North) = (0,-1)`, `East = (1,0)`, `South = (0,1)`, `West = (-1,0)`.
+`opposite(North) = South`, etc.
+
+## Plan de tests (20 cases)
 
 ```
 ConnectionRegistry.test.ts
@@ -140,12 +171,19 @@ ConnectionRegistry.test.ts
 
 GameEngine.connection.test.ts
   7.  connect OK entre output et input adjacents face-à-face
-  8.  connect refuse kind mismatch
+  8.  connect refuse kind mismatch (3 sous-cas: out→out, in→in, in→out)
   9.  connect refuse self-connection
-  10. connect refuse port déjà connecté (des deux côtés)
+  10. connect refuse port déjà connecté (des deux côtés: from et to)
   11. connect refuse ports non-adjacents
   12. connect refuse ports adjacents mais sides non-opposés
   13. removeBuilding supprime les connexions en cascade (from ET to)
+  14. register refuse id_overflow (ConnectionId)
+  15. getConnectionsOf retourne [] après removeBuilding de ce building
+  16. connect refuse unknown_building (from ou to)
+  17. connect refuse unknown_port (port absent du BuildingType)
+  18. bâtiment sans ports: getConnectionsOf retourne [], pas de crash
+  19. connect OK pour port en offset (1,2) d'un footprint 3x3
+  20. connect(rotation=East) === connect(rotation=North) pendant le no-op
 ```
 
 ## NOT in scope

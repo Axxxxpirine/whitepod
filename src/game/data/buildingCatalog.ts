@@ -1,15 +1,41 @@
-import { TileType, type BuildingType, type BuildingTypeId } from '../types';
+import {
+  Direction,
+  PortKind,
+  TileType,
+  type BuildingType,
+  type BuildingTypeId,
+} from '../types';
 
 const entries: readonly BuildingType[] = [
   {
     id: 'placeholder_1x1',
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
+    ports: [],
   },
   {
     id: 'placeholder_3x3',
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
+    ports: [],
+  },
+  {
+    id: 'placeholder_node_1x1',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    ports: [
+      { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
+  },
+  {
+    id: 'placeholder_node_3x3',
+    footprint: { w: 3, h: 3 },
+    allowedTiles: [TileType.Ground],
+    ports: [
+      { id: 'in_north', kind: PortKind.Input, offset: { x: 1, y: 0 }, side: Direction.North },
+      { id: 'out_south', kind: PortKind.Output, offset: { x: 1, y: 2 }, side: Direction.South },
+    ],
   },
 ];
 
@@ -28,6 +54,19 @@ export function validateCatalog(): void {
     }
     if (t.allowedTiles.length === 0) {
       throw new Error(`Invalid catalog entry '${t.id}': allowedTiles must not be empty`);
+    }
+    const seen = new Set<string>();
+    for (const p of t.ports) {
+      if (seen.has(p.id)) {
+        throw new Error(`Invalid catalog entry '${t.id}': duplicate port id '${p.id}'`);
+      }
+      seen.add(p.id);
+      const { x, y } = p.offset;
+      if (x < 0 || y < 0 || x >= t.footprint.w || y >= t.footprint.h) {
+        throw new Error(
+          `Invalid catalog entry '${t.id}': port '${p.id}' offset out of footprint`,
+        );
+      }
     }
   }
 }
