@@ -6,7 +6,16 @@ import {
   type BuildingTypeId,
 } from '../types';
 
+export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
+
 const entries: readonly BuildingType[] = [
+  {
+    id: EXTRACTOR_BUILDING_TYPE_ID,
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    requiresResourceDeposit: true,
+    ports: [],
+  },
   {
     id: 'placeholder_1x1',
     footprint: { w: 1, h: 1 },

@@ -3,6 +3,7 @@ import { Application } from 'pixi.js';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
+import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
@@ -22,6 +23,7 @@ export function GameCanvas() {
     let app: Application | null = null;
     let gridRenderer: GridRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
+    let buildingRenderer: BuildingRenderer | null = null;
 
     const init = async () => {
       app = new Application();
@@ -60,7 +62,8 @@ export function GameCanvas() {
 
       gridRenderer = new GridRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
-      const inputHandler = new InputHandler(engine);
+      buildingRenderer = new BuildingRenderer(app, engine);
+      const inputHandler = new InputHandler(engine, () => useGameStore.getState().selectedTool);
       inputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
 
       const canvas = app.canvas;
@@ -96,6 +99,7 @@ export function GameCanvas() {
       app.ticker.add(() => {
         gridRenderer!.render();
         resourceRenderer!.render();
+        buildingRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -107,6 +111,7 @@ export function GameCanvas() {
       // Only destroy if init() completed — otherwise the async init() will
       // see destroyed=true and call destroy() itself after app.init() finishes.
       if (initCompleted) {
+        buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         gridRenderer?.destroy();
         app?.destroy(true);

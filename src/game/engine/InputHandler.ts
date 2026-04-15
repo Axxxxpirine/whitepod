@@ -1,17 +1,19 @@
 import type { GameEngine } from './GameEngine';
-import { TileType } from '../types';
+import type { SelectedTool } from '../types';
 import { screenToGrid } from './CoordinateTransform';
 import { isInBounds } from '../data/coords';
 
 export class InputHandler {
   private readonly engine: GameEngine;
+  private readonly getSelectedTool: () => SelectedTool;
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
 
-  constructor(engine: GameEngine) {
+  constructor(engine: GameEngine, getSelectedTool: () => SelectedTool) {
     this.engine = engine;
+    this.getSelectedTool = getSelectedTool;
   }
 
   setHoverCallback(cb: (tile: { x: number; y: number } | null) => void): void {
@@ -26,7 +28,12 @@ export class InputHandler {
     } else if (button === 0) {
       const coord = screenToGrid(this.engine.viewport, screenX, screenY);
       if (isInBounds(coord.x, coord.y)) {
-        this.engine.placeTile(coord.x, coord.y, TileType.Ground);
+        const selectedTool = this.getSelectedTool();
+        if (selectedTool.kind === 'tile') {
+          this.engine.placeTile(coord.x, coord.y, selectedTool.tile);
+        } else {
+          this.engine.placeBuilding(selectedTool.buildingType, coord);
+        }
       }
     }
   }
