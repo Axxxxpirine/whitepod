@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { getBuildingType, isBeltTypeId } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
+import { Panel, PanelHeading, Icon } from '../ui';
 
 export function SelectedBuildingPanel() {
   const engine = useGameStore((s) => s.engine);
@@ -52,21 +53,21 @@ export function SelectedBuildingPanel() {
       className="pointer-events-auto absolute"
       style={{ left: anchorX, top: anchorY + 12, transform: 'translateX(-50%)' }}
     >
-      <div className="flex w-[200px] flex-col gap-1.5 rounded-md border border-border bg-surface/90 px-3 py-2 text-ink backdrop-blur-md">
+      <Panel className="flex w-[200px] flex-col gap-1.5 px-3 py-2 text-ink">
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-sm font-medium">{type.name}</span>
+          <PanelHeading className="whitespace-nowrap">{type.name}</PanelHeading>
           <button
             type="button"
             onClick={handleDelete}
-            className="ml-auto cursor-pointer rounded-md border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
+            className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
             aria-label="Supprimer le bâtiment"
             title="Supprimer le bâtiment"
           >
-            <Trash2 size={16} strokeWidth={1.5} />
+            <Icon icon={Trash2} size={16} />
           </button>
         </div>
         <BuildingStatsPanel building={building} engine={engine} worldTick={worldTick} energyVersion={energyVersion} />
-      </div>
+      </Panel>
     </div>
   );
 }

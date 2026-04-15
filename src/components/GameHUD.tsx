@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
+import { Icon, Chip } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -166,9 +167,9 @@ const globalEnergy = useMemo(() => {
                 <div className="label mb-1.5 text-ink-muted">Énergie</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1">
-                    <Zap
+                    <Icon
+                      icon={Zap}
                       size={13}
-                      strokeWidth={1.5}
                       className={globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
@@ -348,7 +349,7 @@ const globalEnergy = useMemo(() => {
                 title="Paramètres"
                 className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
               >
-                <Settings className="h-4 w-4" strokeWidth={1.5} />
+                <Icon icon={Settings} className="h-4 w-4" />
               </button>
 
               {settingsOpen && (
@@ -364,11 +365,9 @@ const globalEnergy = useMemo(() => {
                     className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                   >
                     <span>Lier après pose</span>
-                    <span
-                      className={`label ml-3 rounded-sm px-1.5 py-0.5 ${linkSolarOnPlacement ? 'bg-accent/20 text-accent' : 'bg-surface-2 text-ink-muted'}`}
-                    >
+                    <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
                       {linkSolarOnPlacement ? 'ON' : 'OFF'}
-                    </span>
+                    </Chip>
                   </button>
 
                   {/* Console */}

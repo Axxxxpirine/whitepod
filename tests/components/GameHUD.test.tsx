@@ -111,7 +111,7 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    expect(screen.getByText('Extracteur', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Extracteur' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Supprimer le bâtiment' })).toBeInTheDocument();
   });
 
