@@ -60,7 +60,48 @@ function selectedToolsEqual(
   if (left.kind === 'building' && right.kind === 'building') {
     return left.buildingType === right.buildingType;
   }
-  return false;
+  return left.kind === 'energy_link' && right.kind === 'energy_link';
+}
+
+export { selectedToolsEqual };
+
+interface EnergyLinkClickState {
+  readonly pendingEnergyLinkSource: ReturnType<typeof useGameStore.getState>['pendingEnergyLinkSource'];
+  setPendingEnergyLinkSource: ReturnType<typeof useGameStore.getState>['setPendingEnergyLinkSource'];
+  setSelectedBuilding: ReturnType<typeof useGameStore.getState>['setSelectedBuilding'];
+  setSelectedTool: ReturnType<typeof useGameStore.getState>['setSelectedTool'];
+}
+
+export function handleEnergyLinkClick(
+  engine: GameEngine,
+  state: EnergyLinkClickState,
+  clickedBuildingId: number,
+): void {
+  const sourceId = state.pendingEnergyLinkSource;
+
+  if (sourceId !== null && !engine.getBuildings().has(sourceId)) {
+    state.setPendingEnergyLinkSource(null);
+    state.setSelectedBuilding(clickedBuildingId);
+    state.setPendingEnergyLinkSource(clickedBuildingId);
+    return;
+  }
+
+  if (sourceId === null) {
+    state.setPendingEnergyLinkSource(clickedBuildingId);
+    state.setSelectedBuilding(clickedBuildingId);
+    return;
+  }
+
+  if (sourceId === clickedBuildingId) return;
+
+  const linkChanged = engine.areBuildingsEnergyLinked(sourceId, clickedBuildingId)
+    ? engine.disconnectBuildings(sourceId, clickedBuildingId)
+    : engine.connectBuildings(sourceId, clickedBuildingId);
+  if (!linkChanged) return;
+
+  state.setPendingEnergyLinkSource(null);
+  state.setSelectedTool({ kind: 'select' });
+  state.setSelectedBuilding(sourceId);
 }
 
 export function GameCanvas() {
@@ -209,24 +250,7 @@ export function GameCanvas() {
       });
       currentInputHandler.setEnergyLinkClickCallback((clickedBuildingId) => {
         const state = useGameStore.getState();
-        const sourceId = state.pendingEnergyLinkSource;
-
-        if (sourceId === null) {
-          state.setPendingEnergyLinkSource(clickedBuildingId);
-          state.setSelectedBuilding(clickedBuildingId);
-          return;
-        }
-
-        if (sourceId === clickedBuildingId) return;
-
-        if (engine.areBuildingsEnergyLinked(sourceId, clickedBuildingId)) {
-          engine.disconnectBuildings(sourceId, clickedBuildingId);
-        } else {
-          engine.connectBuildings(sourceId, clickedBuildingId);
-        }
-        state.setPendingEnergyLinkSource(null);
-        state.setSelectedTool({ kind: 'select' });
-        state.setSelectedBuilding(sourceId);
+        handleEnergyLinkClick(engine, state, clickedBuildingId);
       });
 
       const canvas = app.canvas;

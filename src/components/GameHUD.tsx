@@ -117,6 +117,9 @@ export function GameHUD() {
   const handleDeleteSelectedBuilding = () => {
     if (!engine || selectedBuildingId === null) return;
     if (engine.removeBuilding(selectedBuildingId)) {
+      if (pendingEnergyLinkSource === selectedBuildingId) {
+        setPendingEnergyLinkSource(null);
+      }
       clearSelectedBuilding();
     }
   };
