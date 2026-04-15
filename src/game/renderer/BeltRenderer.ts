@@ -5,9 +5,7 @@ import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
 
-const BELT_INSET = 3;
-const BELT_FILL = 0xf4d35e;
-const BELT_STROKE = 0xb08900;
+export const BELT_INSET = 3;
 const BELT_PATH = 0x3a3125;
 
 export class BeltRenderer {
@@ -64,22 +62,12 @@ export class BeltRenderer {
     const outPoint = this.edgePoint(baseX, baseY, outSide);
 
     this.graphics
-      .rect(
-        baseX + BELT_INSET,
-        baseY + BELT_INSET,
-        TILE_SIZE - BELT_INSET * 2,
-        TILE_SIZE - BELT_INSET * 2,
-      )
-      .fill({ color: BELT_FILL, alpha: 0.95 })
-      .stroke({ color: BELT_STROKE, width: 1, alpha: 0.95 });
-
-    this.graphics
       .moveTo(inPoint.x, inPoint.y)
       .lineTo(center.x, center.y)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_PATH, width: 4, alpha: 0.95 });
+      .stroke({ color: BELT_PATH, width: 1.5, alpha: 0.45 });
 
-    this.graphics.circle(outPoint.x, outPoint.y, 2.5).fill({ color: BELT_PATH, alpha: 1 });
+    this.graphics.circle(outPoint.x, outPoint.y, 2).fill({ color: BELT_PATH, alpha: 0.45 });
   }
 
   private edgePoint(baseX: number, baseY: number, side: Direction): TileCoord {

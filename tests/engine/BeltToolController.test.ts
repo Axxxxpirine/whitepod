@@ -26,7 +26,7 @@ function placeExtractor(engine: GameEngine, x: number, y: number) {
 }
 
 describe('BeltToolController', () => {
-  it('removes the full belt line when clicking a belt segment with the belt tool', () => {
+  it('does not remove a belt segment when clicking it with the belt tool', () => {
     const engine = makeEngine();
     const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
     const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
@@ -46,12 +46,10 @@ describe('BeltToolController', () => {
     const point = screenPointForTile(engine, segment.origin.x, segment.origin.y);
     controller.onPointerDown(point.sx, point.sy, 0);
 
-    expect(engine.getConnections().size).toBe(0);
+    // Clicking a belt segment in belt mode no longer deletes it
     for (const segmentId of placed.segmentIds) {
-      expect(engine.buildings.get(segmentId)).toBeNull();
+      expect(engine.buildings.get(segmentId)).not.toBeNull();
     }
-    expect(engine.buildings.get(source)).not.toBeNull();
-    expect(engine.buildings.get(target)).not.toBeNull();
   });
 
   it('selects the clicked storage side when connecting a belt', () => {

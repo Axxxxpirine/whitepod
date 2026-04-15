@@ -1,4 +1,4 @@
-import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
+import { getBuildingType } from '../data/buildingCatalog';
 import { worldTileOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from './GameEngine';
 import { PortKind, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
@@ -35,13 +35,6 @@ export class BeltToolController {
     if (button !== 0 || this.getSelectedTool().kind !== 'belt') return;
 
     const tile = this.engine.screenToTile(screenX, screenY);
-    const building = this.engine.getBuildingAt(tile.x, tile.y);
-    if (building && isBeltTypeId(building.typeId)) {
-      this.engine.removeBelt(building.id);
-      this.cancel();
-      return;
-    }
-
     const from = this.getEndpointAtScreen(tile, PortKind.Output);
     if (!from) {
       this.cancel();

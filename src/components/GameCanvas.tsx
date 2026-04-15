@@ -7,6 +7,7 @@ import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
 import { BeltRenderer } from '@/game/renderer/BeltRenderer';
 import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
+import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
@@ -75,6 +76,7 @@ export function GameCanvas() {
     let resourceRenderer: ResourceRenderer | null = null;
     let buildingRenderer: BuildingRenderer | null = null;
     let beltRenderer: BeltRenderer | null = null;
+    let beltFlowAnimator: BeltFlowAnimator | null = null;
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
@@ -171,6 +173,7 @@ export function GameCanvas() {
       resourceRenderer = new ResourceRenderer(app, engine);
       buildingRenderer = new BuildingRenderer(app, engine);
       beltRenderer = new BeltRenderer(app, engine);
+      beltFlowAnimator = new BeltFlowAnimator(app, engine);
       placementPreviewRenderer = new PlacementPreviewRenderer(app, engine, () => {
         const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = useGameStore.getState();
         return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
@@ -260,7 +263,8 @@ export function GameCanvas() {
       });
       resizeObserver.observe(container);
 
-      app.ticker.add(() => {
+      app.ticker.add((ticker) => {
+        beltFlowAnimator!.update(ticker.deltaMS);
         const state = useGameStore.getState();
         const { selectedBuildingAnchor, selectedBuildingId } = state;
 
@@ -295,6 +299,7 @@ export function GameCanvas() {
         resourceRenderer!.render();
         buildingRenderer!.render();
         beltRenderer!.render();
+        beltFlowAnimator!.render();
         placementPreviewRenderer!.render();
         energyLinkRenderer!.render();
         engine.grid.clearDirty();
@@ -325,6 +330,7 @@ export function GameCanvas() {
         if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
         useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
+        beltFlowAnimator?.destroy();
         beltRenderer?.destroy();
         energyLinkRenderer?.destroy();
         buildingRenderer?.destroy();
