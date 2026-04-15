@@ -6,6 +6,8 @@ import type { Building } from '../types';
 
 interface LinkPreviewState {
   readonly mode: EnergyLinkMode;
+  readonly pendingSourceId: number | null;
+  readonly mouseWorldPos: { x: number; y: number } | null;
 }
 
 export type EnergyLinkMode = 'normal' | 'energy_link';
@@ -150,6 +152,20 @@ export class EnergyLinkRenderer {
         .moveTo(segment.fromCenter.x, segment.fromCenter.y)
         .lineTo(segment.toCenter.x, segment.toCenter.y)
         .stroke(style);
+    }
+
+    const previewState = this.getState();
+    if (previewState.pendingSourceId !== null && previewState.mouseWorldPos !== null) {
+      const src = this.engine.getBuildings().get(previewState.pendingSourceId);
+      if (src) {
+        const srcCenter = getBuildingCenter(src);
+        if (srcCenter) {
+          this.graphics
+            .moveTo(srcCenter.x, srcCenter.y)
+            .lineTo(previewState.mouseWorldPos.x, previewState.mouseWorldPos.y)
+            .stroke({ color: 0xf8e16c, width: 2, alpha: 0.55 });
+        }
+      }
     }
   }
 
