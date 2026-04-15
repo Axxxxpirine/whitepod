@@ -4,9 +4,10 @@ import { GameEngine } from '@/game/engine/GameEngine';
 import { gridToWorld, worldToScreen } from '@/game/engine/CoordinateTransform';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  MERGER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
-import { ResourceType, TileType, type SelectedTool } from '@/game/types';
+import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
 import { TILE_SIZE } from '@/game/constants';
 
 function makeEngine() {
@@ -18,6 +19,11 @@ function makeEngine() {
 function screenPointForTile(engine: GameEngine, x: number, y: number) {
   const { wx, wy } = gridToWorld(x, y);
   return worldToScreen(engine.viewport, wx + TILE_SIZE / 2, wy + TILE_SIZE / 2);
+}
+
+function screenPointForTileOffset(engine: GameEngine, x: number, y: number, offsetX: number, offsetY: number) {
+  const { wx, wy } = gridToWorld(x, y);
+  return worldToScreen(engine.viewport, wx + offsetX, wy + offsetY);
 }
 
 function placeExtractor(engine: GameEngine, x: number, y: number) {
@@ -98,5 +104,39 @@ describe('BeltToolController', () => {
     controller.onPointerDown(eastSidePoint.sx, eastSidePoint.sy, 0);
 
     expect(engine.getConnectionsOf(storage)).toHaveLength(0);
+  });
+
+  it('chooses the merger input that matches the current route instead of the first free port', () => {
+    const engine = makeEngine();
+    const merger = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+    engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 }, Direction.East)!;
+    engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 14 }, Direction.West)!;
+    engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 10 })!;
+
+    const selectedTool: SelectedTool = { kind: 'belt' };
+    const controller = new BeltToolController(engine, () => selectedTool, () => {});
+    const mergerNorthPoint = screenPointForTileOffset(engine, 10, 10, TILE_SIZE / 2, 4);
+    const mergerSouthPoint = screenPointForTileOffset(engine, 10, 10, TILE_SIZE / 2, TILE_SIZE - 4);
+    const mergerWestPoint = screenPointForTileOffset(engine, 10, 10, 4, TILE_SIZE / 2);
+
+    const northPoint = screenPointForTile(engine, 10, 5);
+    controller.onPointerDown(northPoint.sx, northPoint.sy, 0);
+    controller.onPointerDown(mergerNorthPoint.sx, mergerNorthPoint.sy, 0);
+
+    const southPoint = screenPointForTile(engine, 10, 14);
+    controller.onPointerDown(southPoint.sx, southPoint.sy, 0);
+    controller.onPointerDown(mergerSouthPoint.sx, mergerSouthPoint.sy, 0);
+
+    const westPoint = screenPointForTile(engine, 5, 10);
+    controller.onPointerDown(westPoint.sx, westPoint.sy, 0);
+    controller.onPointerDown(mergerWestPoint.sx, mergerWestPoint.sy, 0);
+
+    const mergerConnections = engine.getConnectionsOf(merger);
+    expect(mergerConnections).toHaveLength(3);
+    expect(mergerConnections.map((connection) => connection.to.port).sort()).toEqual([
+      'in_north',
+      'in_south',
+      'in_west',
+    ]);
   });
 });

@@ -6,7 +6,7 @@ import {
   isBeltTypeId,
   validateCatalog,
 } from '@/game/data/buildingCatalog';
-import { PortKind, TileType } from '@/game/types';
+import { Direction, PortKind, TileType } from '@/game/types';
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -105,5 +105,31 @@ describe('merger_basic placement and connections', () => {
       { building: targetId, port: 'in_west' },
     );
     expect(outBelt.ok).toBe(true);
+  });
+
+  it('accepts all 3 inputs regardless of connection order', () => {
+    const engine = makeEngine();
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+
+    const westSource = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 10 })!;
+    const northSource = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 }, Direction.East)!;
+    const southSource = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 14 }, Direction.West)!;
+
+    const north = engine.placeBelt(
+      { building: northSource, port: 'out_east' },
+      { building: mergerId, port: 'in_north' },
+    );
+    const south = engine.placeBelt(
+      { building: southSource, port: 'out_east' },
+      { building: mergerId, port: 'in_south' },
+    );
+    const west = engine.placeBelt(
+      { building: westSource, port: 'out_east' },
+      { building: mergerId, port: 'in_west' },
+    );
+
+    expect(north.ok).toBe(true);
+    expect(south.ok).toBe(true);
+    expect(west.ok).toBe(true);
   });
 });
