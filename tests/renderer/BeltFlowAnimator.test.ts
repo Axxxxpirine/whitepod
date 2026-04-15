@@ -46,7 +46,7 @@ describe('BeltFlowAnimator', () => {
     animator.destroy();
   });
 
-  it('stops belt sprite animation when the upstream extractor deposit is depleted', () => {
+  it('keeps belt sprite animation running when a save restores a zero resource amount', () => {
     const engine = makeEngine();
     engine.placeResource(2, 1, ResourceType.Coal);
 
@@ -70,7 +70,7 @@ describe('BeltFlowAnimator', () => {
 
     engine.grid.resourceAmount.fill(0);
 
-    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.None);
+    expect((animator as any).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
 
     animator.destroy();
   });

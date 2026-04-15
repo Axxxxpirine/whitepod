@@ -3,6 +3,7 @@ import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  EXTRACTOR_RATE_PER_MIN,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 
@@ -127,6 +128,25 @@ describe('GameEngine energy networks', () => {
     const extractorNetwork = engine.getEnergyNetworkForBuilding(extractorId)!;
     expect(solarNetwork).toMatchObject({ production: 8, consumption: 0, remaining: 8 });
     expect(extractorNetwork).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
+  });
+
+  it('keeps a powered extractor producing after many extraction intervals', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(2, 1, ResourceType.Coal);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const initialAmount = engine.grid.getResourceAmount(2, 1);
+    const extractionIntervalMs = 60_000 / EXTRACTOR_RATE_PER_MIN;
+
+    for (let i = 0; i < 250; i++) {
+      engine.update(extractionIntervalMs);
+    }
+
+    expect(engine.getResourceCounts().coal).toBe(250);
+    expect(engine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
+    expect(engine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
   });
 
   it('refuses energy links for buildings outside the electrical system', () => {

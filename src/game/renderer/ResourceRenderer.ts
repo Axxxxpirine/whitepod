@@ -56,7 +56,7 @@ export class ResourceRenderer {
           if (this.activeSprites.has(index)) continue;
 
           const resourceType = grid.resourceType[index] as ResourceTypeT;
-          if (resourceType === ResourceType.None || grid.resourceAmount[index] === 0) continue;
+          if (resourceType === ResourceType.None) continue;
 
           const texture = getResourceTexture(resourceType);
           if (!texture) continue;
@@ -86,7 +86,7 @@ export class ResourceRenderer {
           const resourceType = grid.resourceType[index] as ResourceTypeT;
           const existing = this.activeSprites.get(index);
 
-          if (resourceType === ResourceType.None || grid.resourceAmount[index] === 0) {
+          if (resourceType === ResourceType.None) {
             // Remove sprite if resource was cleared
             if (existing) {
               this.resourceContainer.removeChild(existing);

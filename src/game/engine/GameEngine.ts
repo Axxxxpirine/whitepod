@@ -124,10 +124,7 @@ export class GameEngine {
       const { x, y } = building.origin;
       const idx = toIndex(x, y);
       const resourceType = this.grid.resourceType[idx];
-      const amount = this.grid.resourceAmount[idx];
-      if (amount <= 0 || resourceType === ResourceType.None) continue;
-      const newAmount = amount - 1;
-      this.grid.resourceAmount[idx] = newAmount;
+      if (resourceType === ResourceType.None) continue;
       if (resourceType === ResourceType.Coal) this.playerStock.coal++;
       else if (resourceType === ResourceType.IronOre) this.playerStock.ironOre++;
       else if (resourceType === ResourceType.CopperOre) this.playerStock.copperOre++;
@@ -333,7 +330,6 @@ export class GameEngine {
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (this.grid.getResourceAmount(building.origin.x, building.origin.y) === 0) continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
       if (resource === ResourceType.Coal) coal += EXTRACTOR_RATE_PER_MIN;
       else if (resource === ResourceType.IronOre) ironOre += EXTRACTOR_RATE_PER_MIN;
