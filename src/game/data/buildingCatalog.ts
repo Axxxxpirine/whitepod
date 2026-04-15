@@ -16,6 +16,7 @@ export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;
 export const BELT_CORNER_CCW_BUILDING_TYPE_ID = 'belt_corner_ccw' as const;
 export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 export const BATTERY_BASIC_BUILDING_TYPE_ID = 'battery_basic' as const;
+export const MERGER_BASIC_BUILDING_TYPE_ID = 'merger_basic' as const;
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
@@ -77,6 +78,23 @@ const entries: readonly BuildingType[] = [
         dischargeRate: 5,
       },
     },
+  },
+  // Merger — 3 inputs (West, North, South) + 1 output (East), 1×1.
+  // Rotation reuses the existing system: at rotation=North the ports are as
+  // declared here; each 90° step rotates all sides accordingly, so all four
+  // orientations produce a valid 3-in/1-out topology.
+  {
+    id: MERGER_BASIC_BUILDING_TYPE_ID,
+    name: 'Fusionneur',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [
+      { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'in_north', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.North },
+      { id: 'in_south', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.South },
+      { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
   },
   {
     id: 'placeholder_1x1',
