@@ -91,6 +91,9 @@ export class GameEngine {
       if (type.requiresResourceDeposit && this.grid.getResource(x, y) === ResourceType.None) {
         return { ok: false, reason: 'resource_required' };
       }
+      if (type.forbidsResourceDeposit && this.grid.getResource(x, y) !== ResourceType.None) {
+        return { ok: false, reason: 'resource_forbidden' };
+      }
     }
     return { ok: true };
   }

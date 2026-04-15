@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
-import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import { EXTRACTOR_BUILDING_TYPE_ID, STORAGE_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
@@ -112,5 +112,34 @@ describe('GameEngine building placement', () => {
 
   it('catalog validation runs on construction (does not throw for valid catalog)', () => {
     expect(() => new GameEngine(800, 600)).not.toThrow();
+  });
+
+  describe('storage_basic placement (forbidsResourceDeposit)', () => {
+    it('places storage on empty ground', () => {
+      const id = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 });
+      expect(id).not.toBeNull();
+      expect(engine.getBuildingAt(5, 5)?.id).toBe(id);
+    });
+
+    it('refuses placement when origin tile has a resource deposit', () => {
+      engine.grid.setResource(5, 5, ResourceType.IronOre);
+      const result = engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 });
+      expect(result).toEqual({ ok: false, reason: 'resource_forbidden' });
+      expect(engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 })).toBeNull();
+      expect(engine.getBuildings().size).toBe(0);
+    });
+
+    it('refuses placement when any tile in the 3x3 footprint has a resource deposit', () => {
+      engine.grid.setResource(7, 7, ResourceType.Coal);
+      const result = engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 });
+      expect(result).toEqual({ ok: false, reason: 'resource_forbidden' });
+      expect(engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 })).toBeNull();
+    });
+
+    it('extractor on a resource deposit is unaffected by forbidsResourceDeposit (regression)', () => {
+      engine.grid.setResource(8, 8, ResourceType.IronOre);
+      const id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 });
+      expect(id).not.toBeNull();
+    });
   });
 });
