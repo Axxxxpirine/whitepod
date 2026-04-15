@@ -26,7 +26,7 @@ function placeExtractor(engine: GameEngine, x: number, y: number) {
 }
 
 describe('BeltToolController', () => {
-  it('removes the full belt line when clicking a belt segment with the belt tool', () => {
+  it('does not remove a belt segment when clicking it with the belt tool', () => {
     const engine = makeEngine();
     const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
     const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
@@ -46,15 +46,13 @@ describe('BeltToolController', () => {
     const point = screenPointForTile(engine, segment.origin.x, segment.origin.y);
     controller.onPointerDown(point.sx, point.sy, 0);
 
-    expect(engine.getConnections().size).toBe(0);
+    // Clicking a belt segment in belt mode no longer deletes it
     for (const segmentId of placed.segmentIds) {
-      expect(engine.buildings.get(segmentId)).toBeNull();
+      expect(engine.buildings.get(segmentId)).not.toBeNull();
     }
-    expect(engine.buildings.get(source)).not.toBeNull();
-    expect(engine.buildings.get(target)).not.toBeNull();
   });
 
-  it('selects the clicked storage side when connecting a belt', () => {
+  it('selects the clicked storage side when connecting a belt via two clicks', () => {
     const engine = makeEngine();
     placeExtractor(engine, 5, 13);
     const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
@@ -68,13 +66,37 @@ describe('BeltToolController', () => {
     const sourcePoint = screenPointForTile(engine, 5, 13);
     const eastSidePoint = screenPointForTile(engine, 12, 11);
 
+    // First click: select source
     controller.onPointerDown(sourcePoint.sx, sourcePoint.sy, 0);
+    // Hover to show preview
     controller.onPointerMove(eastSidePoint.sx, eastSidePoint.sy);
-    controller.onPointerUp(eastSidePoint.sx, eastSidePoint.sy, 0);
+    // Second click: place belt to target
+    controller.onPointerDown(eastSidePoint.sx, eastSidePoint.sy, 0);
 
     expect(previewCount).toBeGreaterThan(0);
     const storageConnections = engine.getConnectionsOf(storage);
     expect(storageConnections).toHaveLength(1);
     expect(storageConnections[0].to).toEqual({ building: storage, port: 'in_east' });
+  });
+
+  it('clears the pending source when leaving the belt tool', () => {
+    const engine = makeEngine();
+    placeExtractor(engine, 5, 13);
+    const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+
+    let selectedTool: SelectedTool = { kind: 'belt' };
+    const controller = new BeltToolController(engine, () => selectedTool, () => {});
+
+    const sourcePoint = screenPointForTile(engine, 5, 13);
+    const eastSidePoint = screenPointForTile(engine, 12, 11);
+
+    controller.onPointerDown(sourcePoint.sx, sourcePoint.sy, 0);
+    selectedTool = { kind: 'select' };
+    controller.clearPendingPlacement();
+    selectedTool = { kind: 'belt' };
+
+    controller.onPointerDown(eastSidePoint.sx, eastSidePoint.sy, 0);
+
+    expect(engine.getConnectionsOf(storage)).toHaveLength(0);
   });
 });

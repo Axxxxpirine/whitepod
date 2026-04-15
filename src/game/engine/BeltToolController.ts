@@ -1,4 +1,4 @@
-import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
+import { getBuildingType } from '../data/buildingCatalog';
 import { worldTileOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from './GameEngine';
 import { PortKind, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
@@ -9,7 +9,7 @@ interface PortEndpoint {
   readonly port: PortId;
 }
 
-interface DragState {
+interface PendingFrom {
   readonly from: PortEndpoint;
 }
 
@@ -19,7 +19,7 @@ export class BeltToolController {
   private readonly engine: GameEngine;
   private readonly getSelectedTool: () => SelectedTool;
   private readonly setPreview: (preview: BeltPlacementPreviewModel | null) => void;
-  private dragState: DragState | null = null;
+  private pendingFrom: PendingFrom | null = null;
 
   constructor(
     engine: GameEngine,
@@ -35,21 +35,21 @@ export class BeltToolController {
     if (button !== 0 || this.getSelectedTool().kind !== 'belt') return;
 
     const tile = this.engine.screenToTile(screenX, screenY);
-    const building = this.engine.getBuildingAt(tile.x, tile.y);
-    if (building && isBeltTypeId(building.typeId)) {
-      this.engine.removeBelt(building.id);
-      this.cancel();
-      return;
-    }
 
-    const from = this.getEndpointAtScreen(tile, PortKind.Output);
-    if (!from) {
+    if (!this.pendingFrom) {
+      // First click: select the source output port
+      const from = this.getEndpointAtScreen(tile, PortKind.Output);
+      if (!from) return;
+      this.pendingFrom = { from };
+      this.setPreview(null);
+    } else {
+      // Second click: place the belt to the target input port
+      const from = this.pendingFrom.from;
+      const target = this.getEndpointAtScreen(tile, PortKind.Input);
       this.cancel();
-      return;
+      if (!target || target.building === from.building) return;
+      this.engine.placeBelt(from, target);
     }
-
-    this.dragState = { from };
-    this.setPreview(null);
   }
 
   onPointerMove(screenX: number, screenY: number): void {
@@ -57,15 +57,15 @@ export class BeltToolController {
       this.cancel();
       return;
     }
-    if (!this.dragState) return;
+    if (!this.pendingFrom) return;
 
     const target = this.getEndpointAtScreen(this.engine.screenToTile(screenX, screenY), PortKind.Input);
-    if (!target || target.building === this.dragState.from.building) {
+    if (!target || target.building === this.pendingFrom.from.building) {
       this.setPreview(null);
       return;
     }
 
-    const result = this.engine.canPlaceBelt(this.dragState.from, target);
+    const result = this.engine.canPlaceBelt(this.pendingFrom.from, target);
     if (!result.ok) {
       this.setPreview(null);
       return;
@@ -81,22 +81,13 @@ export class BeltToolController {
     });
   }
 
-  onPointerUp(screenX: number, screenY: number, button: number): void {
-    if (button !== 0 || !this.dragState) {
-      this.cancel();
-      return;
-    }
-
-    const from = this.dragState.from;
-    const target = this.getEndpointAtScreen(this.engine.screenToTile(screenX, screenY), PortKind.Input);
-    this.cancel();
-
-    if (!target || target.building === from.building) return;
-    this.engine.placeBelt(from, target);
+  onPointerUp(_screenX: number, _screenY: number, _button: number): void {
+    // No-op: placement is handled by the two-click flow in onPointerDown
   }
 
   onPointerLeave(): void {
-    this.cancel();
+    // Clear the preview but keep the pending source so the user can come back
+    this.setPreview(null);
   }
 
   onKeyDown(key: string): void {
@@ -105,8 +96,12 @@ export class BeltToolController {
     }
   }
 
+  clearPendingPlacement(): void {
+    this.cancel();
+  }
+
   private cancel(): void {
-    this.dragState = null;
+    this.pendingFrom = null;
     this.setPreview(null);
   }
 
