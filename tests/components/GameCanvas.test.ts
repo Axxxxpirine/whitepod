@@ -48,7 +48,7 @@ describe('GameCanvas helpers', () => {
     expect(setSelectedTool).not.toHaveBeenCalled();
   });
 
-  it('returns to select mode after a successful second click', () => {
+  it('keeps energy-link mode active after a successful second click', () => {
     const engine = makeEngine();
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     engine.grid.setResource(2, 1, ResourceType.IronOre);
@@ -71,7 +71,7 @@ describe('GameCanvas helpers', () => {
 
     expect(engine.areBuildingsEnergyLinked(solarId, extractorId)).toBe(true);
     expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(null);
-    expect(setSelectedTool).toHaveBeenCalledWith({ kind: 'select' });
+    expect(setSelectedTool).not.toHaveBeenCalled();
     expect(setSelectedBuilding).toHaveBeenCalledWith(solarId);
   });
 

@@ -128,4 +128,15 @@ describe('GameEngine energy networks', () => {
     expect(solarNetwork).toMatchObject({ production: 8, consumption: 0, remaining: 8 });
     expect(extractorNetwork).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
   });
+
+  it('refuses energy links for buildings outside the electrical system', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const storageId = engine.placeBuilding('storage_basic', { x: 4, y: 4 })!;
+    const placeholderId = engine.placeBuilding('placeholder_1x1', { x: 8, y: 8 })!;
+
+    expect(engine.connectBuildings(solarId, storageId)).toBe(false);
+    expect(engine.connectBuildings(solarId, placeholderId)).toBe(false);
+    expect(engine.areBuildingsEnergyLinked(solarId, storageId)).toBe(false);
+    expect(engine.areBuildingsEnergyLinked(solarId, placeholderId)).toBe(false);
+  });
 });

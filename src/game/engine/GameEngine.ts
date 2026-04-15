@@ -165,7 +165,12 @@ export class GameEngine {
   }
 
   connectBuildings(a: BuildingId, b: BuildingId): boolean {
-    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    const buildingA = this.buildings.get(a);
+    const buildingB = this.buildings.get(b);
+    if (!buildingA || !buildingB) return false;
+    if (!this.isEnergyLinkableBuilding(buildingA.typeId) || !this.isEnergyLinkableBuilding(buildingB.typeId)) {
+      return false;
+    }
     const connected = this.energyNetwork.connect(a, b);
     if (connected) {
       this.notify('world');
@@ -584,6 +589,12 @@ export class GameEngine {
       consumption,
       remaining: production - consumption,
     };
+  }
+
+  private isEnergyLinkableBuilding(typeId: BuildingTypeId): boolean {
+    const type = getBuildingType(typeId);
+    if (!type?.energy) return false;
+    return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0;
   }
 
   private notify(kind: GameEngineChangeKind): void {
