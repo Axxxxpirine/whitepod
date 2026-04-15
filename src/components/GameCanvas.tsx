@@ -5,6 +5,7 @@ import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
+import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import {
@@ -15,7 +16,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
-import { getBuildingType } from '@/game/data/buildingCatalog';
+import { getBuildingType, SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
 
 const WORLD_SAVE_DELAY_MS = 150;
@@ -79,6 +80,7 @@ export function GameCanvas() {
     let resourceRenderer: ResourceRenderer | null = null;
     let buildingRenderer: BuildingRenderer | null = null;
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
+    let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: (() => void) | null = null;
@@ -102,7 +104,6 @@ export function GameCanvas() {
         autoDensity: true,
       });
 
-      // Mark init as complete so the cleanup knows it's safe to call destroy()
       initCompleted = true;
 
       if (destroyed) {
@@ -111,8 +112,6 @@ export function GameCanvas() {
       }
 
       container.appendChild(app.canvas);
-
-      // Load resource sprites before generating the map
       await loadResourceTextures();
 
       if (destroyed) {
@@ -176,6 +175,11 @@ export function GameCanvas() {
         const { selectedTool, hoverTile } = useGameStore.getState();
         return { selectedTool, hoverTile };
       });
+      energyLinkRenderer = new EnergyLinkRenderer(app, engine, () => {
+        const { selectedBuildingId } = useGameStore.getState();
+        return { inspectedBuildingId: selectedBuildingId };
+      });
+
       const currentInputHandler = new InputHandler(engine, () => useGameStore.getState().selectedTool);
       currentInputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
       currentInputHandler.setBuildingSelectedCallback((buildingId) => {
@@ -185,29 +189,48 @@ export function GameCanvas() {
           state.setSelectedBuildingAnchor(null);
         }
       });
-      currentInputHandler.setBuildingPlacedCallback(() => {
+      currentInputHandler.setBuildingPlacedCallback((buildingId) => {
         const state = useGameStore.getState();
-        state.setSelectedTool({ kind: 'select' });
         state.setSelectedBuilding(null);
         state.setSelectedBuildingAnchor(null);
-      });
-      const canvas = app.canvas;
 
-      handlePointerDown = (e) => {
-        currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
-      };
-      handlePointerMove = (e) => {
-        currentInputHandler.onPointerMove(e.offsetX, e.offsetY);
-      };
-      handlePointerUp = () => {
-        currentInputHandler.onPointerUp();
-      };
-      handlePointerLeave = () => {
-        currentInputHandler.onPointerLeave();
-      };
-      handleContextMenu = (e) => {
-        e.preventDefault();
-      };
+        if (
+          state.selectedTool.kind === 'building' &&
+          state.selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID &&
+          state.linkSolarOnPlacement
+        ) {
+          state.setPendingEnergyLinkSource(buildingId);
+          state.setSelectedTool({ kind: 'energy_link' });
+          return;
+        }
+
+        state.setPendingEnergyLinkSource(null);
+        state.setSelectedTool({ kind: 'select' });
+      });
+      currentInputHandler.setEnergyLinkClickCallback((clickedBuildingId) => {
+        const state = useGameStore.getState();
+        const sourceId = state.pendingEnergyLinkSource;
+
+        if (sourceId === null) {
+          state.setPendingEnergyLinkSource(clickedBuildingId);
+          state.setSelectedBuilding(clickedBuildingId);
+          return;
+        }
+
+        if (sourceId === clickedBuildingId) return;
+
+        engine.connectBuildings(sourceId, clickedBuildingId);
+        state.setPendingEnergyLinkSource(null);
+        state.setSelectedTool({ kind: 'select' });
+        state.setSelectedBuilding(sourceId);
+      });
+
+      const canvas = app.canvas;
+      handlePointerDown = (e) => currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
+      handlePointerMove = (e) => currentInputHandler.onPointerMove(e.offsetX, e.offsetY);
+      handlePointerUp = () => currentInputHandler.onPointerUp();
+      handlePointerLeave = () => currentInputHandler.onPointerLeave();
+      handleContextMenu = (e) => e.preventDefault();
       handleWheel = (e) => {
         e.preventDefault();
         currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode);
@@ -221,9 +244,7 @@ export function GameCanvas() {
       canvas.addEventListener('wheel', handleWheel, { passive: false });
 
       resizeObserver = new ResizeObserver(() => {
-        if (app) {
-          engine.viewport.resize(app.screen.width, app.screen.height);
-        }
+        if (app) engine.viewport.resize(app.screen.width, app.screen.height);
       });
       resizeObserver.observe(container);
 
@@ -232,23 +253,17 @@ export function GameCanvas() {
         const { selectedBuildingAnchor, selectedBuildingId } = state;
 
         if (selectedBuildingId === null) {
-          if (selectedBuildingAnchor !== null) {
-            state.setSelectedBuildingAnchor(null);
-          }
+          if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
         } else {
           const building = engine.getBuildings().get(selectedBuildingId);
           if (!building) {
             state.setSelectedBuilding(null);
-            if (selectedBuildingAnchor !== null) {
-              state.setSelectedBuildingAnchor(null);
-            }
+            if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
           } else {
             const type = getBuildingType(building.typeId);
             if (!type) {
               state.setSelectedBuilding(null);
-              if (selectedBuildingAnchor !== null) {
-                state.setSelectedBuildingAnchor(null);
-              }
+              if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
             } else {
               const worldX = building.origin.x * TILE_SIZE + (type.footprint.w * TILE_SIZE) / 2;
               const worldY = building.origin.y * TILE_SIZE + type.footprint.h * TILE_SIZE;
@@ -268,6 +283,7 @@ export function GameCanvas() {
         resourceRenderer!.render();
         buildingRenderer!.render();
         placementPreviewRenderer!.render();
+        energyLinkRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -276,8 +292,6 @@ export function GameCanvas() {
 
     return () => {
       destroyed = true;
-      // Only destroy if init() completed — otherwise the async init() will
-      // see destroyed=true and call destroy() itself after app.init() finishes.
       if (initCompleted) {
         const shouldPersistOnCleanup = useGameStore.getState().engine === currentEngine;
         if (shouldPersistOnCleanup) {
@@ -296,6 +310,7 @@ export function GameCanvas() {
         if (app?.canvas && handleContextMenu) app.canvas.removeEventListener('contextmenu', handleContextMenu);
         if (app?.canvas && handleWheel) app.canvas.removeEventListener('wheel', handleWheel);
         placementPreviewRenderer?.destroy();
+        energyLinkRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         gridRenderer?.destroy();

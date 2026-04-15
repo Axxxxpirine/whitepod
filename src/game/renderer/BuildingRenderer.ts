@@ -2,6 +2,7 @@ import { Container, Sprite, Texture, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
 } from '../data/buildingCatalog';
@@ -12,6 +13,7 @@ const BUILDING_INSET = 2;
 const BUILDING_TINTS: Record<string, number> = {
   [EXTRACTOR_BUILDING_TYPE_ID]: 0xf5b041,
   [STORAGE_BUILDING_TYPE_ID]: 0x5dade2,
+  [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x82e0aa,
 };
 
 function isBuildingVisible(

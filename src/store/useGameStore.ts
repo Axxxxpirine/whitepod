@@ -15,6 +15,8 @@ interface GameState {
   selectedBuildingId: BuildingId | null;
   selectedBuildingAnchor: ScreenPoint | null;
   sessionEpoch: number;
+  pendingEnergyLinkSource: BuildingId | null;
+  linkSolarOnPlacement: boolean;
   setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
   setSelectedTool: (tool: SelectedTool) => void;
@@ -22,6 +24,8 @@ interface GameState {
   setSelectedBuilding: (id: BuildingId | null) => void;
   setSelectedBuildingAnchor: (anchor: ScreenPoint | null) => void;
   resetSession: () => void;
+  setPendingEnergyLinkSource: (source: BuildingId | null) => void;
+  setLinkSolarOnPlacement: (value: boolean) => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -31,6 +35,8 @@ export const useGameStore = create<GameState>((set) => ({
   selectedBuildingId: null,
   selectedBuildingAnchor: null,
   sessionEpoch: 0,
+  pendingEnergyLinkSource: null,
+  linkSolarOnPlacement: true,
   setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
   setSelectedTool: (tool) => set({ selectedTool: tool }),
@@ -48,4 +54,6 @@ export const useGameStore = create<GameState>((set) => ({
       sessionEpoch: state.sessionEpoch + 1,
     }));
   },
+  setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
+  setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
 }));

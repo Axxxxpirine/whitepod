@@ -25,6 +25,7 @@ import {
   type PlacementResult,
   type Port,
   type PortId,
+  type EnergyNetworkBalance,
   type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
@@ -33,6 +34,7 @@ import { DEFAULT_MAP_SEED } from '../constants';
 import { isInBounds } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
+import { EnergyNetwork } from '../systems/EnergyNetwork';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -68,6 +70,7 @@ export class GameEngine {
   readonly viewport: Viewport;
   readonly buildings: BuildingRegistry;
   readonly connections: ConnectionRegistry;
+  readonly energyNetwork: EnergyNetwork;
   mapSeed: number;
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
 
@@ -78,6 +81,7 @@ export class GameEngine {
     this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
     this.buildings = options.buildings ?? new BuildingRegistry();
     this.connections = options.connections ?? new ConnectionRegistry();
+    this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
   }
 
@@ -134,6 +138,7 @@ export class GameEngine {
     const type = getBuildingType(typeId)!;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
+      this.energyNetwork.registerBuilding(id);
       this.notify('world');
     }
     return id;
@@ -145,11 +150,33 @@ export class GameEngine {
     const type = getBuildingType(building.typeId);
     if (!type) return false;
     this.connections.unregisterAllFor(id);
+    this.energyNetwork.unregisterBuilding(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.notify('world');
     }
     return removed;
+  }
+
+  connectBuildings(a: BuildingId, b: BuildingId): boolean {
+    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    return this.energyNetwork.connect(a, b);
+  }
+
+  getEnergyNetworkForBuilding(buildingId: BuildingId): EnergyNetworkBalance | null {
+    if (!this.buildings.get(buildingId)) return null;
+    const component = this.energyNetwork.getComponentFor(buildingId);
+    if (component.length === 0) return null;
+    return this.computeEnergyBalance(component);
+  }
+
+  getEnergyNetworkBalances(): readonly EnergyNetworkBalance[] {
+    return this.energyNetwork.getComponents().map((component) => this.computeEnergyBalance(component));
+  }
+
+  getEnergyLinkedBuildings(buildingId: BuildingId): readonly BuildingId[] {
+    if (!this.buildings.get(buildingId)) return [];
+    return this.energyNetwork.getNeighbors(buildingId);
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -315,6 +342,27 @@ export class GameEngine {
 
   getViewportSnapshot(): ViewportSnapshot {
     return this.viewport.getSnapshot();
+  }
+
+  private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {
+    let production = 0;
+    let consumption = 0;
+
+    for (const buildingId of buildingIds) {
+      const building = this.buildings.get(buildingId);
+      if (!building) continue;
+      const type = getBuildingType(building.typeId);
+      if (!type?.energy) continue;
+      production += type.energy.production ?? 0;
+      consumption += type.energy.consumption ?? 0;
+    }
+
+    return {
+      buildingIds: [...buildingIds].sort((a, b) => a - b),
+      production,
+      consumption,
+      remaining: production - consumption,
+    };
   }
 
   private notify(kind: GameEngineChangeKind): void {

@@ -8,6 +8,7 @@ import {
 
 export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
 export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
+export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 
 const entries: readonly BuildingType[] = [
   {
@@ -17,6 +18,9 @@ const entries: readonly BuildingType[] = [
     allowedTiles: [TileType.Ground],
     requiresResourceDeposit: true,
     ports: [],
+    energy: {
+      consumption: 5,
+    },
   },
   {
     id: STORAGE_BUILDING_TYPE_ID,
@@ -25,6 +29,17 @@ const entries: readonly BuildingType[] = [
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
     ports: [],
+  },
+  {
+    id: SOLAR_PANEL_BUILDING_TYPE_ID,
+    name: 'Panneau solaire',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [],
+    energy: {
+      production: 8,
+    },
   },
   {
     id: 'placeholder_1x1',

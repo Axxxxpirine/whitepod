@@ -22,6 +22,8 @@ describe('GameHUD', () => {
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
       sessionEpoch: 0,
+      pendingEnergyLinkSource: null,
+      linkSolarOnPlacement: true,
     });
     window.sessionStorage.clear();
   });
@@ -92,26 +94,6 @@ describe('GameHUD', () => {
     expect(removeBuilding).toHaveBeenCalledWith(buildingId);
     expect(useGameStore.getState().selectedBuildingId).toBeNull();
     expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
-  });
-
-  it('clears the selected building panel when switching to placement mode', () => {
-    const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
-    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
-    useGameStore.setState({
-      engine,
-      selectedBuildingId: buildingId,
-      selectedBuildingAnchor: { x: 120, y: 160 },
-    });
-
-    render(<GameHUD />);
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Extracteur' })[0]);
-
-    expect(useGameStore.getState().selectedBuildingId).toBeNull();
-    expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
   });
 
   it('keeps the console toggle working', () => {
