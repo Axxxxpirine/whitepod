@@ -11,9 +11,9 @@ function makeEngine() {
 }
 
 describe('getPlacementPreviewModel', () => {
-  it('returns null for tile tool', () => {
+  it('returns null for select tool', () => {
     const engine = makeEngine();
-    const selectedTool: SelectedTool = { kind: 'tile', tile: TileType.Ground };
+    const selectedTool: SelectedTool = { kind: 'select' };
 
     const preview = getPlacementPreviewModel(engine, selectedTool, { x: 10, y: 10 });
 

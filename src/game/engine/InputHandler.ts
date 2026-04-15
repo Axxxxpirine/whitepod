@@ -1,5 +1,5 @@
 import type { GameEngine } from './GameEngine';
-import type { SelectedTool } from '../types';
+import type { BuildingId, SelectedTool } from '../types';
 import { screenToGrid } from './CoordinateTransform';
 import { isInBounds } from '../data/coords';
 
@@ -11,6 +11,7 @@ export class InputHandler {
   private lastPanY = 0;
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
   private onBuildingPlaced: (() => void) | null = null;
+  private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
 
   constructor(engine: GameEngine, getSelectedTool: () => SelectedTool) {
     this.engine = engine;
@@ -25,6 +26,10 @@ export class InputHandler {
     this.onBuildingPlaced = cb;
   }
 
+  setBuildingSelectedCallback(cb: ((buildingId: BuildingId | null) => void) | null): void {
+    this.onBuildingSelected = cb;
+  }
+
   onPointerDown(screenX: number, screenY: number, button: number): void {
     if (button === 1 || button === 2) {
       this.isPanning = true;
@@ -32,16 +37,18 @@ export class InputHandler {
       this.lastPanY = screenY;
     } else if (button === 0) {
       const coord = screenToGrid(this.engine.viewport, screenX, screenY);
-      if (isInBounds(coord.x, coord.y)) {
-        const selectedTool = this.getSelectedTool();
-        if (selectedTool.kind === 'tile') {
-          this.engine.placeTile(coord.x, coord.y, selectedTool.tile);
-        } else {
-          const buildingId = this.engine.placeBuilding(selectedTool.buildingType, coord);
-          if (buildingId !== null) {
-            this.onBuildingPlaced?.();
-          }
-        }
+      if (!isInBounds(coord.x, coord.y)) return;
+
+      const selectedTool = this.getSelectedTool();
+      if (selectedTool.kind === 'select') {
+        const building = this.engine.getBuildingAt(coord.x, coord.y);
+        this.onBuildingSelected?.(building?.id ?? null);
+        return;
+      }
+
+      const buildingId = this.engine.placeBuilding(selectedTool.buildingType, coord);
+      if (buildingId !== null) {
+        this.onBuildingPlaced?.();
       }
     }
   }

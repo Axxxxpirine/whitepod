@@ -12,6 +12,7 @@ export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
 const entries: readonly BuildingType[] = [
   {
     id: EXTRACTOR_BUILDING_TYPE_ID,
+    name: 'Extracteur',
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     requiresResourceDeposit: true,
@@ -19,6 +20,7 @@ const entries: readonly BuildingType[] = [
   },
   {
     id: STORAGE_BUILDING_TYPE_ID,
+    name: 'Stockage',
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -26,18 +28,21 @@ const entries: readonly BuildingType[] = [
   },
   {
     id: 'placeholder_1x1',
+    name: 'Placeholder 1x1',
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [],
   },
   {
     id: 'placeholder_3x3',
+    name: 'Placeholder 3x3',
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     ports: [],
   },
   {
     id: 'placeholder_node_1x1',
+    name: 'Placeholder noeud 1x1',
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
@@ -47,6 +52,7 @@ const entries: readonly BuildingType[] = [
   },
   {
     id: 'placeholder_node_3x3',
+    name: 'Placeholder noeud 3x3',
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     ports: [

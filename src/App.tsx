@@ -3,7 +3,7 @@ import { GameHUD } from '@/components/GameHUD';
 
 function App() {
   return (
-    <div className="w-screen h-screen">
+    <div className="relative h-screen w-screen">
       <GameCanvas />
       <GameHUD />
     </div>

@@ -1,16 +1,25 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
 import { useGameStore } from '@/store/useGameStore';
 import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
-import { TileType } from '@/game/types';
+import { GameEngine } from '@/game/engine/GameEngine';
+import { ResourceType, TileType } from '@/game/types';
+
+function makeEngine() {
+  const engine = new GameEngine(640, 480);
+  engine.grid.fill(TileType.Ground);
+  return engine;
+}
 
 describe('GameHUD', () => {
   beforeEach(() => {
     useGameStore.setState({
       engine: null,
       hoverTile: { x: 12, y: 7 },
-      selectedTool: { kind: 'tile', tile: TileType.Ground },
+      selectedTool: { kind: 'select' },
+      selectedBuildingId: null,
+      selectedBuildingAnchor: null,
     });
   });
 
@@ -33,7 +42,7 @@ describe('GameHUD', () => {
     expect(screen.getByRole('button', { name: 'Extracteur' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('toggles back to ground mode on second click', () => {
+  it('toggles back to select mode on second click', () => {
     useGameStore.setState({
       selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
     });
@@ -42,11 +51,64 @@ describe('GameHUD', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Extracteur' }));
 
-    expect(useGameStore.getState().selectedTool).toEqual({
-      kind: 'tile',
-      tile: TileType.Ground,
-    });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
     expect(screen.getByRole('button', { name: 'Extracteur' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('renders the selected building panel when a building is selected', () => {
+    const engine = makeEngine();
+    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.getByText('Extracteur', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Supprimer le bâtiment' })).toBeInTheDocument();
+  });
+
+  it('deletes the selected building and closes the panel', () => {
+    const engine = makeEngine();
+    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
+    const removeBuilding = vi.spyOn(engine, 'removeBuilding');
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le bâtiment' }));
+
+    expect(removeBuilding).toHaveBeenCalledWith(buildingId);
+    expect(useGameStore.getState().selectedBuildingId).toBeNull();
+    expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
+  });
+
+  it('clears the selected building panel when switching to placement mode', () => {
+    const engine = makeEngine();
+    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Extracteur' })[0]);
+
+    expect(useGameStore.getState().selectedBuildingId).toBeNull();
+    expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
   });
 
   it('keeps the console toggle working', () => {

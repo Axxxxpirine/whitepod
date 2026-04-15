@@ -8,7 +8,9 @@ import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRender
 import { InputHandler } from '@/game/engine/InputHandler';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
-import { TileType } from '@/game/types';
+import { TILE_SIZE } from '@/game/constants';
+import { getBuildingType } from '@/game/data/buildingCatalog';
+import { worldToScreen } from '@/game/engine/CoordinateTransform';
 
 const MAP_SEED = 42;
 
@@ -79,8 +81,18 @@ export function GameCanvas() {
       });
       const currentInputHandler = new InputHandler(engine, () => useGameStore.getState().selectedTool);
       currentInputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
+      currentInputHandler.setBuildingSelectedCallback((buildingId) => {
+        const state = useGameStore.getState();
+        state.setSelectedBuilding(buildingId);
+        if (buildingId === null) {
+          state.setSelectedBuildingAnchor(null);
+        }
+      });
       currentInputHandler.setBuildingPlacedCallback(() => {
-        useGameStore.getState().setSelectedTool({ kind: 'tile', tile: TileType.Ground });
+        const state = useGameStore.getState();
+        state.setSelectedTool({ kind: 'select' });
+        state.setSelectedBuilding(null);
+        state.setSelectedBuildingAnchor(null);
       });
       const canvas = app.canvas;
 
@@ -119,6 +131,42 @@ export function GameCanvas() {
       resizeObserver.observe(container);
 
       app.ticker.add(() => {
+        const state = useGameStore.getState();
+        const { selectedBuildingAnchor, selectedBuildingId } = state;
+
+        if (selectedBuildingId === null) {
+          if (selectedBuildingAnchor !== null) {
+            state.setSelectedBuildingAnchor(null);
+          }
+        } else {
+          const building = engine.getBuildings().get(selectedBuildingId);
+          if (!building) {
+            state.setSelectedBuilding(null);
+            if (selectedBuildingAnchor !== null) {
+              state.setSelectedBuildingAnchor(null);
+            }
+          } else {
+            const type = getBuildingType(building.typeId);
+            if (!type) {
+              state.setSelectedBuilding(null);
+              if (selectedBuildingAnchor !== null) {
+                state.setSelectedBuildingAnchor(null);
+              }
+            } else {
+              const worldX = building.origin.x * TILE_SIZE + (type.footprint.w * TILE_SIZE) / 2;
+              const worldY = building.origin.y * TILE_SIZE + type.footprint.h * TILE_SIZE;
+              const anchor = worldToScreen(engine.viewport, worldX, worldY);
+              if (
+                selectedBuildingAnchor === null ||
+                selectedBuildingAnchor.x !== anchor.sx ||
+                selectedBuildingAnchor.y !== anchor.sy
+              ) {
+                state.setSelectedBuildingAnchor({ x: anchor.sx, y: anchor.sy });
+              }
+            }
+          }
+        }
+
         gridRenderer!.render();
         resourceRenderer!.render();
         buildingRenderer!.render();
