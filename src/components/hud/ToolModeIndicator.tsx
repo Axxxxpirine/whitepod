@@ -28,14 +28,14 @@ export function ToolModeIndicator() {
   if (!toolLabel && !hasPendingContext) return null;
 
   return (
-    <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/70 px-3 py-1.5 text-xs text-white/85 shadow-xl backdrop-blur-md">
+    <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2 rounded-md border border-accent bg-surface/90 px-3 py-1.5 text-xs text-ink backdrop-blur-md">
       {toolLabel && (
         <span className="font-medium">
-          <span className="text-white/50">Mode&nbsp;·&nbsp;</span>
+          <span className="label text-ink-muted">Mode&nbsp;·&nbsp;</span>
           {toolLabel}
         </span>
       )}
-      <span className="font-mono text-[10px] text-white/50">Esc pour annuler</span>
+      <span className="tabular-nums text-[10px] text-ink-muted">Esc pour annuler</span>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const powerState = engine.getBuildingPowerState(building.id);
     const isPowered = powerState === 'powered';
     const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
-    const powerClass = isPowered ? 'text-emerald-300' : powerState === 'unpowered' ? 'text-red-300' : undefined;
+    const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
     const rate = isPowered ? EXTRACTOR_RATE_PER_MIN : 0;
 
     rows = (
@@ -46,7 +46,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
           icon={Activity}
           label="Debit"
           value={`${rate}/min`}
-          valueClass={isPowered ? 'text-white/90' : 'text-white/40'}
+          valueClass={isPowered ? 'text-ink' : 'text-ink-muted'}
         />
       </>
     );
@@ -66,21 +66,24 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
       const charge = engine.batteryCharges.get(building.id) ?? 0;
       const percent = Math.round((charge / batterySpec.capacity) * 100);
 
+      const lowCharge = percent < 20;
       rows = (
         <>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Battery size={11} className="shrink-0 text-white/40" />
-              <span className="text-xs font-medium text-white/90">{percent}%</span>
+              <Battery size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+              <span className="text-xs font-medium tabular-nums text-ink">{percent}%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Zap size={11} className="shrink-0 text-white/40" />
-              <span className="text-xs font-medium text-white/90">{Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh</span>
+              <Zap size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+              <span className="text-xs font-medium tabular-nums text-ink">
+                {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
+              </span>
             </div>
           </div>
-          <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-sm bg-surface-2">
             <div
-              className="h-full rounded-full bg-teal-400 transition-all duration-300"
+              className={`h-full rounded-sm transition-all duration-300 ${lowCharge ? 'bg-accent-warm' : 'bg-accent'}`}
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -131,7 +134,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const network = engine.getEnergyNetworkForBuilding(building.id);
     const bilanValue = network !== null ? `${Math.round(network.remaining)} kW` : 'Reseau isole';
     const bilanClass =
-      network === null ? 'text-white/50' : network.remaining >= 0 ? 'text-emerald-300' : 'text-red-300';
+      network === null ? 'text-ink-muted' : network.remaining >= 0 ? 'text-ok' : 'text-error';
 
     rows = (
       <>
@@ -145,7 +148,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
   return (
     <div className="flex flex-col gap-1 pt-0.5">
-      <div className="h-px bg-white/10" />
+      <div className="h-px bg-border" />
       {rows}
     </div>
   );
@@ -164,9 +167,9 @@ function StatRow({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <Icon size={11} className="shrink-0 text-white/40" />
-      <span className="text-xs text-white/50">{label}</span>
-      <span className={`ml-auto text-xs font-medium ${valueClass ?? 'text-white/90'}`}>{value}</span>
+      <Icon size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+      <span className="label text-ink-muted">{label}</span>
+      <span className={`ml-auto text-xs font-medium tabular-nums ${valueClass ?? 'text-ink'}`}>{value}</span>
     </div>
   );
 }
@@ -175,7 +178,7 @@ function ResourceStockRow({ sprite, alt, count }: { sprite: string; alt: string;
   return (
     <div className="flex items-center gap-1">
       <img src={sprite} className="h-3.5 w-3.5 object-contain" alt={alt} />
-      <span className="text-xs font-medium text-white/90">{count}</span>
+      <span className="text-xs font-medium tabular-nums text-ink">{count}</span>
     </div>
   );
 }

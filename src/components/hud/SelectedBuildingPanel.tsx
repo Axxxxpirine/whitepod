@@ -52,17 +52,17 @@ export function SelectedBuildingPanel() {
       className="pointer-events-auto absolute"
       style={{ left: anchorX, top: anchorY + 12, transform: 'translateX(-50%)' }}
     >
-      <div className="flex w-[200px] flex-col gap-1.5 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
+      <div className="flex w-[200px] flex-col gap-1.5 rounded-md border border-border bg-surface/90 px-3 py-2 text-ink backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap text-sm font-medium">{type.name}</span>
           <button
             type="button"
             onClick={handleDelete}
-            className="ml-auto cursor-pointer rounded-lg bg-red-500/15 p-1.5 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
+            className="ml-auto cursor-pointer rounded-md border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
             aria-label="Supprimer le bâtiment"
             title="Supprimer le bâtiment"
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} strokeWidth={1.5} />
           </button>
         </div>
         <BuildingStatsPanel building={building} engine={engine} worldTick={worldTick} energyVersion={energyVersion} />

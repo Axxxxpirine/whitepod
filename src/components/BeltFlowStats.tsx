@@ -21,10 +21,10 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
   if (entries.length === 0) {
     return (
       <div className="flex flex-col gap-1 pt-0.5">
-        <div className="h-px bg-white/10" />
+        <div className="h-px bg-border" />
         <div className="flex items-center gap-1.5">
-          <Activity size={11} className="shrink-0 text-white/40" />
-          <span className="text-xs text-white/50">Aucun flux actif</span>
+          <Activity size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+          <span className="label text-ink-muted">Aucun flux actif</span>
         </div>
       </div>
     );
@@ -32,7 +32,7 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
 
   return (
     <div className="flex flex-col gap-1 pt-0.5">
-      <div className="h-px bg-white/10" />
+      <div className="h-px bg-border" />
       {entries.map((entry) => (
         <FlowRow key={entry.resourceType} resourceType={entry.resourceType} ratePerMinute={entry.ratePerMinute} />
       ))}
@@ -50,10 +50,10 @@ function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT;
       {sprite ? (
         <img src={sprite} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
       ) : (
-        <Activity size={11} className="shrink-0 text-white/40" />
+        <Activity size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
       )}
-      <span className="text-xs text-white/50">{label}</span>
-      <span className="ml-auto text-xs font-medium text-white/90">{rateText}</span>
+      <span className="label text-ink-muted">{label}</span>
+      <span className="ml-auto text-xs font-medium tabular-nums text-ink">{rateText}</span>
     </div>
   );
 }

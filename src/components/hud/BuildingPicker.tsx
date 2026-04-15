@@ -27,6 +27,12 @@ function hexColor(n: number): string {
   return `#${n.toString(16).padStart(6, '0')}`;
 }
 
+function ringStyle(color: number): React.CSSProperties {
+  // 1px architectural hairline ring matching the family token — replaces the
+  // old 2px glow boxShadow per DESIGN.md (no drop shadows, hairlines only).
+  return { boxShadow: `0 0 0 1px ${hexColor(color)}` };
+}
+
 export function BuildingPicker() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
@@ -89,15 +95,11 @@ export function BuildingPicker() {
               aria-describedby={tooltipId}
               className={[
                 'relative flex h-14 w-14 cursor-pointer flex-col items-center justify-center',
-                'overflow-hidden rounded-xl border border-white/10 transition-all',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
-                active ? 'bg-white/15' : 'bg-white/10 hover:bg-white/20',
+                'overflow-hidden rounded-md border border-border transition-all',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent',
+                active ? 'bg-surface-2' : 'bg-surface hover:bg-surface-2',
               ].join(' ')}
-              style={
-                active
-                  ? { boxShadow: `0 0 0 2px ${hexColor(entry.highlightColor)}` }
-                  : undefined
-              }
+              style={active ? ringStyle(entry.highlightColor) : undefined}
             >
               {/* Sprite or lucide icon */}
               <div className="flex h-8 w-8 items-center justify-center">
@@ -111,14 +113,15 @@ export function BuildingPicker() {
                 ) : (
                   IconComponent && (
                     <IconComponent
-                      className={`h-5 w-5 transition-colors ${active ? 'text-white' : 'text-white/70'}`}
+                      className={`h-5 w-5 transition-colors ${active ? 'text-ink' : 'text-ink-muted'}`}
+                      strokeWidth={1.5}
                     />
                   )
                 )}
               </div>
 
               {/* Shortcut badge — top-right corner */}
-              <span className="absolute right-1 top-0.5 font-mono text-[9px] text-white/50">
+              <span className="absolute right-1 top-0.5 tabular-nums text-[9px] text-ink-muted">
                 {entry.shortcut.toUpperCase()}
               </span>
 
@@ -133,7 +136,7 @@ export function BuildingPicker() {
               role="tooltip"
               className={[
                 'pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2',
-                'rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[10px] text-white/80 shadow-xl backdrop-blur-sm',
+                'rounded-md border border-border bg-surface px-2 py-1 text-[10px] text-ink',
                 'whitespace-nowrap opacity-0 transition-opacity duration-150',
                 'group-hover:opacity-100 group-focus-within:opacity-100',
               ].join(' ')}

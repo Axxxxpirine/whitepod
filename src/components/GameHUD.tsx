@@ -135,66 +135,61 @@ const globalEnergy = useMemo(() => {
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
-          <div className="min-w-[180px] rounded-xl border border-white/15 bg-black/75 px-3 py-2.5 text-sm text-white/90 shadow-xl backdrop-blur-md">
+          <div className="min-w-[180px] rounded-md border border-border bg-surface/90 px-3 py-2.5 text-sm text-ink backdrop-blur-md">
             {resourceCounts && (
               <>
-                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                  Ressources
-                </div>
+                <div className="label mb-1.5 text-ink-muted">Ressources</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
-                    <span className="font-bold">{resourceCounts.coal}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.coal ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.coal}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.coal ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
-                    <span className="font-bold">{resourceCounts.ironOre}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.ironOre ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.ironOre}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.ironOre ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
-                    <span className="font-bold">{resourceCounts.copperOre}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.copperOre ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.copperOre}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.copperOre ?? 0}/min</span>
                   </div>
                 </div>
               </>
             )}
 
-            {resourceCounts && globalEnergy && (
-              <div className="my-2 border-t border-white/10" />
-            )}
+            {resourceCounts && globalEnergy && <div className="my-2 border-t border-border" />}
 
             {globalEnergy && (
               <>
-                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                  Énergie
-                </div>
+                <div className="label mb-1.5 text-ink-muted">Énergie</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1">
                     <Zap
                       size={13}
-                      className={globalEnergy.remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}
+                      strokeWidth={1.5}
+                      className={globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
-                      className={`font-bold ${globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
+                      className={`font-bold tabular-nums ${globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}`}
                     >
                       {globalEnergy.remaining >= 0 ? '+' : ''}
                       {Math.round(globalEnergy.remaining * 10) / 10} kW
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-white/50">
-                    <span className="text-emerald-400/70">↑</span>
+                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-ok">↑</span>
                     {Math.round(globalEnergy.production * 10) / 10} kW
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-white/50">
-                    <span className="text-orange-400/70">↓</span>
+                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-accent-warm">↓</span>
                     {Math.round(globalEnergy.consumption * 10) / 10} kW
                   </div>
                 </div>
                 {energyStorage && energyStorage.capacity > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1 text-xs text-white/60">
-                    <span className="text-amber-400/70">⬢</span>
+                  <div className="mt-1.5 flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-accent-warm">⬢</span>
                     Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
                     {Math.round(energyStorage.capacity * 10) / 10} kWh
                   </div>
@@ -202,35 +197,35 @@ const globalEnergy = useMemo(() => {
               </>
             )}
 
-            <div className="mt-2 border-t border-white/10 pt-1.5 text-xs text-white/60">
-              {simulationClockLabel} ({isDaylight ? 'Jour' : 'Nuit'})
+            <div className="mt-2 border-t border-border pt-1.5 text-xs text-ink-muted">
+              <span className="tabular-nums">{simulationClockLabel}</span> ({isDaylight ? 'Jour' : 'Nuit'})
               <button
                 type="button"
                 onClick={() => setDebugOpen((value) => !value)}
                 aria-expanded={debugOpen}
-                className="ml-2 cursor-pointer rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 transition-colors hover:bg-white/20"
+                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[10px] text-ink-muted transition-colors hover:bg-border"
               >
                 {debugOpen ? '▲' : '▼'}
               </button>
             </div>
 
             {debugOpen && (
-              <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
+              <div className="mt-2 space-y-2 border-t border-border pt-2">
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-md bg-black/40 px-2 py-1">
-                    <div className="text-white/60">Phase</div>
-                    <div className="font-medium text-white">{simulationPhase}</div>
+                  <div className="rounded-sm bg-surface-2 px-2 py-1">
+                    <div className="label text-ink-muted">Phase</div>
+                    <div className="font-medium text-ink">{simulationPhase}</div>
                   </div>
-                  <div className="rounded-md bg-black/40 px-2 py-1">
-                    <div className="text-white/60">Consommateurs</div>
-                    <div className="font-medium text-white">
+                  <div className="rounded-sm bg-surface-2 px-2 py-1">
+                    <div className="label text-ink-muted">Consommateurs</div>
+                    <div className="font-medium tabular-nums text-ink">
                       {globalEnergy?.onlineConsumers ?? 0} ON / {globalEnergy?.offlineConsumers ?? 0} OFF
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-white/70">Temps (0h-24h)</div>
+                  <div className="label text-ink-muted">Temps (0h-24h)</div>
                   <input
                     aria-label="Simulation time"
                     type="range"
@@ -239,42 +234,29 @@ const globalEnergy = useMemo(() => {
                     step={0.001}
                     value={simulationTime}
                     onChange={(e) => applySimulationTime(Number(e.target.value))}
-                    className="w-full accent-emerald-400"
+                    className="w-full accent-accent"
                   />
                   <div className="flex items-center justify-between gap-1">
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Nuit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.25)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Aube
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.5)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Midi
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.75)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Crépuscule
-                    </button>
+                    {[
+                      { label: 'Nuit', value: 0 },
+                      { label: 'Aube', value: 0.25 },
+                      { label: 'Midi', value: 0.5 },
+                      { label: 'Crépuscule', value: 0.75 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => applySimulationTime(preset.value)}
+                        className="cursor-pointer rounded-sm bg-surface-2 px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-white/70">Vitesse simulation</div>
+                  <div className="label text-ink-muted">Vitesse simulation</div>
                   <div className="flex flex-wrap items-center gap-1">
                     {[0, 0.25, 1, 4, 20].map((speed) => (
                       <button
@@ -283,8 +265,8 @@ const globalEnergy = useMemo(() => {
                         onClick={() => setSimulationSpeed(speed)}
                         className={
                           simulationSpeed === speed
-                            ? 'cursor-pointer rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-black'
-                            : 'cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20'
+                            ? 'cursor-pointer rounded-sm bg-accent px-2 py-1 text-xs font-semibold tabular-nums text-bg'
+                            : 'cursor-pointer rounded-sm bg-surface-2 px-2 py-1 text-xs tabular-nums text-ink-muted transition-colors hover:bg-border hover:text-ink'
                         }
                       >
                         {speed === 0 ? 'Pause' : `${speed}x`}
@@ -302,34 +284,34 @@ const globalEnergy = useMemo(() => {
       <SelectedBuildingPanel />
 
       {consoleOpen && (
-        <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/20 bg-black/85 font-mono text-xs shadow-2xl backdrop-blur-sm">
+        <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-md border border-border bg-surface/95 tabular-nums text-xs backdrop-blur-sm">
           <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
-              <div className="text-white/30">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
+              <div className="text-ink-muted">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
             )}
             {history.map((entry, i) => (
               <div
                 key={i}
                 className={
                   entry.type === 'input'
-                    ? 'text-white/70'
+                    ? 'text-ink'
                     : entry.type === 'error'
-                      ? 'text-red-400'
-                      : 'text-green-400'
+                      ? 'text-error'
+                      : 'text-ok'
                 }
               >
                 {entry.text}
               </div>
             ))}
           </div>
-          <div className="flex border-t border-white/20">
-            <span className="px-2 py-1.5 text-white/50">&gt;</span>
+          <div className="flex border-t border-border">
+            <span className="px-2 py-1.5 text-ink-muted">&gt;</span>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent py-1.5 pr-2 text-white outline-none"
+              className="flex-1 bg-transparent py-1.5 pr-2 text-ink outline-none"
               placeholder="engine.placeResource(10, 10, 1)"
               autoFocus
             />
@@ -338,10 +320,10 @@ const globalEnergy = useMemo(() => {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
-        <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-3 py-2 text-white/85 shadow-2xl backdrop-blur-md">
+        <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md border border-border bg-surface/90 px-3 py-2 text-ink backdrop-blur-md">
           <div className="min-w-0 justify-self-start">
             {hoverTile && (
-              <div className="inline-flex rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/80">
+              <div className="inline-flex rounded-sm bg-surface-2 px-2 py-1 tabular-nums text-xs text-ink-muted">
                 {hoverTile.x}, {hoverTile.y}
               </div>
             )}
@@ -353,7 +335,7 @@ const globalEnergy = useMemo(() => {
 
           <div className="flex items-center justify-self-end gap-2">
             {energyLinkSelected && (
-              <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
+              <div className="rounded-sm bg-surface-2 px-2 py-1 tabular-nums text-xs text-ink-muted">
                 Source: {pendingEnergyLinkSourceName ?? '-'}
               </div>
             )}
@@ -364,16 +346,14 @@ const globalEnergy = useMemo(() => {
                 aria-expanded={settingsOpen}
                 aria-label="Paramètres"
                 title="Paramètres"
-                className={`cursor-pointer rounded-xl px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}`}
+                className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-4 w-4" strokeWidth={1.5} />
               </button>
 
               {settingsOpen && (
-                <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-xl border border-white/15 bg-black/85 p-2 shadow-2xl backdrop-blur-md">
-                  <p className="mb-1.5 px-2 text-[10px] font-medium uppercase tracking-wider text-white/40">
-                    Paramètres
-                  </p>
+                <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-md border border-border bg-surface/95 p-2 backdrop-blur-md">
+                  <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
 
                   {/* Lier après pose */}
                   <button
@@ -381,11 +361,11 @@ const globalEnergy = useMemo(() => {
                     onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
                     aria-pressed={linkSolarOnPlacement}
                     title="Après pose d'un panneau solaire, passe en mode lien"
-                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                   >
                     <span>Lier après pose</span>
                     <span
-                      className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${linkSolarOnPlacement ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/10 text-white/40'}`}
+                      className={`label ml-3 rounded-sm px-1.5 py-0.5 ${linkSolarOnPlacement ? 'bg-accent/20 text-accent' : 'bg-surface-2 text-ink-muted'}`}
                     >
                       {linkSolarOnPlacement ? 'ON' : 'OFF'}
                     </span>
@@ -396,13 +376,13 @@ const globalEnergy = useMemo(() => {
                     type="button"
                     onClick={() => setConsoleOpen((o) => !o)}
                     aria-pressed={consoleOpen}
-                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                   >
                     <span>Console</span>
-                    <span className="ml-3 font-mono text-[10px] text-white/40">&gt;_</span>
+                    <span className="ml-3 tabular-nums text-[10px] text-ink-muted">&gt;_</span>
                   </button>
 
-                  <div className="my-1.5 border-t border-white/10" />
+                  <div className="my-1.5 border-t border-border" />
 
                   {/* Reset */}
                   <button
@@ -411,7 +391,7 @@ const globalEnergy = useMemo(() => {
                       setSettingsOpen(false);
                       handleResetSession();
                     }}
-                    className="flex w-full items-center rounded-lg px-2 py-1.5 text-xs text-red-400/80 transition-colors hover:bg-red-400/10 hover:text-red-400"
+                    className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-error transition-colors hover:bg-error/10"
                   >
                     Reset session
                   </button>
