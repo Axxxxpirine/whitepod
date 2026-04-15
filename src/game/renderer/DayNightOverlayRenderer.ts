@@ -7,10 +7,21 @@ const NIGHT_COLOR = 0x0a1628;
 const DAYLIGHT_BOOST_MAX_ALPHA = 0.10;
 const DAYLIGHT_BOOST_COLOR = 0xfff7dc;
 
+const DAWN_START = 5 / 24;  // 05:00
+const DAWN_END   = 7 / 24;  // 07:00
+const DUSK_START = 17 / 24; // 17:00
+const DUSK_END   = 19 / 24; // 19:00
+
 export function getDaylightFactor(simulationTime: number): number {
   const wrapped = ((simulationTime % 1) + 1) % 1;
-  const raw = Math.max(0, Math.cos(2 * Math.PI * (wrapped - 0.5)));
-  return Math.sqrt(raw);
+  if (wrapped < DAWN_START || wrapped >= DUSK_END) return 0;
+  if (wrapped >= DAWN_END && wrapped < DUSK_START) return 1;
+  if (wrapped < DAWN_END) {
+    const t = (wrapped - DAWN_START) / (DAWN_END - DAWN_START);
+    return t * t * (3 - 2 * t);
+  }
+  const t = (wrapped - DUSK_START) / (DUSK_END - DUSK_START);
+  return 1 - t * t * (3 - 2 * t);
 }
 
 export function getNightOverlayAlpha(simulationTime: number): number {

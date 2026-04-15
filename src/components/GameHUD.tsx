@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Settings, Zap } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
+import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
@@ -55,7 +56,7 @@ const globalEnergy = useMemo(() => {
     return engine ? engine.getEnergyStorageTotals() : null;
   }, [engine, energyVersion, worldTick]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
-  const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
+  const isDaylight = getDaylightFactor(simulationTime) > 0;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
   const simulationPhase =
     simulationHour < 6 ? 'Nuit' : simulationHour < 12 ? 'Matin' : simulationHour < 18 ? 'Jour' : 'Soir';

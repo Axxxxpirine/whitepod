@@ -7,10 +7,22 @@ import {
 
 describe('DayNightOverlayRenderer helpers', () => {
   it('computes expected daylight factors over the cycle', () => {
+    // midnight: full dark
     expect(getDaylightFactor(0)).toBe(0);
-    expect(getDaylightFactor(0.25)).toBeCloseTo(0, 6);
+    // 05:00: dawn just starting
+    expect(getDaylightFactor(5 / 24)).toBeCloseTo(0, 6);
+    // 06:00: mid-dawn
+    expect(getDaylightFactor(0.25)).toBeCloseTo(0.5, 1);
+    // 07:00: full day
+    expect(getDaylightFactor(7 / 24)).toBeCloseTo(1, 6);
+    // noon: full day
     expect(getDaylightFactor(0.5)).toBeCloseTo(1, 6);
-    expect(getDaylightFactor(0.75)).toBeCloseTo(0, 6);
+    // 17:00: still full day (dusk just starting)
+    expect(getDaylightFactor(17 / 24)).toBeCloseTo(1, 6);
+    // 18:00: mid-dusk
+    expect(getDaylightFactor(0.75)).toBeCloseTo(0.5, 1);
+    // 19:00: full night
+    expect(getDaylightFactor(19 / 24)).toBeCloseTo(0, 6);
   });
 
   it('makes night darker than day', () => {
