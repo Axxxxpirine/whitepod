@@ -13,6 +13,11 @@ function App() {
   const tokens = useGameStore(s => s.tokens)
   const metadata = useGameStore(s => s.metadata)
   const stations = useGameStore(s => s.stations)
+  const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
+  const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
+  const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
+  const getBuildOptionsAtSelectedCell = useGameStore(s => s.getBuildOptionsAtSelectedCell)
+  const placeStationAtSelectedCell = useGameStore(s => s.placeStationAtSelectedCell)
   const placeStation = useGameStore(s => s.placeStation)
   const removeStation = useGameStore(s => s.removeStation)
   const countDeposits = useGameStore(s => s.countDeposits)
@@ -60,9 +65,44 @@ function App() {
   }, [metadata])
 
   const effectiveSelectedStationId = selectedStationId || stationOptions[0]?.id || ''
+  const buildOptions = getBuildOptionsAtSelectedCell()
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <div className="min-h-screen p-6 space-y-6 pt-24">
+      <div className="fixed top-0 left-0 right-0 z-20 border-b bg-white/95 backdrop-blur px-6 py-3">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <div className="font-semibold">Build</div>
+          <div className="text-gray-600">
+            {selectedBuildCell
+              ? `Cellule ${selectedBuildCell.x},${selectedBuildCell.y}`
+              : hoveredBuildCell
+                ? `Survol ${hoveredBuildCell.x},${hoveredBuildCell.y}`
+                : 'Clique une cellule pour construire'}
+          </div>
+          <button className="border rounded px-2 py-1" onClick={() => clearBuildSelection()}>
+            Clear
+          </button>
+        </div>
+        {selectedBuildCell ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {buildOptions.map(option => (
+              <button
+                key={option.transitionId}
+                className={`border rounded px-3 py-1 text-sm ${option.enabled ? 'bg-white' : 'bg-gray-100 text-gray-400'}`}
+                title={option.reason}
+                disabled={!option.enabled}
+                onClick={() => {
+                  if (!option.enabled) return
+                  placeStationAtSelectedCell(option.transitionId)
+                }}
+              >
+                {option.name}
+                {!option.enabled && option.reason ? ` (${option.reason})` : ''}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Whitepod</h1>
         <div className="flex items-center gap-3">
@@ -184,10 +224,10 @@ function App() {
 
       <section className="space-y-2">
         <h2 className="font-semibold">Lunar Factory Visualization</h2>
-        <div className="border-2 border-indigo-500 rounded-lg overflow-hidden">
-          <PixiCanvas />
-        </div>
-      </section>
+          <div className="border-2 border-indigo-500 rounded-lg overflow-hidden">
+            <PixiCanvas />
+          </div>
+        </section>
 
       {mode === 'debug' ? <PetriNetDebugger /> : null}
     </div>

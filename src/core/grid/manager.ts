@@ -167,6 +167,12 @@ export class GridManager {
     return [...this.stationsById.values()].sort((a, b) => a.id.localeCompare(b.id))
   }
 
+  getStationAt(x: number, y: number): StationPlacement | null {
+    const stationId = this.stationPosToId.get(key(x, y))
+    if (!stationId) return null
+    return this.stationsById.get(stationId) ?? null
+  }
+
   removeStation(stationId: string): void {
     const station = this.stationsById.get(stationId)
     if (!station) return
@@ -221,6 +227,18 @@ export class GridManager {
     return null
   }
 
+  canPlaceStationAt(x: number, y: number): boolean {
+    return this.isInBounds(x, y) && !this.isOccupied(x, y)
+  }
+
+  hasAdjacentDeposit(resourceId: ResourceId, x: number, y: number): boolean {
+    return this.listDeposits({ resourceId, includeDepleted: false }).some(d => {
+      const dx = Math.abs(d.x - x)
+      const dy = Math.abs(d.y - y)
+      return dx <= 1 && dy <= 1 && (dx + dy > 0)
+    })
+  }
+
   reserveAdjacentDepositForStation(
     station: StationPlacement,
     resourceId: ResourceId,
@@ -256,7 +274,7 @@ export class GridManager {
     }
   }
 
-  private placeStationAt(x: number, y: number, transitionId: string): StationPlacement | null {
+  placeStationAt(x: number, y: number, transitionId: string): StationPlacement | null {
     if (!this.isInBounds(x, y)) return null
     if (this.isOccupied(x, y)) return null
 

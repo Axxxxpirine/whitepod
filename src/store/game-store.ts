@@ -31,6 +31,8 @@ export interface GameState {
 
   stations: StationPlacement[]
   requestedSystemTransitionIds: string[]
+  selectedBuildCell: { x: number; y: number } | null
+  hoveredBuildCell: { x: number; y: number } | null
 
   phase: GamePhase
   tokens: Record<string, number>
@@ -55,6 +57,11 @@ export interface GameState {
   debugResetStats: () => void
 
   placeStation: (transitionId: string) => void
+  selectBuildCell: (x: number, y: number) => void
+  hoverBuildCell: (x: number, y: number | null) => void
+  clearBuildSelection: () => void
+  getBuildOptionsAtSelectedCell: () => Array<{ transitionId: string; name: string; enabled: boolean; reason?: string }>
+  placeStationAtSelectedCell: (transitionId: string) => { ok: boolean; reason?: string }
   removeStation: (stationId: string) => void
 
   requestSystemTransition: (transitionId: 'init' | 'launch' | 'terminate') => void
@@ -63,6 +70,7 @@ export interface GameState {
 
   tick: () => PixiExport
   getPixiExport: () => PixiExport
+  setSelectedBuildCell: (cell: { x: number; y: number } | null) => void
 }
 
 const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
@@ -132,6 +140,27 @@ function createDedupeStorage() {
 function uniqueAppend(list: string[], value: string): string[] {
   if (list.includes(value)) return list
   return [...list, value]
+}
+
+function getConsumedPlaceAnchors(transitionId: string): string[] {
+  if (transitionId.startsWith('extract__')) {
+    return [transitionId.slice('extract__'.length)]
+  }
+  return []
+}
+
+function getBuildReason(grid: GridManager, transitionId: string, x: number, y: number): string | null {
+  if (!grid.canPlaceStationAt(x, y)) return 'Cellule occupée ou hors limites'
+
+  const anchors = getConsumedPlaceAnchors(transitionId)
+  if (anchors.length === 0) return null
+
+  for (const place of anchors) {
+    const resourceId = place as ResourceId
+    if (grid.hasAdjacentDeposit(resourceId, x, y)) return null
+  }
+
+  return 'Aucune place consommée adjacente'
 }
 
 function extractResourceId(transitionId: string): ResourceId | null {
@@ -241,6 +270,8 @@ export const useGameStore = create<GameState>()(
 
       stations: [],
       requestedSystemTransitionIds: [],
+      selectedBuildCell: null,
+      hoveredBuildCell: null,
 
       phase: 'init',
       tokens: {},
@@ -407,6 +438,54 @@ export const useGameStore = create<GameState>()(
         })
       },
 
+      selectBuildCell: (x, y) => {
+        set({ selectedBuildCell: { x, y } })
+      },
+
+      hoverBuildCell: (x, y) => {
+        set({ hoveredBuildCell: y === null ? null : { x, y } })
+      },
+
+      clearBuildSelection: () => {
+        set({ selectedBuildCell: null, hoveredBuildCell: null })
+      },
+
+      getBuildOptionsAtSelectedCell: () => {
+        const { metadata, grid, selectedBuildCell } = get()
+        if (!metadata || !selectedBuildCell) return []
+        const transitions = metadata.gameSystem.transitions.filter(t => t.kind === 'station' && t.activation === 'placed')
+        return transitions.map(t => {
+          const reason = getBuildReason(grid, t.id, selectedBuildCell.x, selectedBuildCell.y)
+          return { transitionId: t.id, name: t.name_fr ?? t.id, enabled: reason === null, reason: reason ?? undefined }
+        })
+      },
+
+      placeStationAtSelectedCell: transitionId => {
+        const { selectedBuildCell, grid, metadata, engine, tickIndex } = get()
+        if (!selectedBuildCell) return { ok: false, reason: 'Aucune cellule sélectionnée' }
+        if (!metadata) return { ok: false, reason: 'Métadonnées non chargées' }
+
+        const transitionMeta = metadata.gameSystem.transitions.find(t => t.id === transitionId)
+        if (!transitionMeta) return { ok: false, reason: 'Transition inconnue' }
+
+        const placeOk = getBuildReason(grid, transitionId, selectedBuildCell.x, selectedBuildCell.y)
+        if (placeOk) return { ok: false, reason: placeOk }
+
+        const station = grid.placeStationAt(selectedBuildCell.x, selectedBuildCell.y, transitionId)
+        if (!station) return { ok: false, reason: 'Impossible de poser la station' }
+
+        set({
+          selectedBuildCell: null,
+          autosaveTickIndex: tickIndex,
+          saveRevision: get().saveRevision + 1,
+          stations: grid.listStations(),
+          engineSnapshot: engine ? engine.getSnapshot() : null,
+          gridSnapshot: grid.getSnapshot(),
+        })
+
+        return { ok: true }
+      },
+
       removeStation: stationId => {
         const { grid, engine, tickIndex } = get()
         grid.removeStation(stationId)
@@ -473,6 +552,10 @@ export const useGameStore = create<GameState>()(
           },
           layerTokens: buildLayerTokens(tokens),
         }
+      },
+
+      setSelectedBuildCell: cell => {
+        set({ selectedBuildCell: cell })
       },
 
       debugResetStats: () => {
