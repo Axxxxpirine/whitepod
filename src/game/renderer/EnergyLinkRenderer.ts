@@ -6,6 +6,7 @@ import type { Building } from '../types';
 
 interface LinkPreviewState {
   readonly inspectedBuildingId: number | null;
+  readonly showAllNetworks: boolean;
 }
 
 function getBuildingCenter(building: Building): { x: number; y: number } | null {
@@ -40,7 +41,38 @@ export class EnergyLinkRenderer {
 
     this.graphics.clear();
 
-    const { inspectedBuildingId } = this.getState();
+    const { inspectedBuildingId, showAllNetworks } = this.getState();
+
+    if (showAllNetworks) {
+      const drawnEdges = new Set<string>();
+      for (const network of this.engine.getEnergyNetworkBalances()) {
+        for (const buildingId of network.buildingIds) {
+          const from = this.engine.buildings.get(buildingId);
+          if (!from) continue;
+          const fromCenter = getBuildingCenter(from);
+          if (!fromCenter) continue;
+
+          for (const neighborId of this.engine.getEnergyLinkedBuildings(buildingId)) {
+            const edgeKey =
+              buildingId < neighborId ? `${buildingId}:${neighborId}` : `${neighborId}:${buildingId}`;
+            if (drawnEdges.has(edgeKey)) continue;
+            drawnEdges.add(edgeKey);
+
+            const to = this.engine.buildings.get(neighborId);
+            if (!to) continue;
+            const toCenter = getBuildingCenter(to);
+            if (!toCenter) continue;
+
+            this.graphics
+              .moveTo(fromCenter.x, fromCenter.y)
+              .lineTo(toCenter.x, toCenter.y)
+              .stroke({ color: 0xf8e16c, width: 2, alpha: 0.95 });
+          }
+        }
+      }
+      return;
+    }
+
     if (inspectedBuildingId === null) return;
 
     const source = this.engine.buildings.get(inspectedBuildingId);
@@ -48,7 +80,6 @@ export class EnergyLinkRenderer {
     const network = this.engine.getEnergyNetworkForBuilding(source.id);
     if (!network) return;
 
-    // Draw every edge in the connected component once.
     const drawnEdges = new Set<string>();
     for (const buildingId of network.buildingIds) {
       const from = this.engine.buildings.get(buildingId);
