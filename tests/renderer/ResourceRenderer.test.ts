@@ -15,6 +15,10 @@ function makeEngine() {
   return engine;
 }
 
+type ResourceRendererTestApi = {
+  activeSprites: Map<number, unknown>;
+};
+
 describe('ResourceRenderer', () => {
   it('renders a resource sprite even when an old save restored a zero resource amount', () => {
     const engine = makeEngine();
@@ -28,7 +32,7 @@ describe('ResourceRenderer', () => {
 
     renderer.render();
 
-    expect((renderer as any).activeSprites.size).toBe(1);
+    expect((renderer as unknown as ResourceRendererTestApi).activeSprites.size).toBe(1);
 
     renderer.destroy();
   });
