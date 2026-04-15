@@ -1,11 +1,12 @@
 import type { GameEngine } from './GameEngine';
-import type { BuildingId, SelectedTool } from '../types';
+import type { BuildingId, Direction, SelectedTool } from '../types';
 import { screenToGrid } from './CoordinateTransform';
 import { isInBounds } from '../data/coords';
 
 export class InputHandler {
   private readonly engine: GameEngine;
   private readonly getSelectedTool: () => SelectedTool;
+  private readonly getBuildingRotation: () => Direction;
   private isPanning = false;
   private lastPanX = 0;
   private lastPanY = 0;
@@ -13,9 +14,14 @@ export class InputHandler {
   private onBuildingPlaced: (() => void) | null = null;
   private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
 
-  constructor(engine: GameEngine, getSelectedTool: () => SelectedTool) {
+  constructor(
+    engine: GameEngine,
+    getSelectedTool: () => SelectedTool,
+    getBuildingRotation: () => Direction,
+  ) {
     this.engine = engine;
     this.getSelectedTool = getSelectedTool;
+    this.getBuildingRotation = getBuildingRotation;
   }
 
   setHoverCallback(cb: (tile: { x: number; y: number } | null) => void): void {
@@ -46,10 +52,17 @@ export class InputHandler {
         return;
       }
 
-      const buildingId = this.engine.placeBuilding(selectedTool.buildingType, coord);
-      if (buildingId !== null) {
-        this.onBuildingPlaced?.();
+      if (selectedTool.kind === 'building') {
+        const buildingId = this.engine.placeBuilding(
+          selectedTool.buildingType,
+          coord,
+          this.getBuildingRotation(),
+        );
+        if (buildingId !== null) {
+          this.onBuildingPlaced?.();
+        }
       }
+      // Belt tool handled by BeltToolController with drag-to-route semantics.
     }
   }
 

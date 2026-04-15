@@ -1,12 +1,14 @@
-import { Container, Sprite, Texture, type Application } from 'pixi.js';
+import { Container, Graphics, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
+  isBeltTypeId,
 } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import type { Building } from '../types';
+import { drawBuildingPortMarkers } from './buildingPortMarkers';
 
 const BUILDING_INSET = 2;
 const BUILDING_TINTS: Record<string, number> = {
@@ -34,13 +36,14 @@ function isBuildingVisible(
 
 export class BuildingRenderer {
   private readonly buildingContainer: Container;
-  private readonly spritePool: Sprite[] = [];
-  private readonly activeSprites: Map<number, Sprite> = new Map();
+  private readonly graphics: Graphics;
   private readonly engine: GameEngine;
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
     this.buildingContainer = new Container();
+    this.graphics = new Graphics();
+    this.buildingContainer.addChild(this.graphics);
     app.stage.addChild(this.buildingContainer);
   }
 
@@ -52,48 +55,30 @@ export class BuildingRenderer {
     this.buildingContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.buildingContainer.scale.set(viewport.zoom);
 
-    const visibleIds = new Set<number>();
+    this.graphics.clear();
+
     for (const building of this.engine.getBuildings().values()) {
+      if (isBeltTypeId(building.typeId)) continue;
       if (!isBuildingVisible(building, visibleRange)) continue;
-      visibleIds.add(building.id);
 
       const type = getBuildingType(building.typeId);
       if (!type) continue;
 
-      let sprite = this.activeSprites.get(building.id);
-      if (!sprite) {
-        sprite = this.acquireSprite();
-        this.buildingContainer.addChild(sprite);
-        this.activeSprites.set(building.id, sprite);
-      }
+      this.graphics
+        .rect(
+          building.origin.x * TILE_SIZE + BUILDING_INSET,
+          building.origin.y * TILE_SIZE + BUILDING_INSET,
+          type.footprint.w * TILE_SIZE - BUILDING_INSET * 2,
+          type.footprint.h * TILE_SIZE - BUILDING_INSET * 2,
+        )
+        .fill({ color: BUILDING_TINTS[building.typeId] ?? 0xd5dbdb, alpha: 0.95 })
+        .stroke({ color: 0x111827, width: 1, alpha: 0.95 });
 
-      sprite.x = building.origin.x * TILE_SIZE + BUILDING_INSET;
-      sprite.y = building.origin.y * TILE_SIZE + BUILDING_INSET;
-      sprite.width = type.footprint.w * TILE_SIZE - BUILDING_INSET * 2;
-      sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
-      sprite.tint = BUILDING_TINTS[building.typeId] ?? 0xd5dbdb;
-      sprite.alpha = 0.95;
-      sprite.visible = true;
+      drawBuildingPortMarkers(this.graphics, building, type);
     }
-
-    for (const [id, sprite] of this.activeSprites) {
-      if (visibleIds.has(id)) continue;
-      this.buildingContainer.removeChild(sprite);
-      sprite.visible = false;
-      this.spritePool.push(sprite);
-      this.activeSprites.delete(id);
-    }
-  }
-
-  private acquireSprite(): Sprite {
-    const sprite = this.spritePool.pop() ?? new Sprite(Texture.WHITE);
-    sprite.visible = true;
-    return sprite;
   }
 
   destroy(): void {
     this.buildingContainer.destroy({ children: true });
-    this.spritePool.length = 0;
-    this.activeSprites.clear();
   }
 }

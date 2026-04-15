@@ -8,6 +8,17 @@ import {
 
 export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
 export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
+export const BELT_STRAIGHT_BUILDING_TYPE_ID = 'belt_straight' as const;
+export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;
+export const BELT_CORNER_CCW_BUILDING_TYPE_ID = 'belt_corner_ccw' as const;
+
+export function isBeltTypeId(typeId: BuildingTypeId): boolean {
+  return (
+    typeId === BELT_STRAIGHT_BUILDING_TYPE_ID ||
+    typeId === BELT_CORNER_CW_BUILDING_TYPE_ID ||
+    typeId === BELT_CORNER_CCW_BUILDING_TYPE_ID
+  );
+}
 
 const entries: readonly BuildingType[] = [
   {
@@ -16,7 +27,9 @@ const entries: readonly BuildingType[] = [
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     requiresResourceDeposit: true,
-    ports: [],
+    ports: [
+      { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
   },
   {
     id: STORAGE_BUILDING_TYPE_ID,
@@ -24,7 +37,12 @@ const entries: readonly BuildingType[] = [
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
-    ports: [],
+    ports: [
+      { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
+      { id: 'in_north', kind: PortKind.Input, offset: { x: 1, y: 0 }, side: Direction.North },
+      { id: 'in_east', kind: PortKind.Input, offset: { x: 2, y: 1 }, side: Direction.East },
+      { id: 'in_south', kind: PortKind.Input, offset: { x: 1, y: 2 }, side: Direction.South },
+    ],
   },
   {
     id: 'placeholder_1x1',
@@ -48,6 +66,41 @@ const entries: readonly BuildingType[] = [
     ports: [
       { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
       { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
+  },
+  // Belts — all 1x1, 2 ports, Ground only. Rotation picks the flow direction.
+  {
+    id: BELT_STRAIGHT_BUILDING_TYPE_ID,
+    name: 'Convoyeur droit',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    ports: [
+      { id: 'in', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'out', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
+  },
+  // Clockwise corner at rotation=North: flow enters West, exits South.
+  // 4 rotations cover NE/SE/SW/NW clockwise turns.
+  {
+    id: BELT_CORNER_CW_BUILDING_TYPE_ID,
+    name: 'Coin droite',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    ports: [
+      { id: 'in', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'out', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.South },
+    ],
+  },
+  // Counterclockwise corner at rotation=North: flow enters West, exits North.
+  // Mirror of belt_corner_cw. Together they cover all 8 corner shapes.
+  {
+    id: BELT_CORNER_CCW_BUILDING_TYPE_ID,
+    name: 'Coin gauche',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    ports: [
+      { id: 'in', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'out', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.North },
     ],
   },
   {

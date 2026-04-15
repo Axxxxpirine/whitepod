@@ -58,6 +58,9 @@ function isSelectedTool(value: unknown): value is SelectedTool {
   if (value.kind === 'select') {
     return true;
   }
+  if (value.kind === 'belt') {
+    return true;
+  }
   if (value.kind === 'building') {
     return typeof value.buildingType === 'string';
   }
