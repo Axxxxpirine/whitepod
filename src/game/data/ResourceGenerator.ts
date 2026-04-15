@@ -2,101 +2,132 @@ import { GRID_WIDTH, GRID_HEIGHT } from '../constants';
 import { ResourceType, TileType } from '../types';
 import type { TileGrid } from './TileGrid';
 import { mulberry32 } from './SeededRNG';
-import { toIndex } from './coords';
+import { isInBounds, toCoord, toIndex } from './coords';
 
 interface ResourceConfig {
   readonly type: ResourceType;
-  readonly frequency: number;
-  readonly threshold: number;
+  readonly coverage: number;
+  readonly minSpacing: number;
+  readonly pairChance: number;
   readonly seedOffset: number;
 }
 
+const RESOURCE_COVERAGE_MULTIPLIER = 0.7;
+
 const DEFAULT_CONFIGS: readonly ResourceConfig[] = [
-  { type: ResourceType.Coal, frequency: 0.10, threshold: 0.83, seedOffset: 0 },
-  { type: ResourceType.IronOre, frequency: 0.09, threshold: 0.86, seedOffset: 1000 },
-  { type: ResourceType.CopperOre, frequency: 0.08, threshold: 0.88, seedOffset: 2000 },
+  {
+    type: ResourceType.Coal,
+    coverage: 0.016 * RESOURCE_COVERAGE_MULTIPLIER,
+    minSpacing: 2,
+    pairChance: 0.12,
+    seedOffset: 0,
+  },
+  {
+    type: ResourceType.IronOre,
+    coverage: 0.006 * RESOURCE_COVERAGE_MULTIPLIER,
+    minSpacing: 2,
+    pairChance: 0.08,
+    seedOffset: 1000,
+  },
+  {
+    type: ResourceType.CopperOre,
+    coverage: 0.0026 * RESOURCE_COVERAGE_MULTIPLIER,
+    minSpacing: 2,
+    pairChance: 0.06,
+    seedOffset: 2000,
+  },
 ];
 
 const ELIGIBLE_TILES = new Set<TileType>([TileType.Ground, TileType.Rock]);
 
-const PERM_SIZE = 256;
-
-function buildPermutation(rng: () => number): Uint8Array {
-  const perm = new Uint8Array(PERM_SIZE * 2);
-  // Fill first half with 0..255
-  for (let i = 0; i < PERM_SIZE; i++) perm[i] = i;
-  // Fisher-Yates shuffle
-  for (let i = PERM_SIZE - 1; i > 0; i--) {
+function shuffleInPlace<T>(items: T[], rng: () => number): void {
+  for (let i = items.length - 1; i > 0; i--) {
     const j = (rng() * (i + 1)) | 0;
-    const tmp = perm[i];
-    perm[i] = perm[j];
-    perm[j] = tmp;
+    const tmp = items[i];
+    items[i] = items[j];
+    items[j] = tmp;
   }
-  // Duplicate for overflow-safe indexing
-  for (let i = 0; i < PERM_SIZE; i++) perm[PERM_SIZE + i] = perm[i];
-  return perm;
 }
 
-/** Value noise with bilinear interpolation */
-function valueNoise(x: number, y: number, perm: Uint8Array): number {
-  const xi = Math.floor(x);
-  const yi = Math.floor(y);
-  const xf = x - xi;
-  const yf = y - yi;
+function markBlockedArea(mask: Uint8Array, x: number, y: number, radius: number): void {
+  const x0 = Math.max(0, x - radius);
+  const y0 = Math.max(0, y - radius);
+  const x1 = Math.min(GRID_WIDTH - 1, x + radius);
+  const y1 = Math.min(GRID_HEIGHT - 1, y + radius);
 
-  // Smoothstep for smoother transitions
-  const u = xf * xf * (3 - 2 * xf);
-  const v = yf * yf * (3 - 2 * yf);
-
-  const ix = xi & 0xff;
-  const iy = yi & 0xff;
-
-  // Hash corners to get pseudo-random values
-  const aa = perm[perm[ix] + iy] / 255;
-  const ab = perm[perm[ix] + iy + 1] / 255;
-  const ba = perm[perm[ix + 1] + iy] / 255;
-  const bb = perm[perm[ix + 1] + iy + 1] / 255;
-
-  // Bilinear interpolation
-  const x1 = aa + u * (ba - aa);
-  const x2 = ab + u * (bb - ab);
-  return x1 + v * (x2 - x1);
+  for (let yy = y0; yy <= y1; yy++) {
+    for (let xx = x0; xx <= x1; xx++) {
+      mask[toIndex(xx, yy)] = 1;
+    }
+  }
 }
 
-/** Two-octave value noise for more natural shapes */
-function noise2D(x: number, y: number, frequency: number, perm: Uint8Array): number {
-  const n1 = valueNoise(x * frequency, y * frequency, perm);
-  const n2 = valueNoise(x * frequency * 2, y * frequency * 2, perm);
-  return n1 * 0.7 + n2 * 0.3;
+function tryPlacePair(
+  grid: TileGrid,
+  x: number,
+  y: number,
+  resourceType: ResourceType,
+  rng: () => number,
+): boolean {
+  const offsets: Array<readonly [number, number]> = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+  ];
+  shuffleInPlace(offsets, rng);
+
+  for (const [dx, dy] of offsets) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (!isInBounds(nx, ny)) continue;
+
+    const index = toIndex(nx, ny);
+    if (grid.resourceType[index] !== ResourceType.None) continue;
+    if (!ELIGIBLE_TILES.has(grid.tileType[index] as TileType)) continue;
+
+    grid.resourceType[index] = resourceType;
+    return true;
+  }
+
+  return false;
 }
 
 export function generateResources(grid: TileGrid, seed: number): void {
-  // Fill the entire grid with Ground before placing resources
   grid.fill(TileType.Ground);
+  grid.resourceType.fill(ResourceType.None);
+
+  const blockedOrigins = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+  const allCoords = Array.from({ length: GRID_WIDTH * GRID_HEIGHT }, (_, index) => index);
 
   for (const config of DEFAULT_CONFIGS) {
     const rng = mulberry32(seed + config.seedOffset);
-    const perm = buildPermutation(rng);
+    const shuffledCoords = [...allCoords];
+    shuffleInPlace(shuffledCoords, rng);
+    const targetCount = Math.round(GRID_WIDTH * GRID_HEIGHT * config.coverage);
+    let placedCount = 0;
 
-    for (let y = 0; y < GRID_HEIGHT; y++) {
-      for (let x = 0; x < GRID_WIDTH; x++) {
-        const index = toIndex(x, y);
+    for (const index of shuffledCoords) {
+      if (placedCount >= targetCount) break;
 
-        // Skip tiles that already have a resource
-        if (grid.resourceType[index] !== ResourceType.None) continue;
+      const { x, y } = toCoord(index);
 
-        // Only place on eligible tile types
-        if (!ELIGIBLE_TILES.has(grid.tileType[index] as TileType)) continue;
+      if (grid.resourceType[index] !== ResourceType.None) continue;
+      if (!ELIGIBLE_TILES.has(grid.tileType[index] as TileType)) continue;
+      if (blockedOrigins[index] !== 0) continue;
 
-        const n = noise2D(x, y, config.frequency, perm);
-        if (n > config.threshold) {
-          grid.resourceType[index] = config.type;
+      grid.resourceType[index] = config.type;
+      markBlockedArea(blockedOrigins, x, y, config.minSpacing);
+      placedCount += 1;
+
+      if (placedCount < targetCount && rng() < config.pairChance) {
+        if (tryPlacePair(grid, x, y, config.type, rng)) {
+          placedCount += 1;
         }
       }
     }
   }
 
-  // Mark entire grid dirty so renderer picks up the changes
   grid.markDirty(0, 0);
   grid.markDirty(GRID_WIDTH - 1, GRID_HEIGHT - 1);
 }
