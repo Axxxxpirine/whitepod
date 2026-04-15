@@ -1,9 +1,10 @@
 import { Container, Sprite, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
-import { getBuildingType, isBeltTypeId, EXTRACTOR_BUILDING_TYPE_ID, MERGER_BASIC_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
-import { Direction, PortKind, ResourceType, type Building, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
+import { resolveBeltFlow } from '../flow/resolveBeltFlow';
+import { Direction, PortKind, type Building, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
 import { getResourceTexture } from './TileSprite';
 import { BELT_INSET } from './BeltRenderer';
 
@@ -189,7 +190,7 @@ export class BeltFlowAnimator {
       const inPoint = this.edgePoint(baseX, baseY, inSide);
       const outPoint = this.edgePoint(baseX, baseY, outSide);
 
-      const resourceTypes = this.resolveResourcesForBelt(building.id);
+      const resourceTypes = resolveBeltFlow(this.engine, building.id).map((e) => e.resourceType);
       // Deterministic stagger: golden ratio hash of building ID
       const phaseOffset = (building.id * 0.618033988749) % 1.0;
 
@@ -204,50 +205,6 @@ export class BeltFlowAnimator {
     }
 
     this.flowCache = newCache;
-  }
-
-  /**
-   * Walk upstream from a belt (via belts and mergers) and collect all distinct
-   * resource types from powered extractors reachable along that path.
-   *
-   * Returns an empty array when no powered extractor is upstream (→ no particles).
-   * Returns a deduplicated, deterministically ordered list otherwise:
-   *   - 1 element: belt carries a single resource type (identical to previous behavior)
-   *   - 2+ elements: belt is downstream of a merger combining different resources
-   */
-  private resolveResourcesForBelt(beltId: BuildingId): ReadonlyArray<ResourceTypeT> {
-    const visited = new Set<BuildingId>();
-    const queue: BuildingId[] = [beltId];
-    // Use a Set for deduplication; insertion order gives deterministic output.
-    const found = new Set<ResourceTypeT>();
-
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      if (visited.has(current)) continue;
-      visited.add(current);
-
-      for (const connection of this.engine.getConnectionsOf(current)) {
-        // Walk upstream: find connections where this building is the destination
-        if (connection.to.building !== current) continue;
-
-        const upstream = this.engine.getBuildings().get(connection.from.building);
-        if (!upstream) continue;
-
-        if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
-          if (this.engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
-          const resource = this.engine.getResourceAt(upstream.origin.x, upstream.origin.y);
-          if (resource !== ResourceType.None) found.add(resource);
-          continue;
-        }
-
-        // Traverse through belts and mergers transparently.
-        if (isBeltTypeId(upstream.typeId) || upstream.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
-          queue.push(upstream.id);
-        }
-      }
-    }
-
-    return [...found];
   }
 
   private edgePoint(baseX: number, baseY: number, side: Direction): Point {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Container, type Application } from 'pixi.js';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
+import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
 import { ResourceType, TileType, type BuildingId } from '@/game/types';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
@@ -9,7 +10,9 @@ import {
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 
-type AnimatorTestApi = { resolveResourcesForBelt(id: BuildingId): ReadonlyArray<ResourceType> };
+function resolveResources(engine: GameEngine, beltId: BuildingId): ReadonlyArray<ResourceType> {
+  return resolveBeltFlow(engine, beltId).map((e) => e.resourceType);
+}
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -40,12 +43,12 @@ describe('BeltFlowAnimator', () => {
     const animator = createAnimator(engine);
     const firstSegmentId = belt.segmentIds[0]!;
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([]);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.IronOre]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.IronOre]);
 
     animator.destroy();
   });
@@ -70,11 +73,11 @@ describe('BeltFlowAnimator', () => {
     const firstSegmentId = belt.segmentIds[0]!;
     const animator = createAnimator(engine);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.Coal]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Coal]);
 
     engine.grid.resourceAmount.fill(0);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.Coal]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Coal]);
 
     animator.destroy();
   });
@@ -108,7 +111,7 @@ describe('BeltFlowAnimator', () => {
     const outBeltFirstSegmentId = outBelt.segmentIds[0]!;
 
     // Belt downstream of the merger should see the same resource type as the input.
-    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBeltFirstSegmentId))
+    expect(resolveResources(engine, outBeltFirstSegmentId))
       .toEqual([ResourceType.Coal]);
 
     animator.destroy();
@@ -155,7 +158,7 @@ describe('BeltFlowAnimator', () => {
 
     const animator = createAnimator(engine);
     const outBeltFirstSegmentId = outBelt.segmentIds[0]!;
-    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBeltFirstSegmentId);
+    const resolved = resolveResources(engine, outBeltFirstSegmentId);
 
     // Both resource types must appear; order is insertion-deterministic.
     expect(resolved).toHaveLength(2);
@@ -197,7 +200,7 @@ describe('BeltFlowAnimator', () => {
     if (!outBelt.ok) throw new Error(`outBelt failed: ${outBelt.reason}`);
 
     const animator = createAnimator(engine);
-    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBelt.segmentIds[0]!);
+    const resolved = resolveResources(engine, outBelt.segmentIds[0]!);
 
     // Deduplicated: two coal inputs → still just [Coal].
     expect(resolved).toEqual([ResourceType.Coal]);
@@ -218,7 +221,7 @@ describe('BeltFlowAnimator', () => {
     if (!outBelt.ok) throw new Error(`outBelt failed: ${outBelt.reason}`);
 
     const animator = createAnimator(engine);
-    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBelt.segmentIds[0]!);
+    const resolved = resolveResources(engine, outBelt.segmentIds[0]!);
 
     // No upstream extractor → no particles.
     expect(resolved).toEqual([]);

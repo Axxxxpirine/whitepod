@@ -215,7 +215,7 @@ export class GameEngine {
 
       if (netPower > 0) {
         this.distributeBatteryCharge(batteries, netPower, dtHours);
-      } else if (netPower < 0) {
+      } else if (netPower < 0 && this.isNetworkPowered(network)) {
         this.distributeBatteryDischarge(batteries, -netPower, dtHours);
       }
     }
@@ -417,9 +417,7 @@ export class GameEngine {
 
     const network = this.getEnergyNetworkForBuilding(buildingId);
     if (!network) return 'unpowered';
-    if (network.remaining >= 0) return 'powered';
-    const dischargeAvailable = this.getNetworkDischargeRate(network.buildingIds);
-    return dischargeAvailable >= -network.remaining ? 'powered' : 'unpowered';
+    return this.isNetworkPowered(network) ? 'powered' : 'unpowered';
   }
 
   private getNetworkDischargeRate(buildingIds: readonly BuildingId[]): number {
@@ -435,6 +433,11 @@ export class GameEngine {
     return total;
   }
 
+  private isNetworkPowered(network: EnergyNetworkBalance): boolean {
+    if (network.remaining >= 0) return true;
+    return this.getNetworkDischargeRate(network.buildingIds) >= -network.remaining;
+  }
+
   getEnergyGlobalStats(): EnergyGlobalStats {
     let production = 0;
     let consumption = 0;
@@ -445,8 +448,7 @@ export class GameEngine {
     for (const network of this.getEnergyNetworkBalances()) {
       production += network.production;
       demandedConsumption += network.consumption;
-      const dischargeAvailable = this.getNetworkDischargeRate(network.buildingIds);
-      const networkIsPowered = network.remaining >= 0 || dischargeAvailable >= -network.remaining;
+      const networkIsPowered = this.isNetworkPowered(network);
       if (networkIsPowered) {
         consumption += network.consumption;
       }
