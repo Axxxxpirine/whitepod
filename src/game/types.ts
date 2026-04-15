@@ -20,3 +20,35 @@ export interface TileCoord {
   readonly x: number;
   readonly y: number;
 }
+
+export type BuildingId = number;
+export type BuildingTypeId = string;
+
+export interface Footprint {
+  readonly w: number;
+  readonly h: number;
+}
+
+export interface BuildingType {
+  readonly id: BuildingTypeId;
+  readonly footprint: Footprint;
+  readonly allowedTiles: readonly TileType[];
+}
+
+export interface Building {
+  readonly id: BuildingId;
+  readonly typeId: BuildingTypeId;
+  readonly origin: TileCoord;
+  readonly rotation: Direction;
+}
+
+export type PlacementFailure =
+  | 'out_of_bounds'
+  | 'tile_occupied'
+  | 'tile_type_invalid'
+  | 'unknown_type'
+  | 'id_overflow';
+
+export type PlacementResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: PlacementFailure };

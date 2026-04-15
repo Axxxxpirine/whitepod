@@ -40,6 +40,9 @@ export function GameCanvas() {
 
       const engine = new GameEngine(app.screen.width, app.screen.height);
       initEngine(engine);
+      if (import.meta.env.DEV) {
+        (window as unknown as { engine: GameEngine }).engine = engine;
+      }
 
       renderer = new GridRenderer(app, engine);
       const inputHandler = new InputHandler(engine);
