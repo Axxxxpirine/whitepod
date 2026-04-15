@@ -24,7 +24,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
 import type { SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
-import { worldToScreen } from '@/game/engine/CoordinateTransform';
+import { worldToScreen, screenToWorld } from '@/game/engine/CoordinateTransform';
 import {
   handleBuildingPlaced,
   handleEnergyLinkClick,
@@ -194,10 +194,19 @@ export function GameCanvas() {
         const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = useGameStore.getState();
         return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
       });
+      const mouseScreenPos = { x: 0, y: 0, valid: false };
       energyLinkRenderer = new EnergyLinkRenderer(app, engine, () => {
-        const { selectedTool } = useGameStore.getState();
+        const { selectedTool, pendingEnergyLinkSource } = useGameStore.getState();
+        const isEnergyLink = selectedTool.kind === 'energy_link';
+        let mouseWorldPos: { x: number; y: number } | null = null;
+        if (isEnergyLink && pendingEnergyLinkSource !== null && mouseScreenPos.valid) {
+          const { wx, wy } = screenToWorld(engine.viewport, mouseScreenPos.x, mouseScreenPos.y);
+          mouseWorldPos = { x: wx, y: wy };
+        }
         return {
-          mode: selectedTool.kind === 'energy_link' ? 'energy_link' : 'normal',
+          mode: isEnergyLink ? 'energy_link' : 'normal',
+          pendingSourceId: isEnergyLink ? pendingEnergyLinkSource : null,
+          mouseWorldPos,
         };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
@@ -253,6 +262,9 @@ export function GameCanvas() {
         currentBeltToolController.onPointerDown(e.offsetX, e.offsetY, e.button);
       };
       handlePointerMove = (e) => {
+        mouseScreenPos.x = e.offsetX;
+        mouseScreenPos.y = e.offsetY;
+        mouseScreenPos.valid = true;
         currentInputHandler.onPointerMove(e.offsetX, e.offsetY);
         currentBeltToolController.onPointerMove(e.offsetX, e.offsetY);
       };
@@ -261,6 +273,7 @@ export function GameCanvas() {
         currentBeltToolController.onPointerUp(e.offsetX, e.offsetY, e.button);
       };
       handlePointerLeave = () => {
+        mouseScreenPos.valid = false;
         currentInputHandler.onPointerLeave();
         currentBeltToolController.onPointerLeave();
       };

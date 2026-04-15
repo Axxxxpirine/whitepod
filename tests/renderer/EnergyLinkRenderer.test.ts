@@ -31,6 +31,8 @@ function makeEngine() {
 function createRenderer(engine: GameEngine, getMode: () => EnergyLinkMode) {
   return new EnergyLinkRenderer({ stage: new Container() } as unknown as Application, engine, () => ({
     mode: getMode(),
+    pendingSourceId: null,
+    mouseWorldPos: null,
   }));
 }
 
