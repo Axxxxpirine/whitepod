@@ -3,7 +3,7 @@ import { TileType as TileTypeConst } from '../types';
 import { Texture } from 'pixi.js';
 
 const TILE_COLORS: Record<TileType, number> = {
-  [TileTypeConst.Empty]: 0x1a1a2e,
+  [TileTypeConst.Empty]: 0x4a7c59,
   [TileTypeConst.Ground]: 0x4a7c59,
   [TileTypeConst.Rock]: 0x6b6b6b,
   [TileTypeConst.Water]: 0x2d6a9f,
