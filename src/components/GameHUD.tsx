@@ -1,21 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Trash2, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
-  isBeltTypeId,
 } from '@/game/data/buildingCatalog';
 import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
+import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
   const engine = useGameStore((s) => s.engine);
   const selectedTool = useGameStore((s) => s.selectedTool);
-  const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
-  const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
   const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
@@ -50,25 +48,12 @@ export function GameHUD() {
     selectedTool.kind === 'building' && selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID;
   const energyLinkSelected = selectedTool.kind === 'energy_link';
 
-  const selectedBuilding =
-    engine && selectedBuildingId !== null ? engine.getBuildings().get(selectedBuildingId) ?? null : null;
-  const selectedBuildingName = selectedBuilding ? getBuildingType(selectedBuilding.typeId)?.name ?? null : null;
   const pendingEnergyLinkSourceName = useMemo(() => {
     if (!engine || pendingEnergyLinkSource === null) return null;
     const source = engine.getBuildings().get(pendingEnergyLinkSource);
     if (!source) return null;
     return getBuildingType(source.typeId)?.name ?? null;
   }, [engine, pendingEnergyLinkSource]);
-  const anchorVisible =
-    engine &&
-    selectedBuildingAnchor &&
-    selectedBuildingAnchor.x >= 0 &&
-    selectedBuildingAnchor.x <= engine.viewport.screenWidth &&
-    selectedBuildingAnchor.y >= 0 &&
-    selectedBuildingAnchor.y <= engine.viewport.screenHeight;
-  const showSelectedBuildingPanel = Boolean(
-    engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
-  );
   const buildingRotationLabel = directionLabel(currentBuildingRotation);
   const globalEnergy = useMemo(() => {
     void energyVersion;
@@ -158,23 +143,6 @@ export function GameHUD() {
     rotateBuildingRotation();
   };
 
-  const handleDeleteSelectedBuilding = () => {
-    if (!engine || selectedBuildingId === null) return;
-
-    const building = engine.getBuildings().get(selectedBuildingId);
-    if (!building) return;
-
-    const removed = isBeltTypeId(building.typeId)
-      ? engine.removeBelt(selectedBuildingId)
-      : engine.removeBuilding(selectedBuildingId);
-    if (removed) {
-      if (pendingEnergyLinkSource === selectedBuildingId) {
-        setPendingEnergyLinkSource(null);
-      }
-      clearSelectedBuilding();
-    }
-  };
-
   const handleResetSession = () => {
     if (!window.confirm('Reset the current session and start a new game?')) {
       return;
@@ -249,25 +217,7 @@ export function GameHUD() {
         </div>
       )}
 
-      {showSelectedBuildingPanel && selectedBuildingAnchor && (
-        <div
-          className="pointer-events-auto absolute"
-          style={{ left: selectedBuildingAnchor.x, top: selectedBuildingAnchor.y + 12, transform: 'translateX(-50%)' }}
-        >
-          <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
-            <span className="whitespace-nowrap text-sm font-medium">{selectedBuildingName}</span>
-            <button
-              type="button"
-              onClick={handleDeleteSelectedBuilding}
-              className="cursor-pointer rounded-lg bg-red-500/15 p-1.5 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
-              aria-label="Supprimer le bâtiment"
-              title="Supprimer le bâtiment"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
-      )}
+      <SelectedBuildingPanel />
 
       {consoleOpen && (
         <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/20 bg-black/85 font-mono text-xs shadow-2xl backdrop-blur-sm">
