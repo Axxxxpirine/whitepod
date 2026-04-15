@@ -21,7 +21,7 @@ import {
   saveWorldSession,
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
-import { loadResourceTextures } from '@/game/renderer/TileSprite';
+import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
 import type { SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { worldToScreen, screenToWorld } from '@/game/engine/CoordinateTransform';
@@ -128,6 +128,7 @@ export function GameCanvas() {
       container.appendChild(app.canvas);
 
       await loadResourceTextures();
+      await loadBuildingTextures();
 
       if (destroyed) {
         app.destroy(true);
