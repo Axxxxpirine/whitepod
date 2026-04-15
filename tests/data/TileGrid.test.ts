@@ -77,7 +77,7 @@ describe('TileGrid', () => {
   describe('serialization', () => {
     it('produces a buffer of the correct size', () => {
       const grid = new TileGrid();
-      expect(grid.serialize().byteLength).toBe(GRID_SIZE * 4);
+      expect(grid.serialize().byteLength).toBe(GRID_SIZE * 6);
     });
 
     it('round-trips data via serialize / deserialize', () => {

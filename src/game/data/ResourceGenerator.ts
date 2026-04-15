@@ -1,4 +1,4 @@
-import { GRID_WIDTH, GRID_HEIGHT } from '../constants';
+import { GRID_WIDTH, GRID_HEIGHT, RESOURCE_DEPOSIT_AMOUNT } from '../constants';
 import { ResourceType, TileType } from '../types';
 import type { TileGrid } from './TileGrid';
 import { mulberry32 } from './SeededRNG';
@@ -87,6 +87,7 @@ function tryPlacePair(
     if (!ELIGIBLE_TILES.has(grid.tileType[index] as TileType)) continue;
 
     grid.resourceType[index] = resourceType;
+    grid.resourceAmount[index] = RESOURCE_DEPOSIT_AMOUNT;
     return true;
   }
 
@@ -96,6 +97,7 @@ function tryPlacePair(
 export function generateResources(grid: TileGrid, seed: number): void {
   grid.fill(TileType.Ground);
   grid.resourceType.fill(ResourceType.None);
+  grid.resourceAmount.fill(0);
 
   const blockedOrigins = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
   const allCoords = Array.from({ length: GRID_WIDTH * GRID_HEIGHT }, (_, index) => index);
@@ -117,6 +119,7 @@ export function generateResources(grid: TileGrid, seed: number): void {
       if (blockedOrigins[index] !== 0) continue;
 
       grid.resourceType[index] = config.type;
+      grid.resourceAmount[index] = RESOURCE_DEPOSIT_AMOUNT;
       markBlockedArea(blockedOrigins, x, y, config.minSpacing);
       placedCount += 1;
 

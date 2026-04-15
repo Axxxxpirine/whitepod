@@ -1,5 +1,5 @@
-import { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT } from '../constants';
-import type { TileType, ResourceType } from '../types';
+import { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, RESOURCE_DEPOSIT_AMOUNT } from '../constants';
+import { ResourceType, type TileType, type ResourceType as ResourceTypeT } from '../types';
 import { toIndex, isInBounds } from './coords';
 
 interface DirtyRegion {
@@ -16,6 +16,7 @@ export class TileGrid {
   readonly elevation: Uint8Array;
   readonly flags: Uint8Array;
   readonly resourceType: Uint8Array;
+  readonly resourceAmount: Uint16Array;
   readonly metadata: Map<number, Record<string, unknown>>;
 
   private dirtyRegion: DirtyRegion | null = null;
@@ -26,6 +27,7 @@ export class TileGrid {
     this.elevation = new Uint8Array(GRID_SIZE);
     this.flags = new Uint8Array(GRID_SIZE);
     this.resourceType = new Uint8Array(GRID_SIZE);
+    this.resourceAmount = new Uint16Array(GRID_SIZE);
     this.metadata = new Map();
     this.onChange = onChange;
   }
@@ -45,15 +47,21 @@ export class TileGrid {
     this.onChange?.();
   }
 
-  getResource(x: number, y: number): ResourceType {
-    return this.resourceType[toIndex(x, y)] as ResourceType;
+  getResource(x: number, y: number): ResourceTypeT {
+    return this.resourceType[toIndex(x, y)] as ResourceTypeT;
   }
 
-  setResource(x: number, y: number, resource: ResourceType): void {
+  setResource(x: number, y: number, resource: ResourceTypeT): void {
     if (!isInBounds(x, y)) return;
-    this.resourceType[toIndex(x, y)] = resource;
+    const idx = toIndex(x, y);
+    this.resourceType[idx] = resource;
+    this.resourceAmount[idx] = resource === ResourceType.None ? 0 : RESOURCE_DEPOSIT_AMOUNT;
     this.markDirty(x, y);
     this.onChange?.();
+  }
+
+  getResourceAmount(x: number, y: number): number {
+    return this.resourceAmount[toIndex(x, y)];
   }
 
   fill(type: TileType): void {
@@ -98,11 +106,13 @@ export class TileGrid {
   }
 
   serialize(): ArrayBuffer {
-    const combined = new Uint8Array(GRID_SIZE * 4);
+    const amountBytes = new Uint8Array(this.resourceAmount.buffer);
+    const combined = new Uint8Array(GRID_SIZE * 4 + GRID_SIZE * 2);
     combined.set(this.tileType, 0);
     combined.set(this.elevation, GRID_SIZE);
     combined.set(this.flags, GRID_SIZE * 2);
     combined.set(this.resourceType, GRID_SIZE * 3);
+    combined.set(amountBytes, GRID_SIZE * 4);
     return combined.buffer;
   }
 
@@ -112,9 +122,18 @@ export class TileGrid {
     grid.tileType.set(data.subarray(0, GRID_SIZE));
     grid.elevation.set(data.subarray(GRID_SIZE, GRID_SIZE * 2));
     grid.flags.set(data.subarray(GRID_SIZE * 2, GRID_SIZE * 3));
-    // Backward compatibility: old saves have 3 arrays, new ones have 4
+    // Backward compatibility: old saves have 3 arrays, new ones have 4, newest have 4 + Uint16
     if (buffer.byteLength >= GRID_SIZE * 4) {
       grid.resourceType.set(data.subarray(GRID_SIZE * 3, GRID_SIZE * 4));
+    }
+    if (buffer.byteLength >= GRID_SIZE * 6) {
+      const amountBytes = data.subarray(GRID_SIZE * 4, GRID_SIZE * 6);
+      new Uint8Array(grid.resourceAmount.buffer).set(amountBytes);
+    } else {
+      // Migrate: infer amounts from resource types
+      for (let i = 0; i < GRID_SIZE; i++) {
+        grid.resourceAmount[i] = grid.resourceType[i] !== ResourceType.None ? RESOURCE_DEPOSIT_AMOUNT : 0;
+      }
     }
     return grid;
   }

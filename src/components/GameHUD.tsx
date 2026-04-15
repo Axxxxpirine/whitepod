@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Trash2, Zap } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -27,6 +27,14 @@ export function GameHUD() {
   const resetSession = useGameStore((s) => s.resetSession);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
+
+  const [worldTick, setWorldTick] = useState(0);
+  useEffect(() => {
+    if (!engine) return;
+    return engine.subscribe((kind) => {
+      if (kind === 'world') setWorldTick((t) => t + 1);
+    });
+  }, [engine]);
 
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -66,6 +74,17 @@ export function GameHUD() {
     void energyVersion;
     return engine ? engine.getEnergyGlobalStats() : null;
   }, [engine, energyVersion]);
+
+  const resourceCounts = useMemo(() => {
+    void worldTick;
+    return engine?.getResourceCounts() ?? null;
+  }, [engine, worldTick]);
+
+  const resourceRates = useMemo(() => {
+    void worldTick;
+    void energyVersion;
+    return engine?.getResourceRates() ?? null;
+  }, [engine, worldTick, energyVersion]);
 
 
   const executeCommand = useCallback(
@@ -165,14 +184,67 @@ export function GameHUD() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
-      {globalEnergy && (
-        <div className="absolute top-3 right-3">
-          <div className="rounded-xl border border-white/15 bg-black/75 px-3 py-2 text-sm text-white/90 shadow-xl backdrop-blur-md">
-            <div>Production électrique: {globalEnergy.production}kWh</div>
-            <div>Consommation électrique: {globalEnergy.consumption}kWh</div>
-            <div className={globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}>
-              Bilan énergétique: {globalEnergy.remaining}kWh
-            </div>
+      {(resourceCounts || globalEnergy) && (
+        <div className="absolute top-3 left-3">
+          <div className="min-w-[180px] rounded-xl border border-white/15 bg-black/75 px-3 py-2.5 text-sm text-white/90 shadow-xl backdrop-blur-md">
+            {resourceCounts && (
+              <>
+                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  Ressources
+                </div>
+                <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
+                    <span className="font-bold">{resourceCounts.coal}</span>
+                    <span className="text-xs text-white/40">{resourceRates?.coal ?? 0} /min</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
+                    <span className="font-bold">{resourceCounts.ironOre}</span>
+                    <span className="text-xs text-white/40">{resourceRates?.ironOre ?? 0} /min</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
+                    <span className="font-bold">{resourceCounts.copperOre}</span>
+                    <span className="text-xs text-white/40">{resourceRates?.copperOre ?? 0} /min</span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {resourceCounts && globalEnergy && (
+              <div className="my-2 border-t border-white/10" />
+            )}
+
+            {globalEnergy && (
+              <>
+                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  Énergie
+                </div>
+                <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+                  <div className="flex items-center gap-1">
+                    <Zap
+                      size={13}
+                      className={globalEnergy.remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}
+                    />
+                    <span
+                      className={`font-bold ${globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
+                    >
+                      {globalEnergy.remaining >= 0 ? '+' : ''}
+                      {globalEnergy.remaining} kWh
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-white/50">
+                    <span className="text-emerald-400/70">↑</span>
+                    {globalEnergy.production} kWh
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-white/50">
+                    <span className="text-orange-400/70">↓</span>
+                    {globalEnergy.consumption} kWh
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
