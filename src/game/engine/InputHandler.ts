@@ -10,6 +10,7 @@ export class InputHandler {
   private lastPanX = 0;
   private lastPanY = 0;
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
+  private onBuildingPlaced: (() => void) | null = null;
 
   constructor(engine: GameEngine, getSelectedTool: () => SelectedTool) {
     this.engine = engine;
@@ -18,6 +19,10 @@ export class InputHandler {
 
   setHoverCallback(cb: (tile: { x: number; y: number } | null) => void): void {
     this.onHoverChange = cb;
+  }
+
+  setBuildingPlacedCallback(cb: (() => void) | null): void {
+    this.onBuildingPlaced = cb;
   }
 
   onPointerDown(screenX: number, screenY: number, button: number): void {
@@ -32,7 +37,10 @@ export class InputHandler {
         if (selectedTool.kind === 'tile') {
           this.engine.placeTile(coord.x, coord.y, selectedTool.tile);
         } else {
-          this.engine.placeBuilding(selectedTool.buildingType, coord);
+          const buildingId = this.engine.placeBuilding(selectedTool.buildingType, coord);
+          if (buildingId !== null) {
+            this.onBuildingPlaced?.();
+          }
         }
       }
     }
@@ -59,6 +67,11 @@ export class InputHandler {
 
   onPointerUp(): void {
     this.isPanning = false;
+  }
+
+  onPointerLeave(): void {
+    this.isPanning = false;
+    this.onHoverChange?.(null);
   }
 
   onWheel(screenX: number, screenY: number, deltaX: number, deltaY: number, ctrlKey: boolean, deltaMode: number): void {
