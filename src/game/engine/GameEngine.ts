@@ -131,9 +131,6 @@ export class GameEngine {
       if (resourceType === ResourceType.Coal) this.playerStock.coal++;
       else if (resourceType === ResourceType.IronOre) this.playerStock.ironOre++;
       else if (resourceType === ResourceType.CopperOre) this.playerStock.copperOre++;
-      if (newAmount === 0) {
-        this.grid.resourceType[idx] = ResourceType.None;
-      }
       this.grid.markDirty(x, y);
       changed = true;
     }
@@ -170,10 +167,10 @@ export class GameEngine {
       if (!type.allowedTiles.includes(this.grid.getType(x, y))) {
         return { ok: false, reason: 'tile_type_invalid' };
       }
-      if (type.requiresResourceDeposit && this.grid.getResource(x, y) === ResourceType.None) {
+      if (type.requiresResourceDeposit && (this.grid.getResource(x, y) === ResourceType.None || this.grid.getResourceAmount(x, y) === 0)) {
         return { ok: false, reason: 'resource_required' };
       }
-      if (type.forbidsResourceDeposit && this.grid.getResource(x, y) !== ResourceType.None) {
+      if (type.forbidsResourceDeposit && this.grid.getResource(x, y) !== ResourceType.None && this.grid.getResourceAmount(x, y) > 0) {
         return { ok: false, reason: 'resource_forbidden' };
       }
     }
@@ -336,6 +333,7 @@ export class GameEngine {
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
+      if (this.grid.getResourceAmount(building.origin.x, building.origin.y) === 0) continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
       if (resource === ResourceType.Coal) coal += EXTRACTOR_RATE_PER_MIN;
       else if (resource === ResourceType.IronOre) ironOre += EXTRACTOR_RATE_PER_MIN;

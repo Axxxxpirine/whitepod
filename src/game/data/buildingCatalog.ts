@@ -1,9 +1,11 @@
 import {
   Direction,
   PortKind,
+  ResourceType,
   TileType,
   type BuildingType,
   type BuildingTypeId,
+  type ResourceType as ResourceTypeT,
 } from '../types';
 
 export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
@@ -135,6 +137,19 @@ const catalog = new Map<BuildingTypeId, BuildingType>(entries.map((t) => [t.id, 
 
 export function getBuildingType(id: BuildingTypeId): BuildingType | undefined {
   return catalog.get(id);
+}
+
+export function resourceTypeLabel(type: ResourceTypeT): string {
+  switch (type) {
+    case ResourceType.Coal:
+      return 'Charbon';
+    case ResourceType.IronOre:
+      return 'Minerai de fer';
+    case ResourceType.CopperOre:
+      return 'Minerai de cuivre';
+    default:
+      return 'Aucune';
+  }
 }
 
 export function validateCatalog(): void {
