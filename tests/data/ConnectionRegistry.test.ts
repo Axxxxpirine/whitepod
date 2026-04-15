@@ -77,4 +77,29 @@ describe('ConnectionRegistry', () => {
     expect(reg.getConnectionsOf(4)).toHaveLength(1);
     expect(reg.getAll().size).toBe(1);
   });
+
+  it('serialize/deserialize roundtrip restores instances and indexes', () => {
+    const reg = new ConnectionRegistry();
+    const id = reg.register({ building: 1, port: 'out' }, { building: 2, port: 'in' })!;
+
+    const restored = ConnectionRegistry.deserialize(reg.serialize());
+
+    expect(restored.get(id)).toEqual({
+      id,
+      from: { building: 1, port: 'out' },
+      to: { building: 2, port: 'in' },
+    });
+    expect(restored.isPortConnected(1, 'out')).toBe(true);
+    expect(restored.isPortConnected(2, 'in')).toBe(true);
+  });
+
+  it('deserialize throws on unknown version', () => {
+    expect(() =>
+      ConnectionRegistry.deserialize({
+        version: 999,
+        nextId: 1,
+        connections: [],
+      }),
+    ).toThrow(/version/);
+  });
 });

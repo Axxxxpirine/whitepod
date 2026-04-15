@@ -94,6 +94,14 @@ engine.getVisibleTiles()                            // → { x0, y0, x1, y1 }
 engine.screenToTile(screenX, screenY)               // → { x, y }
 ```
 
+## Session persistence
+
+- The current game session is saved automatically in `sessionStorage`.
+- The saved session is scoped to the current browser tab and restored on reload.
+- Persisted state includes the world, buildings, connections, camera position, zoom, and selected tool.
+- Temporary UI state such as hover and console history is not persisted.
+- Use the `Reset` button in the HUD to clear the current tab session and start a fresh game.
+
 ## Project structure
 
 ```

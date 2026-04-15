@@ -7,6 +7,12 @@ export interface VisibleTileRange {
   y1: number;
 }
 
+export interface ViewportSnapshot {
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly zoom: number;
+}
+
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 const VIEWPORT_PADDING = 2;
@@ -21,13 +27,15 @@ export class Viewport {
   zoom: number;
   screenWidth: number;
   screenHeight: number;
+  private readonly onChange: (() => void) | null;
 
-  constructor(screenWidth: number, screenHeight: number) {
+  constructor(screenWidth: number, screenHeight: number, onChange: (() => void) | null = null) {
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
     this.zoom = 1;
     this.centerX = (GRID_WIDTH * TILE_SIZE) / 2;
     this.centerY = (GRID_HEIGHT * TILE_SIZE) / 2;
+    this.onChange = onChange;
   }
 
   getVisibleTileRange(): VisibleTileRange {
@@ -43,16 +51,20 @@ export class Viewport {
   }
 
   pan(dx: number, dy: number): void {
-    this.centerX = clamp(
+    const nextCenterX = clamp(
       this.centerX + dx / this.zoom,
       0,
       GRID_WIDTH * TILE_SIZE,
     );
-    this.centerY = clamp(
+    const nextCenterY = clamp(
       this.centerY + dy / this.zoom,
       0,
       GRID_HEIGHT * TILE_SIZE,
     );
+    if (nextCenterX === this.centerX && nextCenterY === this.centerY) return;
+    this.centerX = nextCenterX;
+    this.centerY = nextCenterY;
+    this.onChange?.();
   }
 
   zoomAt(screenX: number, screenY: number, factor: number): void {
@@ -66,10 +78,35 @@ export class Viewport {
     this.centerX = worldX - (screenX - this.screenWidth / 2) / newZoom;
     this.centerY = worldY - (screenY - this.screenHeight / 2) / newZoom;
     this.zoom = newZoom;
+    this.onChange?.();
   }
 
   resize(width: number, height: number): void {
     this.screenWidth = width;
     this.screenHeight = height;
+  }
+
+  getSnapshot(): ViewportSnapshot {
+    return {
+      centerX: this.centerX,
+      centerY: this.centerY,
+      zoom: this.zoom,
+    };
+  }
+
+  restore(snapshot: ViewportSnapshot): void {
+    const nextCenterX = clamp(snapshot.centerX, 0, GRID_WIDTH * TILE_SIZE);
+    const nextCenterY = clamp(snapshot.centerY, 0, GRID_HEIGHT * TILE_SIZE);
+    const nextZoom = clamp(snapshot.zoom, MIN_ZOOM, MAX_ZOOM);
+    const changed =
+      nextCenterX !== this.centerX ||
+      nextCenterY !== this.centerY ||
+      nextZoom !== this.zoom;
+    this.centerX = nextCenterX;
+    this.centerY = nextCenterY;
+    this.zoom = nextZoom;
+    if (changed) {
+      this.onChange?.();
+    }
   }
 }

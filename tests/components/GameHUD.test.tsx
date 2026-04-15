@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
+import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 import { GameEngine } from '@/game/engine/GameEngine';
@@ -20,7 +21,9 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      sessionEpoch: 0,
     });
+    window.sessionStorage.clear();
   });
 
   it('renders the bottom navbar with the extractor button', () => {
@@ -119,5 +122,28 @@ describe('GameHUD', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByPlaceholderText('engine.placeResource(10, 10, 1)')).not.toBeInTheDocument();
+  });
+
+  it('resets the session from the HUD', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
+    window.sessionStorage.setItem(WORLD_STORAGE_KEY, 'world');
+    window.sessionStorage.setItem(VIEW_STORAGE_KEY, 'view');
+    useGameStore.setState({
+      selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+      selectedBuildingId: 12,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(confirm).toHaveBeenCalled();
+    expect(useGameStore.getState().sessionEpoch).toBe(1);
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+    expect(useGameStore.getState().selectedBuildingId).toBeNull();
+    expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
+    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 });
