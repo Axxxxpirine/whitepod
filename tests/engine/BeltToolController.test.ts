@@ -52,7 +52,7 @@ describe('BeltToolController', () => {
     }
   });
 
-  it('selects the clicked storage side when connecting a belt', () => {
+  it('selects the clicked storage side when connecting a belt via two clicks', () => {
     const engine = makeEngine();
     placeExtractor(engine, 5, 13);
     const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
@@ -66,9 +66,12 @@ describe('BeltToolController', () => {
     const sourcePoint = screenPointForTile(engine, 5, 13);
     const eastSidePoint = screenPointForTile(engine, 12, 11);
 
+    // First click: select source
     controller.onPointerDown(sourcePoint.sx, sourcePoint.sy, 0);
+    // Hover to show preview
     controller.onPointerMove(eastSidePoint.sx, eastSidePoint.sy);
-    controller.onPointerUp(eastSidePoint.sx, eastSidePoint.sy, 0);
+    // Second click: place belt to target
+    controller.onPointerDown(eastSidePoint.sx, eastSidePoint.sy, 0);
 
     expect(previewCount).toBeGreaterThan(0);
     const storageConnections = engine.getConnectionsOf(storage);
