@@ -21,6 +21,7 @@ describe('InputHandler', () => {
 
   it('selects a building when the selected tool is select', () => {
     engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
     engine.placeBuilding('placeholder_1x1', { x: 0, y: 0 });
     const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const onBuildingSelected = vi.fn();
@@ -94,6 +95,7 @@ describe('InputHandler', () => {
 
   it('emits clicked building id in energy link mode', () => {
     engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
     const source = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 0 })!;
     const getSelectedTool = (): SelectedTool => ({ kind: 'energy_link' });
     const onEnergyLinkClick = vi.fn();
@@ -163,6 +165,7 @@ describe('InputHandler', () => {
 
   it('does not select a building while building placement mode is active', () => {
     engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
     engine.placeBuilding('placeholder_1x1', { x: 0, y: 0 });
     const getSelectedTool = (): SelectedTool => ({
       kind: 'building',

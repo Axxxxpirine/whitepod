@@ -92,7 +92,8 @@ export type PlacementFailure =
   | 'resource_required'
   | 'resource_forbidden'
   | 'unknown_type'
-  | 'id_overflow';
+  | 'id_overflow'
+  | 'tile_fogged';
 
 export type PlacementResult =
   | { readonly ok: true }

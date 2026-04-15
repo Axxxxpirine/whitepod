@@ -14,6 +14,7 @@ function makeEngine() {
   const engine = new GameEngine(640, 480);
   engine.generateMap(99);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   engine.grid.setResource(8, 8, ResourceType.Coal);
   engine.placeBuilding('extractor_basic', { x: 8, y: 8 });
   return engine;

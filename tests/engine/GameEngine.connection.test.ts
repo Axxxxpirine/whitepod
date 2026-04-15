@@ -4,6 +4,7 @@ import { Direction, TileType } from '@/game/types';
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
 }
 
 // Place two placeholder_node_1x1 side by side horizontally:

@@ -11,6 +11,7 @@ import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { BuildingHighlightRenderer } from '@/game/renderer/BuildingHighlightRenderer';
 import { DayNightOverlayRenderer } from '@/game/renderer/DayNightOverlayRenderer';
+import { FogOfWarRenderer } from '@/game/renderer/FogOfWarRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
@@ -93,6 +94,7 @@ export function GameCanvas() {
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
     let buildingHighlightRenderer: BuildingHighlightRenderer | null = null;
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
+    let fogOfWarRenderer: FogOfWarRenderer | null = null;
     let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
@@ -209,6 +211,10 @@ export function GameCanvas() {
           pendingSourceId: isEnergyLink ? pendingEnergyLinkSource : null,
           mouseWorldPos,
         };
+      });
+      fogOfWarRenderer = new FogOfWarRenderer(app, engine, () => {
+        const { selectedTool, hoverTile } = useGameStore.getState();
+        return { selectedTool, hoverTile };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
 
@@ -363,6 +369,7 @@ export function GameCanvas() {
         buildingHighlightRenderer!.render();
         placementPreviewRenderer!.render();
         energyLinkRenderer!.render();
+        fogOfWarRenderer!.render();
         dayNightOverlayRenderer!.render();
         engine.grid.clearDirty();
       });
@@ -396,6 +403,7 @@ export function GameCanvas() {
         beltFlowAnimator?.destroy();
         beltRenderer?.destroy();
         energyLinkRenderer?.destroy();
+        fogOfWarRenderer?.destroy();
         dayNightOverlayRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();

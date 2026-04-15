@@ -5,6 +5,7 @@ import {
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  WATCHTOWER_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
 } from '../data/buildingCatalog';
@@ -26,6 +27,7 @@ const BUILDING_TINTS: Record<string, number> = {
   [STORAGE_BUILDING_TYPE_ID]: 0x06b6d4,
   [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x22c55e,
   [MERGER_BASIC_BUILDING_TYPE_ID]: 0xc084fc, // violet — distinct from belts (pink) and storage (cyan)
+  [WATCHTOWER_BUILDING_TYPE_ID]: 0x8b5cf6,
 };
 const DEFAULT_BUILDING_ALPHA = 0.95;
 const EXTRACTOR_BUILDING_ALPHA = 0.52;

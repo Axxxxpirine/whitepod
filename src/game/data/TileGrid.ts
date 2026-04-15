@@ -1,4 +1,4 @@
-import { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, RESOURCE_DEPOSIT_AMOUNT } from '../constants';
+import { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, RESOURCE_DEPOSIT_AMOUNT, REVEALED_FLAG } from '../constants';
 import { ResourceType, type TileType, type ResourceType as ResourceTypeT } from '../types';
 import { toIndex, isInBounds } from './coords';
 
@@ -21,6 +21,7 @@ export class TileGrid {
 
   private dirtyRegion: DirtyRegion | null = null;
   private onChange: TileGridChangeListener | null;
+  fogVersion = 0;
 
   constructor(onChange: TileGridChangeListener | null = null) {
     this.tileType = new Uint8Array(GRID_SIZE);
@@ -84,6 +85,48 @@ export class TileGrid {
       this.markDirty(x0 + w - 1, y0 + h - 1);
       this.onChange?.();
     }
+  }
+
+  isRevealed(x: number, y: number): boolean {
+    return (this.flags[toIndex(x, y)] & REVEALED_FLAG) !== 0;
+  }
+
+  revealCircle(cx: number, cy: number, radius: number): void {
+    const r2 = radius * radius;
+    const x0 = Math.max(0, Math.floor(cx - radius));
+    const y0 = Math.max(0, Math.floor(cy - radius));
+    const x1 = Math.min(GRID_WIDTH - 1, Math.ceil(cx + radius));
+    const y1 = Math.min(GRID_HEIGHT - 1, Math.ceil(cy + radius));
+
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const dx = x - cx;
+        const dy = y - cy;
+        if (dx * dx + dy * dy <= r2) {
+          this.flags[toIndex(x, y)] |= REVEALED_FLAG;
+        }
+      }
+    }
+
+    this.markDirty(x0, y0);
+    this.markDirty(x1, y1);
+    this.fogVersion++;
+    this.onChange?.();
+  }
+
+  revealAll(): void {
+    this.flags.fill(REVEALED_FLAG);
+    this.markDirty(0, 0);
+    this.markDirty(GRID_WIDTH - 1, GRID_HEIGHT - 1);
+    this.fogVersion++;
+    this.onChange?.();
+  }
+
+  hasAnyRevealed(): boolean {
+    for (let i = 0; i < GRID_SIZE; i++) {
+      if (this.flags[i] & REVEALED_FLAG) return true;
+    }
+    return false;
   }
 
   markDirty(x: number, y: number): void {

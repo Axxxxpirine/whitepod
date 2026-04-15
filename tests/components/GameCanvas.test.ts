@@ -11,6 +11,7 @@ import { SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 function makeEngine() {
   const engine = new GameEngine(640, 480);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   return engine;
 }
 

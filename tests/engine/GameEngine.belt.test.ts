@@ -8,6 +8,7 @@ import { Direction, ResourceType, TileType } from '@/game/types';
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
 }
 
 function placeEndpoints(engine: GameEngine, ax: number, bx: number, y: number) {

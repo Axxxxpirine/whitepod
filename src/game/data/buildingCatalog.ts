@@ -17,6 +17,7 @@ export const BELT_CORNER_CCW_BUILDING_TYPE_ID = 'belt_corner_ccw' as const;
 export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 export const BATTERY_BASIC_BUILDING_TYPE_ID = 'battery_basic' as const;
 export const MERGER_BASIC_BUILDING_TYPE_ID = 'merger_basic' as const;
+export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
@@ -95,6 +96,14 @@ const entries: readonly BuildingType[] = [
       { id: 'in_south', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.South },
       { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
     ],
+  },
+  {
+    id: WATCHTOWER_BUILDING_TYPE_ID,
+    name: "Tour d'observation",
+    footprint: { w: 2, h: 2 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [],
   },
   {
     id: 'placeholder_1x1',

@@ -7,6 +7,7 @@ import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/typ
 function makeEngine() {
   const engine = new GameEngine(640, 480);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   return engine;
 }
 

@@ -11,6 +11,7 @@ import { Direction, PortKind, TileType } from '@/game/types';
 function makeEngine() {
   const engine = new GameEngine(800, 600);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   return engine;
 }
 

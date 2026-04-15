@@ -5,6 +5,7 @@ import { EXTRACTOR_BUILDING_TYPE_ID, STORAGE_BUILDING_TYPE_ID } from '@/game/dat
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
 }
 
 describe('GameEngine building placement', () => {
