@@ -1,8 +1,8 @@
-import { Container, Sprite, Texture, type Application } from 'pixi.js';
+import { Container, Sprite, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
 import { TILE_SIZE, GRID_WIDTH } from '../constants';
 import type { TileType } from '../types';
-import { getTileColor } from './TileSprite';
+import { getTileColor, getTileTexture } from './TileSprite';
 
 export class GridRenderer {
   private readonly tileContainer: Container;
@@ -50,7 +50,7 @@ export class GridRenderer {
           const index = ty * GRID_WIDTH + tx;
           if (!this.activeSprites.has(index)) {
             const sprite = this.acquireSprite();
-            sprite.tint = getTileColor(grid.tileType[index] as TileType);
+            sprite.tint = getTileColor(grid.tileType[index] as TileType, tx, ty);
             sprite.x = tx * TILE_SIZE;
             sprite.y = ty * TILE_SIZE;
             this.tileContainer.addChild(sprite);
@@ -74,7 +74,7 @@ export class GridRenderer {
           const index = ty * GRID_WIDTH + tx;
           const sprite = this.activeSprites.get(index);
           if (sprite) {
-            sprite.tint = getTileColor(grid.tileType[index] as TileType);
+            sprite.tint = getTileColor(grid.tileType[index] as TileType, tx, ty);
           }
         }
       }
@@ -82,7 +82,7 @@ export class GridRenderer {
   }
 
   private acquireSprite(): Sprite {
-    const sprite = this.spritePool.pop() ?? new Sprite(Texture.WHITE);
+    const sprite = this.spritePool.pop() ?? new Sprite(getTileTexture());
     sprite.width = TILE_SIZE - 1;
     sprite.height = TILE_SIZE - 1;
     return sprite;
