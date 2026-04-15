@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import {
+  EXTRACTOR_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
+} from '@/game/data/buildingCatalog';
 import { TileType } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 
@@ -14,6 +17,8 @@ export function GameHUD() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const extractorSelected =
     selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
+  const storageSelected =
+    selectedTool.kind === 'building' && selectedTool.buildingType === STORAGE_BUILDING_TYPE_ID;
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -55,6 +60,14 @@ export function GameHUD() {
       extractorSelected
         ? { kind: 'tile', tile: TileType.Ground }
         : { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+    );
+  };
+
+  const toggleStorageTool = () => {
+    setSelectedTool(
+      storageSelected
+        ? { kind: 'tile', tile: TileType.Ground }
+        : { kind: 'building', buildingType: STORAGE_BUILDING_TYPE_ID },
     );
   };
 
@@ -110,18 +123,32 @@ export function GameHUD() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={toggleExtractorTool}
-          aria-pressed={extractorSelected}
-          className={
-            extractorSelected
-              ? 'rounded-xl bg-amber-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
-              : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
-          }
-        >
-          Extracteur
-        </button>
+        <div className="flex items-center gap-2 justify-self-center">
+          <button
+            type="button"
+            onClick={toggleExtractorTool}
+            aria-pressed={extractorSelected}
+            className={
+              extractorSelected
+                ? 'rounded-xl bg-amber-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
+                : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
+            }
+          >
+            Extracteur
+          </button>
+          <button
+            type="button"
+            onClick={toggleStorageTool}
+            aria-pressed={storageSelected}
+            className={
+              storageSelected
+                ? 'rounded-xl bg-sky-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
+                : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
+            }
+          >
+            Stockage
+          </button>
+        </div>
 
         <div className="justify-self-end flex items-center gap-2">
           <button

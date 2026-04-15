@@ -62,6 +62,7 @@ export interface BuildingType {
   readonly footprint: Footprint;
   readonly allowedTiles: readonly TileType[];
   readonly requiresResourceDeposit?: boolean;
+  readonly forbidsResourceDeposit?: boolean;
   readonly ports: readonly Port[];
 }
 
@@ -77,6 +78,7 @@ export type PlacementFailure =
   | 'tile_occupied'
   | 'tile_type_invalid'
   | 'resource_required'
+  | 'resource_forbidden'
   | 'unknown_type'
   | 'id_overflow';
 

@@ -1,12 +1,17 @@
 import { Container, Sprite, Texture, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
-import { EXTRACTOR_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
+import {
+  EXTRACTOR_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
+  getBuildingType,
+} from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import type { Building } from '../types';
 
 const BUILDING_INSET = 2;
 const BUILDING_TINTS: Record<string, number> = {
   [EXTRACTOR_BUILDING_TYPE_ID]: 0xf5b041,
+  [STORAGE_BUILDING_TYPE_ID]: 0x5dade2,
 };
 
 function isBuildingVisible(
