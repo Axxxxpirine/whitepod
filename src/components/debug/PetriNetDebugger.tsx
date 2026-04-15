@@ -112,7 +112,7 @@ export function PetriNetDebugger() {
     return set
   }, [countDeposits, marking, transitions])
 
-  const filteredTransitions = useMemo(() => {
+  const visibility = useMemo(() => {
     const q = filterText.trim().toLowerCase()
 
     const allowedLayers = new Set<string>()
@@ -121,14 +121,9 @@ export function PetriNetDebugger() {
     if (showBus) allowedLayers.add('bus')
     if (showStock) allowedLayers.add('stock')
 
-    const isPlaceVisible = (placeId: string) => {
-      const layer = placeLayer(placeId)
-      if (!allowedLayers.has(layer)) return false
-      if (!q) return true
-      return placeId.toLowerCase().includes(q)
-    }
+    const placePassesLayer = (placeId: string) => allowedLayers.has(placeLayer(placeId))
 
-    const isTransitionVisible = (t: Transition) => {
+    const transitionMatchesQuery = (t: Transition) => {
       if (!q) return true
       if (t.id.toLowerCase().includes(q)) return true
       for (const input of t.consumes) {
@@ -140,42 +135,63 @@ export function PetriNetDebugger() {
       return false
     }
 
-    // First pass: transitions matching query.
-    const base = transitions.filter(t => isTransitionVisible(t))
+    const visibleTransitionIds = new Set<string>()
+    const visiblePlaceIds = new Set<string>()
 
-    // Second pass: if query is a place, keep transitions adjacent.
     if (!q) {
-      return base.filter(t => {
+      // Layer-only filtering: show all transitions that touch at least one visible place.
+      for (const t of transitions) {
+        let transitionVisible = false
+
         for (const input of t.consumes) {
-          if (allowedLayers.has(placeLayer(input.place))) return true
+          if (!placePassesLayer(input.place)) continue
+          transitionVisible = true
+          visiblePlaceIds.add(input.place)
         }
         for (const output of t.produces) {
-          if (allowedLayers.has(placeLayer(output.place))) return true
+          if (!placePassesLayer(output.place)) continue
+          transitionVisible = true
+          visiblePlaceIds.add(output.place)
         }
-        return false
-      })
+
+        if (transitionVisible) visibleTransitionIds.add(t.id)
+      }
+
+      return { visibleTransitionIds, visiblePlaceIds }
     }
 
-    const visiblePlaces = new Set<string>()
-    for (const t of base) {
+    // Query filtering: include matches + 1-hop neighborhood.
+    const matchingTransitions = transitions.filter(transitionMatchesQuery)
+
+    for (const t of matchingTransitions) {
+      visibleTransitionIds.add(t.id)
+
       for (const input of t.consumes) {
-        if (isPlaceVisible(input.place)) visiblePlaces.add(input.place)
+        if (placePassesLayer(input.place)) visiblePlaceIds.add(input.place)
       }
       for (const output of t.produces) {
-        if (isPlaceVisible(output.place)) visiblePlaces.add(output.place)
+        if (placePassesLayer(output.place)) visiblePlaceIds.add(output.place)
       }
     }
 
-    return transitions.filter(t => {
-      if (isTransitionVisible(t)) return true
+    for (const t of transitions) {
+      if (visibleTransitionIds.has(t.id)) continue
+
       for (const input of t.consumes) {
-        if (visiblePlaces.has(input.place)) return true
+        if (visiblePlaceIds.has(input.place)) {
+          visibleTransitionIds.add(t.id)
+          break
+        }
       }
       for (const output of t.produces) {
-        if (visiblePlaces.has(output.place)) return true
+        if (visiblePlaceIds.has(output.place)) {
+          visibleTransitionIds.add(t.id)
+          break
+        }
       }
-      return false
-    })
+    }
+
+    return { visibleTransitionIds, visiblePlaceIds }
   }, [filterText, showBus, showControl, showStock, showSurface, transitions])
 
   const documentationHtml = useMemo(() => {
@@ -431,10 +447,12 @@ export function PetriNetDebugger() {
           <div className="text-sm" dangerouslySetInnerHTML={{ __html: documentationHtml }} />
 
           <PetriNetDiagram
-            transitions={filteredTransitions}
+            transitions={transitions}
             marking={marking}
             enabledTransitionIds={enabledTransitionIds}
             onFireTransition={fireTransition}
+            visibleTransitionIds={visibility.visibleTransitionIds}
+            visiblePlaceIds={visibility.visiblePlaceIds}
           />
         </div>
       </div>

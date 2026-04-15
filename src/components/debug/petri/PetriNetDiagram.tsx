@@ -55,6 +55,8 @@ export interface PetriNetDiagramProps {
   marking: Record<string, number>
   enabledTransitionIds: ReadonlySet<string>
   onFireTransition: (transitionId: string) => void
+  visibleTransitionIds?: ReadonlySet<string>
+  visiblePlaceIds?: ReadonlySet<string>
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -78,6 +80,8 @@ export function PetriNetDiagram({
   marking,
   enabledTransitionIds,
   onFireTransition,
+  visibleTransitionIds,
+  visiblePlaceIds,
 }: PetriNetDiagramProps) {
   const [zoom, setZoom] = useState<number>(1)
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 })
@@ -157,6 +161,22 @@ export function PetriNetDiagram({
 
     return { nodes, edges, nodeByKey, bounds: { x: 0, y: 0, width, height } }
   }, [transitions])
+
+  const isPlaceVisible = useCallback(
+    (place: string) => {
+      if (!visiblePlaceIds) return true
+      return visiblePlaceIds.has(place)
+    },
+    [visiblePlaceIds],
+  )
+
+  const isTransitionVisible = useCallback(
+    (transitionId: string) => {
+      if (!visibleTransitionIds) return true
+      return visibleTransitionIds.has(transitionId)
+    },
+    [visibleTransitionIds],
+  )
 
   const viewBox = useMemo(() => {
     const w = layout.bounds.width / zoom
@@ -326,6 +346,11 @@ export function PetriNetDiagram({
           const toNode = layout.nodeByKey.get(`${edge.to.kind}:${edge.to.id}`)
           if (!fromNode || !toNode) return null
 
+          if (edge.from.kind === 'place' && !isPlaceVisible(edge.from.id)) return null
+          if (edge.from.kind === 'transition' && !isTransitionVisible(edge.from.id)) return null
+          if (edge.to.kind === 'place' && !isPlaceVisible(edge.to.id)) return null
+          if (edge.to.kind === 'transition' && !isTransitionVisible(edge.to.id)) return null
+
           const rawStart = { x: fromNode.x, y: fromNode.y }
           const rawEnd = { x: toNode.x, y: toNode.y }
 
@@ -349,6 +374,8 @@ export function PetriNetDiagram({
         {/* Nodes */}
         {layout.nodes.map(node => {
           if (node.kind === 'place') {
+            if (!isPlaceVisible(node.id)) return null
+
             const tokens = marking[node.id] ?? 0
             return (
               <g key={`p:${node.id}`}>
@@ -362,6 +389,8 @@ export function PetriNetDiagram({
               </g>
             )
           }
+
+          if (!isTransitionVisible(node.id)) return null
 
           const isEnabled = enabledTransitionIds.has(node.id)
           const fill = isEnabled ? '#b6f7b6' : '#d0d0d0'
@@ -416,6 +445,11 @@ export function PetriNetDiagram({
               const toNode = layout.nodeByKey.get(`${edge.to.kind}:${edge.to.id}`)
               if (!fromNode || !toNode) return null
 
+              if (edge.from.kind === 'place' && !isPlaceVisible(edge.from.id)) return null
+              if (edge.from.kind === 'transition' && !isTransitionVisible(edge.from.id)) return null
+              if (edge.to.kind === 'place' && !isPlaceVisible(edge.to.id)) return null
+              if (edge.to.kind === 'transition' && !isTransitionVisible(edge.to.id)) return null
+
               const rawStart = { x: fromNode.x, y: fromNode.y }
               const rawEnd = { x: toNode.x, y: toNode.y }
 
@@ -438,8 +472,11 @@ export function PetriNetDiagram({
             {/* Nodes */}
             {layout.nodes.map(node => {
               if (node.kind === 'place') {
+                if (!isPlaceVisible(node.id)) return null
                 return <circle key={`mm:p:${node.id}`} cx={node.x} cy={node.y} r={8} fill="#fff" stroke="#444" strokeWidth={1} />
               }
+
+              if (!isTransitionVisible(node.id)) return null
 
               const isEnabled = enabledTransitionIds.has(node.id)
               return (

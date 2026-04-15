@@ -11,6 +11,7 @@
 - PixiJS 8 (rendu 2D - phase 2)
 - Vite 8, Tailwind CSS 4, ESLint
 - Vitest (tests), localStorage (persistance)
+- Debug PetriNet UI: Dagre (layout), Marked (Markdown)
 
 ---
 
@@ -38,6 +39,12 @@
   - tick 1s + dispatch `window.__whitepodOnPixiUpdate` + event `whitepod-pixi-update`
 - **UI minimale** : `src/App.tsx`
   - mode `player|debug`, seed + new game, reset save, stations, tokens
+- **Debug PetriNet Simulator** (mode `debug`) :
+  - `src/components/debug/PetriNetDebugger.tsx` (controls, stats, filters)
+  - `src/components/debug/petri/PetriNetDiagram.tsx` (SVG + minimap + ROI)
+  - Le simulateur est **interactif** et modifie l'état réel (fire/step/auto-sim)
+- **GameLoop** : `src/engine/game-loop.ts`
+  - en `debug`, le tick automatique est **gated** par `autoTickEnabled`
 - **Tests** : Vitest (DSL compiler, engine, grid, snapshots, store hydration)
 
 ### 0.2 Commandes (reprise de session)
@@ -45,10 +52,13 @@
 Environnement recommandé (Nix) :
 
 - `nix develop`
-- `npm ci`
+- `npm install` (ou `npm ci` si lockfile stable)
 - `npm run generate:lunar-chemistry` (à faire après toute modification du DSL)
 - `npm test`
+- `npm run lint`
 - `npm run dev`
+
+Astuce: si `node/npm` ne sont pas disponibles hors shell, utiliser `nix develop -c <commande>`.
 
 Pour repartir de zéro côté sauvegarde :
 
@@ -60,6 +70,24 @@ Pour repartir de zéro côté sauvegarde :
 - **Exporter l'état complet pour Pixi** (dépôts + stations + grid sparse) dans `PixiExport`.
 - **Implémenter un premier renderer PixiJS** (Phase 5) consommant l'export.
 - Ajouter un UI de placement sur grille (au lieu du placement automatique).
+- Améliorer le debug PetriNet (inspecteur transition + raisons disable + perf/UX).
+
+### 0.4 Notes Debug PetriNet (important)
+
+- En mode `debug`, le `GameLoop` **ne tick pas** automatiquement par défaut.
+  - Le simulateur (`PetriNetDebugger`) appelle `setAutoTickEnabled(false)`.
+  - Le tick est alors piloté par le simulateur (step/auto-sim) et modifie le store réel.
+- Pour réactiver le tick auto en debug (rare), mettre `autoTickEnabled=true` dans le store.
+- Les stats debug (history, produced/consumed) sont calculées côté store :
+  - `debugFiringHistory`, `debugTotalFires`, `debugTokenStats`, `debugStatsStartTick`.
+
+### 0.5 Reprise de session (checklist)
+
+- Démarrer le devshell: `nix develop`
+- Installer deps: `npm install`
+- Vérifier l'état: `npm test && npm run lint && npm run build`
+- Lancer: `npm run dev`
+- Debugger: passer en mode `debug` et utiliser "Petri net simulator".
 
 ---
 
@@ -114,12 +142,14 @@ Auto-save (30s) → Launch rocket → Done → Terminate
 - **Bus** : Transport intermédiaire
 - **Stock** : Stockage pour consommation
 
-**Transitions** (182 transitions) :
+**Transitions** (ordre de grandeur) :
+- Artefact runtime `public/data/lunar-chemistry.game-system.transitions.json` : ~369 transitions
+- Places runtime : ~186 places
 - **Extraction** : tier0 ressources (lunar_helium3, lunar_hydrogen, lunar_oxygen, lunar_regolith)
-- **Convey** : surface → bus (61 transitions)
-- **Store** : bus → stock (61 transitions)
-- **Recipe** : stock → surface (61 transitions)
-- **Drain** : purge post-launch (61 transitions)
+- **Convey** : surface → bus
+- **Store** : bus → stock
+- **Recipe** : stock → surface
+- **Drain** : purge post-launch
 
 ---
 
@@ -661,11 +691,15 @@ export class GameLoop {
     const loop = (timestamp: number) => {
       if (!this.running) return;
       
-      if (timestamp - this.lastTick >= 1000) {
-        const exportData = useGameStore.getState().tick();
-        this.dispatchToPixi(exportData);
-        this.lastTick = timestamp;
-      }
+       if (timestamp - this.lastTick >= 1000) {
+         const state = useGameStore.getState();
+         const shouldAutoTick = state.mode === 'player' || state.autoTickEnabled;
+         if (shouldAutoTick) {
+           const exportData = state.tick();
+           this.dispatchToPixi(exportData);
+         }
+         this.lastTick = timestamp;
+       }
       
       this.animationFrameId = requestAnimationFrame(loop);
     };
@@ -915,8 +949,12 @@ whitepod/
 │   ├── render/                 # Future (Phase 5)
 │   │   └── pixi-renderer.ts
 │   │
-│   ├── components/             # Future (Phase 5)
-│   │   └── PixiCanvas.tsx
+│   ├── components/
+│   │   ├── debug/
+│   │   │   ├── PetriNetDebugger.tsx
+│   │   │   └── petri/
+│   │   │       └── PetriNetDiagram.tsx
+│   │   └── PixiCanvas.tsx      # Future (Phase 5)
 │   │
 │   ├── assets/
 │   │   └── README.md
