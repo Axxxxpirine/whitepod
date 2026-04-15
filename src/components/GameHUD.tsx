@@ -5,6 +5,7 @@ import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
+import { ToolModeIndicator } from './hud/ToolModeIndicator';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -168,6 +169,7 @@ export function GameHUD() {
         </div>
       )}
 
+      <ToolModeIndicator />
       <SelectedBuildingPanel />
 
       {consoleOpen && (

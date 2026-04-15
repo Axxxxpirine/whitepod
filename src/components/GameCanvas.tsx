@@ -20,6 +20,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
+import type { SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
 import {
@@ -60,11 +61,19 @@ function createDebouncedTask(task: () => void, delayMs: number) {
   };
 }
 
+const CURSOR_CLASS: Record<SelectedTool['kind'], string> = {
+  select: 'cursor-default',
+  building: 'cursor-crosshair',
+  belt: 'cursor-crosshair',
+  energy_link: 'cursor-cell',
+};
+
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionEpoch = useGameStore((s) => s.sessionEpoch);
   const setEngine = useGameStore((s) => s.setEngine);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
+  const selectedToolKind = useGameStore((s) => s.selectedTool.kind);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -358,5 +367,5 @@ export function GameCanvas() {
     };
   }, [sessionEpoch, setEngine, setSelectedTool]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
 }
