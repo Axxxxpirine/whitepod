@@ -471,6 +471,25 @@ export const useGameStore = create<GameState>()(
         const transitionsById = new Map<string, Transition>()
         for (const t of transitions) transitionsById.set(t.id, t)
 
+        const deposits = grid.listDeposits({ includeDepleted: false })
+        const gridStations = grid.listStations()
+
+        const layerTokens = {
+          surface: {} as Record<string, number>,
+          bus: {} as Record<string, number>,
+          stock: {} as Record<string, number>,
+        }
+
+        for (const [place, qty] of Object.entries(engine.getTokensSnapshot())) {
+          if (place.endsWith('_surface')) {
+            layerTokens.surface[place] = qty
+          } else if (place.endsWith('_bus')) {
+            layerTokens.bus[place] = qty
+          } else if (place.endsWith('_stock')) {
+            layerTokens.stock[place] = qty
+          }
+        }
+
         set(state => {
           const base = {
             requestedSystemTransitionIds: [],
@@ -479,7 +498,7 @@ export const useGameStore = create<GameState>()(
             gridSnapshot: nextGridSnapshot,
             phase: engine.getPhase(),
             tokens: engine.getTokensSnapshot(),
-            stations: grid.listStations(),
+            stations: gridStations,
             lastFiredTransitionIds: fired,
             fireEventSeq: state.fireEventSeq + 1,
           }
@@ -501,6 +520,19 @@ export const useGameStore = create<GameState>()(
           timestamp,
           phase: engine.getPhase(),
           tokens: engine.getTokensSnapshot(),
+          grid: {
+            width: 128,
+            height: 128,
+            deposits: deposits.map(d => ({
+              id: d.id,
+              x: d.x,
+              y: d.y,
+              resourceId: d.resourceId,
+              remaining: d.remaining,
+            })),
+            stations: gridStations,
+          },
+          layerTokens,
         }
       },
     }),

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ResourceId } from '@/core/grid/manager'
+import { PixiCanvas } from '@/components/PixiCanvas'
 import { PetriNetDebugger } from '@/components/debug/PetriNetDebugger'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
@@ -179,6 +180,13 @@ function App() {
         <pre className="bg-gray-50 border rounded p-3 text-xs overflow-auto">
           {JSON.stringify(tokens, null, 2)}
         </pre>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold">Lunar Factory Visualization</h2>
+        <div className="border-2 border-indigo-500 rounded-lg overflow-hidden">
+          <PixiCanvas />
+        </div>
       </section>
 
       {mode === 'debug' ? <PetriNetDebugger /> : null}

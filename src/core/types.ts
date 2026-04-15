@@ -1,3 +1,5 @@
+import type { ResourceId } from '@/core/grid/manager'
+
 export type GamePhase = 'init' | 'running' | 'done' | 'terminated'
 
 export interface TokenRef {
@@ -54,8 +56,34 @@ export interface LunarChemistryMetadata {
   }
 }
 
+export interface PixiGridDeposit {
+  id: string
+  x: number
+  y: number
+  resourceId: ResourceId
+  remaining: number
+}
+
+export interface PixiGridStation {
+  id: string
+  x: number
+  y: number
+  transitionId: string
+}
+
 export interface PixiExport {
   timestamp: number
   phase: GamePhase
   tokens: Record<string, number>
+  grid: {
+    width: 128
+    height: 128
+    deposits: PixiGridDeposit[]
+    stations: PixiGridStation[]
+  }
+  layerTokens: {
+    surface: Record<string, number>
+    bus: Record<string, number>
+    stock: Record<string, number>
+  }
 }
