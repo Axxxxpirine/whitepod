@@ -27,6 +27,14 @@ Jeu de gestion et d'optimisation industrielle sur grille. Le joueur incarne l'ar
 - La duplication de logique entre plusieurs fichiers est un code smell a eviter.
 - Ne pas hesiter a modifier le code existant. Ne pas prendre de raccourcis en ajoutant de la logique locale pour resoudre un probleme.
 
+## Design system
+
+- `DESIGN.md` is the source of truth for all visual and UI decisions (colors, typography, spacing, aesthetic direction "Architect's Drawing Board").
+- Toujours lire `DESIGN.md` avant de modifier un composant UI, d'ajouter un ecran, ou de choisir une couleur / police / radius.
+- Les tokens de couleur, la typographie et les regles d'espacement y sont definis une fois. Ne jamais deviner, ne jamais dupliquer.
+- Flaguer tout code existant ou nouveau qui ne respecte pas `DESIGN.md` (ex: `#ffffff` pur a la place de `#E8E6DF`, chiffres sans `tabular-nums`, ombres portees, radius > 4px, palette orange-rust).
+- Ne pas devier de `DESIGN.md` sans approbation explicite du user, consignee dans le tableau "Decisions log" du fichier.
+
 ## Git et travail en equipe
 
 - Toujours travailler sur une branche dediee, jamais directement sur `main`.
