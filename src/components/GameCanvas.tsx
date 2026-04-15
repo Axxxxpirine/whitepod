@@ -11,6 +11,7 @@ import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
+import { popCancelStack } from '@/game/input/CancelStack';
 import {
   createSessionId,
   loadPersistedSession,
@@ -214,6 +215,9 @@ export function GameCanvas() {
         const state = useGameStore.getState();
         handleEnergyLinkClick(engine, state, clickedBuildingId);
       });
+      currentInputHandler.setOutOfGridClickCallback(() => {
+        popCancelStack(useGameStore, currentBeltToolController);
+      });
 
       const canvas = app.canvas;
       handlePointerDown = (e) => {
@@ -250,8 +254,11 @@ export function GameCanvas() {
         }
         if ((e.key === 'r' || e.key === 'R') && useGameStore.getState().selectedTool.kind === 'building') {
           useGameStore.getState().rotateBuildingRotation();
+          return;
         }
-        currentBeltToolController.onKeyDown(e.key);
+        if (e.key === 'Escape') {
+          popCancelStack(useGameStore, currentBeltToolController);
+        }
       };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
