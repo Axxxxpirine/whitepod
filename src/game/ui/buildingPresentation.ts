@@ -7,6 +7,7 @@ import {
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  WATCHTOWER_BUILDING_TYPE_ID,
   getBuildingType,
 } from '../data/buildingCatalog';
 import type { BuildingId, BuildingTypeId, SelectedTool } from '../types';
@@ -112,6 +113,14 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     shortcut: '6',
     activeClass: 'bg-violet-400',
     highlightFamily: [MERGER_BASIC_BUILDING_TYPE_ID],
+    highlightColor: 0xc084fc,
+  },
+  {
+    kind: 'building',
+    typeId: WATCHTOWER_BUILDING_TYPE_ID,
+    shortcut: '8',
+    activeClass: 'bg-violet-400',
+    highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
     highlightColor: 0xc084fc,
   },
   {

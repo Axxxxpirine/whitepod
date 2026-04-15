@@ -7,6 +7,7 @@ describe('GameEngine session snapshots', () => {
     const engine = new GameEngine(640, 480);
     engine.generateMap(77);
     engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
     engine.grid.setResource(5, 5, ResourceType.IronOre);
     engine.placeBuilding('extractor_basic', { x: 5, y: 5 });
     const a = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 10 })!;
@@ -63,6 +64,7 @@ describe('GameEngine session snapshots', () => {
   it('restores placed belts from a serialized snapshot', () => {
     const engine = new GameEngine(640, 480);
     engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
     const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
     const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
     const placed = engine.placeBelt(
@@ -87,6 +89,7 @@ describe('GameEngine session snapshots', () => {
     const engine = new GameEngine(640, 480);
     engine.simulationTime = 0.5; // noon — full solar production
     engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     engine.grid.setResource(2, 1, ResourceType.IronOre);
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;

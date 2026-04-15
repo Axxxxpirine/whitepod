@@ -13,6 +13,7 @@ import { TILE_SIZE } from '@/game/constants';
 function makeEngine() {
   const engine = new GameEngine(800, 600);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   return engine;
 }
 

@@ -10,6 +10,7 @@ import { Direction, ResourceType, TileType } from '@/game/types';
 function makeEngine() {
   const engine = new GameEngine(640, 480);
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
   return engine;
 }
 

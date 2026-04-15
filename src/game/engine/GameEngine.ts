@@ -40,14 +40,15 @@ import {
   type TileCoord,
   type TileType,
 } from '../types';
-import { DEFAULT_MAP_SEED } from '../constants';
+import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
+import { GRID_WIDTH, GRID_HEIGHT } from '../constants';
 import { isInBounds, toIndex } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
 import { planBelt } from './BeltRouter';
 import { EnergyNetwork } from '../systems/EnergyNetwork';
 import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
-import { SOLAR_PANEL_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -292,6 +293,9 @@ export class GameEngine {
 
     for (const { x, y, inBounds, idx } of this.buildings.footprintTiles(origin, type.footprint)) {
       if (!inBounds) return { ok: false, reason: 'out_of_bounds' };
+      if (!(this.grid.flags[idx] & REVEALED_FLAG)) {
+        return { ok: false, reason: 'tile_fogged' };
+      }
       if (this.buildings.occupantIdAt(idx) !== 0) {
         return { ok: false, reason: 'tile_occupied' };
       }
@@ -322,6 +326,11 @@ export class GameEngine {
       this.energyNetwork.registerBuilding(id);
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
+      }
+      if (typeId === WATCHTOWER_BUILDING_TYPE_ID) {
+        const cx = origin.x + Math.floor(type.footprint.w / 2);
+        const cy = origin.y + Math.floor(type.footprint.h / 2);
+        this.grid.revealCircle(cx, cy, WATCHTOWER_REVEAL_RADIUS);
       }
       this.notify('world');
     }
@@ -726,6 +735,11 @@ export class GameEngine {
 
   generateMap(seed: number): void {
     generateResources(this.grid, seed);
+    this.grid.revealCircle(
+      Math.floor(GRID_WIDTH / 2),
+      Math.floor(GRID_HEIGHT / 2),
+      INITIAL_FOG_REVEAL_RADIUS,
+    );
     this.mapSeed = seed;
     this.notify('world');
   }
@@ -829,6 +843,15 @@ export class GameEngine {
           engine.batteryCharges.set(entry.id, Math.max(0, Math.min(entry.charge, capacity)));
         }
       }
+    }
+
+    // Backward compatibility: old saves have no fog data — reveal default area
+    if (!engine.grid.hasAnyRevealed()) {
+      engine.grid.revealCircle(
+        Math.floor(GRID_WIDTH / 2),
+        Math.floor(GRID_HEIGHT / 2),
+        INITIAL_FOG_REVEAL_RADIUS,
+      );
     }
 
     return engine;

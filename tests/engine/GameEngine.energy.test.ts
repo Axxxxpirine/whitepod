@@ -16,6 +16,7 @@ const HALF_NIGHT_SECONDS = FULL_DAY_NIGHT_CYCLE_SECONDS / 2;
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
 }
 
 function simulate(engine: GameEngine, totalSeconds: number, stepSeconds = 0.1) {

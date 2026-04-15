@@ -10,6 +10,7 @@ import {
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+  engine.grid.revealAll();
 }
 
 // Pair of 1x1 node placeholders. Each has out_east (East) and in_west (West).
