@@ -13,6 +13,7 @@ import {
 } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
+import { BeltFlowStats } from './BeltFlowStats';
 
 interface BuildingStatsPanelProps {
   building: Building;
@@ -20,7 +21,7 @@ interface BuildingStatsPanelProps {
 }
 
 export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps) {
-  if (isBeltTypeId(building.typeId)) return null;
+  if (isBeltTypeId(building.typeId)) return <BeltFlowStats building={building} engine={engine} />;
 
   let rows: React.ReactNode = null;
 
