@@ -33,7 +33,7 @@ export type BuildingId = number;
 export type BuildingTypeId = string;
 
 export type SelectedTool =
-  | { readonly kind: 'tile'; readonly tile: TileType }
+  | { readonly kind: 'select' }
   | { readonly kind: 'building'; readonly buildingType: BuildingTypeId };
 
 export interface Footprint {
@@ -59,6 +59,7 @@ export interface Port {
 
 export interface BuildingType {
   readonly id: BuildingTypeId;
+  readonly name: string;
   readonly footprint: Footprint;
   readonly allowedTiles: readonly TileType[];
   readonly requiresResourceDeposit?: boolean;

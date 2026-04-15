@@ -18,16 +18,17 @@ describe('InputHandler', () => {
     engine = makeEngine();
   });
 
-  it('places terrain when the selected tool is a tile', () => {
-    const getSelectedTool = (): SelectedTool => ({ kind: 'tile', tile: TileType.Ground });
-    const placeTile = vi.spyOn(engine, 'placeTile');
-    const placeBuilding = vi.spyOn(engine, 'placeBuilding');
+  it('selects a building when the selected tool is select', () => {
+    engine.grid.fill(TileType.Ground);
+    engine.placeBuilding('placeholder_1x1', { x: 0, y: 0 });
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
+    const onBuildingSelected = vi.fn();
     const handler = new InputHandler(engine, getSelectedTool);
+    handler.setBuildingSelectedCallback(onBuildingSelected);
 
     handler.onPointerDown(320, 240, 0);
 
-    expect(placeTile).toHaveBeenCalledWith(0, 0, TileType.Ground);
-    expect(placeBuilding).not.toHaveBeenCalled();
+    expect(onBuildingSelected).toHaveBeenCalledWith(1);
   });
 
   it('places the selected building when the selected tool is a building', () => {
@@ -35,31 +36,41 @@ describe('InputHandler', () => {
       kind: 'building',
       buildingType: 'extractor_basic',
     });
-    const placeTile = vi.spyOn(engine, 'placeTile');
     const placeBuilding = vi.spyOn(engine, 'placeBuilding');
     const handler = new InputHandler(engine, getSelectedTool);
 
     handler.onPointerDown(320, 240, 0);
 
     expect(placeBuilding).toHaveBeenCalledWith('extractor_basic', { x: 0, y: 0 });
-    expect(placeTile).not.toHaveBeenCalled();
   });
 
-  it('starts panning on right click without placing anything', () => {
-    const getSelectedTool = (): SelectedTool => ({ kind: 'tile', tile: TileType.Ground });
-    const placeTile = vi.spyOn(engine, 'placeTile');
+  it('returns null when selecting an empty tile', () => {
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
+    const onBuildingSelected = vi.fn();
     const handler = new InputHandler(engine, getSelectedTool);
+    handler.setBuildingSelectedCallback(onBuildingSelected);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(onBuildingSelected).toHaveBeenCalledWith(null);
+  });
+
+  it('starts panning on right click without selecting anything', () => {
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
+    const onBuildingSelected = vi.fn();
+    const handler = new InputHandler(engine, getSelectedTool);
+    handler.setBuildingSelectedCallback(onBuildingSelected);
 
     handler.onPointerDown(320, 240, 2);
     handler.onPointerMove(340, 255);
 
-    expect(placeTile).not.toHaveBeenCalled();
+    expect(onBuildingSelected).not.toHaveBeenCalled();
     expect(engine.viewport.centerX).not.toBe(TILE_SIZE / 2);
     expect(engine.viewport.centerY).not.toBe(TILE_SIZE / 2);
   });
 
   it('zooms on wheel input with ctrlKey', () => {
-    const getSelectedTool = (): SelectedTool => ({ kind: 'tile', tile: TileType.Ground });
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const handler = new InputHandler(engine, getSelectedTool);
     const initialZoom = engine.viewport.zoom;
 
@@ -100,8 +111,25 @@ describe('InputHandler', () => {
     expect(onBuildingPlaced).not.toHaveBeenCalled();
   });
 
+  it('does not select a building while building placement mode is active', () => {
+    engine.placeBuilding('extractor_basic', { x: 0, y: 0 });
+    const getSelectedTool = (): SelectedTool => ({
+      kind: 'building',
+      buildingType: 'extractor_basic',
+    });
+    const onBuildingSelected = vi.fn();
+    const placeBuilding = vi.spyOn(engine, 'placeBuilding').mockReturnValueOnce(null);
+    const handler = new InputHandler(engine, getSelectedTool);
+    handler.setBuildingSelectedCallback(onBuildingSelected);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(placeBuilding).toHaveBeenCalledWith('extractor_basic', { x: 0, y: 0 });
+    expect(onBuildingSelected).not.toHaveBeenCalled();
+  });
+
   it('clears hover when the pointer leaves the canvas', () => {
-    const getSelectedTool = (): SelectedTool => ({ kind: 'tile', tile: TileType.Ground });
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const onHoverChange = vi.fn();
     const handler = new InputHandler(engine, getSelectedTool);
     handler.setHoverCallback(onHoverChange);
@@ -113,7 +141,7 @@ describe('InputHandler', () => {
   });
 
   it('stops panning when the pointer leaves the canvas', () => {
-    const getSelectedTool = (): SelectedTool => ({ kind: 'tile', tile: TileType.Ground });
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const handler = new InputHandler(engine, getSelectedTool);
 
     handler.onPointerDown(320, 240, 2);

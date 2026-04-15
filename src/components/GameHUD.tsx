@@ -1,16 +1,21 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  getBuildingType,
 } from '@/game/data/buildingCatalog';
-import { TileType } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
   const engine = useGameStore((s) => s.engine);
   const selectedTool = useGameStore((s) => s.selectedTool);
+  const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
+  const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
+  const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
+  const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
@@ -19,6 +24,19 @@ export function GameHUD() {
     selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
   const storageSelected =
     selectedTool.kind === 'building' && selectedTool.buildingType === STORAGE_BUILDING_TYPE_ID;
+  const selectedBuilding =
+    engine && selectedBuildingId !== null ? engine.getBuildings().get(selectedBuildingId) ?? null : null;
+  const selectedBuildingName = selectedBuilding ? getBuildingType(selectedBuilding.typeId)?.name ?? null : null;
+  const anchorVisible =
+    engine &&
+    selectedBuildingAnchor &&
+    selectedBuildingAnchor.x >= 0 &&
+    selectedBuildingAnchor.x <= engine.viewport.screenWidth &&
+    selectedBuildingAnchor.y >= 0 &&
+    selectedBuildingAnchor.y <= engine.viewport.screenHeight;
+  const showSelectedBuildingPanel = Boolean(
+    engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
+  );
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -30,7 +48,6 @@ export function GameHUD() {
       setHistory((h) => [...h, { text: `> ${cmd}`, type: 'input' }]);
 
       try {
-        // Expose engine in the eval scope
         const fn = new Function('engine', `return ${cmd}`);
         const result = fn(engine);
         const output = result === undefined ? 'undefined' : JSON.stringify(result);
@@ -40,13 +57,17 @@ export function GameHUD() {
         setHistory((h) => [...h, { text: msg, type: 'error' }]);
       }
 
-      // Scroll to bottom after render
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
       });
     },
     [engine],
   );
+
+  const clearSelectedBuilding = useCallback(() => {
+    setSelectedBuilding(null);
+    setSelectedBuildingAnchor(null);
+  }, [setSelectedBuilding, setSelectedBuildingAnchor]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && input.trim()) {
@@ -55,30 +76,51 @@ export function GameHUD() {
     }
   };
 
-  const toggleExtractorTool = () => {
+  const toggleTool = (buildingType: typeof EXTRACTOR_BUILDING_TYPE_ID | typeof STORAGE_BUILDING_TYPE_ID) => {
+    clearSelectedBuilding();
     setSelectedTool(
-      extractorSelected
-        ? { kind: 'tile', tile: TileType.Ground }
-        : { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+      selectedTool.kind === 'building' && selectedTool.buildingType === buildingType
+        ? { kind: 'select' }
+        : { kind: 'building', buildingType },
     );
   };
 
-  const toggleStorageTool = () => {
-    setSelectedTool(
-      storageSelected
-        ? { kind: 'tile', tile: TileType.Ground }
-        : { kind: 'building', buildingType: STORAGE_BUILDING_TYPE_ID },
-    );
+  const handleDeleteSelectedBuilding = () => {
+    if (!engine || selectedBuildingId === null) return;
+    if (engine.removeBuilding(selectedBuildingId)) {
+      clearSelectedBuilding();
+    }
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 p-3 select-none">
+    <div className="pointer-events-none fixed inset-0 z-50 select-none">
+      {showSelectedBuildingPanel && selectedBuildingAnchor && (
+        <div
+          className="pointer-events-auto absolute"
+          style={{
+            left: selectedBuildingAnchor.x,
+            top: selectedBuildingAnchor.y + 12,
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
+            <span className="whitespace-nowrap text-sm font-medium">{selectedBuildingName}</span>
+            <button
+              type="button"
+              onClick={handleDeleteSelectedBuilding}
+              className="cursor-pointer rounded-lg bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
+              aria-label="Supprimer le bâtiment"
+              title="Supprimer le bâtiment"
+            >
+              <Trash2 size={16} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {consoleOpen && (
-        <div className="absolute bottom-full right-3 mb-2 w-96 max-w-[calc(100vw-1.5rem)] bg-black/85 border border-white/20 rounded-xl overflow-hidden font-mono text-xs backdrop-blur-sm shadow-2xl">
-          <div
-            ref={scrollRef}
-            className="h-48 overflow-y-auto p-2 space-y-0.5"
-          >
+        <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/20 bg-black/85 font-mono text-xs shadow-2xl backdrop-blur-sm">
+          <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
               <div className="text-white/30">
                 Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...
@@ -99,14 +141,14 @@ export function GameHUD() {
               </div>
             ))}
           </div>
-          <div className="border-t border-white/20 flex">
-            <span className="text-white/50 px-2 py-1.5">&gt;</span>
+          <div className="flex border-t border-white/20">
+            <span className="px-2 py-1.5 text-white/50">&gt;</span>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent text-white outline-none py-1.5 pr-2"
+              className="flex-1 bg-transparent py-1.5 pr-2 text-white outline-none"
               placeholder="engine.placeResource(10, 10, 1)"
               autoFocus
             />
@@ -114,52 +156,54 @@ export function GameHUD() {
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-3 py-2 text-white/85 backdrop-blur-md shadow-2xl">
-        <div className="justify-self-start min-w-0">
-          {hoverTile && (
-            <div className="inline-flex bg-black/40 text-white/80 font-mono text-xs px-2 py-1 rounded-md">
-              {hoverTile.x}, {hoverTile.y}
-            </div>
-          )}
-        </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
+        <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-3 py-2 text-white/85 shadow-2xl backdrop-blur-md">
+          <div className="min-w-0 justify-self-start">
+            {hoverTile && (
+              <div className="inline-flex rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/80">
+                {hoverTile.x}, {hoverTile.y}
+              </div>
+            )}
+          </div>
 
-        <div className="flex items-center gap-2 justify-self-center">
-          <button
-            type="button"
-            onClick={toggleExtractorTool}
-            aria-pressed={extractorSelected}
-            className={
-              extractorSelected
-                ? 'rounded-xl bg-amber-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
-                : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
-            }
-          >
-            Extracteur
-          </button>
-          <button
-            type="button"
-            onClick={toggleStorageTool}
-            aria-pressed={storageSelected}
-            className={
-              storageSelected
-                ? 'rounded-xl bg-sky-400 text-black font-semibold px-4 py-2 text-sm shadow-lg cursor-pointer transition-colors'
-                : 'rounded-xl bg-white/10 hover:bg-white/20 text-white/90 px-4 py-2 text-sm cursor-pointer transition-colors'
-            }
-          >
-            Stockage
-          </button>
-        </div>
+          <div className="flex items-center justify-self-center gap-2">
+            <button
+              type="button"
+              onClick={() => toggleTool(EXTRACTOR_BUILDING_TYPE_ID)}
+              aria-pressed={extractorSelected}
+              className={
+                extractorSelected
+                  ? 'cursor-pointer rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
+              }
+            >
+              Extracteur
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleTool(STORAGE_BUILDING_TYPE_ID)}
+              aria-pressed={storageSelected}
+              className={
+                storageSelected
+                  ? 'cursor-pointer rounded-xl bg-sky-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
+              }
+            >
+              Stockage
+            </button>
+          </div>
 
-        <div className="justify-self-end flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setConsoleOpen((o) => !o)}
-            aria-expanded={consoleOpen}
-            className="bg-white/10 hover:bg-white/20 text-white/90 font-mono text-xs px-3 py-2 rounded-xl transition-colors cursor-pointer"
-            title="Toggle console"
-          >
-            {consoleOpen ? 'Close' : '>_'}
-          </button>
+          <div className="flex items-center justify-self-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConsoleOpen((o) => !o)}
+              aria-expanded={consoleOpen}
+              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 font-mono text-xs text-white/90 transition-colors hover:bg-white/20"
+              title="Toggle console"
+            >
+              {consoleOpen ? 'Close' : '>_'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
