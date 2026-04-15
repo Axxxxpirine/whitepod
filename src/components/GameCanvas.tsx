@@ -195,10 +195,9 @@ export function GameCanvas() {
         return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
       });
       energyLinkRenderer = new EnergyLinkRenderer(app, engine, () => {
-        const { selectedBuildingId, selectedTool } = useGameStore.getState();
+        const { selectedTool } = useGameStore.getState();
         return {
-          inspectedBuildingId: selectedBuildingId,
-          showAllNetworks: selectedTool.kind === 'energy_link',
+          mode: selectedTool.kind === 'energy_link' ? 'energy_link' : 'normal',
         };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);

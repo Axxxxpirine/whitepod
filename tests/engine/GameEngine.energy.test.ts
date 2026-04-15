@@ -132,22 +132,26 @@ describe('GameEngine energy networks', () => {
   });
 
   it('keeps a powered extractor producing after many extraction intervals', () => {
-    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.Coal);
-    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    const steadyEngine = new GameEngine(800, 600, { dayNightCycleSeconds: 1_000_000_000 });
+    steadyEngine.simulationTime = 0.5;
+    groundEverywhere(steadyEngine);
 
-    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+    const solarId = steadyEngine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    steadyEngine.placeResource(2, 1, ResourceType.Coal);
+    const extractorId = steadyEngine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
 
-    const initialAmount = engine.grid.getResourceAmount(2, 1);
-    const extractionIntervalMs = 60_000 / EXTRACTOR_RATE_PER_MIN;
+    expect(steadyEngine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const initialAmount = steadyEngine.grid.getResourceAmount(2, 1);
+    const extractionIntervalSeconds = 60 / EXTRACTOR_RATE_PER_MIN;
 
     for (let i = 0; i < 250; i++) {
-      engine.update(extractionIntervalMs);
+      steadyEngine.update(extractionIntervalSeconds);
     }
 
-    expect(engine.getResourceCounts().coal).toBe(250);
-    expect(engine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
-    expect(engine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
+    expect(steadyEngine.getResourceCounts().coal).toBe(250);
+    expect(steadyEngine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
+    expect(steadyEngine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
   });
 
   it('refuses energy links for buildings outside the electrical system', () => {
