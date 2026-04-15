@@ -12,9 +12,9 @@ interface ResourceConfig {
 }
 
 const DEFAULT_CONFIGS: readonly ResourceConfig[] = [
-  { type: ResourceType.Coal, frequency: 0.05, threshold: 0.72, seedOffset: 0 },
-  { type: ResourceType.IronOre, frequency: 0.04, threshold: 0.78, seedOffset: 1000 },
-  { type: ResourceType.CopperOre, frequency: 0.03, threshold: 0.80, seedOffset: 2000 },
+  { type: ResourceType.Coal, frequency: 0.10, threshold: 0.83, seedOffset: 0 },
+  { type: ResourceType.IronOre, frequency: 0.09, threshold: 0.86, seedOffset: 1000 },
+  { type: ResourceType.CopperOre, frequency: 0.08, threshold: 0.88, seedOffset: 2000 },
 ];
 
 const ELIGIBLE_TILES = new Set<TileType>([TileType.Ground, TileType.Rock]);

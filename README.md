@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+# Whitepod
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Industrial grid management and optimization game. You play as the architect of a living automated system: observe a territory, organize your infrastructure, anticipate circulation and energy constraints, then continuously refine your network to transform raw space into a coherent, stable, and scalable machine.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- TypeScript + React 19
+- PixiJS 8 (2D rendering)
+- Zustand (state management)
+- Vite 8 (build tooling)
+- Tailwind CSS 4 + shadcn (UI)
+- Vitest (tests)
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 20+
+- npm
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Development
+
+```bash
+npm run dev   # → http://localhost:5173
+```
+
+## Available commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server with HMR |
+| `npm run build` | Type-check + production build |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint checks |
+| `npm run test` | Run test suite with Vitest |
+| `npm run test:ui` | Run tests with Vitest UI (browser interface) |
+
+## Browser console (dev only)
+
+In development, the game engine is exposed as `window.engine`. Open the browser devtools console to interact with it directly.
+
+### Resources
 
 ```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+engine.placeResource(x, y, resourceType)
+// ResourceType: 0=None  1=Coal  2=IronOre  3=CopperOre
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+engine.removeResource(x, y)
+engine.getResourceAt(x, y)
+```
+
+### Tiles
+
+```js
+engine.placeTile(x, y, tileType)
+// TileType: 0=Empty  1=Ground  2=Rock  3=Water
+
+engine.getTileAt(x, y)
+engine.grid.fill(tileType)                           // Fill entire map
+engine.grid.fillRect(x0, y0, width, height, tileType)
+```
+
+### Buildings
+
+```js
+engine.placeBuilding('placeholder_1x1', { x, y })   // Returns BuildingId or null
+engine.placeBuilding('placeholder_3x3', { x, y })
+engine.removeBuilding(id)
+engine.getBuildingAt(x, y)
+engine.getBuildings()                                // ReadonlyMap of all buildings
+engine.canPlaceBuilding('placeholder_1x1', { x, y })
+// Returns { ok: true } or { ok: false, reason: string }
+```
+
+### Map generation
+
+```js
+engine.generateMap(seed)   // Generate resources using a seeded RNG
+```
+
+### Camera / Viewport
+
+```js
+engine.viewport.pan(dx, dy)                         // Pan by screen pixels
+engine.viewport.zoomAt(screenX, screenY, factor)    // factor > 1 = zoom in
+engine.viewport.zoom                                // Current zoom level (0.25–4)
+engine.viewport.centerX                             // Camera center X (world pixels)
+engine.viewport.centerY                             // Camera center Y (world pixels)
+engine.getVisibleTiles()                            // → { x0, y0, x1, y1 }
+engine.screenToTile(screenX, screenY)               // → { x, y }
+```
+
+## Project structure
+
+```
+src/
+├── game/
+│   ├── engine/     # GameEngine, Viewport, InputHandler, CoordinateTransform
+│   ├── renderer/   # PixiJS renderers (Grid, Resources, TileSprite)
+│   └── data/       # TileGrid, BuildingRegistry, ResourceGenerator, buildingCatalog
+├── components/     # GameCanvas, GameHUD, shadcn UI components
+├── store/          # Zustand game store
+└── hooks/          # Custom React hooks
+tests/              # Vitest test suites
 ```
