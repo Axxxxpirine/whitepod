@@ -84,8 +84,8 @@ export class GridRenderer {
 
   private acquireSprite(): Sprite {
     const sprite = this.spritePool.pop() ?? new Sprite(Texture.WHITE);
-    sprite.width = TILE_SIZE;
-    sprite.height = TILE_SIZE;
+    sprite.width = TILE_SIZE - 1;
+    sprite.height = TILE_SIZE - 1;
     return sprite;
   }
 

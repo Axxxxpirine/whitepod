@@ -22,7 +22,7 @@ export function GameCanvas() {
       app = new Application();
       await app.init({
         resizeTo: container,
-        backgroundColor: 0x1a1a2e,
+        backgroundColor: 0x2d5a3d,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
@@ -62,7 +62,7 @@ export function GameCanvas() {
         'wheel',
         (e) => {
           e.preventDefault();
-          inputHandler.onWheel(e.offsetX, e.offsetY, e.deltaY);
+          inputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode);
         },
         { passive: false },
       );

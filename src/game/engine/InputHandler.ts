@@ -40,8 +40,18 @@ export class InputHandler {
     this.isPanning = false;
   }
 
-  onWheel(screenX: number, screenY: number, delta: number): void {
-    const factor = delta < 0 ? 1.1 : 0.9;
-    this.engine.viewport.zoomAt(screenX, screenY, factor);
+  onWheel(screenX: number, screenY: number, deltaX: number, deltaY: number, ctrlKey: boolean, deltaMode: number): void {
+    if (ctrlKey) {
+      // Trackpad pinch — proportional zoom, factor calibré pour les petits deltas
+      const factor = Math.pow(1.01, -deltaY);
+      this.engine.viewport.zoomAt(screenX, screenY, factor);
+    } else if (deltaMode !== 0 || Math.abs(deltaY) >= 50) {
+      // Molette souris — zoom discret
+      const factor = deltaY < 0 ? 1.1 : 0.9;
+      this.engine.viewport.zoomAt(screenX, screenY, factor);
+    } else {
+      // Scroll deux doigts trackpad — pan
+      this.engine.viewport.pan(deltaX, deltaY);
+    }
   }
 }
