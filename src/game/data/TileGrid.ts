@@ -135,6 +135,9 @@ export class TileGrid {
         grid.resourceAmount[i] = grid.resourceType[i] !== ResourceType.None ? RESOURCE_DEPOSIT_AMOUNT : 0;
       }
     }
+    for (let i = 0; i < GRID_SIZE; i++) {
+      grid.resourceAmount[i] = grid.resourceType[i] !== ResourceType.None ? RESOURCE_DEPOSIT_AMOUNT : 0;
+    }
     return grid;
   }
 }

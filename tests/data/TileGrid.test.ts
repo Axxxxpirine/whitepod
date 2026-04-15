@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TileGrid } from '@/game/data/TileGrid';
 import { ResourceType, TileType } from '@/game/types';
-import { GRID_SIZE, GRID_WIDTH } from '@/game/constants';
+import { GRID_SIZE, GRID_WIDTH, RESOURCE_DEPOSIT_AMOUNT } from '@/game/constants';
 
 describe('TileGrid', () => {
   it('initializes with all Empty tiles', () => {
@@ -95,6 +95,18 @@ describe('TileGrid', () => {
       expect(restored.getResource(1, 0)).toBe(ResourceType.Coal);
       expect(restored.elevation[0]).toBe(42);
       expect(restored.flags[100]).toBe(7);
+    });
+
+    it('normalizes restored resource amounts for existing deposits', () => {
+      const grid = new TileGrid();
+      grid.fill(TileType.Ground);
+      grid.setResource(1, 0, ResourceType.Coal);
+      grid.resourceAmount[1] = 0;
+
+      const restored = TileGrid.deserialize(grid.serialize());
+
+      expect(restored.getResource(1, 0)).toBe(ResourceType.Coal);
+      expect(restored.getResourceAmount(1, 0)).toBe(RESOURCE_DEPOSIT_AMOUNT);
     });
   });
 });

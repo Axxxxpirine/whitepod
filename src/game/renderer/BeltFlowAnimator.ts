@@ -209,9 +209,6 @@ export class BeltFlowAnimator {
           if (this.engine.getBuildingPowerState(upstream.id) !== 'powered') {
             return ResourceType.None;
           }
-          if (this.engine.grid.getResourceAmount(upstream.origin.x, upstream.origin.y) <= 0) {
-            return ResourceType.None;
-          }
           return this.engine.getResourceAt(upstream.origin.x, upstream.origin.y);
         }
 
