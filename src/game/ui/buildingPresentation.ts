@@ -53,6 +53,11 @@ export interface VirtualToolbarEntry {
 
 export type ToolbarEntry = BuildingToolbarEntry | VirtualToolbarEntry;
 
+// Highlights are brighter siblings of each family's building tile color (see
+// BuildingRenderer BUILDING_TINTS). Belt + energy-link own their own hues
+// (pink, purple) since they have no tile tint to echo. Picked to be mutually
+// distinguishable and to stay clear of the map palette (moss / grey / deep
+// blue).
 export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
@@ -66,39 +71,39 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     kind: 'building',
     typeId: STORAGE_BUILDING_TYPE_ID,
     shortcut: '2',
-    activeClass: 'bg-sky-400',
+    activeClass: 'bg-cyan-400',
     highlightFamily: [STORAGE_BUILDING_TYPE_ID],
-    highlightColor: 0x38bdf8,
+    highlightColor: 0x22d3ee,
   },
   {
     kind: 'tool',
     tool: 'belt',
     label: 'Convoyeur',
     shortcut: '3',
-    activeClass: 'bg-lime-300',
+    activeClass: 'bg-pink-400',
     highlightFamily: [
       BELT_STRAIGHT_BUILDING_TYPE_ID,
       BELT_CORNER_CW_BUILDING_TYPE_ID,
       BELT_CORNER_CCW_BUILDING_TYPE_ID,
     ],
-    highlightColor: 0xa3e635,
+    highlightColor: 0xec4899,
   },
   {
     kind: 'building',
     typeId: SOLAR_PANEL_BUILDING_TYPE_ID,
     shortcut: '4',
-    activeClass: 'bg-lime-400',
+    activeClass: 'bg-green-400',
     highlightFamily: [SOLAR_PANEL_BUILDING_TYPE_ID],
-    highlightColor: 0x84cc16,
+    highlightColor: 0x4ade80,
   },
   {
     kind: 'tool',
     tool: 'energy_link',
     label: 'Lien énergie',
     shortcut: '5',
-    activeClass: 'bg-violet-300',
+    activeClass: 'bg-purple-400',
     highlightFamily: [],
-    highlightColor: 0xc4b5fd,
+    highlightColor: 0xa855f7,
     highlightMode: 'energy-network',
   },
 ];
