@@ -123,13 +123,13 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
     const network = engine.getEnergyNetworkForBuilding(building.id);
-    const bilanValue = network !== null ? `${Math.round(network.remaining)} kWh` : 'Reseau isole';
+    const bilanValue = network !== null ? `${Math.round(network.remaining)} kW` : 'Reseau isole';
     const bilanClass =
       network === null ? 'text-white/50' : network.remaining >= 0 ? 'text-emerald-300' : 'text-red-300';
 
     rows = (
       <>
-        <StatRow icon={Sun} label="Production" value={`+${production} kWh`} />
+        <StatRow icon={Sun} label="Production" value={`+${production} kW`} />
         <StatRow icon={Zap} label="Bilan reseau" value={bilanValue} valueClass={bilanClass} />
       </>
     );

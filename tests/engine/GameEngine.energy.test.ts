@@ -2,13 +2,79 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
 import {
+  BATTERY_BASIC_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
+  getBuildingType,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
+import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
+
+const EXTRACTION_INTERVAL_SECONDS = 60 / EXTRACTOR_RATE_PER_MIN;
+const FULL_DAY_NIGHT_CYCLE_SECONDS = 120;
+const HALF_NIGHT_SECONDS = FULL_DAY_NIGHT_CYCLE_SECONDS / 2;
 
 function groundEverywhere(engine: GameEngine) {
   engine.grid.fill(TileType.Ground);
+}
+
+function simulate(engine: GameEngine, totalSeconds: number, stepSeconds = 0.1) {
+  let elapsed = 0;
+  while (elapsed < totalSeconds) {
+    const dt = Math.min(stepSeconds, totalSeconds - elapsed);
+    engine.update(dt);
+    elapsed += dt;
+  }
+}
+
+function simulateUntil(
+  engine: GameEngine,
+  predicate: () => boolean,
+  stepSeconds = 0.1,
+  maxSeconds = FULL_DAY_NIGHT_CYCLE_SECONDS * 10,
+): number {
+  let elapsed = 0;
+  while (elapsed < maxSeconds) {
+    if (predicate()) return elapsed;
+    engine.update(stepSeconds);
+    elapsed += stepSeconds;
+  }
+  if (predicate()) return elapsed;
+  throw new Error(`Condition not reached within ${maxSeconds}s`);
+}
+
+function expectedChargeTimeSeconds({
+  startSimulationTime,
+  capacity,
+  chargeRate,
+  solarProduction,
+  panelCount,
+  stepSeconds = 0.1,
+  maxSeconds = FULL_DAY_NIGHT_CYCLE_SECONDS * 10,
+}: {
+  startSimulationTime: number;
+  capacity: number;
+  chargeRate: number;
+  solarProduction: number;
+  panelCount: number;
+  stepSeconds?: number;
+  maxSeconds?: number;
+}): number {
+  let simulationTime = startSimulationTime;
+  let charge = 0;
+  let elapsed = 0;
+
+  while (elapsed < maxSeconds) {
+    if (charge >= capacity) return elapsed;
+    simulationTime = ((simulationTime + stepSeconds / FULL_DAY_NIGHT_CYCLE_SECONDS) % 1 + 1) % 1;
+    const production = solarProduction * panelCount * getDaylightFactor(simulationTime);
+    const dtHours = stepSeconds / FULL_DAY_NIGHT_CYCLE_SECONDS;
+    const chargeWindow = Math.min(chargeRate * dtHours, capacity - charge);
+    charge += Math.max(0, Math.min(production * dtHours, chargeWindow));
+    elapsed += stepSeconds;
+  }
+
+  throw new Error(`Battery did not fill within ${maxSeconds}s`);
 }
 
 describe('GameEngine energy networks', () => {
@@ -30,9 +96,9 @@ describe('GameEngine energy networks', () => {
     const network = engine.getEnergyNetworkForBuilding(extractorId);
     expect(network).toEqual({
       buildingIds: [solarId, extractorId].sort((a, b) => a - b),
-      production: 8,
-      consumption: 5,
-      remaining: 3,
+      production: 10,
+      consumption: 4,
+      remaining: 6,
     });
   });
 
@@ -47,9 +113,9 @@ describe('GameEngine energy networks', () => {
 
     const network = engine.getEnergyNetworkForBuilding(solarB)!;
     expect(network.buildingIds).toEqual([solarA, extractor, solarB].sort((a, b) => a - b));
-    expect(network.production).toBe(16);
-    expect(network.consumption).toBe(5);
-    expect(network.remaining).toBe(11);
+    expect(network.production).toBe(20);
+    expect(network.consumption).toBe(4);
+    expect(network.remaining).toBe(16);
   });
 
   it('tracks isolated buildings as separate one-node networks', () => {
@@ -63,8 +129,8 @@ describe('GameEngine energy networks', () => {
     const solarNetwork = networks.find((network) => network.buildingIds.includes(solarId));
     const extractorNetwork = networks.find((network) => network.buildingIds.includes(extractorId));
 
-    expect(solarNetwork).toMatchObject({ production: 8, consumption: 0, remaining: 8 });
-    expect(extractorNetwork).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
+    expect(solarNetwork).toMatchObject({ production: 10, consumption: 0, remaining: 10 });
+    expect(extractorNetwork).toMatchObject({ production: 0, consumption: 4, remaining: -4 });
   });
 
   it('drops links and recalculates balance when a building is removed', () => {
@@ -76,7 +142,7 @@ describe('GameEngine energy networks', () => {
     expect(engine.removeBuilding(solarId)).toBe(true);
 
     const network = engine.getEnergyNetworkForBuilding(extractorId)!;
-    expect(network).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
+    expect(network).toMatchObject({ production: 0, consumption: 4, remaining: -4 });
   });
 
   it('computes power states (neutral, powered, unpowered)', () => {
@@ -105,9 +171,9 @@ describe('GameEngine energy networks', () => {
 
     const stats = engine.getEnergyGlobalStats();
     expect(stats).toEqual({
-      production: 8,
-      consumption: 5,
-      remaining: -2,
+      production: 10,
+      consumption: 4,
+      remaining: 2,
       onlineConsumers: 1,
       offlineConsumers: 1,
     });
@@ -127,8 +193,8 @@ describe('GameEngine energy networks', () => {
 
     const solarNetwork = engine.getEnergyNetworkForBuilding(solarId)!;
     const extractorNetwork = engine.getEnergyNetworkForBuilding(extractorId)!;
-    expect(solarNetwork).toMatchObject({ production: 8, consumption: 0, remaining: 8 });
-    expect(extractorNetwork).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
+    expect(solarNetwork).toMatchObject({ production: 10, consumption: 0, remaining: 10 });
+    expect(extractorNetwork).toMatchObject({ production: 0, consumption: 4, remaining: -4 });
   });
 
   it('keeps a powered extractor producing after many extraction intervals', () => {
@@ -152,6 +218,107 @@ describe('GameEngine energy networks', () => {
     expect(steadyEngine.getResourceCounts().coal).toBe(250);
     expect(steadyEngine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
     expect(steadyEngine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
+  });
+
+  it('keeps a battery-backed extractor producing after many extraction intervals', () => {
+    const solarAId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const solarBId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
+    engine.placeResource(7, 1, ResourceType.Coal);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 7, y: 1 })!;
+
+    expect(engine.connectBuildings(solarAId, extractorId)).toBe(true);
+    expect(engine.connectBuildings(solarBId, extractorId)).toBe(true);
+    expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
+
+    const initialAmount = engine.grid.getResourceAmount(7, 1);
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+    engine.batteryCharges.set(batteryId, battery.capacity);
+
+    for (let i = 0; i < 250; i++) {
+      engine.update(EXTRACTION_INTERVAL_SECONDS);
+    }
+
+    expect(engine.getResourceCounts().coal).toBe(250);
+    expect(engine.grid.getResourceAmount(7, 1)).toBe(initialAmount);
+    expect(engine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
+  });
+
+  it('charges an empty battery to full with two solar panels over a daylight-aware simulation', () => {
+    const solarAId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const solarBId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
+    engine.connectBuildings(solarAId, batteryId);
+    engine.connectBuildings(solarBId, batteryId);
+
+    const solarProd = getBuildingType(SOLAR_PANEL_BUILDING_TYPE_ID)!.energy!.production!;
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+
+    const elapsedSeconds = simulateUntil(
+      engine,
+      () => (engine.batteryCharges.get(batteryId) ?? 0) >= battery.capacity,
+      0.1,
+      FULL_DAY_NIGHT_CYCLE_SECONDS * 4,
+    );
+    const expectedSeconds = expectedChargeTimeSeconds({
+      startSimulationTime: 0.5,
+      capacity: battery.capacity,
+      chargeRate: battery.chargeRate,
+      solarProduction: solarProd,
+      panelCount: 2,
+    });
+
+    expect(elapsedSeconds).toBeCloseTo(expectedSeconds, 5);
+    expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(battery.capacity, 5);
+  });
+
+  it('discharges a battery at the kW rate when demand exceeds production', () => {
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(4, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
+    engine.connectBuildings(batteryId, extractorId);
+
+    const extractorCons = getBuildingType(EXTRACTOR_BUILDING_TYPE_ID)!.energy!.consumption!;
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+    engine.batteryCharges.set(batteryId, battery.capacity);
+
+    engine.update(120);
+    expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(battery.capacity - extractorCons, 5);
+    expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
+  });
+
+  it('stores enough energy in one full battery to power one extractor for a full night', () => {
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(4, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
+    expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
+
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+    const extractorConsumption = getBuildingType(EXTRACTOR_BUILDING_TYPE_ID)!.energy!.consumption!;
+    engine.batteryCharges.set(batteryId, battery.capacity);
+    engine.setSimulationTime(0.75);
+
+    simulate(engine, HALF_NIGHT_SECONDS, EXTRACTION_INTERVAL_SECONDS);
+
+    expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
+    expect(engine.getResourceCounts().ironOre).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(
+      battery.capacity - extractorConsumption * (HALF_NIGHT_SECONDS / FULL_DAY_NIGHT_CYCLE_SECONDS),
+      5,
+    );
+  });
+
+  it('reports global energy storage totals across all batteries', () => {
+    const batteryA = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const batteryB = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 5, y: 1 })!;
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+
+    engine.batteryCharges.set(batteryA, battery.capacity);
+    engine.batteryCharges.set(batteryB, battery.capacity / 2);
+
+    const totals = engine.getEnergyStorageTotals();
+    expect(totals.stored).toBeCloseTo(battery.capacity * 1.5, 5);
+    expect(totals.capacity).toBeCloseTo(battery.capacity * 2, 5);
   });
 
   it('refuses energy links for buildings outside the electrical system', () => {

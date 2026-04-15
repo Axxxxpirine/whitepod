@@ -51,6 +51,12 @@ export function GameHUD() {
     void simulationTime;
     return engine ? engine.getEnergyGlobalStats() : null;
   }, [engine, energyVersion, simulationTime]);
+  const energyStorage = useMemo(() => {
+    void energyVersion;
+    void simulationTime;
+    void worldTick;
+    return engine ? engine.getEnergyStorageTotals() : null;
+  }, [engine, energyVersion, simulationTime, worldTick]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
@@ -170,18 +176,25 @@ export function GameHUD() {
                       className={`font-bold ${globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
                     >
                       {globalEnergy.remaining >= 0 ? '+' : ''}
-                      {Math.round(globalEnergy.remaining * 10) / 10} kWh
+                      {Math.round(globalEnergy.remaining * 10) / 10} kW
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-white/50">
                     <span className="text-emerald-400/70">↑</span>
-                    {Math.round(globalEnergy.production * 10) / 10} kWh
+                    {Math.round(globalEnergy.production * 10) / 10} kW
                   </div>
                   <div className="flex items-center gap-1 text-xs text-white/50">
                     <span className="text-orange-400/70">↓</span>
-                    {Math.round(globalEnergy.consumption * 10) / 10} kWh
+                    {Math.round(globalEnergy.consumption * 10) / 10} kW
                   </div>
                 </div>
+                {energyStorage && energyStorage.capacity > 0 && (
+                  <div className="mt-1.5 flex items-center gap-1 text-xs text-white/60">
+                    <span className="text-amber-400/70">⬢</span>
+                    Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
+                    {Math.round(energyStorage.capacity * 10) / 10} kWh
+                  </div>
+                )}
               </>
             )}
 

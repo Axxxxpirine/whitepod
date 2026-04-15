@@ -98,9 +98,9 @@ describe('GameEngine session snapshots', () => {
     expect(restored.areBuildingsEnergyLinked(solarId, extractorId)).toBe(true);
     expect(restored.getEnergyNetworkForBuilding(extractorId)).toEqual({
       buildingIds: [solarId, extractorId].sort((a, b) => a - b),
-      production: 8,
-      consumption: 5,
-      remaining: 3,
+      production: 10,
+      consumption: 4,
+      remaining: 6,
     });
   });
 });

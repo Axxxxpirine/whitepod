@@ -37,7 +37,7 @@ const entries: readonly BuildingType[] = [
       { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
     ],
     energy: {
-      consumption: 5,
+      consumption: 4,
     },
   },
   {
@@ -61,7 +61,7 @@ const entries: readonly BuildingType[] = [
     forbidsResourceDeposit: true,
     ports: [],
     energy: {
-      production: 8,
+      production: 10,
     },
   },
   {
@@ -73,9 +73,9 @@ const entries: readonly BuildingType[] = [
     ports: [],
     energy: {
       battery: {
-        capacity: 50,
-        chargeRate: 5,
-        dischargeRate: 5,
+        capacity: 10,
+        chargeRate: 20,
+        dischargeRate: 20,
       },
     },
   },

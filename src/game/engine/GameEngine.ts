@@ -87,7 +87,15 @@ interface GameEngineOptions {
   readonly dayNightCycleSeconds?: number;
 }
 
-const SERIALIZE_VERSION = 1;
+const SERIALIZE_VERSION = 2;
+
+interface BatteryBuildingRef {
+  readonly id: BuildingId;
+  readonly charge: number;
+  readonly capacity: number;
+  readonly chargeRate: number;
+  readonly dischargeRate: number;
+}
 
 export class GameEngine {
   private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_RATE_PER_MIN;
@@ -117,7 +125,7 @@ export class GameEngine {
     this.dayNightCycleSeconds =
       options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
-        : 600;
+        : 120;
   }
 
   setSimulationTime(value: number): void {
@@ -165,53 +173,71 @@ export class GameEngine {
     }
   }
 
+  private collectBatteries(buildingIds: readonly BuildingId[]): BatteryBuildingRef[] {
+    const refs: BatteryBuildingRef[] = [];
+    for (const id of buildingIds) {
+      const charge = this.batteryCharges.get(id);
+      if (charge === undefined) continue;
+      const building = this.buildings.get(id);
+      if (!building) continue;
+      const battery = getBuildingType(building.typeId)?.energy?.battery;
+      if (!battery) continue;
+      refs.push({
+        id,
+        charge,
+        capacity: battery.capacity,
+        chargeRate: battery.chargeRate,
+        dischargeRate: battery.dischargeRate,
+      });
+    }
+    return refs;
+  }
+
+  getEnergyStorageTotals(): { stored: number; capacity: number } {
+    let stored = 0;
+    let capacity = 0;
+    for (const ref of this.collectBatteries(Array.from(this.batteryCharges.keys()))) {
+      stored += ref.charge;
+      capacity += ref.capacity;
+    }
+    return { stored, capacity };
+  }
+
   private updateBatteries(dt: number): void {
     if (this.batteryCharges.size === 0) return;
 
+    // 1 day-night cycle = 1 sim-hour. Catalog values (kW, kWh) scale with cycle length.
+    const dtHours = dt / this.dayNightCycleSeconds;
     for (const network of this.getEnergyNetworkBalances()) {
       const netPower = network.remaining;
-
-      const batteries: Array<{ id: BuildingId; rate: number; capacity: number }> = [];
-      for (const id of network.buildingIds) {
-        const charge = this.batteryCharges.get(id);
-        if (charge === undefined) continue;
-        const building = this.buildings.get(id);
-        if (!building) continue;
-        const type = getBuildingType(building.typeId);
-        const battery = type?.energy?.battery;
-        if (!battery) continue;
-        batteries.push({ id, rate: 0, capacity: battery.capacity });
-      }
+      const batteries = this.collectBatteries(network.buildingIds);
       if (batteries.length === 0) continue;
 
       if (netPower > 0) {
-        this.distributeBatteryCharge(batteries, netPower, dt);
+        this.distributeBatteryCharge(batteries, netPower, dtHours);
       } else if (netPower < 0) {
-        this.distributeBatteryDischarge(batteries, -netPower, dt);
+        this.distributeBatteryDischarge(batteries, -netPower, dtHours);
       }
     }
   }
 
   private distributeBatteryCharge(
-    batteries: Array<{ id: BuildingId; rate: number; capacity: number }>,
+    batteries: readonly BatteryBuildingRef[],
     surplus: number,
-    dt: number,
+    dtHours: number,
   ): void {
     let totalAcceptable = 0;
     const acceptable: number[] = [];
     for (const bat of batteries) {
-      const charge = this.batteryCharges.get(bat.id) ?? 0;
-      const type = getBuildingType(this.buildings.get(bat.id)!.typeId)!;
-      const chargeRate = type.energy!.battery!.chargeRate;
-      const maxByRate = chargeRate * dt;
-      const maxByCapacity = bat.capacity - charge;
-      const canAccept = Math.min(maxByRate, maxByCapacity);
-      acceptable.push(Math.max(0, canAccept));
-      totalAcceptable += Math.max(0, canAccept);
+      const maxByRate = bat.chargeRate * dtHours;
+      const maxByCapacity = bat.capacity - bat.charge;
+      const canAccept = Math.max(0, Math.min(maxByRate, maxByCapacity));
+      acceptable.push(canAccept);
+      totalAcceptable += canAccept;
     }
     if (totalAcceptable <= 0) return;
 
-    const totalEnergy = Math.min(surplus * dt, totalAcceptable);
+    const totalEnergy = Math.min(surplus * dtHours, totalAcceptable);
     for (let i = 0; i < batteries.length; i++) {
       if (acceptable[i] <= 0) continue;
       const share = (acceptable[i] / totalAcceptable) * totalEnergy;
@@ -221,24 +247,21 @@ export class GameEngine {
   }
 
   private distributeBatteryDischarge(
-    batteries: Array<{ id: BuildingId; rate: number; capacity: number }>,
+    batteries: readonly BatteryBuildingRef[],
     deficit: number,
-    dt: number,
+    dtHours: number,
   ): void {
     let totalProvidable = 0;
     const providable: number[] = [];
     for (const bat of batteries) {
-      const charge = this.batteryCharges.get(bat.id) ?? 0;
-      const type = getBuildingType(this.buildings.get(bat.id)!.typeId)!;
-      const dischargeRate = type.energy!.battery!.dischargeRate;
-      const maxByRate = dischargeRate * dt;
-      const canProvide = Math.min(maxByRate, charge);
-      providable.push(Math.max(0, canProvide));
-      totalProvidable += Math.max(0, canProvide);
+      const maxByRate = bat.dischargeRate * dtHours;
+      const canProvide = Math.max(0, Math.min(maxByRate, bat.charge));
+      providable.push(canProvide);
+      totalProvidable += canProvide;
     }
     if (totalProvidable <= 0) return;
 
-    const totalEnergy = Math.min(deficit * dt, totalProvidable);
+    const totalEnergy = Math.min(deficit * dtHours, totalProvidable);
     for (let i = 0; i < batteries.length; i++) {
       if (providable[i] <= 0) continue;
       const share = (providable[i] / totalProvidable) * totalEnergy;

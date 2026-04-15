@@ -6,15 +6,15 @@ describe('GameEngine simulation clock', () => {
     const engine = new GameEngine(800, 600);
     expect(engine.simulationTime).toBe(0);
 
-    engine.update(150);
+    engine.update(30);
     expect(engine.simulationTime).toBeCloseTo(0.25);
   });
 
   it('wraps simulation time in [0, 1)', () => {
     const engine = new GameEngine(800, 600);
 
-    engine.update(610);
-    expect(engine.simulationTime).toBeCloseTo(10 / 600);
+    engine.update(130);
+    expect(engine.simulationTime).toBeCloseTo(10 / 120);
   });
 
   it('ignores non-positive and non-finite delta times', () => {

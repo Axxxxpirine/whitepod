@@ -67,7 +67,7 @@ describe('sessionStorage persistence', () => {
     window.sessionStorage.setItem(
       VIEW_STORAGE_KEY,
       JSON.stringify({
-        version: 1,
+        version: 2,
         sessionId: 'session-b',
         viewport: { centerX: 10, centerY: 20, zoom: 2 },
         selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
