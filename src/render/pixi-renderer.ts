@@ -9,6 +9,8 @@ interface PixiRendererConfig {
   depositColors: Record<ResourceId, number>
 }
 
+type StationCategory = 'extractor' | 'conveyor' | 'factory' | 'storage'
+
 const DEFAULT_CONFIG: PixiRendererConfig = {
   cellSize: 12,
   cellsPerSide: 128,
@@ -132,6 +134,13 @@ export class PixiRenderer {
     // Background color update handled by container
   }
 
+  private getStationCategory(transitionId: string): StationCategory {
+    if (transitionId.startsWith('extract__')) return 'extractor'
+    if (transitionId.startsWith('convey__')) return 'conveyor'
+    if (transitionId.startsWith('store__')) return 'storage'
+    return 'factory'
+  }
+
   private renderCells(cells: PixiExport['grid']['cells']): void {
     if (!this.cellLayer) return
 
@@ -147,7 +156,32 @@ export class PixiRenderer {
       }
 
       if (cell.kind === 'station') {
-        this.cellLayer.rect(x, y, cellSize, cellSize).fill(0x666666).stroke({ width: 1, color: 0x00ff00 })
+        const category = this.getStationCategory(cell.transitionId ?? cell.id)
+        switch (category) {
+          case 'extractor':
+            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x7c2d12).stroke({ width: 1, color: 0xfbbf24 })
+            this.cellLayer.circle(x + cellSize / 2, y + cellSize / 2, cellSize * 0.18).fill(0xfde68a)
+            this.cellLayer.rect(x + cellSize * 0.18, y + cellSize * 0.38, cellSize * 0.64, cellSize * 0.24).fill(0xf59e0b)
+            break
+          case 'conveyor':
+            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x262626).stroke({ width: 1, color: 0xf97316 })
+            this.cellLayer.rect(x + 2, y + cellSize * 0.42, cellSize - 4, cellSize * 0.16).fill(0xf97316)
+            this.cellLayer.rect(x + cellSize * 0.38, y + 2, cellSize * 0.16, cellSize - 4).fill(0xfee08b)
+            break
+          case 'storage':
+            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x0f766e).stroke({ width: 1, color: 0x5eead4 })
+            this.cellLayer.rect(x + 2, y + 2, cellSize - 4, cellSize * 0.28).fill(0x99f6e4)
+            this.cellLayer.rect(x + 2, y + cellSize * 0.42, cellSize - 4, cellSize * 0.18).fill(0x14b8a6)
+            this.cellLayer.rect(x + 2, y + cellSize * 0.68, cellSize - 4, cellSize * 0.18).fill(0x0f766e)
+            break
+          case 'factory':
+          default:
+            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x4338ca).stroke({ width: 1, color: 0xc4b5fd })
+            this.cellLayer.rect(x + 2, y + 2, cellSize - 4, cellSize * 0.22).fill(0x818cf8)
+            this.cellLayer.rect(x + 2, y + cellSize * 0.4, cellSize - 4, cellSize * 0.18).fill(0xa78bfa)
+            this.cellLayer.rect(x + 2, y + cellSize * 0.66, cellSize - 4, cellSize * 0.18).fill(0x8b5cf6)
+            break
+        }
       }
     }
   }

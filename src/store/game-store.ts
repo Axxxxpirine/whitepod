@@ -66,6 +66,8 @@ export interface GameState {
   removeStation: (stationId: string) => void
   setBuildPalette: (kind: 'extractor' | 'conveyor' | 'factory' | 'storage') => void
   buildPalette: 'extractor' | 'conveyor' | 'factory' | 'storage'
+  selectedBuildTransitionId: string | null
+  setSelectedBuildTransitionId: (transitionId: string | null) => void
   getPreferredTransitionIdForPalette: () => string | null
 
   requestSystemTransition: (transitionId: 'init' | 'launch' | 'terminate') => void
@@ -81,6 +83,7 @@ const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
 const EXTRACT_PREFIX = 'extract__'
 const AUTOSAVE_TICK_INTERVAL = 30
 const PIXI_CELL_SIZE = 24
+const RESOURCE_ORDER: ResourceId[] = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
 
 type PersistedGameState = Pick<
   GameState,
@@ -256,6 +259,29 @@ function buildLayerTokens(tokens: Record<string, number>): PixiExport['layerToke
   return { surface, bus, stock }
 }
 
+function getPalettePrefix(kind: GameState['buildPalette']): string {
+  switch (kind) {
+    case 'extractor':
+      return 'extract__'
+    case 'conveyor':
+      return 'convey__'
+    case 'factory':
+      return 'recipe__'
+    case 'storage':
+      return 'store__'
+  }
+}
+
+function ensureStarterExtractor(grid: GridManager): void {
+  if (grid.listStations().length > 0) return
+
+  for (const resourceId of RESOURCE_ORDER) {
+    const transitionId = `extract__${resourceId}`
+    const station = grid.placeStationNearDeposit(resourceId, transitionId)
+    if (station) return
+  }
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -278,6 +304,7 @@ export const useGameStore = create<GameState>()(
       selectedBuildCell: null,
       hoveredBuildCell: null,
       buildPalette: 'extractor',
+      selectedBuildTransitionId: null,
 
       phase: 'init',
       tokens: {},
@@ -311,6 +338,8 @@ export const useGameStore = create<GameState>()(
           grid.loadSnapshot(gridSnapshot)
         }
 
+        ensureStarterExtractor(grid)
+
         if (engineSnapshot) {
           engine.loadSnapshot(engineSnapshot)
         } else {
@@ -336,6 +365,7 @@ export const useGameStore = create<GameState>()(
           debugFiringHistory: [],
           debugTotalFires: {},
           debugTokenStats: {},
+          selectedBuildTransitionId: null,
         }))
       },
 
@@ -368,6 +398,8 @@ export const useGameStore = create<GameState>()(
           grid.initialize(seed)
         }
 
+        ensureStarterExtractor(grid)
+
         if (engine) engine.initialize()
 
         set(state => ({
@@ -387,6 +419,7 @@ export const useGameStore = create<GameState>()(
           debugFiringHistory: [],
           debugTotalFires: {},
           debugTokenStats: {},
+          selectedBuildTransitionId: null,
         }))
       },
 
@@ -401,6 +434,8 @@ export const useGameStore = create<GameState>()(
           grid.initialize(seed)
         }
 
+        ensureStarterExtractor(grid)
+
         if (engine) engine.initialize()
 
         set(state => ({
@@ -420,6 +455,7 @@ export const useGameStore = create<GameState>()(
           debugFiringHistory: [],
           debugTotalFires: {},
           debugTokenStats: {},
+          selectedBuildTransitionId: null,
         }))
       },
 
@@ -482,20 +518,21 @@ export const useGameStore = create<GameState>()(
       },
 
       setBuildPalette: kind => {
-        set({ buildPalette: kind })
+        const prefix = getPalettePrefix(kind)
+        const current = get().selectedBuildTransitionId
+        const next = current && current.startsWith(prefix) ? current : null
+        set({ buildPalette: kind, selectedBuildTransitionId: next })
+      },
+
+      setSelectedBuildTransitionId: transitionId => {
+        set({ selectedBuildTransitionId: transitionId })
       },
 
       getBuildOptionsAtSelectedCell: () => {
         const { metadata, grid, selectedBuildCell, buildPalette } = get()
         if (!metadata || !selectedBuildCell) return []
-        const transitions = metadata.gameSystem.transitions.filter(t => {
-          if (t.kind !== 'station' || t.activation !== 'placed') return false
-          if (buildPalette === 'factory') return t.stationKind !== 'extract'
-          if (buildPalette === 'extractor') return t.stationKind === 'extract'
-          if (buildPalette === 'storage') return t.stationKind === 'store'
-          if (buildPalette === 'conveyor') return t.stationKind === 'convey'
-          return true
-        })
+        const prefix = getPalettePrefix(buildPalette)
+        const transitions = metadata.gameSystem.transitions.filter(t => t.kind === 'station' && t.activation === 'placed' && t.id.startsWith(prefix))
         return transitions.map(t => {
           const reason = getBuildReason(grid, t.id, selectedBuildCell.x, selectedBuildCell.y)
           return { transitionId: t.id, name: t.name_fr ?? t.id, enabled: reason === null, reason: reason ?? undefined }
@@ -503,19 +540,11 @@ export const useGameStore = create<GameState>()(
       },
 
       getPreferredTransitionIdForPalette: () => {
-        const { metadata, buildPalette } = get()
-        if (!metadata) return null
+        const { selectedBuildTransitionId, buildPalette, transitions } = get()
+        const prefix = getPalettePrefix(buildPalette)
+        if (selectedBuildTransitionId && selectedBuildTransitionId.startsWith(prefix)) return selectedBuildTransitionId
 
-        const transitions = metadata.gameSystem.transitions.filter(t => {
-          if (t.kind !== 'station' || t.activation !== 'placed') return false
-          if (buildPalette === 'factory') return t.stationKind !== 'extract'
-          if (buildPalette === 'extractor') return t.stationKind === 'extract'
-          if (buildPalette === 'storage') return t.stationKind === 'store'
-          if (buildPalette === 'conveyor') return t.stationKind === 'convey'
-          return false
-        })
-
-        return transitions[0]?.id ?? null
+        return transitions.find(t => t.id.startsWith(prefix))?.id ?? null
       },
 
       placeStationAtSelectedCell: transitionId => {

@@ -360,8 +360,8 @@ describe('useGameStore persistence hydrate', () => {
 
     expect(exportData.grid.cells.length).toBeGreaterThan(0)
     expect(exportData.grid.deposits.length).toBeGreaterThan(0)
-    expect(exportData.grid.stations.length).toBe(1)
-    expect(exportData.grid.stations[0].active).toBe(true)
+    expect(exportData.grid.stations.length).toBe(2)
+    expect(exportData.grid.stations.every(station => station.active)).toBe(true)
     expect(exportData.layerTokens.surface).toEqual({})
     expect(exportData.layerTokens.bus).toEqual({})
     expect(exportData.layerTokens.stock).toEqual({})

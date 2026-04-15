@@ -20,6 +20,34 @@ function statusLabel(phase: string): string {
   }
 }
 
+const RESOURCE_ORDER: ResourceId[] = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
+
+function paletteLabel(kind: 'extractor' | 'conveyor' | 'factory' | 'storage'): string {
+  switch (kind) {
+    case 'extractor':
+      return 'Extractors'
+    case 'conveyor':
+      return 'Conveyors'
+    case 'factory':
+      return 'Factories'
+    case 'storage':
+      return 'Storage'
+  }
+}
+
+function palettePrefix(kind: 'extractor' | 'conveyor' | 'factory' | 'storage'): string {
+  switch (kind) {
+    case 'extractor':
+      return 'extract__'
+    case 'conveyor':
+      return 'convey__'
+    case 'factory':
+      return 'recipe__'
+    case 'storage':
+      return 'store__'
+  }
+}
+
 function App() {
   const loadSystem = useGameStore(s => s.loadSystem)
   const mode = useGameStore(s => s.mode)
@@ -33,11 +61,10 @@ function App() {
   const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
   const buildPalette = useGameStore(s => s.buildPalette)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
-  const getBuildOptionsAtSelectedCell = useGameStore(s => s.getBuildOptionsAtSelectedCell)
-  const placeStationAtSelectedCell = useGameStore(s => s.placeStationAtSelectedCell)
+  const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
+  const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
   const placeStation = useGameStore(s => s.placeStation)
   const removeStation = useGameStore(s => s.removeStation)
-  const countDeposits = useGameStore(s => s.countDeposits)
   const requestSystemTransition = useGameStore(s => s.requestSystemTransition)
   const tick = useGameStore(s => s.tick)
   const resetSave = useGameStore(s => s.resetSave)
@@ -84,11 +111,37 @@ function App() {
   }, [metadata])
 
   const effectiveSelectedStationId = selectedStationId || stationOptions[0]?.id || ''
-  const buildOptions = getBuildOptionsAtSelectedCell()
+  const buildPrefix = palettePrefix(buildPalette)
+  const buildOptions = useMemo(
+    () => (metadata?.gameSystem.transitions ?? []).filter(t => t.id.startsWith(buildPrefix)).sort((a, b) => a.id.localeCompare(b.id)),
+    [buildPrefix, metadata],
+  )
+  const activeBuildTransitionId =
+    selectedBuildTransitionId && selectedBuildTransitionId.startsWith(buildPrefix)
+      ? selectedBuildTransitionId
+      : buildOptions[0]?.id ?? null
+
+  useEffect(() => {
+    if (activeBuildTransitionId && activeBuildTransitionId !== selectedBuildTransitionId) {
+      setSelectedBuildTransitionId(activeBuildTransitionId)
+    }
+  }, [activeBuildTransitionId, selectedBuildTransitionId, setSelectedBuildTransitionId])
+
+  const activeBuildTransition = useMemo(
+    () => buildOptions.find(t => t.id === activeBuildTransitionId) ?? null,
+    [activeBuildTransitionId, buildOptions],
+  )
 
   const tokenEntries = Object.entries(tokens)
     .filter(([, value]) => value > 0)
     .sort(([a], [b]) => a.localeCompare(b))
+
+  const resourceTotals = RESOURCE_ORDER.map(resourceId => ({
+    resourceId,
+    count: Object.entries(tokens)
+      .filter(([place]) => place.startsWith(resourceId))
+      .reduce((sum, [, qty]) => sum + qty, 0),
+  }))
 
   const selectedCellLabel = selectedBuildCell
     ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
@@ -126,6 +179,16 @@ function App() {
         <span className="hud-badge">Stations {stations.length}</span>
         <span className="hud-badge">Tokens {tokenEntries.length}</span>
         <span className="hud-badge">Build {buildOptions.length}</span>
+        <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build selected'}</span>
+      </div>
+
+      <div className="hud-resource-strip hud-layer panel-surface panel-dark">
+        {resourceTotals.map(resource => (
+          <div key={resource.resourceId} className="hud-resource-pill">
+            <span>{resource.resourceId.replace('lunar_', '')}</span>
+            <strong>{resource.count}</strong>
+          </div>
+        ))}
       </div>
 
       <main className="hud-layer-grid hud-layer">
@@ -161,7 +224,7 @@ function App() {
 
           <section className="panel-surface panel-dark hud-panel">
             <div className="panel-header panel-header--dark">
-              <h2>Build</h2>
+              <h2>Build Library</h2>
               <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
             </div>
             <div className="hud-actions hud-actions--dense">
@@ -180,39 +243,38 @@ function App() {
                 </button>
               ))}
             </div>
+            <div className="hud-library-header">
+              <div>
+                <span className="hud-muted">Active category</span>
+                <div className="hud-library-title">{paletteLabel(buildPalette)}</div>
+              </div>
+              <div className="hud-muted">{buildOptions.length} available</div>
+            </div>
+            <div className="hud-library-scroll">
+              <div className="hud-chip-list">
+                {buildOptions.map(option => (
+                  <button
+                    key={option.id}
+                    className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
+                    onClick={() => setSelectedBuildTransitionId(option.id)}
+                    title={option.name_fr ?? option.id}
+                  >
+                    <span>{option.name_fr ?? option.id}</span>
+                    <small>{option.id}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className="hud-muted">
-              Active: {buildPalette}
-              <br />
+              Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name_fr ?? activeBuildTransition.id : 'the selected build'}.
+            </p>
+            <p className="hud-muted">
               {selectedBuildCell
                 ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
                 : hoveredBuildCell
                   ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
-                  : 'Select a grid cell to build.'}
+                  : 'Select a grid cell to inspect.'}
             </p>
-            {selectedBuildCell ? (
-              <div className="hud-chip-list">
-                {buildOptions.map(option => (
-                  <button
-                    key={option.transitionId}
-                    className={`hud-chip ${option.enabled ? '' : 'is-disabled'}`}
-                    title={option.reason}
-                    disabled={!option.enabled}
-                    onClick={() => {
-                      if (!option.enabled) return
-                      placeStationAtSelectedCell(option.transitionId)
-                    }}
-                  >
-                    <span>{option.name}</span>
-                    {!option.enabled && option.reason ? <small>{option.reason}</small> : null}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {effectiveSelectedStationId.startsWith('extract__') ? (
-              <p className="hud-muted">
-                Units available: <code>{countDeposits(effectiveSelectedStationId.slice('extract__'.length) as ResourceId)}</code>
-              </p>
-            ) : null}
           </section>
         </aside>
 
@@ -273,6 +335,7 @@ function App() {
           <span className="hud-badge">{statusLabel(phase)}</span>
           <span className="hud-badge">Seed {seed}</span>
           {mode === 'debug' ? <span className="hud-badge hud-badge--accent">Debug</span> : null}
+          <span className="hud-badge">Debug via top-right Mode</span>
         </div>
         <div className="hud-bottom-right">
           <div className="hud-zoom-group">
