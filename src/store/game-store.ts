@@ -26,6 +26,7 @@ export interface GameState {
   grid: GridManager
   seed: number
   autosaveTickIndex: number
+  saveRevision: number
   tickIndex: number
 
   stations: StationPlacement[]
@@ -69,8 +70,40 @@ const AUTOSAVE_TICK_INTERVAL = 30
 
 type PersistedGameState = Pick<
   GameState,
-  'mode' | 'seed' | 'autosaveTickIndex' | 'engineSnapshot' | 'gridSnapshot'
+  'mode' | 'seed' | 'autosaveTickIndex' | 'saveRevision' | 'engineSnapshot' | 'gridSnapshot'
 >
+
+function isPersistedGameState(value: unknown): value is PersistedGameState {
+  if (!value || typeof value !== 'object') return false
+
+  const state = value as Partial<PersistedGameState>
+  if (state.mode !== 'player' && state.mode !== 'debug') return false
+  if (typeof state.seed !== 'number' || !Number.isFinite(state.seed)) return false
+  if (typeof state.autosaveTickIndex !== 'number' || !Number.isInteger(state.autosaveTickIndex)) return false
+  if (typeof state.saveRevision !== 'number' || !Number.isInteger(state.saveRevision) || state.saveRevision < 0) {
+    return false
+  }
+
+  if (state.engineSnapshot !== null && state.engineSnapshot !== undefined) {
+    try {
+      const engine = new PetriNetEngine([])
+      engine.loadSnapshot(state.engineSnapshot as PetriNetEngineSnapshot)
+    } catch {
+      return false
+    }
+  }
+
+  if (state.gridSnapshot !== null && state.gridSnapshot !== undefined) {
+    try {
+      const grid = new GridManager()
+      grid.loadSnapshot(state.gridSnapshot as GridSnapshot)
+    } catch {
+      return false
+    }
+  }
+
+  return true
+}
 
 function createDedupeStorage() {
   const base = createJSONStorage<PersistedGameState>(() => localStorage)
@@ -178,6 +211,7 @@ export const useGameStore = create<GameState>()(
       grid: new GridManager(),
       seed: 1,
       autosaveTickIndex: 0,
+      saveRevision: 0,
       tickIndex: 0,
 
       stations: [],
@@ -235,6 +269,7 @@ export const useGameStore = create<GameState>()(
           tokens: engine.getTokensSnapshot(),
           lastFiredTransitionIds: [],
           fireEventSeq: state.fireEventSeq + 1,
+          saveRevision: state.saveRevision + 1,
           debugStatsStartTick: null,
           debugFiringHistory: [],
           debugTotalFires: {},
@@ -276,6 +311,7 @@ export const useGameStore = create<GameState>()(
         set(state => ({
           seed,
           autosaveTickIndex: 0,
+          saveRevision: state.saveRevision + 1,
           tickIndex: 0,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
@@ -308,6 +344,7 @@ export const useGameStore = create<GameState>()(
         set(state => ({
           seed,
           autosaveTickIndex: 0,
+          saveRevision: state.saveRevision + 1,
           tickIndex: 0,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
@@ -338,6 +375,7 @@ export const useGameStore = create<GameState>()(
 
         set({
           autosaveTickIndex: tickIndex,
+          saveRevision: get().saveRevision + 1,
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
           gridSnapshot: grid.getSnapshot(),
@@ -350,6 +388,7 @@ export const useGameStore = create<GameState>()(
 
         set({
           autosaveTickIndex: tickIndex,
+          saveRevision: get().saveRevision + 1,
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
           gridSnapshot: grid.getSnapshot(),
@@ -359,6 +398,8 @@ export const useGameStore = create<GameState>()(
       requestSystemTransition: transitionId => {
         set(state => ({
           requestedSystemTransitionIds: uniqueAppend(state.requestedSystemTransitionIds, transitionId),
+          autosaveTickIndex: state.tickIndex,
+          saveRevision: state.saveRevision + 1,
         }))
       },
 
@@ -405,7 +446,6 @@ export const useGameStore = create<GameState>()(
           grid.consumeReservedDeposit(reservedDepositId)
         }
 
-        const shouldFlush = SYSTEM_TRANSITIONS.has(transitionId)
         const timestamp = Date.now()
 
         const transitionsById = new Map<string, Transition>()
@@ -427,11 +467,10 @@ export const useGameStore = create<GameState>()(
             debugTokenStats: updateDebugTokenStats(state.debugTokenStats, fired, transitionsById),
           }
 
-          if (!shouldFlush) return base
-
           return {
             ...base,
             autosaveTickIndex: tickIndex,
+            saveRevision: state.saveRevision + 1,
             engineSnapshot: engine.getSnapshot(),
             gridSnapshot: grid.getSnapshot(),
           }
@@ -550,6 +589,7 @@ export const useGameStore = create<GameState>()(
             ? {
                 ...base,
                 autosaveTickIndex: nextTickIndex,
+                saveRevision: state.saveRevision + 1,
                 engineSnapshot: engine.getSnapshot(),
                 gridSnapshot: grid.getSnapshot(),
               }
@@ -595,6 +635,21 @@ export const useGameStore = create<GameState>()(
       name: 'whitepod-save',
       version: 1,
       storage: createDedupeStorage(),
+      merge: (persisted, current) => {
+        if (!isPersistedGameState(persisted)) {
+          try {
+            localStorage.removeItem('whitepod-save')
+          } catch {
+            // ignore
+          }
+          return current
+        }
+
+        return {
+          ...current,
+          ...persisted,
+        }
+      },
       migrate: (persisted, version) => {
         if (version === 0) {
           const s = (persisted ?? {}) as Partial<PersistedGameState> & { tickIndex?: number }
@@ -607,6 +662,7 @@ export const useGameStore = create<GameState>()(
             engineSnapshot: s.engineSnapshot ?? null,
             gridSnapshot: s.gridSnapshot ?? null,
             autosaveTickIndex,
+            saveRevision: typeof s.saveRevision === 'number' ? s.saveRevision : 0,
           }
         }
 
@@ -616,6 +672,7 @@ export const useGameStore = create<GameState>()(
         mode: state.mode,
         seed: state.seed,
         autosaveTickIndex: state.autosaveTickIndex,
+        saveRevision: state.saveRevision,
         engineSnapshot: state.engineSnapshot,
         gridSnapshot: state.gridSnapshot,
       }),

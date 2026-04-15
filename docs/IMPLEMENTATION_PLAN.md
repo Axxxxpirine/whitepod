@@ -35,6 +35,7 @@
 - **Store Zustand + persistance** : `src/store/game-store.ts`
   - persistance via `zustand/middleware/persist` (clé localStorage: `whitepod-save`)
   - snapshots sérialisables engine + grid
+  - auto-save cadence 30 ticks + flush sur actions majeures
 - **GameLoop + export** : `src/engine/game-loop.ts`
   - tick 1s + dispatch `window.__whitepodOnPixiUpdate` + event `whitepod-pixi-update`
 - **UI minimale** : `src/App.tsx`
@@ -872,7 +873,7 @@ echo "Directory: public/assets/"
 - [x] Persistence localStorage (snapshots engine + grid)
 - [x] Loader transitions + metadata fonctionnels (`/data/...`)
 - [x] Test d'hydratation store (mock fetch + localStorage)
-- [ ] Auto-save toutes les 30 secondes (actuellement: persistance à chaque tick/interaction)
+- [x] Auto-save toutes les 30 secondes + flush sur actions majeures
 
 ### Phase 3: Game Loop & Integration (Priorité Haute)
 
@@ -1054,7 +1055,7 @@ whitepod/
 ### Phase 2: Store & Data Pipeline
 - [x] Store Zustand initialisé
 - [x] Persistence localStorage fonctionnelle (snapshots sérialisables)
-- [ ] Auto-save toutes les 30 secondes (actuellement: persistance à chaque tick/interaction)
+- [x] Auto-save toutes les 30 secondes + flush sur actions majeures
 - [x] Loader transitions: JSON servie via `public/data/*`
 - [x] DSL → JSON: compilateur + validation
 
@@ -1184,7 +1185,7 @@ Ce plan exhaustif couvre l'ensemble de l'implémentation du moteur Whitepod, de 
 **Prochaines étapes** (dans une session ultérieure):
 
 1. **Phase 1**: ✅ Types core + PetriNet engine + Grid manager
-2. **Phase 2**: ✅ Store Zustand + loaders + persistance
+2. **Phase 2**: ✅ Store Zustand + loaders + persistance + autosave
 3. **Phase 3**: ✅ Game loop + intégration React (UI minimale)
 4. **Phase 4**: ⏳ Asset pipeline + scripts (non implémenté)
 5. **Phase 5**: ⏳ PixiJS renderer + export Pixi complet

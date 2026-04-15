@@ -1,13 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+function createLocalStorageMock() {
+  const data = new Map<string, string>()
+
+  return {
+    getItem: vi.fn((key: string) => data.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      data.set(key, value)
+    }),
+    removeItem: vi.fn((key: string) => {
+      data.delete(key)
+    }),
+    clear: vi.fn(() => {
+      data.clear()
+    }),
+  }
+}
+
 describe('useGameStore persistence hydrate', () => {
+  let storage: ReturnType<typeof createLocalStorageMock>
+
   beforeEach(() => {
     vi.resetModules()
-    localStorage.clear()
+    storage = createLocalStorageMock()
+    vi.stubGlobal('localStorage', storage)
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('hydrates engine and grid from saved snapshots', async () => {
@@ -39,7 +60,7 @@ describe('useGameStore persistence hydrate', () => {
       version: 0,
     }
 
-    localStorage.setItem('whitepod-save', JSON.stringify(savedState))
+    storage.setItem('whitepod-save', JSON.stringify(savedState))
 
     const transitions = [
       { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
@@ -145,27 +166,142 @@ describe('useGameStore persistence hydrate', () => {
       return { ok: false, status: 404, statusText: 'Not Found' }
     }))
 
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
-
     const { useGameStore } = await import('./game-store')
     await useGameStore.getState().loadSystem()
 
-    const afterLoad = setItemSpy.mock.calls.length
+    const afterLoad = storage.setItem.mock.calls.length
 
     useGameStore.getState().tick()
-    expect(setItemSpy.mock.calls.length).toBe(afterLoad)
+    expect(storage.setItem.mock.calls.length).toBe(afterLoad)
 
     useGameStore.getState().placeStation('extract__lunar_hydrogen')
-    expect(setItemSpy.mock.calls.length).toBeGreaterThan(afterLoad)
+    expect(storage.setItem.mock.calls.length).toBeGreaterThan(afterLoad)
 
-    const afterPlacement = setItemSpy.mock.calls.length
+    const afterPlacement = storage.setItem.mock.calls.length
 
     for (let i = 0; i < 28; i++) {
       useGameStore.getState().tick()
     }
-    expect(setItemSpy.mock.calls.length).toBe(afterPlacement)
+    expect(storage.setItem.mock.calls.length).toBe(afterPlacement)
 
     useGameStore.getState().tick()
-    expect(setItemSpy.mock.calls.length).toBeGreaterThan(afterPlacement)
+    expect(storage.setItem.mock.calls.length).toBeGreaterThan(afterPlacement)
+  })
+
+  it('flushes a requested system transition immediately', async () => {
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      { id: 'launch', consumes: [{ place: 'run', qty: 1 }], produces: [{ place: 'done', qty: 1 }] },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [],
+        transitions: [],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 1, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 3 },
+            lunar_oxygen: { depositCount: 1, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 1, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+
+    const before = JSON.parse(storage.getItem('whitepod-save') ?? 'null')
+    expect(before.state.saveRevision).toBe(1)
+
+    useGameStore.getState().requestSystemTransition('launch')
+
+    const after = JSON.parse(storage.getItem('whitepod-save') ?? 'null')
+    expect(after.state.saveRevision).toBe(2)
+  })
+
+  it('drops invalid persisted saves during hydration', async () => {
+    storage.setItem(
+      'whitepod-save',
+      JSON.stringify({
+        state: {
+          mode: 'player',
+          seed: 1,
+          autosaveTickIndex: 4,
+          saveRevision: 1,
+          engineSnapshot: {
+            tokens: { run: 1 },
+            terminated: false,
+          },
+          gridSnapshot: {
+            version: 2,
+            rngState: 123,
+            nextStationSeq: 1,
+            deposits: [],
+            stations: [],
+          },
+        },
+        version: 1,
+      }),
+    )
+
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      { id: 'launch', consumes: [{ place: 'run', qty: 1 }], produces: [{ place: 'done', qty: 1 }] },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [],
+        transitions: [],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 1, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 3 },
+            lunar_oxygen: { depositCount: 1, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 1, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+
+    expect(useGameStore.getState().tickIndex).toBe(0)
+    expect(useGameStore.getState().gridSnapshot?.version).toBe(1)
+
+    const stored = JSON.parse(storage.getItem('whitepod-save') ?? 'null')
+    expect(stored.state.gridSnapshot.version).toBe(1)
+    expect(stored.state.saveRevision).toBeGreaterThanOrEqual(1)
   })
 })
