@@ -60,6 +60,16 @@
   border-radius: 20px;
 }
 
+.hud-status-strip {
+  top: 78px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
 .hud-eyebrow {
   margin: 0;
   font-size: 11px;
@@ -117,7 +127,7 @@
 
 .hud-layer-grid {
   position: absolute;
-  inset: 84px 16px 76px;
+  inset: 124px 16px 76px;
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr) 320px;
   gap: 14px;
@@ -132,7 +142,7 @@
 .hud-panel,
 .hud-debug {
   border-radius: 20px;
-  padding: 14px;
+  padding: 12px;
 }
 
 .panel-header {
@@ -145,7 +155,7 @@
 
 .panel-header--dark h2 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
   color: var(--hud-text);
 }
@@ -180,7 +190,7 @@
   border: 1px solid var(--hud-border-strong);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
-  padding: 10px 12px;
+  padding: 9px 11px;
   font: inherit;
   color: var(--hud-text);
 }
@@ -201,8 +211,8 @@
 
 .hud-button,
 .hud-link {
-  padding: 9px 11px;
-  font-size: 12px;
+  padding: 8px 10px;
+  font-size: 11px;
 }
 
 .hud-button:hover,
@@ -233,9 +243,9 @@
 .hud-chip {
   display: grid;
   gap: 3px;
-  padding: 9px 11px;
+  padding: 8px 10px;
   text-align: left;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .hud-chip small {
@@ -277,6 +287,10 @@
   border-radius: 20px;
 }
 
+.hud-bottom .hud-badge {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .hud-debug {
   right: 16px;
   bottom: 92px;
@@ -284,8 +298,13 @@
 }
 
 @media (max-width: 1180px) {
+  .hud-status-strip {
+    top: 148px;
+    left: 16px;
+  }
+
   .hud-layer-grid {
-    inset: 84px 16px 92px;
+    inset: 188px 16px 92px;
     grid-template-columns: 1fr;
     align-content: start;
   }
@@ -303,8 +322,15 @@
     right: 10px;
   }
 
+  .hud-status-strip {
+    top: 144px;
+    left: 10px;
+    right: 10px;
+    flex-wrap: wrap;
+  }
+
   .hud-layer-grid {
-    inset: 92px 10px 92px;
+    inset: 186px 10px 92px;
   }
 
   .hud-topbar {

@@ -86,6 +86,12 @@ function App() {
     .filter(([, value]) => value > 0)
     .sort(([a], [b]) => a.localeCompare(b))
 
+  const selectedCellLabel = selectedBuildCell
+    ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
+    : hoveredBuildCell
+      ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
+      : 'No cell selected'
+
   return (
     <div className="app-shell app-shell--overlay min-h-screen">
       <PixiCanvas className="canvas-stage canvas-stage--background" />
@@ -107,6 +113,13 @@ function App() {
           <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
         </div>
       </header>
+
+      <div className="hud-status-strip hud-layer panel-surface panel-dark">
+        <span className="hud-badge">{selectedCellLabel}</span>
+        <span className="hud-badge">Stations {stations.length}</span>
+        <span className="hud-badge">Tokens {tokenEntries.length}</span>
+        <span className="hud-badge">Build {buildOptions.length}</span>
+      </div>
 
       <main className="hud-layer-grid hud-layer">
         <aside className="hud-column hud-column--left">
