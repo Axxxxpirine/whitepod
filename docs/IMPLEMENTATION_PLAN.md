@@ -4,11 +4,11 @@
 
 **Whitepod** est un jeu de gestion et d'optimisation industrielle sur grille lunaire. Le joueur incarne l'architecte d'un système automatisé vivant : il observe un territoire, organise l'implantation de son infrastructure, anticipe les contraintes de circulation et d'énergie, puis affine en continu la structure de son réseau pour transformer un espace brut en machine cohérente, stable et évolutive.
 
-**Objectif Phase 1** : Implémenter le moteur de jeu avec export JSON pour PixiJS renderer (phase 2).
+**Objectif actuel** : consolider une boucle de jeu jouable avec rendu PixiJS, HUD React tuilé, persistance locale, et base de debug/inspection pour les itérations suivantes.
 
 **Stack Technique** :
 - TypeScript, React 19, Zustand (state management)
-- PixiJS 8 (rendu 2D - phase 2)
+- PixiJS 8 (rendu 2D)
 - Vite 8, Tailwind CSS 4, ESLint
 - Vitest (tests), localStorage (persistance)
 - Debug PetriNet UI: Dagre (layout), Marked (Markdown)
@@ -19,7 +19,7 @@
 
 ### 0.1 Résumé
 
-✅ Un socle fonctionnel existe déjà pour la Phase 1 → Phase 3 :
+✅ Un socle fonctionnel existe déjà pour la boucle runtime actuelle :
 
 - **DSL canonique** : `docs/lunar-chemistry-petrinet.dsl`
   - `run` gating explicite pour les transitions *station*
@@ -38,14 +38,23 @@
   - auto-save cadence 30 ticks + flush sur actions majeures
 - **GameLoop + export** : `src/engine/game-loop.ts`
   - tick 1s + dispatch `window.__whitepodOnPixiUpdate` + event `whitepod-pixi-update`
-- **UI minimale** : `src/App.tsx`
-  - mode `player|debug`, seed + new game, reset save, stations, tokens
-- **Debug PetriNet Simulator** (mode `debug`) :
+- **HUD joueur tuilé** : `src/App.tsx`, `src/App.css`
+  - header, résumé, sidebars, viewport central, footer
+  - plus d'overlay absolu pour les panneaux HUD
+  - panneaux à scroll interne pour éviter les collisions de layout
+  - le rendu Pixi est désormais dans un panneau dédié au centre
+- **Renderer Pixi** : `src/components/PixiCanvas.tsx`, `src/render/pixi-renderer.ts`
+  - grille 128x128, dépôts/stations, overlays de tokens
+  - zoom UI côté React avec viewport scrollable
+- **Debug PetriNet Simulator** (code conservé, hors surface joueur pour l'instant) :
   - `src/components/debug/PetriNetDebugger.tsx` (controls, stats, filters)
   - `src/components/debug/petri/PetriNetDiagram.tsx` (SVG + minimap + ROI)
   - Le simulateur est **interactif** et modifie l'état réel (fire/step/auto-sim)
-- **GameLoop** : `src/engine/game-loop.ts`
-  - en `debug`, le tick automatique est **gated** par `autoTickEnabled`
+  - le code existe toujours mais n'est plus exposé dans le HUD joueur courant
+- **Validation actuelle** :
+  - `npm run build` ✅
+  - `npm test` ✅
+  - `npm run lint` ✅
 - **Tests** : Vitest (DSL compiler, engine, grid, snapshots, store hydration)
 
 ### 0.2 Commandes (reprise de session)
@@ -57,6 +66,7 @@ Environnement recommandé (Nix) :
 - `npm run generate:lunar-chemistry` (à faire après toute modification du DSL)
 - `npm test`
 - `npm run lint`
+- `npm run build`
 - `npm run dev`
 
 Astuce: si `node/npm` ne sont pas disponibles hors shell, utiliser `nix develop -c <commande>`.
@@ -68,10 +78,13 @@ Pour repartir de zéro côté sauvegarde :
 
 ### 0.3 Prochaines étapes prioritaires
 
+- **Comparer avec la future base `main` rafraîchie** : réévaluer les écarts une fois la branche cible disponible localement.
+- **Affiner le HUD tuilé** : proportions desktop/mobile, hiérarchie visuelle, ergonomie des sidebars.
+- **Ajuster le viewport central** : zoom par défaut, occupation de l'espace, comportement de scroll, confort sur laptop.
+- **Vérifier précisément le mapping pointeur → cellule** dans le nouveau layout tuilé (clic/hover/placement) avec QA manuelle.
 - **Stabiliser le contrat PixiExport/renderer** : diffing strategy, cleanup, resize behavior, update policy.
 - **Compléter l'intégration PixiJS** : tests d'intégration, performances, animation playback.
-- **Clarifier l'UI de placement sur grille** : définir les règles de validation, l'interaction (click vs dropdown), et l'interaction avec les flux existants.
-- **Améliorer le debug PetriNet** : inspecteur de transition, raisons de disable, perf/UX.
+- **Décider du sort du debug UI** : réintégration contrôlée, séparation sur route dédiée, ou nettoyage des dépendances (`dagre`, `marked`) si non retenu.
 - **Finaliser la pipeline d'assets** : mapping asset-ID ↔ resource, versioning, fallback behavior.
 
 ### 0.4 Notes Debug PetriNet (important)
@@ -89,7 +102,19 @@ Pour repartir de zéro côté sauvegarde :
 - Installer deps: `npm install`
 - Vérifier l'état: `npm test && npm run lint && npm run build`
 - Lancer: `npm run dev`
-- Debugger: passer en mode `debug` et utiliser "Petri net simulator".
+- Vérifier en priorité le layout HUD tuilé sur desktop + mobile
+- Vérifier les interactions grille: hover, clic, placement, zoom
+- Debugger si besoin via les composants debug existants, mais ils ne sont plus branchés au HUD joueur courant
+
+### 0.6 Handoff de cette session
+
+- Le HUD overlay a été remplacé par un **layout tuilé** en flux normal.
+- La grille Pixi n'est plus un fond plein écran, mais un **viewport central dédié**.
+- Les panneaux `Build Library`, `Stations` et `Tokens` ont un **scroll interne** pour éviter les chevauchements.
+- Le sélecteur de mode a été retiré de la surface joueur; le HUD affiche simplement `player`.
+- `src/App.css` est désormais bien importé par `src/App.tsx`.
+- Le zoom par défaut du viewport a été réduit pour mieux rentrer dans le panneau central (`0.625`).
+- Les vérifications de base sont vertes: build, tests, lint.
 
 ---
 

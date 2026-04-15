@@ -82,7 +82,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       ref={containerRef}
       id="pixi-canvas"
       className={className}
-      style={{ width: '100%', height: '100%', minHeight: '72vh', ...style }}
+      style={{ display: 'block', width: '100%', height: '100%', minWidth: 0, minHeight: 0, ...style }}
     />
   )
 }
