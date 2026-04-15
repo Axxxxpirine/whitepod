@@ -2,6 +2,7 @@ import type { TileType } from '../types';
 import { TileType as TileTypeConst, ResourceType as ResourceTypeConst } from '../types';
 import type { ResourceType } from '../types';
 import { Assets, Texture } from 'pixi.js';
+import { BATTERY_BASIC_BUILDING_TYPE_ID, EXTRACTOR_BUILDING_TYPE_ID, SOLAR_PANEL_BUILDING_TYPE_ID, STORAGE_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 
 const TILE_COLORS: Record<TileType, number> = {
   [TileTypeConst.Empty]: 0x4a7c59,
@@ -34,4 +35,23 @@ export async function loadResourceTextures(): Promise<void> {
 
 export function getResourceTexture(type: ResourceType): Texture | null {
   return resourceTextures.get(type) ?? null;
+}
+
+const buildingTextures = new Map<string, Texture>();
+
+export async function loadBuildingTextures(): Promise<void> {
+  const entries: [string, string][] = [
+    [SOLAR_PANEL_BUILDING_TYPE_ID, 'sprites/solar_panel.svg'],
+    [BATTERY_BASIC_BUILDING_TYPE_ID, 'sprites/battery.svg'],
+    [STORAGE_BUILDING_TYPE_ID, 'sprites/warehouse.svg'],
+    [EXTRACTOR_BUILDING_TYPE_ID, 'sprites/extractor.svg'],
+  ];
+  for (const [typeId, path] of entries) {
+    const texture = await Assets.load<Texture>(path);
+    buildingTextures.set(typeId, texture);
+  }
+}
+
+export function getBuildingTexture(typeId: string): Texture | null {
+  return buildingTextures.get(typeId) ?? null;
 }

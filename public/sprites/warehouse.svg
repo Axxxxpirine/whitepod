@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- Ground shadow -->
+  <rect x="6" y="8" width="54" height="52" fill="#1a1a2a" opacity="0.4"/>
+
+  <!-- Main roof structure -->
+  <rect x="4" y="4" width="54" height="52" rx="1" fill="#4a4a5e"/>
+
+  <!-- Roof highlight top+left -->
+  <rect x="4" y="4" width="54" height="1" fill="#6a6a7e"/>
+  <rect x="4" y="4" width="1" height="52" fill="#6a6a7e"/>
+  <!-- Roof shadow bottom+right -->
+  <rect x="4" y="55" width="54" height="1" fill="#33334a"/>
+  <rect x="57" y="4" width="1" height="52" fill="#33334a"/>
+
+  <!-- Roof surface (slightly lighter metallic) -->
+  <rect x="6" y="6" width="50" height="48" fill="#555568"/>
+
+  <!-- Roof ridge panels (horizontal corrugated lines) -->
+  <rect x="6" y="9" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="14" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="19" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="24" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="29" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="34" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="39" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="44" width="50" height="2" fill="#5e5e72"/>
+  <rect x="6" y="49" width="50" height="2" fill="#5e5e72"/>
+
+  <!-- Roof ridge shadow lines (darker below each ridge) -->
+  <rect x="6" y="11" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="16" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="21" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="26" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="31" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="36" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="41" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="46" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+  <rect x="6" y="51" width="50" height="1" fill="#4a4a5a" opacity="0.5"/>
+
+  <!-- Central spine / roof ridge (runs vertically down center) -->
+  <rect x="29" y="4" width="4" height="52" fill="#4e4e62"/>
+  <rect x="30" y="4" width="2" height="52" fill="#62627a"/>
+  <rect x="30" y="4" width="1" height="52" fill="#6e6e88" opacity="0.5"/>
+
+  <!-- Ventilation units on roof (futuristic touch) -->
+  <!-- Vent 1 top-left -->
+  <rect x="12" y="12" width="8" height="6" fill="#3e3e52"/>
+  <rect x="13" y="13" width="6" height="4" fill="#2e2e42"/>
+  <rect x="13" y="13" width="6" height="1" fill="#4a7acc" opacity="0.4"/>
+  <rect x="13" y="15" width="6" height="1" fill="#4a7acc" opacity="0.3"/>
+  <!-- Vent fan blades hint -->
+  <rect x="15" y="13" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+  <rect x="17" y="13" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+
+  <!-- Vent 2 top-right -->
+  <rect x="42" y="12" width="8" height="6" fill="#3e3e52"/>
+  <rect x="43" y="13" width="6" height="4" fill="#2e2e42"/>
+  <rect x="43" y="13" width="6" height="1" fill="#4a7acc" opacity="0.4"/>
+  <rect x="43" y="15" width="6" height="1" fill="#4a7acc" opacity="0.3"/>
+  <rect x="45" y="13" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+  <rect x="47" y="13" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+
+  <!-- Vent 3 bottom-left -->
+  <rect x="12" y="42" width="8" height="6" fill="#3e3e52"/>
+  <rect x="13" y="43" width="6" height="4" fill="#2e2e42"/>
+  <rect x="13" y="43" width="6" height="1" fill="#4a7acc" opacity="0.4"/>
+  <rect x="13" y="45" width="6" height="1" fill="#4a7acc" opacity="0.3"/>
+  <rect x="15" y="43" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+  <rect x="17" y="43" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+
+  <!-- Vent 4 bottom-right -->
+  <rect x="42" y="42" width="8" height="6" fill="#3e3e52"/>
+  <rect x="43" y="43" width="6" height="4" fill="#2e2e42"/>
+  <rect x="43" y="43" width="6" height="1" fill="#4a7acc" opacity="0.4"/>
+  <rect x="43" y="45" width="6" height="1" fill="#4a7acc" opacity="0.3"/>
+  <rect x="45" y="43" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+  <rect x="47" y="43" width="1" height="4" fill="#4a4a5e" opacity="0.4"/>
+
+  <!-- Loading dock / large door visible at bottom edge -->
+  <rect x="18" y="53" width="14" height="4" fill="#3a3a4e"/>
+  <rect x="18" y="53" width="14" height="1" fill="#2a2a3e"/>
+  <rect x="19" y="54" width="12" height="2" fill="#2e4a5a"/>
+  <!-- Door segments -->
+  <rect x="22" y="54" width="1" height="2" fill="#3a3a4e" opacity="0.5"/>
+  <rect x="25" y="54" width="1" height="2" fill="#3a3a4e" opacity="0.5"/>
+  <rect x="28" y="54" width="1" height="2" fill="#3a3a4e" opacity="0.5"/>
+  <!-- Door indicator light -->
+  <rect x="24" y="53" width="2" height="1" fill="#3aeaa0" opacity="0.6"/>
+
+  <!-- Second loading dock -->
+  <rect x="38" y="53" width="10" height="4" fill="#3a3a4e"/>
+  <rect x="38" y="53" width="10" height="1" fill="#2a2a3e"/>
+  <rect x="39" y="54" width="8" height="2" fill="#2e4a5a"/>
+  <rect x="42" y="54" width="1" height="2" fill="#3a3a4e" opacity="0.5"/>
+  <rect x="45" y="54" width="1" height="2" fill="#3a3a4e" opacity="0.5"/>
+  <rect x="42" y="53" width="2" height="1" fill="#3aeaa0" opacity="0.6"/>
+
+  <!-- Rooftop utility box (center-right) -->
+  <rect x="40" y="26" width="7" height="7" fill="#3e3e52"/>
+  <rect x="41" y="27" width="5" height="5" fill="#2e2e42"/>
+  <!-- Status LED on utility box -->
+  <rect x="43" y="29" width="2" height="2" fill="#4aeaa0" opacity="0.6"/>
+  <rect x="43" y="29" width="1" height="1" fill="#aaffdd" opacity="0.5"/>
+
+  <!-- Small antenna / sensor on roof -->
+  <rect x="14" y="27" width="2" height="2" fill="#6a6a7e"/>
+  <rect x="14.5" y="25" width="1" height="2" fill="#5a5a6e"/>
+  <rect x="14" y="25" width="2" height="1" fill="#7a7a8e"/>
+
+  <!-- Futuristic roof edge trim (glowing accent lines) -->
+  <rect x="4" y="4" width="54" height="1" fill="#4a7acc" opacity="0.2"/>
+  <rect x="4" y="4" width="1" height="52" fill="#4a7acc" opacity="0.15"/>
+  <rect x="4" y="55" width="54" height="1" fill="#4a7acc" opacity="0.1"/>
+  <rect x="57" y="4" width="1" height="52" fill="#4a7acc" opacity="0.1"/>
+
+  <!-- Subtle light reflection on roof (top-left area) -->
+  <rect x="8" y="7" width="12" height="1" fill="#7a7a90" opacity="0.3"/>
+  <rect x="8" y="7" width="1" height="4" fill="#7a7a90" opacity="0.2"/>
+</svg>

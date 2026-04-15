@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- Outer casing shadow -->
+  <rect x="7" y="9" width="50" height="50" rx="2" fill="#1a1a2a" opacity="0.5"/>
+
+  <!-- Outer casing (dark metallic) -->
+  <rect x="6" y="6" width="50" height="50" rx="2" fill="#2e2e3e"/>
+
+  <!-- Casing highlight top+left -->
+  <rect x="6" y="6" width="50" height="1" fill="#4a4a5e"/>
+  <rect x="6" y="6" width="1" height="50" fill="#4a4a5e"/>
+  <!-- Casing shadow bottom+right -->
+  <rect x="6" y="55" width="50" height="1" fill="#1e1e2e"/>
+  <rect x="55" y="6" width="1" height="50" fill="#1e1e2e"/>
+
+  <!-- Inner panel (recessed area) -->
+  <rect x="9" y="9" width="44" height="44" fill="#1a1a2e"/>
+
+  <!-- Energy cells - 2 horizontal glowing cells -->
+  <!-- Cell 1 (top) -->
+  <rect x="12" y="12" width="38" height="17" rx="1" fill="#0a2a3a"/>
+  <rect x="13" y="13" width="36" height="15" rx="1" fill="#0d3a4a"/>
+  <!-- Cell 1 energy fill (glowing green) -->
+  <rect x="14" y="14" width="34" height="13" fill="#0a4a3a"/>
+  <rect x="14" y="14" width="28" height="13" fill="#1a8a5a" opacity="0.8"/>
+  <rect x="14" y="14" width="28" height="6" fill="#2aaa6a" opacity="0.4"/>
+  <!-- Cell 1 glow highlight -->
+  <rect x="14" y="14" width="28" height="1" fill="#4aeaa0" opacity="0.5"/>
+  <rect x="14" y="14" width="1" height="13" fill="#4aeaa0" opacity="0.3"/>
+  <!-- Cell 1 segment lines -->
+  <rect x="20" y="14" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="27" y="14" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="34" y="14" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="41" y="14" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <!-- Cell 1 empty section (right side, lower charge) -->
+  <rect x="42" y="14" width="6" height="13" fill="#0a2a2a" opacity="0.7"/>
+
+  <!-- Cell 2 (bottom) -->
+  <rect x="12" y="33" width="38" height="17" rx="1" fill="#0a2a3a"/>
+  <rect x="13" y="34" width="36" height="15" rx="1" fill="#0d3a4a"/>
+  <!-- Cell 2 energy fill -->
+  <rect x="14" y="35" width="34" height="13" fill="#0a4a3a"/>
+  <rect x="14" y="35" width="34" height="13" fill="#1a8a5a" opacity="0.8"/>
+  <rect x="14" y="35" width="34" height="6" fill="#2aaa6a" opacity="0.4"/>
+  <!-- Cell 2 glow highlight -->
+  <rect x="14" y="35" width="34" height="1" fill="#4aeaa0" opacity="0.5"/>
+  <rect x="14" y="35" width="1" height="13" fill="#4aeaa0" opacity="0.3"/>
+  <!-- Cell 2 segment lines -->
+  <rect x="20" y="35" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="27" y="35" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="34" y="35" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+  <rect x="41" y="35" width="1" height="13" fill="#0a3a2e" opacity="0.6"/>
+
+  <!-- Center divider bar (metallic) -->
+  <rect x="9" y="30" width="44" height="3" fill="#3a3a4e"/>
+  <rect x="9" y="30" width="44" height="1" fill="#5a5a6e" opacity="0.6"/>
+  <rect x="9" y="32" width="44" height="1" fill="#2a2a3e"/>
+
+  <!-- Futuristic circuit traces on divider -->
+  <rect x="12" y="31" width="3" height="1" fill="#3aeaa0" opacity="0.6"/>
+  <rect x="18" y="31" width="5" height="1" fill="#3aeaa0" opacity="0.4"/>
+  <rect x="26" y="31" width="2" height="1" fill="#3aeaa0" opacity="0.6"/>
+  <rect x="38" y="31" width="6" height="1" fill="#3aeaa0" opacity="0.4"/>
+  <rect x="47" y="31" width="3" height="1" fill="#3aeaa0" opacity="0.6"/>
+
+  <!-- Corner bolts / connectors -->
+  <!-- Top-left -->
+  <rect x="8" y="8" width="3" height="3" fill="#4a4a5e"/>
+  <rect x="9" y="9" width="1" height="1" fill="#6a6a7e"/>
+  <!-- Top-right -->
+  <rect x="51" y="8" width="3" height="3" fill="#4a4a5e"/>
+  <rect x="52" y="9" width="1" height="1" fill="#6a6a7e"/>
+  <!-- Bottom-left -->
+  <rect x="8" y="51" width="3" height="3" fill="#4a4a5e"/>
+  <rect x="9" y="52" width="1" height="1" fill="#6a6a7e"/>
+  <!-- Bottom-right -->
+  <rect x="51" y="51" width="3" height="3" fill="#4a4a5e"/>
+  <rect x="52" y="52" width="1" height="1" fill="#6a6a7e"/>
+
+  <!-- Status LED indicator (top-right area) -->
+  <rect x="49" y="11" width="2" height="2" fill="#4aeaa0"/>
+  <rect x="49" y="11" width="1" height="1" fill="#aaffdd" opacity="0.7"/>
+
+  <!-- Small status LED 2 -->
+  <rect x="46" y="11" width="2" height="2" fill="#2a8a5a" opacity="0.7"/>
+
+  <!-- Terminal connectors on right side -->
+  <rect x="56" y="18" width="4" height="6" fill="#3a3a4e"/>
+  <rect x="57" y="19" width="2" height="4" fill="#4aeaa0" opacity="0.5"/>
+  <rect x="56" y="18" width="4" height="1" fill="#5a5a6e" opacity="0.5"/>
+
+  <rect x="56" y="38" width="4" height="6" fill="#3a3a4e"/>
+  <rect x="57" y="39" width="2" height="4" fill="#4aeaa0" opacity="0.5"/>
+  <rect x="56" y="38" width="4" height="1" fill="#5a5a6e" opacity="0.5"/>
+
+  <!-- Subtle glow around energy cells -->
+  <rect x="11" y="11" width="40" height="1" fill="#2aaa6a" opacity="0.15"/>
+  <rect x="11" y="28" width="40" height="1" fill="#2aaa6a" opacity="0.15"/>
+  <rect x="11" y="33" width="40" height="1" fill="#2aaa6a" opacity="0.15"/>
+  <rect x="11" y="49" width="40" height="1" fill="#2aaa6a" opacity="0.15"/>
+
+  <!-- "+" symbol etched near top terminal -->
+  <rect x="57" y="15" width="3" height="1" fill="#5a5a6e" opacity="0.5"/>
+  <rect x="58" y="14" width="1" height="3" fill="#5a5a6e" opacity="0.5"/>
+  <!-- "-" symbol etched near bottom terminal -->
+  <rect x="57" y="46" width="3" height="1" fill="#5a5a6e" opacity="0.5"/>
+</svg>

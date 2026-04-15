@@ -10,6 +10,7 @@ import {
 import type { GameEngine } from '../engine/GameEngine';
 import type { Building, PowerState } from '../types';
 import { drawBuildingPortMarkers } from './buildingPortMarkers';
+import { getBuildingTexture } from './TileSprite';
 
 const BUILDING_INSET = 2;
 const POWER_INDICATOR_RADIUS = 4;
@@ -111,7 +112,9 @@ export class BuildingRenderer {
       sprite.y = building.origin.y * TILE_SIZE + BUILDING_INSET;
       sprite.width = type.footprint.w * TILE_SIZE - BUILDING_INSET * 2;
       sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
-      sprite.tint = BUILDING_TINTS[building.typeId] ?? 0xd5dbdb;
+      const buildingTexture = getBuildingTexture(building.typeId);
+      sprite.texture = buildingTexture ?? Texture.WHITE;
+      sprite.tint = buildingTexture ? 0xffffff : (BUILDING_TINTS[building.typeId] ?? 0xd5dbdb);
       sprite.alpha =
         building.typeId === EXTRACTOR_BUILDING_TYPE_ID ? EXTRACTOR_BUILDING_ALPHA : DEFAULT_BUILDING_ALPHA;
       sprite.visible = true;
