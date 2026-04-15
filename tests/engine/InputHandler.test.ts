@@ -3,6 +3,7 @@ import { InputHandler } from '@/game/engine/InputHandler';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { TILE_SIZE } from '@/game/constants';
 import { Direction, TileType, type SelectedTool } from '@/game/types';
+import { SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -53,6 +54,55 @@ describe('InputHandler', () => {
     handler.onPointerDown(320, 240, 0);
 
     expect(onBuildingSelected).toHaveBeenCalledWith(null);
+  });
+
+  it('places the selected building when the selected tool is building', () => {
+    const getSelectedTool = (): SelectedTool => ({ kind: 'building', buildingType: 'extractor_basic' });
+    const placeBuilding = vi.spyOn(engine, 'placeBuilding');
+    const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(placeBuilding).toHaveBeenCalledWith('extractor_basic', { x: 0, y: 0 }, Direction.North);
+  });
+
+  it('emits building id on successful placement', () => {
+    const getSelectedTool = (): SelectedTool => ({ kind: 'building', buildingType: 'extractor_basic' });
+    const onBuildingPlaced = vi.fn();
+    const placeBuilding = vi.spyOn(engine, 'placeBuilding').mockReturnValueOnce(1);
+    const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
+    handler.setBuildingPlacedCallback(onBuildingPlaced);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(placeBuilding).toHaveBeenCalledWith('extractor_basic', { x: 0, y: 0 }, Direction.North);
+    expect(onBuildingPlaced).toHaveBeenCalledWith(1);
+  });
+
+  it('does not emit placement callback when placement fails', () => {
+    const getSelectedTool = (): SelectedTool => ({ kind: 'building', buildingType: 'extractor_basic' });
+    const onBuildingPlaced = vi.fn();
+    const placeBuilding = vi.spyOn(engine, 'placeBuilding').mockReturnValueOnce(null);
+    const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
+    handler.setBuildingPlacedCallback(onBuildingPlaced);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(placeBuilding).toHaveBeenCalledWith('extractor_basic', { x: 0, y: 0 }, Direction.North);
+    expect(onBuildingPlaced).not.toHaveBeenCalled();
+  });
+
+  it('emits clicked building id in energy link mode', () => {
+    engine.grid.fill(TileType.Ground);
+    const source = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 0 })!;
+    const getSelectedTool = (): SelectedTool => ({ kind: 'energy_link' });
+    const onEnergyLinkClick = vi.fn();
+    const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
+    handler.setEnergyLinkClickCallback(onEnergyLinkClick);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(onEnergyLinkClick).toHaveBeenCalledWith(source);
   });
 
   it('starts panning on right click without selecting anything', () => {

@@ -11,8 +11,9 @@ export class InputHandler {
   private lastPanX = 0;
   private lastPanY = 0;
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
-  private onBuildingPlaced: (() => void) | null = null;
+  private onBuildingPlaced: ((buildingId: BuildingId) => void) | null = null;
   private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
+  private onEnergyLinkClick: ((buildingId: BuildingId) => void) | null = null;
 
   constructor(
     engine: GameEngine,
@@ -28,7 +29,7 @@ export class InputHandler {
     this.onHoverChange = cb;
   }
 
-  setBuildingPlacedCallback(cb: (() => void) | null): void {
+  setBuildingPlacedCallback(cb: ((buildingId: BuildingId) => void) | null): void {
     this.onBuildingPlaced = cb;
   }
 
@@ -36,33 +37,51 @@ export class InputHandler {
     this.onBuildingSelected = cb;
   }
 
+  setEnergyLinkClickCallback(cb: ((buildingId: BuildingId) => void) | null): void {
+    this.onEnergyLinkClick = cb;
+  }
+
   onPointerDown(screenX: number, screenY: number, button: number): void {
     if (button === 1 || button === 2) {
       this.isPanning = true;
       this.lastPanX = screenX;
       this.lastPanY = screenY;
-    } else if (button === 0) {
-      const coord = screenToGrid(this.engine.viewport, screenX, screenY);
-      if (!isInBounds(coord.x, coord.y)) return;
+      return;
+    }
 
-      const selectedTool = this.getSelectedTool();
-      if (selectedTool.kind === 'select') {
-        const building = this.engine.getBuildingAt(coord.x, coord.y);
-        this.onBuildingSelected?.(building?.id ?? null);
-        return;
-      }
+    if (button !== 0) return;
 
-      if (selectedTool.kind === 'building') {
-        const buildingId = this.engine.placeBuilding(
-          selectedTool.buildingType,
-          coord,
-          this.getBuildingRotation(),
-        );
-        if (buildingId !== null) {
-          this.onBuildingPlaced?.();
-        }
+    const coord = screenToGrid(this.engine.viewport, screenX, screenY);
+    if (!isInBounds(coord.x, coord.y)) return;
+
+    const selectedTool = this.getSelectedTool();
+    if (selectedTool.kind === 'select') {
+      const building = this.engine.getBuildingAt(coord.x, coord.y);
+      this.onBuildingSelected?.(building?.id ?? null);
+      return;
+    }
+
+    if (selectedTool.kind === 'building') {
+      const buildingId = this.engine.placeBuilding(
+        selectedTool.buildingType,
+        coord,
+        this.getBuildingRotation(),
+      );
+      if (buildingId !== null) {
+        this.onBuildingPlaced?.(buildingId);
       }
-      // Belt tool handled by BeltToolController with drag-to-route semantics.
+      return;
+    }
+
+    // Belt tool handled by BeltToolController with drag-to-route semantics.
+    if (selectedTool.kind === 'belt') {
+      return;
+    }
+
+    if (selectedTool.kind === 'energy_link') {
+      const building = this.engine.getBuildingAt(coord.x, coord.y);
+      if (!building) return;
+      this.onEnergyLinkClick?.(building.id);
     }
   }
 
@@ -96,15 +115,12 @@ export class InputHandler {
 
   onWheel(screenX: number, screenY: number, deltaX: number, deltaY: number, ctrlKey: boolean, deltaMode: number): void {
     if (ctrlKey) {
-      // Trackpad pinch — proportional zoom, factor calibré pour les petits deltas
       const factor = Math.pow(1.01, -deltaY);
       this.engine.viewport.zoomAt(screenX, screenY, factor);
     } else if (deltaMode !== 0 || Math.abs(deltaY) >= 50) {
-      // Molette souris — zoom discret
       const factor = deltaY < 0 ? 1.1 : 0.9;
       this.engine.viewport.zoomAt(screenX, screenY, factor);
     } else {
-      // Scroll deux doigts trackpad — pan
       this.engine.viewport.pan(deltaX, deltaY);
     }
   }

@@ -24,6 +24,8 @@ describe('GameHUD', () => {
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       sessionEpoch: 0,
+      pendingEnergyLinkSource: null,
+      linkSolarOnPlacement: true,
     });
     window.sessionStorage.clear();
   });
@@ -153,6 +155,24 @@ describe('GameHUD', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
   });
 
+  it('clears pending energy-link source when deleting the selected building', () => {
+    const engine = makeEngine();
+    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+      pendingEnergyLinkSource: buildingId,
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le bâtiment' }));
+
+    expect(useGameStore.getState().pendingEnergyLinkSource).toBeNull();
+  });
+
   it('keeps the console toggle working', () => {
     render(<GameHUD />);
 
@@ -188,5 +208,22 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
     expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+  });
+
+  it('shows global electricity card in the top-right area', () => {
+    const engine = makeEngine();
+    const solar = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    const extractorPowered = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    engine.connectBuildings(solar, extractorPowered);
+    engine.grid.setResource(6, 6, ResourceType.IronOre);
+    engine.placeBuilding('extractor_basic', { x: 6, y: 6 })!;
+
+    useGameStore.setState({ engine });
+    render(<GameHUD />);
+
+    expect(screen.getByText('Production électrique: 8kWh')).toBeInTheDocument();
+    expect(screen.getByText('Consommation électrique: 5kWh')).toBeInTheDocument();
+    expect(screen.getByText('Bilan énergétique: -2kWh')).toBeInTheDocument();
   });
 });

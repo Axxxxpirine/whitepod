@@ -22,11 +22,14 @@ import {
   type Connection,
   type ConnectionId,
   type ConnectionResult,
+  type EnergyGlobalStats,
   type PendingEndpoint,
   type PlacementResult,
   type PlaceBeltResult,
+  type PowerState,
   type Port,
   type PortId,
+  type EnergyNetworkBalance,
   type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
@@ -36,6 +39,7 @@ import { isInBounds } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
 import { planBelt } from './BeltRouter';
+import { EnergyNetwork } from '../systems/EnergyNetwork';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -55,6 +59,7 @@ export interface SerializedGameWorld {
   readonly grid: ArrayBuffer;
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
+  readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
 }
 
 interface GameEngineOptions {
@@ -71,6 +76,7 @@ export class GameEngine {
   readonly viewport: Viewport;
   readonly buildings: BuildingRegistry;
   readonly connections: ConnectionRegistry;
+  readonly energyNetwork: EnergyNetwork;
   mapSeed: number;
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
 
@@ -81,6 +87,7 @@ export class GameEngine {
     this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
     this.buildings = options.buildings ?? new BuildingRegistry();
     this.connections = options.connections ?? new ConnectionRegistry();
+    this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
   }
 
@@ -137,6 +144,7 @@ export class GameEngine {
     const type = getBuildingType(typeId)!;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
+      this.energyNetwork.registerBuilding(id);
       this.notify('world');
     }
     return id;
@@ -148,11 +156,108 @@ export class GameEngine {
     const type = getBuildingType(building.typeId);
     if (!type) return false;
     this.connections.unregisterAllFor(id);
+    this.energyNetwork.unregisterBuilding(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.notify('world');
     }
     return removed;
+  }
+
+  connectBuildings(a: BuildingId, b: BuildingId): boolean {
+    const buildingA = this.buildings.get(a);
+    const buildingB = this.buildings.get(b);
+    if (!buildingA || !buildingB) return false;
+    if (!this.isEnergyLinkableBuilding(buildingA.typeId) || !this.isEnergyLinkableBuilding(buildingB.typeId)) {
+      return false;
+    }
+    const connected = this.energyNetwork.connect(a, b);
+    if (connected) {
+      this.notify('world');
+    }
+    return connected;
+  }
+
+  disconnectBuildings(a: BuildingId, b: BuildingId): boolean {
+    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    const disconnected = this.energyNetwork.disconnect(a, b);
+    if (disconnected) {
+      this.notify('world');
+    }
+    return disconnected;
+  }
+
+  areBuildingsEnergyLinked(a: BuildingId, b: BuildingId): boolean {
+    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    return this.energyNetwork.isConnected(a, b);
+  }
+
+  getEnergyNetworkForBuilding(buildingId: BuildingId): EnergyNetworkBalance | null {
+    if (!this.buildings.get(buildingId)) return null;
+    const component = this.energyNetwork.getComponentFor(buildingId);
+    if (component.length === 0) return null;
+    return this.computeEnergyBalance(component);
+  }
+
+  getEnergyNetworkBalances(): readonly EnergyNetworkBalance[] {
+    return this.energyNetwork.getComponents().map((component) => this.computeEnergyBalance(component));
+  }
+
+  getEnergyLinkedBuildings(buildingId: BuildingId): readonly BuildingId[] {
+    if (!this.buildings.get(buildingId)) return [];
+    return this.energyNetwork.getNeighbors(buildingId);
+  }
+
+  getBuildingPowerState(buildingId: BuildingId): PowerState {
+    const building = this.buildings.get(buildingId);
+    if (!building) return 'neutral';
+    const type = getBuildingType(building.typeId);
+    if (!type?.energy?.consumption || type.energy.consumption <= 0) {
+      return 'neutral';
+    }
+
+    const network = this.getEnergyNetworkForBuilding(buildingId);
+    if (!network) return 'unpowered';
+    return network.remaining >= 0 ? 'powered' : 'unpowered';
+  }
+
+  getEnergyGlobalStats(): EnergyGlobalStats {
+    let production = 0;
+    let consumption = 0;
+    let demandedConsumption = 0;
+    let onlineConsumers = 0;
+    let offlineConsumers = 0;
+
+    for (const network of this.getEnergyNetworkBalances()) {
+      production += network.production;
+      demandedConsumption += network.consumption;
+      const networkIsPowered = network.remaining >= 0;
+      if (networkIsPowered) {
+        // "consumption" is the energy actually supplied (not total requested demand).
+        consumption += network.consumption;
+      }
+      for (const buildingId of network.buildingIds) {
+        const building = this.buildings.get(buildingId);
+        if (!building) continue;
+        const buildingType = getBuildingType(building.typeId);
+        const machineConsumption = buildingType?.energy?.consumption ?? 0;
+        if (machineConsumption <= 0) continue;
+        if (networkIsPowered) {
+          onlineConsumers += 1;
+        } else {
+          offlineConsumers += 1;
+        }
+      }
+    }
+
+    return {
+      production,
+      consumption,
+      // "remaining" is the net electrical balance against total demand.
+      remaining: production - demandedConsumption,
+      onlineConsumers,
+      offlineConsumers,
+    };
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -408,12 +513,26 @@ export class GameEngine {
   }
 
   serializeWorld(): SerializedGameWorld {
+    const energyLinks: Array<{ a: BuildingId; b: BuildingId }> = [];
+    const seen = new Set<string>();
+    for (const buildingId of this.buildings.getAll().keys()) {
+      for (const neighborId of this.energyNetwork.getNeighbors(buildingId)) {
+        const a = Math.min(buildingId, neighborId);
+        const b = Math.max(buildingId, neighborId);
+        const key = `${a}:${b}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        energyLinks.push({ a, b });
+      }
+    }
+
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
       grid: this.grid.serialize(),
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
+      energyLinks,
     };
   }
 
@@ -435,11 +554,47 @@ export class GameEngine {
       }
     }
 
+    for (const buildingId of engine.buildings.getAll().keys()) {
+      engine.energyNetwork.registerBuilding(buildingId);
+    }
+    for (const link of snapshot.energyLinks ?? []) {
+      if (engine.buildings.get(link.a) && engine.buildings.get(link.b)) {
+        engine.energyNetwork.connect(link.a, link.b);
+      }
+    }
+
     return engine;
   }
 
   getViewportSnapshot(): ViewportSnapshot {
     return this.viewport.getSnapshot();
+  }
+
+  private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {
+    let production = 0;
+    let consumption = 0;
+
+    for (const buildingId of buildingIds) {
+      const building = this.buildings.get(buildingId);
+      if (!building) continue;
+      const type = getBuildingType(building.typeId);
+      if (!type?.energy) continue;
+      production += type.energy.production ?? 0;
+      consumption += type.energy.consumption ?? 0;
+    }
+
+    return {
+      buildingIds: [...buildingIds].sort((a, b) => a - b),
+      production,
+      consumption,
+      remaining: production - consumption,
+    };
+  }
+
+  private isEnergyLinkableBuilding(typeId: BuildingTypeId): boolean {
+    const type = getBuildingType(typeId);
+    if (!type?.energy) return false;
+    return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0;
   }
 
   private notify(kind: GameEngineChangeKind): void {

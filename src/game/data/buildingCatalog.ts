@@ -11,6 +11,7 @@ export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
 export const BELT_STRAIGHT_BUILDING_TYPE_ID = 'belt_straight' as const;
 export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;
 export const BELT_CORNER_CCW_BUILDING_TYPE_ID = 'belt_corner_ccw' as const;
+export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
@@ -30,6 +31,9 @@ const entries: readonly BuildingType[] = [
     ports: [
       { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
     ],
+    energy: {
+      consumption: 5,
+    },
   },
   {
     id: STORAGE_BUILDING_TYPE_ID,
@@ -43,6 +47,17 @@ const entries: readonly BuildingType[] = [
       { id: 'in_east', kind: PortKind.Input, offset: { x: 2, y: 1 }, side: Direction.East },
       { id: 'in_south', kind: PortKind.Input, offset: { x: 1, y: 2 }, side: Direction.South },
     ],
+  },
+  {
+    id: SOLAR_PANEL_BUILDING_TYPE_ID,
+    name: 'Panneau solaire',
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [],
+    energy: {
+      production: 8,
+    },
   },
   {
     id: 'placeholder_1x1',

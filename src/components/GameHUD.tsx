@@ -1,6 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
@@ -15,23 +17,40 @@ export function GameHUD() {
   const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
   const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
   const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
+  const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
+  const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
+  const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
+  const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
+  const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
+
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
   const extractorSelected =
     selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
   const storageSelected =
     selectedTool.kind === 'building' && selectedTool.buildingType === STORAGE_BUILDING_TYPE_ID;
   const beltSelected = selectedTool.kind === 'belt';
+  const solarSelected =
+    selectedTool.kind === 'building' && selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID;
+  const energyLinkSelected = selectedTool.kind === 'energy_link';
+
   const selectedBuilding =
     engine && selectedBuildingId !== null ? engine.getBuildings().get(selectedBuildingId) ?? null : null;
   const selectedBuildingName = selectedBuilding ? getBuildingType(selectedBuilding.typeId)?.name ?? null : null;
+  const pendingEnergyLinkSourceName = useMemo(() => {
+    if (!engine || pendingEnergyLinkSource === null) return null;
+    const source = engine.getBuildings().get(pendingEnergyLinkSource);
+    if (!source) return null;
+    return getBuildingType(source.typeId)?.name ?? null;
+  }, [engine, pendingEnergyLinkSource]);
   const anchorVisible =
     engine &&
     selectedBuildingAnchor &&
@@ -43,6 +62,11 @@ export function GameHUD() {
     engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
   );
   const buildingRotationLabel = directionLabel(currentBuildingRotation);
+  const globalEnergy = useMemo(() => {
+    void energyVersion;
+    return engine ? engine.getEnergyGlobalStats() : null;
+  }, [engine, energyVersion]);
+
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -82,13 +106,28 @@ export function GameHUD() {
     }
   };
 
-  const toggleTool = (buildingType: typeof EXTRACTOR_BUILDING_TYPE_ID | typeof STORAGE_BUILDING_TYPE_ID) => {
+  const toggleTool = useCallback(
+    (
+      buildingType:
+        | typeof EXTRACTOR_BUILDING_TYPE_ID
+        | typeof STORAGE_BUILDING_TYPE_ID
+        | typeof SOLAR_PANEL_BUILDING_TYPE_ID,
+    ) => {
+      clearSelectedBuilding();
+      setPendingEnergyLinkSource(null);
+      setSelectedTool(
+        selectedTool.kind === 'building' && selectedTool.buildingType === buildingType
+          ? { kind: 'select' }
+          : { kind: 'building', buildingType },
+      );
+    },
+    [clearSelectedBuilding, selectedTool, setPendingEnergyLinkSource, setSelectedTool],
+  );
+
+  const toggleEnergyLinkTool = () => {
     clearSelectedBuilding();
-    setSelectedTool(
-      selectedTool.kind === 'building' && selectedTool.buildingType === buildingType
-        ? { kind: 'select' }
-        : { kind: 'building', buildingType },
-    );
+    setPendingEnergyLinkSource(null);
+    setSelectedTool(energyLinkSelected ? { kind: 'select' } : { kind: 'energy_link' });
   };
 
   const toggleBeltTool = () => {
@@ -110,6 +149,9 @@ export function GameHUD() {
       ? engine.removeBelt(selectedBuildingId)
       : engine.removeBuilding(selectedBuildingId);
     if (removed) {
+      if (pendingEnergyLinkSource === selectedBuildingId) {
+        setPendingEnergyLinkSource(null);
+      }
       clearSelectedBuilding();
     }
   };
@@ -123,25 +165,33 @@ export function GameHUD() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
+      {globalEnergy && (
+        <div className="absolute top-3 right-3">
+          <div className="rounded-xl border border-white/15 bg-black/75 px-3 py-2 text-sm text-white/90 shadow-xl backdrop-blur-md">
+            <div>Production électrique: {globalEnergy.production}kWh</div>
+            <div>Consommation électrique: {globalEnergy.consumption}kWh</div>
+            <div className={globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+              Bilan énergétique: {globalEnergy.remaining}kWh
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSelectedBuildingPanel && selectedBuildingAnchor && (
         <div
           className="pointer-events-auto absolute"
-          style={{
-            left: selectedBuildingAnchor.x,
-            top: selectedBuildingAnchor.y + 12,
-            transform: 'translateX(-50%)',
-          }}
+          style={{ left: selectedBuildingAnchor.x, top: selectedBuildingAnchor.y + 12, transform: 'translateX(-50%)' }}
         >
           <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-black/80 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
             <span className="whitespace-nowrap text-sm font-medium">{selectedBuildingName}</span>
             <button
               type="button"
               onClick={handleDeleteSelectedBuilding}
-              className="cursor-pointer rounded-lg bg-red-500/15 px-2 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
+              className="cursor-pointer rounded-lg bg-red-500/15 p-1.5 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
               aria-label="Supprimer le bâtiment"
               title="Supprimer le bâtiment"
             >
-              Supprimer
+              <Trash2 size={16} />
             </button>
           </div>
         </div>
@@ -151,9 +201,7 @@ export function GameHUD() {
         <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/20 bg-black/85 font-mono text-xs shadow-2xl backdrop-blur-sm">
           <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
-              <div className="text-white/30">
-                Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...
-              </div>
+              <div className="text-white/30">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
             )}
             {history.map((entry, i) => (
               <div
@@ -232,6 +280,30 @@ export function GameHUD() {
             >
               Convoyeur
             </button>
+            <button
+              type="button"
+              onClick={() => toggleTool(SOLAR_PANEL_BUILDING_TYPE_ID)}
+              aria-pressed={solarSelected}
+              className={
+                solarSelected
+                  ? 'cursor-pointer rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
+              }
+            >
+              Panneau solaire
+            </button>
+            <button
+              type="button"
+              onClick={toggleEnergyLinkTool}
+              aria-pressed={energyLinkSelected}
+              className={
+                energyLinkSelected
+                  ? 'cursor-pointer rounded-xl bg-violet-300 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
+              }
+            >
+              Lien énergie
+            </button>
             {selectedTool.kind === 'building' && (
               <button
                 type="button"
@@ -252,6 +324,24 @@ export function GameHUD() {
             >
               Reset
             </button>
+            <button
+              type="button"
+              onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
+              aria-pressed={linkSolarOnPlacement}
+              className={
+                linkSolarOnPlacement
+                  ? 'cursor-pointer rounded-xl bg-emerald-400/90 px-3 py-2 text-xs font-semibold text-black transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/80 transition-colors hover:bg-white/20'
+              }
+              title="Après pose d'un panneau solaire, passe en mode lien"
+            >
+              Lier après pose: {linkSolarOnPlacement ? 'ON' : 'OFF'}
+            </button>
+            {energyLinkSelected && (
+              <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
+                Source: {pendingEnergyLinkSourceName ?? '-'}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => setConsoleOpen((o) => !o)}

@@ -82,4 +82,24 @@ describe('GameEngine session snapshots', () => {
     }
     expect(restored.getConnections().size).toBe(engine.getConnections().size);
   });
+
+  it('restores energy links from a serialized snapshot', () => {
+    const engine = new GameEngine(640, 480);
+    engine.grid.fill(TileType.Ground);
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const world = engine.serializeWorld();
+    const restored = GameEngine.fromSnapshot(world, 640, 480);
+
+    expect(restored.areBuildingsEnergyLinked(solarId, extractorId)).toBe(true);
+    expect(restored.getEnergyNetworkForBuilding(extractorId)).toEqual({
+      buildingIds: [solarId, extractorId].sort((a, b) => a - b),
+      production: 8,
+      consumption: 5,
+      remaining: 3,
+    });
+  });
 });
