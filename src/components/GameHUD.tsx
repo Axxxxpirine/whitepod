@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Zap } from 'lucide-react';
-import {
-  EXTRACTOR_BUILDING_TYPE_ID,
-  SOLAR_PANEL_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
-  getBuildingType,
-} from '@/game/data/buildingCatalog';
+import { getBuildingType } from '@/game/data/buildingCatalog';
 import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
+import { BuildingPicker } from './hud/BuildingPicker';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -18,12 +14,8 @@ export function GameHUD() {
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
-  const setSelectedTool = useGameStore((s) => s.setSelectedTool);
-  const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
-  const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
-  const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
 
   const [worldTick, setWorldTick] = useState(0);
@@ -39,13 +31,6 @@ export function GameHUD() {
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const extractorSelected =
-    selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
-  const storageSelected =
-    selectedTool.kind === 'building' && selectedTool.buildingType === STORAGE_BUILDING_TYPE_ID;
-  const beltSelected = selectedTool.kind === 'belt';
-  const solarSelected =
-    selectedTool.kind === 'building' && selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID;
   const energyLinkSelected = selectedTool.kind === 'energy_link';
 
   const pendingEnergyLinkSourceName = useMemo(() => {
@@ -98,45 +83,11 @@ export function GameHUD() {
     [engine],
   );
 
-  const clearSelectedBuilding = useCallback(() => {
-    setSelectedBuilding(null);
-    setSelectedBuildingAnchor(null);
-  }, [setSelectedBuilding, setSelectedBuildingAnchor]);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && input.trim()) {
       executeCommand(input.trim());
       setInput('');
     }
-  };
-
-  const toggleTool = useCallback(
-    (
-      buildingType:
-        | typeof EXTRACTOR_BUILDING_TYPE_ID
-        | typeof STORAGE_BUILDING_TYPE_ID
-        | typeof SOLAR_PANEL_BUILDING_TYPE_ID,
-    ) => {
-      clearSelectedBuilding();
-      setPendingEnergyLinkSource(null);
-      setSelectedTool(
-        selectedTool.kind === 'building' && selectedTool.buildingType === buildingType
-          ? { kind: 'select' }
-          : { kind: 'building', buildingType },
-      );
-    },
-    [clearSelectedBuilding, selectedTool, setPendingEnergyLinkSource, setSelectedTool],
-  );
-
-  const toggleEnergyLinkTool = () => {
-    clearSelectedBuilding();
-    setPendingEnergyLinkSource(null);
-    setSelectedTool(energyLinkSelected ? { kind: 'select' } : { kind: 'energy_link' });
-  };
-
-  const toggleBeltTool = () => {
-    clearSelectedBuilding();
-    setSelectedTool(beltSelected ? { kind: 'select' } : { kind: 'belt' });
   };
 
   const rotatePlacement = () => {
@@ -266,66 +217,7 @@ export function GameHUD() {
           </div>
 
           <div className="flex items-center justify-self-center gap-2">
-            <button
-              type="button"
-              onClick={() => toggleTool(EXTRACTOR_BUILDING_TYPE_ID)}
-              aria-pressed={extractorSelected}
-              className={
-                extractorSelected
-                  ? 'cursor-pointer rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
-              }
-            >
-              Extracteur
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleTool(STORAGE_BUILDING_TYPE_ID)}
-              aria-pressed={storageSelected}
-              className={
-                storageSelected
-                  ? 'cursor-pointer rounded-xl bg-sky-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
-              }
-            >
-              Stockage
-            </button>
-            <button
-              type="button"
-              onClick={toggleBeltTool}
-              aria-pressed={beltSelected}
-              className={
-                beltSelected
-                  ? 'cursor-pointer rounded-xl bg-lime-300 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
-              }
-            >
-              Convoyeur
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleTool(SOLAR_PANEL_BUILDING_TYPE_ID)}
-              aria-pressed={solarSelected}
-              className={
-                solarSelected
-                  ? 'cursor-pointer rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
-              }
-            >
-              Panneau solaire
-            </button>
-            <button
-              type="button"
-              onClick={toggleEnergyLinkTool}
-              aria-pressed={energyLinkSelected}
-              className={
-                energyLinkSelected
-                  ? 'cursor-pointer rounded-xl bg-violet-300 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
-              }
-            >
-              Lien énergie
-            </button>
+            <BuildingPicker />
             {selectedTool.kind === 'building' && (
               <button
                 type="button"
