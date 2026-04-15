@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#171f2d"/>
+      <stop offset="100%" stop-color="#111926"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cdd6df"/>
+      <stop offset="100%" stop-color="#66717d"/>
+    </linearGradient>
+    <linearGradient id="darkSteel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b2430"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#63d9ff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2e8cff" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="greenGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7de27b" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2fbf7d" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="amberGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb15c" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#f07b27" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="violetGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c38cff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#8852ff" stop-opacity="0.82"/>
+    </linearGradient>
+    
+  </defs>
+  
+    <rect width="128" height="128" rx="24" fill="#071018"/>
+    <rect x="10" y="10" width="108" height="108" rx="20" fill="#141c27" stroke="#243141" stroke-width="4"/>
+    <path d="M64 24L96 44V84L64 104L32 84V44Z" fill="#202d3b" stroke="#3a4c63" stroke-width="3"/>
+    <g transform="translate(64 64)">
+      
+      <g transform="scale(0.72)">
+        <path d="M-28 16L-10 -20H18L34 8L14 30H-12Z" fill="url(#greenGlow)" stroke="#0c1017" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M-10 -20L2 6L-12 30" stroke="#ffffff" stroke-opacity="0.22" stroke-width="4" stroke-linecap="round"/>
+        <path d="M18 -20L34 8" stroke="#ffffff" stroke-opacity="0.2" stroke-width="4" stroke-linecap="round"/>
+      </g>
+    
+    </g>
+    <path d="M34 44L64 28L94 44" stroke="#3a4c63" stroke-width="3" stroke-linecap="round"/>
+    <path d="M34 84L64 100L94 84" stroke="#50657f" stroke-width="3" stroke-linecap="round"/>
+  
+</svg>

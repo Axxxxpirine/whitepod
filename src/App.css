@@ -55,9 +55,19 @@
 
 .hud-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   align-items: start;
+}
+
+.hud-summary-block {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hud-summary-block--wide {
+  min-width: 0;
 }
 
 .hud-summary-group,
@@ -180,6 +190,33 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.hud-menu-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hud-menu-group--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hud-menu-group-title {
+  color: var(--hud-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
 .hud-panel--fill,
@@ -367,6 +404,14 @@
 
 .token-card strong {
   font-size: 18px;
+}
+
+.hud-debug {
+  min-height: 0;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 20px;
 }
 
 .hud-footer {

@@ -774,12 +774,14 @@ public/assets/
 │   ├── aluminum_ingots_tile.png
 │   └── ... (61 ressources)
 ├── icons/              # Icons 64x64 (256x256 animés)
-└── cards/              # Cards illustrées (512x512 animées)
+├── cards/              # Cards illustrées (512x512 animées)
+├── ui/                 # HUD primitives and controls
+└── manifest.json       # Asset map for loaders
 ```
 
 ### 3.2 Scripts de Génération
 
-**`scripts/extract-resources.ts`**:
+**`scripts/extract-resources.mjs`**:
 ```typescript
 #!/usr/bin/env tsx
 import { readFileSync, writeFileSync } from 'fs';
@@ -806,7 +808,7 @@ writeFileSync(output, filtered.join('\n'));
 console.log(`Extrayé ${filtered.length} ressources → ${output}`);
 ```
 
-**`scripts/generate-asset-prompts.ts`**:
+**`scripts/generate-asset-prompts.mjs`**:
 ```typescript
 #!/usr/bin/env tsx
 import { readFileSync, writeFileSync } from 'fs';
@@ -917,18 +919,18 @@ echo "Directory: public/assets/"
 ### Phase 4: Asset Pipeline (Priorité Moyenne)
 
 **Fichiers**:
-11. `scripts/extract-resources.ts` - Extraction ressources
-12. `scripts/generate-asset-prompts.ts` - Génération prompts
-13. `scripts/generate-images.ts` - Génération images (placeholder)
+11. `scripts/extract-resources.mjs` - Extraction ressources
+12. `scripts/generate-asset-prompts.mjs` - Génération prompts
+13. `scripts/generate-images.mjs` - Génération SVG placeholders
 14. `scripts/build-assets.sh` - Build script
 15. `public/assets/README.md` - Documentation assets
 
 **Délivrables**:
-- [ ] Pipeline extraction fonctionnel
-- [ ] Prompts générés (180+ ressources × 3 = 540+ prompts)
-- [ ] Structure assets prête
-- [ ] Documentation complète
-- [ ] Mapping asset-ID ↔ ResourceId défini
+- [x] Pipeline extraction fonctionnel
+- [x] Prompts générés (ressources + UI)
+- [x] Structure assets prête
+- [x] Documentation complète
+- [x] Mapping asset-ID ↔ ResourceId défini
 
 ### Phase 5: PixiJS Renderer (Priorité Moyenne - Partiellement implémenté)
 
@@ -956,9 +958,11 @@ echo "Directory: public/assets/"
 whitepod/
 ├── public/
 │   └── assets/
-│       ├── tiles/              # Sprite sheets 4x4 (256x256)
-│       ├── icons/              # Icons 64x64
-│       └── cards/              # Cards illustrées
+│       ├── tiles/              # Resource tiles
+│       ├── icons/              # Resource icons
+│       ├── cards/              # Resource cards
+│       ├── ui/                 # HUD primitives and controls
+│       └── manifest.json       # Asset map
 │
 ├── src/
 │   ├── core/
@@ -1019,9 +1023,9 @@ whitepod/
 │   └── generated-asset-prompts.jsonl   # Généré (Phase 4)
 │
 ├── scripts/
-│   ├── extract-resources.ts
-│   ├── generate-asset-prompts.ts
-│   ├── generate-images.ts
+│   ├── extract-resources.mjs
+│   ├── generate-asset-prompts.mjs
+│   ├── generate-images.mjs
 │   └── build-assets.sh
 │
 └── package.json
@@ -1041,9 +1045,9 @@ whitepod/
     "test": "vitest",
     "test:ui": "vitest --ui",
     "generate:lunar-chemistry": "node scripts/generate-lunar-chemistry.js",
-    "assets:extract": "tsx scripts/extract-resources.ts",
-    "assets:prompts": "tsx scripts/generate-asset-prompts.ts",
-    "assets:generate": "tsx scripts/generate-images.ts",
+    "assets:extract": "node scripts/extract-resources.mjs",
+    "assets:prompts": "node scripts/generate-asset-prompts.mjs",
+    "assets:generate": "node scripts/generate-images.mjs",
     "assets:build": "bash scripts/build-assets.sh"
   }
 }
@@ -1098,10 +1102,10 @@ whitepod/
 - [x] Export Pixi sparse: grid/cells, dépôts, stations, layerTokens
 
 ### Phase 4: Asset Pipeline
-- [ ] Extraction ressources: 61 ressources extraites
-- [ ] Prompts générés: 183+ prompts (61 × 3)
-- [ ] Structure assets: répertoires créés
-- [ ] Documentation: README.md complet
+- [x] Extraction ressources: 61 ressources extraites
+- [x] Prompts générés: 208 prompts
+- [x] Structure assets: répertoires créés
+- [x] Documentation: README.md complet
 
 ### Phase 5: PixiJS Renderer (Partiellement implémenté)
 - [x] Renderer monté: canvas PixiJS actif
@@ -1141,8 +1145,8 @@ whitepod/
 
 ### Séance 4: Asset Pipeline (Phase 4)
 **Durée**: 2-3 heures
-1. Créer `scripts/extract-resources.ts` (30 min)
-2. Créer `scripts/generate-asset-prompts.ts` (60 min)
+1. Créer `scripts/extract-resources.mjs` (30 min)
+2. Créer `scripts/generate-asset-prompts.mjs` (60 min)
 3. Créer `scripts/build-assets.sh` (30 min)
 4. Générer ressources & prompts (30 min)
 5. Documentation assets (30 min)
@@ -1221,7 +1225,7 @@ Ce plan exhaustif couvre l'ensemble de l'implémentation du moteur Whitepod, de 
 1. **Phase 1**: ✅ Types core + PetriNet engine + Grid manager
 2. **Phase 2**: ✅ Store Zustand + loaders + persistance + autosave
 3. **Phase 3**: ✅ Game loop + intégration React + export Pixi sparse
-4. **Phase 4**: ⏳ Asset pipeline + scripts (non implémenté)
+4. **Phase 4**: ✅ Asset pipeline + scripts + SVG placeholders
 5. **Phase 5**: ⏳ PixiJS renderer + raffinage visuel
 
 Le plan est prêt pour l'implémentation.

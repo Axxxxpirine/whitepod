@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#171f2d"/>
+      <stop offset="100%" stop-color="#111926"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cdd6df"/>
+      <stop offset="100%" stop-color="#66717d"/>
+    </linearGradient>
+    <linearGradient id="darkSteel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b2430"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#63d9ff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2e8cff" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="greenGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7de27b" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2fbf7d" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="amberGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb15c" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#f07b27" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="violetGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c38cff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#8852ff" stop-opacity="0.82"/>
+    </linearGradient>
+    
+  </defs>
+  
+    <rect width="512" height="512" fill="#071018"/>
+    <rect x="24" y="24" width="464" height="464" rx="36" fill="url(#bg)" stroke="#243141" stroke-width="4"/>
+    <path d="M64 130H448" stroke="#223041" stroke-width="2" stroke-dasharray="6 10" opacity="0.9"/>
+    <path d="M64 382H448" stroke="#223041" stroke-width="2" stroke-dasharray="6 10" opacity="0.9"/>
+    <path d="M96 160L160 116H352L416 160V352L352 396H160L96 352Z" fill="#182231" stroke="#43566d" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M128 176L180 140H332L384 176V336L332 372H180L128 336Z" fill="#0f1722" fill-opacity="0.9" stroke="#556a83" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M164 200H348" stroke="url(#amberGlow)" stroke-width="8" stroke-linecap="round" opacity="0.82"/>
+    <path d="M164 304H348" stroke="#cdd6df" stroke-width="6" stroke-linecap="round" opacity="0.22"/>
+    <g transform="translate(256 260)">
+      
+      <g transform="scale(2)">
+        <path d="M0 -34C10 -20 24 -3 24 14C24 27 13 38 0 38C-13 38 -24 27 -24 14C-24 -3 -10 -20 0 -34Z" fill="url(#violetGlow)" stroke="#0c1017" stroke-width="4"/>
+        <circle cx="-10" cy="10" r="4" fill="#ffffff" fill-opacity="0.34"/>
+        <circle cx="9" cy="-2" r="3" fill="#ffffff" fill-opacity="0.18"/>
+      </g>
+    
+    </g>
+    <circle cx="146" cy="188" r="6" fill="#63d9ff"/>
+    <circle cx="366" cy="324" r="6" fill="#7de27b"/>
+    <circle cx="256" cy="104" r="7" fill="#ffb15c"/>
+    <path d="M112 412C168 384 344 384 400 412" stroke="#3a4c63" stroke-width="4" stroke-linecap="round"/>
+  
+</svg>

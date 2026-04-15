@@ -1,0 +1,672 @@
+{
+  "version": 1,
+  "sourceSheet": "./public/assets.png",
+  "styleGuide": {
+    "sourceSheet": "./public/assets.png",
+    "palette": {
+      "backdrop": "#071018",
+      "panel": "#111926",
+      "panelStrong": "#171f2d",
+      "steel": "#cdd6df",
+      "steelDark": "#66717d",
+      "cyan": "#63d9ff",
+      "green": "#7de27b",
+      "amber": "#ffb15c",
+      "violet": "#c38cff",
+      "ink": "#121820",
+      "inkSoft": "#1b2430",
+      "line": "#243141",
+      "lineSoft": "#3a4c63",
+      "glow": "rgba(99, 217, 255, 0.22)"
+    },
+    "notes": [
+      "Use chunky outlines and beveled faces.",
+      "Keep the palette muted with cyan, green, amber and violet accents.",
+      "Prefer isometric or slightly top-down industrial forms.",
+      "UI assets should feel like diegetic control-room hardware."
+    ]
+  },
+  "generatedAt": "2026-04-15T23:54:50.421Z",
+  "resources": [
+    {
+      "id": "air_filtration",
+      "tier": 3,
+      "nameFr": "Filtration d'air",
+      "tile": "tiles/air_filtration.svg",
+      "icon": "icons/air_filtration.svg",
+      "card": "cards/air_filtration.svg"
+    },
+    {
+      "id": "aluminum_ingots",
+      "tier": 2,
+      "nameFr": "Lingots d'aluminium",
+      "tile": "tiles/aluminum_ingots.svg",
+      "icon": "icons/aluminum_ingots.svg",
+      "card": "cards/aluminum_ingots.svg"
+    },
+    {
+      "id": "aluminum_oxide",
+      "tier": 1,
+      "nameFr": "Oxyde d'aluminium",
+      "tile": "tiles/aluminum_oxide.svg",
+      "icon": "icons/aluminum_oxide.svg",
+      "card": "cards/aluminum_oxide.svg"
+    },
+    {
+      "id": "ammonia",
+      "tier": 1,
+      "nameFr": "Ammoniac",
+      "tile": "tiles/ammonia.svg",
+      "icon": "icons/ammonia.svg",
+      "card": "cards/ammonia.svg"
+    },
+    {
+      "id": "carbon_dioxide",
+      "tier": 1,
+      "nameFr": "Dioxyde de carbone",
+      "tile": "tiles/carbon_dioxide.svg",
+      "icon": "icons/carbon_dioxide.svg",
+      "card": "cards/carbon_dioxide.svg"
+    },
+    {
+      "id": "carbon_fiber",
+      "tier": 3,
+      "nameFr": "Fibre de carbone",
+      "tile": "tiles/carbon_fiber.svg",
+      "icon": "icons/carbon_fiber.svg",
+      "card": "cards/carbon_fiber.svg"
+    },
+    {
+      "id": "cargo_container",
+      "tier": 3,
+      "nameFr": "Conteneur cargo",
+      "tile": "tiles/cargo_container.svg",
+      "icon": "icons/cargo_container.svg",
+      "card": "cards/cargo_container.svg"
+    },
+    {
+      "id": "ceramic_plates",
+      "tier": 2,
+      "nameFr": "Plaques céramiques",
+      "tile": "tiles/ceramic_plates.svg",
+      "icon": "icons/ceramic_plates.svg",
+      "card": "cards/ceramic_plates.svg"
+    },
+    {
+      "id": "combustion_chamber",
+      "tier": 3,
+      "nameFr": "Chambre de combustion",
+      "tile": "tiles/combustion_chamber.svg",
+      "icon": "icons/combustion_chamber.svg",
+      "card": "cards/combustion_chamber.svg"
+    },
+    {
+      "id": "communication_antenna",
+      "tier": 3,
+      "nameFr": "Antenne de communication",
+      "tile": "tiles/communication_antenna.svg",
+      "icon": "icons/communication_antenna.svg",
+      "card": "cards/communication_antenna.svg"
+    },
+    {
+      "id": "crew_module",
+      "tier": 3,
+      "nameFr": "Module équipage",
+      "tile": "tiles/crew_module.svg",
+      "icon": "icons/crew_module.svg",
+      "card": "cards/crew_module.svg"
+    },
+    {
+      "id": "emergency_system",
+      "tier": 3,
+      "nameFr": "Système d'urgence",
+      "tile": "tiles/emergency_system.svg",
+      "icon": "icons/emergency_system.svg",
+      "card": "cards/emergency_system.svg"
+    },
+    {
+      "id": "escape_rocket",
+      "tier": 3,
+      "nameFr": "Fusée de sauvetage",
+      "tile": "tiles/escape_rocket.svg",
+      "icon": "icons/escape_rocket.svg",
+      "card": "cards/escape_rocket.svg"
+    },
+    {
+      "id": "fertilizer_pellets",
+      "tier": 3,
+      "nameFr": "Pellets d'engrais",
+      "tile": "tiles/fertilizer_pellets.svg",
+      "icon": "icons/fertilizer_pellets.svg",
+      "card": "cards/fertilizer_pellets.svg"
+    },
+    {
+      "id": "flight_computer",
+      "tier": 3,
+      "nameFr": "Ordinateur de bord",
+      "tile": "tiles/flight_computer.svg",
+      "icon": "icons/flight_computer.svg",
+      "card": "cards/flight_computer.svg"
+    },
+    {
+      "id": "fuel_injector",
+      "tier": 3,
+      "nameFr": "Injecteur de carburant",
+      "tile": "tiles/fuel_injector.svg",
+      "icon": "icons/fuel_injector.svg",
+      "card": "cards/fuel_injector.svg"
+    },
+    {
+      "id": "fuel_pump",
+      "tier": 3,
+      "nameFr": "Pompe à carburant",
+      "tile": "tiles/fuel_pump.svg",
+      "icon": "icons/fuel_pump.svg",
+      "card": "cards/fuel_pump.svg"
+    },
+    {
+      "id": "fuel_tank",
+      "tier": 3,
+      "nameFr": "Réservoir de carburant",
+      "tile": "tiles/fuel_tank.svg",
+      "icon": "icons/fuel_tank.svg",
+      "card": "cards/fuel_tank.svg"
+    },
+    {
+      "id": "fuel_valve",
+      "tier": 3,
+      "nameFr": "Valve de carburant",
+      "tile": "tiles/fuel_valve.svg",
+      "icon": "icons/fuel_valve.svg",
+      "card": "cards/fuel_valve.svg"
+    },
+    {
+      "id": "glass_panels",
+      "tier": 3,
+      "nameFr": "Panneaux de verre",
+      "tile": "tiles/glass_panels.svg",
+      "icon": "icons/glass_panels.svg",
+      "card": "cards/glass_panels.svg"
+    },
+    {
+      "id": "graphite",
+      "tier": 2,
+      "nameFr": "Graphite",
+      "tile": "tiles/graphite.svg",
+      "icon": "icons/graphite.svg",
+      "card": "cards/graphite.svg"
+    },
+    {
+      "id": "hatch_doors",
+      "tier": 3,
+      "nameFr": "Portes d'écoutille",
+      "tile": "tiles/hatch_doors.svg",
+      "icon": "icons/hatch_doors.svg",
+      "card": "cards/hatch_doors.svg"
+    },
+    {
+      "id": "heat_shield",
+      "tier": 3,
+      "nameFr": "Bouclier thermique",
+      "tile": "tiles/heat_shield.svg",
+      "icon": "icons/heat_shield.svg",
+      "card": "cards/heat_shield.svg"
+    },
+    {
+      "id": "hydrogen_fuel",
+      "tier": 2,
+      "nameFr": "Carburant hydrogène",
+      "tile": "tiles/hydrogen_fuel.svg",
+      "icon": "icons/hydrogen_fuel.svg",
+      "card": "cards/hydrogen_fuel.svg"
+    },
+    {
+      "id": "instrumentation",
+      "tier": 3,
+      "nameFr": "Instrumentation",
+      "tile": "tiles/instrumentation.svg",
+      "icon": "icons/instrumentation.svg",
+      "card": "cards/instrumentation.svg"
+    },
+    {
+      "id": "iron_bars",
+      "tier": 2,
+      "nameFr": "Barres de fer",
+      "tile": "tiles/iron_bars.svg",
+      "icon": "icons/iron_bars.svg",
+      "card": "cards/iron_bars.svg"
+    },
+    {
+      "id": "iron_oxide",
+      "tier": 1,
+      "nameFr": "Oxyde de fer",
+      "tile": "tiles/iron_oxide.svg",
+      "icon": "icons/iron_oxide.svg",
+      "card": "cards/iron_oxide.svg"
+    },
+    {
+      "id": "landing_gear",
+      "tier": 3,
+      "nameFr": "Train d'atterrissage",
+      "tile": "tiles/landing_gear.svg",
+      "icon": "icons/landing_gear.svg",
+      "card": "cards/landing_gear.svg"
+    },
+    {
+      "id": "launch_adapter",
+      "tier": 3,
+      "nameFr": "Adaptateur de lancement",
+      "tile": "tiles/launch_adapter.svg",
+      "icon": "icons/launch_adapter.svg",
+      "card": "cards/launch_adapter.svg"
+    },
+    {
+      "id": "life_support_gas",
+      "tier": 3,
+      "nameFr": "Gaz de support vie",
+      "tile": "tiles/life_support_gas.svg",
+      "icon": "icons/life_support_gas.svg",
+      "card": "cards/life_support_gas.svg"
+    },
+    {
+      "id": "life_support_tank",
+      "tier": 3,
+      "nameFr": "Réservoir support vie",
+      "tile": "tiles/life_support_tank.svg",
+      "icon": "icons/life_support_tank.svg",
+      "card": "cards/life_support_tank.svg"
+    },
+    {
+      "id": "liquid_oxygen",
+      "tier": 2,
+      "nameFr": "Oxygène liquide",
+      "tile": "tiles/liquid_oxygen.svg",
+      "icon": "icons/liquid_oxygen.svg",
+      "card": "cards/liquid_oxygen.svg"
+    },
+    {
+      "id": "lunar_helium3",
+      "tier": 0,
+      "nameFr": "Hélium-3 lunaire",
+      "tile": "tiles/lunar_helium3.svg",
+      "icon": "icons/lunar_helium3.svg",
+      "card": "cards/lunar_helium3.svg"
+    },
+    {
+      "id": "lunar_hydrogen",
+      "tier": 0,
+      "nameFr": "Hydrogène lunaire",
+      "tile": "tiles/lunar_hydrogen.svg",
+      "icon": "icons/lunar_hydrogen.svg",
+      "card": "cards/lunar_hydrogen.svg"
+    },
+    {
+      "id": "lunar_oxygen",
+      "tier": 0,
+      "nameFr": "Oxygène lunaire",
+      "tile": "tiles/lunar_oxygen.svg",
+      "icon": "icons/lunar_oxygen.svg",
+      "card": "cards/lunar_oxygen.svg"
+    },
+    {
+      "id": "lunar_regolith",
+      "tier": 0,
+      "nameFr": "Régolithe lunaire",
+      "tile": "tiles/lunar_regolith.svg",
+      "icon": "icons/lunar_regolith.svg",
+      "card": "cards/lunar_regolith.svg"
+    },
+    {
+      "id": "methane",
+      "tier": 1,
+      "nameFr": "Méthane",
+      "tile": "tiles/methane.svg",
+      "icon": "icons/methane.svg",
+      "card": "cards/methane.svg"
+    },
+    {
+      "id": "navigation_system",
+      "tier": 3,
+      "nameFr": "Système de navigation",
+      "tile": "tiles/navigation_system.svg",
+      "icon": "icons/navigation_system.svg",
+      "card": "cards/navigation_system.svg"
+    },
+    {
+      "id": "nitrogen_fertilizer",
+      "tier": 2,
+      "nameFr": "Engrais azoté",
+      "tile": "tiles/nitrogen_fertilizer.svg",
+      "icon": "icons/nitrogen_fertilizer.svg",
+      "card": "cards/nitrogen_fertilizer.svg"
+    },
+    {
+      "id": "nitrogen_gas",
+      "tier": 1,
+      "nameFr": "Azote (gaz)",
+      "tile": "tiles/nitrogen_gas.svg",
+      "icon": "icons/nitrogen_gas.svg",
+      "card": "cards/nitrogen_gas.svg"
+    },
+    {
+      "id": "nozzle",
+      "tier": 3,
+      "nameFr": "Tuyère",
+      "tile": "tiles/nozzle.svg",
+      "icon": "icons/nozzle.svg",
+      "card": "cards/nozzle.svg"
+    },
+    {
+      "id": "oxidizer_pump",
+      "tier": 3,
+      "nameFr": "Pompe d'oxydant",
+      "tile": "tiles/oxidizer_pump.svg",
+      "icon": "icons/oxidizer_pump.svg",
+      "card": "cards/oxidizer_pump.svg"
+    },
+    {
+      "id": "oxidizer_tank",
+      "tier": 3,
+      "nameFr": "Réservoir d'oxydant",
+      "tile": "tiles/oxidizer_tank.svg",
+      "icon": "icons/oxidizer_tank.svg",
+      "card": "cards/oxidizer_tank.svg"
+    },
+    {
+      "id": "oxidizer_valve",
+      "tier": 3,
+      "nameFr": "Valve d'oxydant",
+      "tile": "tiles/oxidizer_valve.svg",
+      "icon": "icons/oxidizer_valve.svg",
+      "card": "cards/oxidizer_valve.svg"
+    },
+    {
+      "id": "polymer_plastic",
+      "tier": 3,
+      "nameFr": "Plastique polymère",
+      "tile": "tiles/polymer_plastic.svg",
+      "icon": "icons/polymer_plastic.svg",
+      "card": "cards/polymer_plastic.svg"
+    },
+    {
+      "id": "power_batteries",
+      "tier": 3,
+      "nameFr": "Batteries",
+      "tile": "tiles/power_batteries.svg",
+      "icon": "icons/power_batteries.svg",
+      "card": "cards/power_batteries.svg"
+    },
+    {
+      "id": "rocket_fuel",
+      "tier": 3,
+      "nameFr": "Propergol",
+      "tile": "tiles/rocket_fuel.svg",
+      "icon": "icons/rocket_fuel.svg",
+      "card": "cards/rocket_fuel.svg"
+    },
+    {
+      "id": "rocket_ready",
+      "tier": 3,
+      "nameFr": "Fusée prête",
+      "tile": "tiles/rocket_ready.svg",
+      "icon": "icons/rocket_ready.svg",
+      "card": "cards/rocket_ready.svg"
+    },
+    {
+      "id": "seals_gaskets",
+      "tier": 3,
+      "nameFr": "Joints et garnitures",
+      "tile": "tiles/seals_gaskets.svg",
+      "icon": "icons/seals_gaskets.svg",
+      "card": "cards/seals_gaskets.svg"
+    },
+    {
+      "id": "silicon_dioxide",
+      "tier": 1,
+      "nameFr": "Dioxyde de silicium",
+      "tile": "tiles/silicon_dioxide.svg",
+      "icon": "icons/silicon_dioxide.svg",
+      "card": "cards/silicon_dioxide.svg"
+    },
+    {
+      "id": "silicon_wafers",
+      "tier": 2,
+      "nameFr": "Wafers de silicium",
+      "tile": "tiles/silicon_wafers.svg",
+      "icon": "icons/silicon_wafers.svg",
+      "card": "cards/silicon_wafers.svg"
+    },
+    {
+      "id": "solar_panels",
+      "tier": 3,
+      "nameFr": "Panneaux solaires",
+      "tile": "tiles/solar_panels.svg",
+      "icon": "icons/solar_panels.svg",
+      "card": "cards/solar_panels.svg"
+    },
+    {
+      "id": "steel_bars",
+      "tier": 3,
+      "nameFr": "Barres d'acier",
+      "tile": "tiles/steel_bars.svg",
+      "icon": "icons/steel_bars.svg",
+      "card": "cards/steel_bars.svg"
+    },
+    {
+      "id": "structural_frame",
+      "tier": 3,
+      "nameFr": "Structure principale",
+      "tile": "tiles/structural_frame.svg",
+      "icon": "icons/structural_frame.svg",
+      "card": "cards/structural_frame.svg"
+    },
+    {
+      "id": "synthetic_methane",
+      "tier": 2,
+      "nameFr": "Méthane synthétique",
+      "tile": "tiles/synthetic_methane.svg",
+      "icon": "icons/synthetic_methane.svg",
+      "card": "cards/synthetic_methane.svg"
+    },
+    {
+      "id": "thermal_control",
+      "tier": 3,
+      "nameFr": "Contrôle thermique",
+      "tile": "tiles/thermal_control.svg",
+      "icon": "icons/thermal_control.svg",
+      "card": "cards/thermal_control.svg"
+    },
+    {
+      "id": "thrust_controller",
+      "tier": 3,
+      "nameFr": "Contrôleur de poussée",
+      "tile": "tiles/thrust_controller.svg",
+      "icon": "icons/thrust_controller.svg",
+      "card": "cards/thrust_controller.svg"
+    },
+    {
+      "id": "water",
+      "tier": 1,
+      "nameFr": "Eau",
+      "tile": "tiles/water.svg",
+      "icon": "icons/water.svg",
+      "card": "cards/water.svg"
+    },
+    {
+      "id": "water_recycler",
+      "tier": 3,
+      "nameFr": "Recycleur d'eau",
+      "tile": "tiles/water_recycler.svg",
+      "icon": "icons/water_recycler.svg",
+      "card": "cards/water_recycler.svg"
+    },
+    {
+      "id": "windows",
+      "tier": 3,
+      "nameFr": "Hublots",
+      "tile": "tiles/windows.svg",
+      "icon": "icons/windows.svg",
+      "card": "cards/windows.svg"
+    },
+    {
+      "id": "wiring_harness",
+      "tier": 3,
+      "nameFr": "Faisceau de câbles",
+      "tile": "tiles/wiring_harness.svg",
+      "icon": "icons/wiring_harness.svg",
+      "card": "cards/wiring_harness.svg"
+    }
+  ],
+  "ui": [
+    {
+      "id": "panel",
+      "label": "Panel",
+      "kind": "frame",
+      "file": "ui/panel.svg"
+    },
+    {
+      "id": "panel-strong",
+      "label": "Panel Strong",
+      "kind": "frame",
+      "file": "ui/panel-strong.svg"
+    },
+    {
+      "id": "button",
+      "label": "Button",
+      "kind": "button",
+      "file": "ui/button.svg"
+    },
+    {
+      "id": "button-primary",
+      "label": "Primary Button",
+      "kind": "button",
+      "file": "ui/button-primary.svg"
+    },
+    {
+      "id": "button-danger",
+      "label": "Danger Button",
+      "kind": "button",
+      "file": "ui/button-danger.svg"
+    },
+    {
+      "id": "badge",
+      "label": "Badge",
+      "kind": "pill",
+      "file": "ui/badge.svg"
+    },
+    {
+      "id": "chip",
+      "label": "Chip",
+      "kind": "chip",
+      "file": "ui/chip.svg"
+    },
+    {
+      "id": "metric",
+      "label": "Metric",
+      "kind": "metric",
+      "file": "ui/metric.svg"
+    },
+    {
+      "id": "input",
+      "label": "Input",
+      "kind": "field",
+      "file": "ui/input.svg"
+    },
+    {
+      "id": "select",
+      "label": "Select",
+      "kind": "field",
+      "file": "ui/select.svg"
+    },
+    {
+      "id": "viewport-frame",
+      "label": "Viewport",
+      "kind": "viewport",
+      "file": "ui/viewport-frame.svg"
+    },
+    {
+      "id": "token-card",
+      "label": "Token Card",
+      "kind": "card",
+      "file": "ui/token-card.svg"
+    },
+    {
+      "id": "resource-pill",
+      "label": "Resource Pill",
+      "kind": "pill",
+      "file": "ui/resource-pill.svg"
+    },
+    {
+      "id": "scroll-track",
+      "label": "Scroll Track",
+      "kind": "scroll",
+      "file": "ui/scroll-track.svg"
+    },
+    {
+      "id": "scroll-thumb",
+      "label": "Scroll Thumb",
+      "kind": "scroll",
+      "file": "ui/scroll-thumb.svg"
+    },
+    {
+      "id": "toolbar",
+      "label": "Toolbar",
+      "kind": "toolbar",
+      "file": "ui/toolbar.svg"
+    },
+    {
+      "id": "section-header",
+      "label": "Section Header",
+      "kind": "header",
+      "file": "ui/section-header.svg"
+    },
+    {
+      "id": "icon-play",
+      "label": "Play",
+      "kind": "icon",
+      "file": "ui/icon-play.svg"
+    },
+    {
+      "id": "icon-pause",
+      "label": "Pause",
+      "kind": "icon",
+      "file": "ui/icon-pause.svg"
+    },
+    {
+      "id": "icon-reset",
+      "label": "Reset",
+      "kind": "icon",
+      "file": "ui/icon-reset.svg"
+    },
+    {
+      "id": "icon-zoom-in",
+      "label": "Zoom In",
+      "kind": "icon",
+      "file": "ui/icon-zoom-in.svg"
+    },
+    {
+      "id": "icon-zoom-out",
+      "label": "Zoom Out",
+      "kind": "icon",
+      "file": "ui/icon-zoom-out.svg"
+    },
+    {
+      "id": "icon-trash",
+      "label": "Trash",
+      "kind": "icon",
+      "file": "ui/icon-trash.svg"
+    },
+    {
+      "id": "icon-info",
+      "label": "Info",
+      "kind": "icon",
+      "file": "ui/icon-info.svg"
+    },
+    {
+      "id": "icon-gear",
+      "label": "Gear",
+      "kind": "icon",
+      "file": "ui/icon-gear.svg"
+    }
+  ]
+}

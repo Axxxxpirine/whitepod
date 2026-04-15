@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="80" viewBox="0 0 256 80" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#171f2d"/>
+      <stop offset="100%" stop-color="#111926"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cdd6df"/>
+      <stop offset="100%" stop-color="#66717d"/>
+    </linearGradient>
+    <linearGradient id="darkSteel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b2430"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#63d9ff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2e8cff" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="greenGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7de27b" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2fbf7d" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="amberGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb15c" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#f07b27" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="violetGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c38cff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#8852ff" stop-opacity="0.82"/>
+    </linearGradient>
+    
+  </defs>
+  
+    <rect width="256" height="80" rx="40" fill="#071018"/>
+    <rect x="8" y="8" width="240" height="64" rx="32" fill="rgba(255,255,255,0.05)" stroke="#243141" stroke-width="3"/>
+    <path d="M34 20H222" stroke="#63d9ff" stroke-width="4" stroke-linecap="round" opacity="0.82"/>
+    <circle cx="54" cy="40" r="14" fill="#63d9ff"/>
+    <path d="M166 28H214M166 40H214M166 52H214" stroke="#d7e3ef" stroke-opacity="0.3" stroke-width="4" stroke-linecap="round"/>
+  
+</svg>

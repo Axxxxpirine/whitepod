@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="96" viewBox="0 0 256 96" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#171f2d"/>
+      <stop offset="100%" stop-color="#111926"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cdd6df"/>
+      <stop offset="100%" stop-color="#66717d"/>
+    </linearGradient>
+    <linearGradient id="darkSteel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b2430"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#63d9ff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2e8cff" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="greenGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7de27b" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2fbf7d" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="amberGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb15c" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#f07b27" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="violetGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c38cff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#8852ff" stop-opacity="0.82"/>
+    </linearGradient>
+    
+  </defs>
+  
+    <rect width="256" height="96" rx="20" fill="#071018"/>
+    <rect x="8" y="8" width="240" height="80" rx="16" fill="rgba(255,255,255,0.05)" stroke="#243141" stroke-width="3"/>
+    <rect x="20" y="18" width="216" height="60" rx="12" fill="rgba(255,255,255,0.04)" stroke="#3a4c63" stroke-width="2"/>
+    <path d="M34 24H222" stroke="#7de27b" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+    <path d="M34 72H222" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 7"/>
+    <circle cx="54" cy="48" r="8" fill="#7de27b" opacity="0.85"/>
+    <path d="M170 34H210M170 48H210M170 62H210" stroke="#d9e4f0" stroke-opacity="0.24" stroke-width="4" stroke-linecap="round"/>
+    <path d="M34 24L52 24" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
+  
+</svg>
