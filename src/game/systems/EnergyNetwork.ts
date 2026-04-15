@@ -32,6 +32,23 @@ export class EnergyNetwork {
     return aNeighbors.size !== before;
   }
 
+  disconnect(a: BuildingId, b: BuildingId): boolean {
+    if (a === b) return false;
+
+    const aNeighbors = this.adjacency.get(a);
+    const bNeighbors = this.adjacency.get(b);
+    if (!aNeighbors || !bNeighbors) return false;
+    if (!aNeighbors.has(b) || !bNeighbors.has(a)) return false;
+
+    aNeighbors.delete(b);
+    bNeighbors.delete(a);
+    return true;
+  }
+
+  isConnected(a: BuildingId, b: BuildingId): boolean {
+    return this.adjacency.get(a)?.has(b) ?? false;
+  }
+
   getComponentFor(startId: BuildingId): BuildingId[] {
     if (!this.adjacency.has(startId)) return [];
 

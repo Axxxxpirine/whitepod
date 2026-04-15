@@ -76,4 +76,56 @@ describe('GameEngine energy networks', () => {
     const network = engine.getEnergyNetworkForBuilding(extractorId)!;
     expect(network).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
   });
+
+  it('computes power states (neutral, powered, unpowered)', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(2, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+
+    expect(engine.getBuildingPowerState(solarId)).toBe('neutral');
+    expect(engine.getBuildingPowerState(extractorId)).toBe('unpowered');
+
+    engine.connectBuildings(solarId, extractorId);
+    expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
+
+    expect(engine.removeBuilding(solarId)).toBe(true);
+    expect(engine.getBuildingPowerState(extractorId)).toBe('unpowered');
+  });
+
+  it('aggregates global energy stats with online/offline consumers', () => {
+    const solarA = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+    engine.placeResource(11, 10, ResourceType.IronOre);
+    const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 11, y: 10 })!;
+    engine.connectBuildings(solarA, extractorA);
+
+    engine.placeResource(20, 20, ResourceType.IronOre);
+    const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 20, y: 20 })!;
+
+    const stats = engine.getEnergyGlobalStats();
+    expect(stats).toEqual({
+      production: 8,
+      consumption: 5,
+      remaining: -2,
+      onlineConsumers: 1,
+      offlineConsumers: 1,
+    });
+    expect(engine.getBuildingPowerState(extractorA)).toBe('powered');
+    expect(engine.getBuildingPowerState(extractorB)).toBe('unpowered');
+  });
+
+  it('can disconnect an existing energy link', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(2, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+    expect(engine.areBuildingsEnergyLinked(solarId, extractorId)).toBe(true);
+    expect(engine.disconnectBuildings(solarId, extractorId)).toBe(true);
+    expect(engine.areBuildingsEnergyLinked(solarId, extractorId)).toBe(false);
+
+    const solarNetwork = engine.getEnergyNetworkForBuilding(solarId)!;
+    const extractorNetwork = engine.getEnergyNetworkForBuilding(extractorId)!;
+    expect(solarNetwork).toMatchObject({ production: 8, consumption: 0, remaining: 8 });
+    expect(extractorNetwork).toMatchObject({ production: 0, consumption: 5, remaining: -5 });
+  });
 });

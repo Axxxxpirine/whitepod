@@ -219,7 +219,11 @@ export function GameCanvas() {
 
         if (sourceId === clickedBuildingId) return;
 
-        engine.connectBuildings(sourceId, clickedBuildingId);
+        if (engine.areBuildingsEnergyLinked(sourceId, clickedBuildingId)) {
+          engine.disconnectBuildings(sourceId, clickedBuildingId);
+        } else {
+          engine.connectBuildings(sourceId, clickedBuildingId);
+        }
         state.setPendingEnergyLinkSource(null);
         state.setSelectedTool({ kind: 'select' });
         state.setSelectedBuilding(sourceId);
