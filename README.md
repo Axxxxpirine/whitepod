@@ -4,7 +4,7 @@ Industrial grid management and optimization game. You play as the architect of a
 
 ## Tech stack
 
-- TypeScript + React 19
+- TypeScript 6 + React 19
 - PixiJS 8 (2D rendering)
 - Zustand (state management)
 - Vite 8 (build tooling)
@@ -67,13 +67,72 @@ engine.grid.fillRect(x0, y0, width, height, tileType)
 ### Buildings
 
 ```js
-engine.placeBuilding('placeholder_1x1', { x, y })   // Returns BuildingId or null
+engine.placeBuilding('extractor_basic', { x, y })          // Returns BuildingId or null
+engine.placeBuilding('solar_panel', { x, y })
+engine.placeBuilding('storage_basic', { x, y })             // 3x3 footprint
+engine.placeBuilding('battery_basic', { x, y })             // 2x2 footprint
+engine.placeBuilding('merger_basic', { x, y })
+engine.placeBuilding('watchtower', { x, y })                // 2x2, reveals fog in radius
+engine.placeBuilding('placeholder_1x1', { x, y })
 engine.placeBuilding('placeholder_3x3', { x, y })
+engine.placeBuilding('placeholder_node_1x1', { x, y })
+engine.placeBuilding('placeholder_node_3x3', { x, y })
+engine.placeBuilding('extractor_basic', { x, y }, rotation) // Optional Direction (0=N 1=E 2=S 3=W)
 engine.removeBuilding(id)
 engine.getBuildingAt(x, y)
-engine.getBuildings()                                // ReadonlyMap of all buildings
-engine.canPlaceBuilding('placeholder_1x1', { x, y })
+engine.getBuildings()                                       // ReadonlyMap of all buildings
+engine.canPlaceBuilding('extractor_basic', { x, y })
 // Returns { ok: true } or { ok: false, reason: string }
+```
+
+### Port connections
+
+```js
+engine.canConnect(from, to)            // from/to = { building: BuildingId, port: PortId }
+engine.connect(from, to)               // Returns ConnectionId or null
+engine.disconnect(connectionId)
+engine.getConnections()                // ReadonlyMap of all connections
+engine.getConnectionsOf(buildingId)    // Connections involving a building
+```
+
+### Belts
+
+Belt segments (`belt_straight`, `belt_corner_cw`, `belt_corner_ccw`) are placed automatically by the belt routing system.
+
+```js
+engine.canPlaceBelt(from, to)          // Plan a belt route between two port endpoints
+engine.placeBelt(from, to)             // Place belt segments + auto-connect
+engine.removeBelt(segmentId)           // Remove entire connected belt chain
+```
+
+### Energy network
+
+```js
+engine.connectBuildings(a, b)                  // Create energy link between two buildings
+engine.disconnectBuildings(a, b)
+engine.areBuildingsEnergyLinked(a, b)
+engine.getEnergyLinkedBuildings(buildingId)    // Neighbors in energy graph
+engine.getEnergyNetworkForBuilding(buildingId) // Balance for building's network
+engine.getEnergyNetworkBalances()              // All network balances
+engine.getBuildingPowerState(buildingId)        // 'powered' | 'unpowered' | 'neutral'
+engine.getEnergyGlobalStats()                  // Global production/consumption stats
+engine.getEnergyStorageTotals()                // { stored, capacity } across all batteries
+```
+
+### Resources & economy
+
+```js
+engine.getResourceCounts()             // Current player stock { coal, ironOre, copperOre }
+engine.getResourceRates()              // Active extraction rates (items/min)
+```
+
+### Simulation
+
+```js
+engine.simulationTime                  // Day/night cycle position (0–1)
+engine.mapSeed                         // Current map seed
+engine.playerStock                     // Direct access to resource stock
+engine.batteryCharges                  // Map<BuildingId, number> of battery charge levels
 ```
 
 ### Map generation
@@ -107,11 +166,25 @@ engine.screenToTile(screenX, screenY)               // → { x, y }
 ```
 src/
 ├── game/
-│   ├── engine/     # GameEngine, Viewport, InputHandler, CoordinateTransform
-│   ├── renderer/   # PixiJS renderers (Grid, Resources, TileSprite)
-│   └── data/       # TileGrid, BuildingRegistry, ResourceGenerator, buildingCatalog
-├── components/     # GameCanvas, GameHUD, shadcn UI components
-├── store/          # Zustand game store
-└── hooks/          # Custom React hooks
-tests/              # Vitest test suites
+│   ├── engine/       # GameEngine, Viewport, InputHandler, CoordinateTransform, BeltRouter
+│   ├── renderer/     # PixiJS renderers (Grid, Building, Belt, Resource, FogOfWar, DayNight, EnergyLink, etc.)
+│   ├── data/         # TileGrid, BuildingRegistry, ConnectionRegistry, ResourceGenerator, buildingCatalog
+│   ├── systems/      # EnergyNetwork
+│   ├── flow/         # Belt flow resolution
+│   ├── input/        # CancelStack
+│   ├── persistence/  # sessionStorage layer
+│   ├── ui/           # Building presentation, sprite paths, toolbar icons
+│   ├── constants.ts
+│   └── types.ts
+├── components/
+│   ├── hud/          # BuildingPicker, SelectedBuildingPanel, ToolModeIndicator
+│   ├── GameCanvas.tsx
+│   ├── GameHUD.tsx
+│   ├── BuildingStatsPanel.tsx
+│   └── BeltFlowStats.tsx
+├── assets/           # Static assets
+├── lib/              # Shared utilities
+├── store/            # Zustand game store
+└── test/             # Test setup
+tests/                # Vitest test suites
 ```
