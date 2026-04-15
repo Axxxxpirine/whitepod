@@ -88,7 +88,7 @@ export class PixiRenderer {
     this.stationLayer.clear()
     this.tokenLayer.clear()
 
-    this.updatePhase(exportData.phase)
+    this.updatePhase()
 
     if (exportData.grid) {
       this.renderDeposits(exportData.grid.deposits)
@@ -117,7 +117,7 @@ export class PixiRenderer {
     return depositsEqual && stationsEqual
   }
 
-  private updatePhase(_phase: GamePhase): void {
+  private updatePhase(): void {
     // Background color update handled by container
   }
 
