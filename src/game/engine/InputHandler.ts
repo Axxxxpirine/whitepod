@@ -15,6 +15,9 @@ export class InputHandler {
   private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
   private onEnergyLinkClick: ((buildingId: BuildingId) => void) | null = null;
   private onOutOfGridClick: (() => void) | null = null;
+  private onInvalidPlacement:
+    | ((origin: { x: number; y: number }, buildingType: string) => void)
+    | null = null;
 
   constructor(
     engine: GameEngine,
@@ -44,6 +47,12 @@ export class InputHandler {
 
   setOutOfGridClickCallback(cb: (() => void) | null): void {
     this.onOutOfGridClick = cb;
+  }
+
+  setInvalidPlacementCallback(
+    cb: ((origin: { x: number; y: number }, buildingType: string) => void) | null,
+  ): void {
+    this.onInvalidPlacement = cb;
   }
 
   onPointerDown(screenX: number, screenY: number, button: number): void {
@@ -77,6 +86,8 @@ export class InputHandler {
       );
       if (buildingId !== null) {
         this.onBuildingPlaced?.(buildingId);
+      } else {
+        this.onInvalidPlacement?.(coord, selectedTool.buildingType);
       }
       return;
     }

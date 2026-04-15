@@ -218,6 +218,11 @@ export function GameCanvas() {
       currentInputHandler.setOutOfGridClickCallback(() => {
         popCancelStack(useGameStore, currentBeltToolController);
       });
+      currentInputHandler.setInvalidPlacementCallback((origin, buildingType) => {
+        const type = getBuildingType(buildingType);
+        if (!type) return;
+        placementPreviewRenderer?.flashInvalid(origin, type.footprint);
+      });
 
       const canvas = app.canvas;
       handlePointerDown = (e) => {
