@@ -99,7 +99,10 @@ export class InputHandler {
 
     if (selectedTool.kind === 'energy_link') {
       const building = this.engine.getBuildingAt(coord.x, coord.y);
-      if (!building) return;
+      if (!building) {
+        this.onBuildingSelected?.(null);
+        return;
+      }
       this.onEnergyLinkClick?.(building.id);
     }
   }

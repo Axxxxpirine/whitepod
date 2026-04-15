@@ -10,6 +10,7 @@ import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
 import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { BuildingHighlightRenderer } from '@/game/renderer/BuildingHighlightRenderer';
+import { DayNightOverlayRenderer } from '@/game/renderer/DayNightOverlayRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
@@ -75,6 +76,7 @@ export function GameCanvas() {
   const setEngine = useGameStore((s) => s.setEngine);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const selectedToolKind = useGameStore((s) => s.selectedTool.kind);
+  const setSimulationTime = useGameStore((s) => s.setSimulationTime);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -91,6 +93,7 @@ export function GameCanvas() {
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
     let buildingHighlightRenderer: BuildingHighlightRenderer | null = null;
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
+    let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -145,6 +148,7 @@ export function GameCanvas() {
       state.setSelectedBuilding(null);
       state.setSelectedBuildingAnchor(null);
       state.setBeltPreview(null);
+      setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
       setEngine(engine);
 
@@ -197,6 +201,7 @@ export function GameCanvas() {
           showAllNetworks: selectedTool.kind === 'energy_link',
         };
       });
+      dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
 
       const currentInputHandler = new InputHandler(
         engine,
@@ -223,6 +228,7 @@ export function GameCanvas() {
         state.setSelectedBuilding(buildingId);
         if (buildingId === null) {
           state.setSelectedBuildingAnchor(null);
+          state.setPendingEnergyLinkSource(null);
         }
       });
       currentInputHandler.setBuildingPlacedCallback((buildingId) => {
@@ -298,9 +304,15 @@ export function GameCanvas() {
       resizeObserver.observe(container);
 
       app.ticker.add((ticker) => {
-        engine.update(ticker.deltaMS);
-        beltFlowAnimator!.update(ticker.deltaMS);
         const state = useGameStore.getState();
+        const dtSeconds = ticker.deltaMS / 1000;
+        if (state.simulationSpeed > 0) {
+          engine.update(dtSeconds * state.simulationSpeed);
+        }
+        beltFlowAnimator!.update(ticker.deltaMS);
+        if (state.simulationTime !== engine.simulationTime) {
+          state.setSimulationTime(engine.simulationTime);
+        }
         const { selectedBuildingAnchor, selectedBuildingId } = state;
 
         if (selectedBuildingId === null) {
@@ -338,6 +350,7 @@ export function GameCanvas() {
         buildingHighlightRenderer!.render();
         placementPreviewRenderer!.render();
         energyLinkRenderer!.render();
+        dayNightOverlayRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -370,13 +383,14 @@ export function GameCanvas() {
         beltFlowAnimator?.destroy();
         beltRenderer?.destroy();
         energyLinkRenderer?.destroy();
+        dayNightOverlayRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         gridRenderer?.destroy();
         app?.destroy(true);
       }
     };
-  }, [sessionEpoch, setEngine, setSelectedTool]);
+  }, [sessionEpoch, setEngine, setSelectedTool, setSimulationTime]);
 
   return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
 }

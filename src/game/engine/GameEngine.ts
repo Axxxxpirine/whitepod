@@ -46,6 +46,8 @@ import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
 import { planBelt } from './BeltRouter';
 import { EnergyNetwork } from '../systems/EnergyNetwork';
+import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
+import { SOLAR_PANEL_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -73,6 +75,8 @@ export interface SerializedGameWorld {
   readonly connections: SerializedConnectionRegistry;
   readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
   readonly playerStock?: ResourceStock;
+  readonly simulationTime?: number;
+  readonly batteryCharges?: readonly { readonly id: BuildingId; readonly charge: number }[];
 }
 
 interface GameEngineOptions {
@@ -80,20 +84,24 @@ interface GameEngineOptions {
   readonly buildings?: BuildingRegistry;
   readonly connections?: ConnectionRegistry;
   readonly mapSeed?: number;
+  readonly dayNightCycleSeconds?: number;
 }
 
 const SERIALIZE_VERSION = 1;
 
 export class GameEngine {
-  private static readonly EXTRACTION_INTERVAL_MS = 60_000 / EXTRACTOR_RATE_PER_MIN;
+  private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_RATE_PER_MIN;
 
   readonly grid: TileGrid;
   readonly viewport: Viewport;
   readonly buildings: BuildingRegistry;
   readonly connections: ConnectionRegistry;
   readonly energyNetwork: EnergyNetwork;
+  readonly dayNightCycleSeconds: number;
+  simulationTime = 0;
   mapSeed: number;
   readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
+  readonly batteryCharges = new Map<BuildingId, number>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
   private extractionAccumulator = 0;
 
@@ -106,14 +114,35 @@ export class GameEngine {
     this.connections = options.connections ?? new ConnectionRegistry();
     this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
+    this.dayNightCycleSeconds =
+      options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
+        ? options.dayNightCycleSeconds
+        : 600;
+  }
+
+  setSimulationTime(value: number): void {
+    this.simulationTime = ((value % 1) + 1) % 1;
   }
 
   update(dt: number): void {
+    if (!Number.isFinite(dt) || dt <= 0) return;
+
+    // Day/night cycle
+    const cycleSeconds = this.dayNightCycleSeconds;
+    if (Number.isFinite(cycleSeconds) && cycleSeconds > 0) {
+      const next = this.simulationTime + dt / cycleSeconds;
+      this.simulationTime = ((next % 1) + 1) % 1;
+    }
+
+    // Resource extraction
     this.extractionAccumulator += dt;
-    if (this.extractionAccumulator >= GameEngine.EXTRACTION_INTERVAL_MS) {
-      this.extractionAccumulator -= GameEngine.EXTRACTION_INTERVAL_MS;
+    if (this.extractionAccumulator >= GameEngine.EXTRACTION_INTERVAL_S) {
+      this.extractionAccumulator -= GameEngine.EXTRACTION_INTERVAL_S;
       this.processExtraction();
     }
+
+    // Battery charge/discharge
+    this.updateBatteries(dt);
   }
 
   private processExtraction(): void {
@@ -133,6 +162,88 @@ export class GameEngine {
     }
     if (changed) {
       this.notify('world');
+    }
+  }
+
+  private updateBatteries(dt: number): void {
+    if (this.batteryCharges.size === 0) return;
+
+    for (const network of this.getEnergyNetworkBalances()) {
+      const netPower = network.remaining;
+
+      const batteries: Array<{ id: BuildingId; rate: number; capacity: number }> = [];
+      for (const id of network.buildingIds) {
+        const charge = this.batteryCharges.get(id);
+        if (charge === undefined) continue;
+        const building = this.buildings.get(id);
+        if (!building) continue;
+        const type = getBuildingType(building.typeId);
+        const battery = type?.energy?.battery;
+        if (!battery) continue;
+        batteries.push({ id, rate: 0, capacity: battery.capacity });
+      }
+      if (batteries.length === 0) continue;
+
+      if (netPower > 0) {
+        this.distributeBatteryCharge(batteries, netPower, dt);
+      } else if (netPower < 0) {
+        this.distributeBatteryDischarge(batteries, -netPower, dt);
+      }
+    }
+  }
+
+  private distributeBatteryCharge(
+    batteries: Array<{ id: BuildingId; rate: number; capacity: number }>,
+    surplus: number,
+    dt: number,
+  ): void {
+    let totalAcceptable = 0;
+    const acceptable: number[] = [];
+    for (const bat of batteries) {
+      const charge = this.batteryCharges.get(bat.id) ?? 0;
+      const type = getBuildingType(this.buildings.get(bat.id)!.typeId)!;
+      const chargeRate = type.energy!.battery!.chargeRate;
+      const maxByRate = chargeRate * dt;
+      const maxByCapacity = bat.capacity - charge;
+      const canAccept = Math.min(maxByRate, maxByCapacity);
+      acceptable.push(Math.max(0, canAccept));
+      totalAcceptable += Math.max(0, canAccept);
+    }
+    if (totalAcceptable <= 0) return;
+
+    const totalEnergy = Math.min(surplus * dt, totalAcceptable);
+    for (let i = 0; i < batteries.length; i++) {
+      if (acceptable[i] <= 0) continue;
+      const share = (acceptable[i] / totalAcceptable) * totalEnergy;
+      const current = this.batteryCharges.get(batteries[i].id) ?? 0;
+      this.batteryCharges.set(batteries[i].id, Math.min(current + share, batteries[i].capacity));
+    }
+  }
+
+  private distributeBatteryDischarge(
+    batteries: Array<{ id: BuildingId; rate: number; capacity: number }>,
+    deficit: number,
+    dt: number,
+  ): void {
+    let totalProvidable = 0;
+    const providable: number[] = [];
+    for (const bat of batteries) {
+      const charge = this.batteryCharges.get(bat.id) ?? 0;
+      const type = getBuildingType(this.buildings.get(bat.id)!.typeId)!;
+      const dischargeRate = type.energy!.battery!.dischargeRate;
+      const maxByRate = dischargeRate * dt;
+      const canProvide = Math.min(maxByRate, charge);
+      providable.push(Math.max(0, canProvide));
+      totalProvidable += Math.max(0, canProvide);
+    }
+    if (totalProvidable <= 0) return;
+
+    const totalEnergy = Math.min(deficit * dt, totalProvidable);
+    for (let i = 0; i < batteries.length; i++) {
+      if (providable[i] <= 0) continue;
+      const share = (providable[i] / totalProvidable) * totalEnergy;
+      const current = this.batteryCharges.get(batteries[i].id) ?? 0;
+      this.batteryCharges.set(batteries[i].id, Math.max(current - share, 0));
     }
   }
 
@@ -186,6 +297,9 @@ export class GameEngine {
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
       this.energyNetwork.registerBuilding(id);
+      if (type.energy?.battery) {
+        this.batteryCharges.set(id, 0);
+      }
       this.notify('world');
     }
     return id;
@@ -218,6 +332,7 @@ export class GameEngine {
 
     this.connections.unregisterAllFor(id);
     this.energyNetwork.unregisterBuilding(id);
+    this.batteryCharges.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.notify('world');
@@ -279,7 +394,22 @@ export class GameEngine {
 
     const network = this.getEnergyNetworkForBuilding(buildingId);
     if (!network) return 'unpowered';
-    return network.remaining >= 0 ? 'powered' : 'unpowered';
+    if (network.remaining >= 0) return 'powered';
+    const dischargeAvailable = this.getNetworkDischargeRate(network.buildingIds);
+    return dischargeAvailable >= -network.remaining ? 'powered' : 'unpowered';
+  }
+
+  private getNetworkDischargeRate(buildingIds: readonly BuildingId[]): number {
+    let total = 0;
+    for (const id of buildingIds) {
+      const charge = this.batteryCharges.get(id);
+      if (charge === undefined || charge <= 0) continue;
+      const building = this.buildings.get(id);
+      if (!building) continue;
+      const type = getBuildingType(building.typeId);
+      total += type?.energy?.battery?.dischargeRate ?? 0;
+    }
+    return total;
   }
 
   getEnergyGlobalStats(): EnergyGlobalStats {
@@ -292,9 +422,9 @@ export class GameEngine {
     for (const network of this.getEnergyNetworkBalances()) {
       production += network.production;
       demandedConsumption += network.consumption;
-      const networkIsPowered = network.remaining >= 0;
+      const dischargeAvailable = this.getNetworkDischargeRate(network.buildingIds);
+      const networkIsPowered = network.remaining >= 0 || dischargeAvailable >= -network.remaining;
       if (networkIsPowered) {
-        // "consumption" is the energy actually supplied (not total requested demand).
         consumption += network.consumption;
       }
       for (const buildingId of network.buildingIds) {
@@ -604,6 +734,11 @@ export class GameEngine {
       }
     }
 
+    const batteryCharges: Array<{ id: BuildingId; charge: number }> = [];
+    for (const [id, charge] of this.batteryCharges) {
+      batteryCharges.push({ id, charge });
+    }
+
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
@@ -612,6 +747,8 @@ export class GameEngine {
       connections: this.connections.serialize(),
       energyLinks,
       playerStock: { ...this.playerStock },
+      simulationTime: this.simulationTime,
+      batteryCharges,
     };
   }
 
@@ -635,6 +772,13 @@ export class GameEngine {
 
     for (const buildingId of engine.buildings.getAll().keys()) {
       engine.energyNetwork.registerBuilding(buildingId);
+      const building = engine.buildings.get(buildingId);
+      if (building) {
+        const type = getBuildingType(building.typeId);
+        if (type?.energy?.battery) {
+          engine.batteryCharges.set(buildingId, 0);
+        }
+      }
     }
     for (const link of snapshot.energyLinks ?? []) {
       if (engine.buildings.get(link.a) && engine.buildings.get(link.b)) {
@@ -648,6 +792,20 @@ export class GameEngine {
       engine.playerStock.copperOre = snapshot.playerStock.copperOre;
     }
 
+    if (typeof snapshot.simulationTime === 'number' && Number.isFinite(snapshot.simulationTime)) {
+      engine.simulationTime = ((snapshot.simulationTime % 1) + 1) % 1;
+    }
+    for (const entry of snapshot.batteryCharges ?? []) {
+      if (engine.batteryCharges.has(entry.id)) {
+        const building = engine.buildings.get(entry.id);
+        if (building) {
+          const type = getBuildingType(building.typeId);
+          const capacity = type?.energy?.battery?.capacity ?? 0;
+          engine.batteryCharges.set(entry.id, Math.max(0, Math.min(entry.charge, capacity)));
+        }
+      }
+    }
+
     return engine;
   }
 
@@ -658,13 +816,19 @@ export class GameEngine {
   private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {
     let production = 0;
     let consumption = 0;
+    const daylightFactor = getDaylightFactor(this.simulationTime);
 
     for (const buildingId of buildingIds) {
       const building = this.buildings.get(buildingId);
       if (!building) continue;
       const type = getBuildingType(building.typeId);
       if (!type?.energy) continue;
-      production += type.energy.production ?? 0;
+      const baseProduction = type.energy.production ?? 0;
+      if (baseProduction > 0 && building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
+        production += baseProduction * daylightFactor;
+      } else {
+        production += baseProduction;
+      }
       consumption += type.energy.consumption ?? 0;
     }
 
@@ -679,7 +843,7 @@ export class GameEngine {
   private isEnergyLinkableBuilding(typeId: BuildingTypeId): boolean {
     const type = getBuildingType(typeId);
     if (!type?.energy) return false;
-    return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0;
+    return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
 
   private notify(kind: GameEngineChangeKind): void {

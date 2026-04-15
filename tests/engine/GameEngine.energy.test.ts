@@ -16,6 +16,7 @@ describe('GameEngine energy networks', () => {
 
   beforeEach(() => {
     engine = new GameEngine(800, 600);
+    engine.simulationTime = 0.5; // noon — full solar production
     groundEverywhere(engine);
   });
 

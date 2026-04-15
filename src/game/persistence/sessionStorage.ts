@@ -19,6 +19,8 @@ interface PersistedWorldState {
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
   readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
+  readonly simulationTime?: number;
+  readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
 }
 
 interface PersistedViewState {
@@ -115,6 +117,15 @@ function isPersistedWorldState(value: unknown): value is PersistedWorldState {
         (link) =>
           isRecord(link) && isFiniteNumber(link.a) && isFiniteNumber(link.b),
       ));
+  const batteryChargesValid =
+    value.batteryCharges === undefined ||
+    (Array.isArray(value.batteryCharges) &&
+      value.batteryCharges.every(
+        (entry) =>
+          isRecord(entry) && isFiniteNumber(entry.id) && isFiniteNumber(entry.charge),
+      ));
+  const simulationTimeValid =
+    value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
   return (
     value.version === STORAGE_VERSION &&
     typeof value.sessionId === 'string' &&
@@ -124,7 +135,9 @@ function isPersistedWorldState(value: unknown): value is PersistedWorldState {
     value.gridBase64.length > 0 &&
     isSerializedBuildingRegistry(value.buildings) &&
     isSerializedConnectionRegistry(value.connections) &&
-    energyLinksValid
+    energyLinksValid &&
+    batteryChargesValid &&
+    simulationTimeValid
   );
 }
 
@@ -192,6 +205,8 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
     connections: snapshot.connections,
     energyLinks: snapshot.energyLinks,
     playerStock: snapshot.playerStock,
+    simulationTime: snapshot.simulationTime,
+    batteryCharges: snapshot.batteryCharges,
   };
 
   storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
@@ -244,6 +259,8 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
         connections: parsedWorld.connections,
         energyLinks: parsedWorld.energyLinks,
         playerStock: parsedWorld.playerStock,
+        simulationTime: parsedWorld.simulationTime,
+        batteryCharges: parsedWorld.batteryCharges,
       },
       screenWidth,
       screenHeight,

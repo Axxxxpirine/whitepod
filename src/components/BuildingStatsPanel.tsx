@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Pickaxe, Sun, Zap } from 'lucide-react';
+import { Activity, Battery, Pickaxe, Sun, Zap } from 'lucide-react';
 import {
+  BATTERY_BASIC_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -52,6 +53,25 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
         <ResourceStockRow sprite="sprites/copper-ore.png" alt="Cuivre" count={stock.copperOre} />
       </div>
     );
+  } else if (building.typeId === BATTERY_BASIC_BUILDING_TYPE_ID) {
+    const batterySpec = getBuildingType(building.typeId)?.energy?.battery;
+    if (batterySpec) {
+      const charge = engine.batteryCharges.get(building.id) ?? 0;
+      const percent = Math.round((charge / batterySpec.capacity) * 100);
+
+      rows = (
+        <>
+          <StatRow icon={Battery} label="Charge" value={`${percent}%`} />
+          <StatRow icon={Zap} label="Stockage" value={`${Math.round(charge * 10) / 10} / ${batterySpec.capacity} kWh`} />
+          <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-teal-400 transition-all duration-300"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+        </>
+      );
+    }
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
     const network = engine.getEnergyNetworkForBuilding(building.id);

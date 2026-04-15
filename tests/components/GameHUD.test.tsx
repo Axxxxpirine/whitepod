@@ -17,6 +17,8 @@ describe('GameHUD', () => {
   beforeEach(() => {
     useGameStore.setState({
       engine: null,
+      simulationTime: 0,
+      simulationSpeed: 1,
       hoverTile: { x: 12, y: 7 },
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
@@ -210,20 +212,34 @@ describe('GameHUD', () => {
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('shows global electricity in the top-left HUD panel', () => {
+  it('shows simulation time in the HUD panel', () => {
     const engine = makeEngine();
-    const solar = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
-    engine.grid.setResource(2, 1, ResourceType.IronOre);
-    const extractorPowered = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
-    engine.connectBuildings(solar, extractorPowered);
-    engine.grid.setResource(6, 6, ResourceType.IronOre);
-    engine.placeBuilding('extractor_basic', { x: 6, y: 6 })!;
-
-    useGameStore.setState({ engine });
+    useGameStore.setState({ engine, simulationTime: 0.5 });
     render(<GameHUD />);
 
-    expect(screen.getByText('-2 kWh')).toBeInTheDocument();
-    expect(screen.getByText('8 kWh')).toBeInTheDocument();
-    expect(screen.getByText('5 kWh')).toBeInTheDocument();
+    expect(screen.getByText(/12:00/)).toBeInTheDocument();
+  });
+
+  it('opens debug panel and allows simulation presets', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, simulationTime: 0 });
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Midi' }));
+
+    expect(useGameStore.getState().simulationTime).toBe(0.5);
+    expect(engine.simulationTime).toBe(0.5);
+  });
+
+  it('updates simulation speed from debug panel', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, simulationSpeed: 1 });
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: '4x' }));
+
+    expect(useGameStore.getState().simulationSpeed).toBe(4);
   });
 });

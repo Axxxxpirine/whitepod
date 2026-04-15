@@ -15,6 +15,7 @@ export const BELT_STRAIGHT_BUILDING_TYPE_ID = 'belt_straight' as const;
 export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;
 export const BELT_CORNER_CCW_BUILDING_TYPE_ID = 'belt_corner_ccw' as const;
 export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
+export const BATTERY_BASIC_BUILDING_TYPE_ID = 'battery_basic' as const;
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
@@ -60,6 +61,21 @@ const entries: readonly BuildingType[] = [
     ports: [],
     energy: {
       production: 8,
+    },
+  },
+  {
+    id: BATTERY_BASIC_BUILDING_TYPE_ID,
+    name: 'Batterie',
+    footprint: { w: 2, h: 2 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [],
+    energy: {
+      battery: {
+        capacity: 50,
+        chargeRate: 5,
+        dischargeRate: 5,
+      },
     },
   },
   {

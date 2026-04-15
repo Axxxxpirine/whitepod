@@ -12,6 +12,7 @@ type AnimatorTestApi = { resolveResourceForBelt(id: BuildingId): ResourceType };
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
+  engine.simulationTime = 0.5; // noon — full solar production
   engine.grid.fill(TileType.Ground);
   return engine;
 }
