@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -162,11 +163,11 @@ export function GameHUD() {
             <button
               type="button"
               onClick={handleDeleteSelectedBuilding}
-              className="cursor-pointer rounded-lg bg-red-500/15 px-2 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
+              className="cursor-pointer rounded-lg bg-red-500/15 p-1.5 text-red-300 transition-colors hover:bg-red-500/25 hover:text-red-200"
               aria-label="Supprimer le bâtiment"
               title="Supprimer le bâtiment"
             >
-              Supprimer
+              <Trash2 size={16} />
             </button>
           </div>
         </div>
