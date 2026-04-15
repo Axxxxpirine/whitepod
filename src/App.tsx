@@ -47,7 +47,7 @@ function App() {
   const loopRef = useRef<GameLoop | null>(null)
   const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
-  const [canvasZoom, setCanvasZoom] = useState<number>(1.25)
+  const [canvasZoom, setCanvasZoom] = useState<number>(1.75)
   const [debugOpen, setDebugOpen] = useState<boolean>(false)
 
   useEffect(() => {

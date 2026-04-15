@@ -10,7 +10,7 @@ interface PixiRendererConfig {
 }
 
 const DEFAULT_CONFIG: PixiRendererConfig = {
-  cellSize: 24,
+  cellSize: 12,
   cellsPerSide: 128,
   backgroundColors: {
     init: 0x2d1b69,
@@ -47,7 +47,7 @@ export class PixiRenderer {
   public attachTo(node: HTMLElement | null): void {
     this.mountNode = node
 
-    if (this.app && node && this.app.canvas.parentElement !== node) {
+    if (this.app?.renderer && node && this.app.canvas.parentElement !== node) {
       node.replaceChildren(this.app.canvas)
     }
   }

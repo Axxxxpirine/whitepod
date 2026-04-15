@@ -11,7 +11,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<PixiRenderer | null>(null)
   const selectBuildCell = useGameStore(s => s.selectBuildCell)
-  const placeStationAtSelectedCell = useGameStore(s => s.placeStationAtSelectedCell)
+  const placeStationAtCell = useGameStore(s => s.placeStationAtCell)
   const buildPalette = useGameStore(s => s.buildPalette)
   const getPreferredTransitionIdForPalette = useGameStore(s => s.getPreferredTransitionIdForPalette)
   const hoverBuildCell = useGameStore(s => s.hoverBuildCell)
@@ -44,7 +44,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       const transitionId = getPreferredTransitionIdForPalette()
       if (!transitionId) return
 
-      placeStationAtSelectedCell(transitionId)
+      placeStationAtCell(x, y, transitionId)
     }
 
     const handleMove = (event: MouseEvent) => {
@@ -76,7 +76,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       container.removeEventListener('mouseleave', handleLeave)
       renderer.destroy()
     }
-  }, [buildPalette, getPixiExport, getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtSelectedCell, selectBuildCell])
+  }, [buildPalette, getPixiExport, getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtCell, selectBuildCell])
 
   return (
     <div

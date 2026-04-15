@@ -61,6 +61,7 @@ export interface GameState {
   hoverBuildCell: (x: number, y: number | null) => void
   clearBuildSelection: () => void
   getBuildOptionsAtSelectedCell: () => Array<{ transitionId: string; name: string; enabled: boolean; reason?: string }>
+  placeStationAtCell: (x: number, y: number, transitionId: string) => { ok: boolean; reason?: string }
   placeStationAtSelectedCell: (transitionId: string) => { ok: boolean; reason?: string }
   removeStation: (stationId: string) => void
   setBuildPalette: (kind: 'extractor' | 'conveyor' | 'factory' | 'storage') => void
@@ -443,6 +444,31 @@ export const useGameStore = create<GameState>()(
         })
       },
 
+      placeStationAtCell: (x, y, transitionId) => {
+        const { grid, metadata, engine, tickIndex } = get()
+        if (!metadata) return { ok: false, reason: 'Métadonnées non chargées' }
+
+        const transitionMeta = metadata.gameSystem.transitions.find(t => t.id === transitionId)
+        if (!transitionMeta) return { ok: false, reason: 'Transition inconnue' }
+
+        const placeOk = getBuildReason(grid, transitionId, x, y)
+        if (placeOk) return { ok: false, reason: placeOk }
+
+        const station = grid.placeStationAt(x, y, transitionId)
+        if (!station) return { ok: false, reason: 'Impossible de poser la station' }
+
+        set({
+          selectedBuildCell: null,
+          autosaveTickIndex: tickIndex,
+          saveRevision: get().saveRevision + 1,
+          stations: grid.listStations(),
+          engineSnapshot: engine ? engine.getSnapshot() : null,
+          gridSnapshot: grid.getSnapshot(),
+        })
+
+        return { ok: true }
+      },
+
       selectBuildCell: (x, y) => {
         set({ selectedBuildCell: { x, y } })
       },
@@ -493,29 +519,9 @@ export const useGameStore = create<GameState>()(
       },
 
       placeStationAtSelectedCell: transitionId => {
-        const { selectedBuildCell, grid, metadata, engine, tickIndex } = get()
+        const { selectedBuildCell } = get()
         if (!selectedBuildCell) return { ok: false, reason: 'Aucune cellule sélectionnée' }
-        if (!metadata) return { ok: false, reason: 'Métadonnées non chargées' }
-
-        const transitionMeta = metadata.gameSystem.transitions.find(t => t.id === transitionId)
-        if (!transitionMeta) return { ok: false, reason: 'Transition inconnue' }
-
-        const placeOk = getBuildReason(grid, transitionId, selectedBuildCell.x, selectedBuildCell.y)
-        if (placeOk) return { ok: false, reason: placeOk }
-
-        const station = grid.placeStationAt(selectedBuildCell.x, selectedBuildCell.y, transitionId)
-        if (!station) return { ok: false, reason: 'Impossible de poser la station' }
-
-        set({
-          selectedBuildCell: null,
-          autosaveTickIndex: tickIndex,
-          saveRevision: get().saveRevision + 1,
-          stations: grid.listStations(),
-          engineSnapshot: engine ? engine.getSnapshot() : null,
-          gridSnapshot: grid.getSnapshot(),
-        })
-
-        return { ok: true }
+        return get().placeStationAtCell(selectedBuildCell.x, selectedBuildCell.y, transitionId)
       },
 
       removeStation: stationId => {
