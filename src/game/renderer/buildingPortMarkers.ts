@@ -1,9 +1,10 @@
 import { TILE_SIZE } from '../constants';
 import { worldSideOf, worldTileOf } from '../data/ConnectionRegistry';
 import { Direction, PortKind, type Building, type BuildingType, type TileCoord } from '../types';
+import { PIXI } from '@/design/tokens';
 
-const INPUT_COLOR = 0x93c5fd;
-const OUTPUT_COLOR = 0xf59e0b;
+const INPUT_COLOR = PIXI.accent;
+const OUTPUT_COLOR = PIXI.accentWarm;
 
 export function drawBuildingPortMarkers(
   draw: {

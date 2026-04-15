@@ -3,6 +3,7 @@ import { TileType as TileTypeConst, ResourceType as ResourceTypeConst } from '..
 import type { ResourceType } from '../types';
 import { Assets, Texture, ImageSource } from 'pixi.js';
 import { BUILDING_SPRITE_PATHS } from '../ui/spritePaths';
+import { PIXI } from '@/design/tokens';
 
 /* ── Deterministic hash helpers ── */
 
@@ -58,43 +59,50 @@ function craterDarkening(x: number, y: number): number {
   return darkening;
 }
 
-/* ── Tile color with lunar palette ── */
+/* ── Tile color (Architect's Drawing Board palette) ──
+ * Ground recentered on --grid-tile #181A1F, rock on --grid-tile-rock #22262D.
+ * Procedural noise + crater darkening preserved, amplitude reduced to ±5%
+ * (graphite mat should not vary like a grassy plain).
+ * Each tile keeps the cool graphite tint via tintedHex(lum). */
 
-const GROUND_BASE = 0xd0;
-const GROUND_MIN = 0x90;
-const ROCK_BASE = 0x70;
-const ROCK_MIN = 0x4a;
+// Target luminance matches the B channel of the token hex (highest of R/G/B).
+const GROUND_LUM_BASE = 0x1f;   // #181A1F
+const GROUND_LUM_MIN = 0x19;    // darkened by craters
+const ROCK_LUM_BASE = 0x2d;     // #22262D
+const ROCK_LUM_MIN = 0x24;
 const SHADE_STEPS = 8;
-const WATER_COLOR = 0x2d6a9f;
+const NOISE_AMPLITUDE = 2;      // ±5% of mid-luminance ~40 ⇒ ±2
+const WATER_COLOR = PIXI.accent; // cool accent water reads as energy/liquid
 
-function grayToHex(gray: number): number {
-  const g = Math.max(0, Math.min(255, gray));
-  return (g << 16) | (g << 8) | g;
+// Graphite tint: R:G:B ≈ 0.77 : 0.84 : 1.0 (matches #181A1F / #22262D ratios)
+function tintedHex(lum: number): number {
+  const v = Math.max(0, Math.min(255, lum));
+  const r = Math.round(v * 0.77);
+  const g = Math.round(v * 0.84);
+  const b = Math.round(v);
+  return (r << 16) | (g << 8) | b;
 }
 
 export function getTileColor(type: TileType, x: number, y: number): number {
   if (type === TileTypeConst.Water) return WATER_COLOR;
 
   const dark = craterDarkening(x, y);
-  // Add subtle per-tile noise so flat areas aren't perfectly uniform
-  const noise = (hashCell(x, y, 0) - 0.5) * 6;
+  const noise = (hashCell(x, y, 0) - 0.5) * 2 * NOISE_AMPLITUDE;
 
-  const base = type === TileTypeConst.Rock || type === TileTypeConst.Empty && false
-    ? ROCK_BASE : GROUND_BASE;
-  const min = type === TileTypeConst.Rock ? ROCK_MIN : GROUND_MIN;
+  const isRock = type === TileTypeConst.Rock;
+  const base = isRock ? ROCK_LUM_BASE : GROUND_LUM_BASE;
+  const min = isRock ? ROCK_LUM_MIN : GROUND_LUM_MIN;
 
-  let gray = base - dark * (base - min) + noise;
-  // Quantize to SHADE_STEPS levels for pixelated look
-  gray = Math.round(gray / (256 / SHADE_STEPS)) * (256 / SHADE_STEPS);
+  let lum = base - dark * (base - min) + noise;
+  lum = Math.round(lum / (256 / SHADE_STEPS)) * (256 / SHADE_STEPS);
 
   switch (type) {
     case TileTypeConst.Empty:
     case TileTypeConst.Ground:
-      return grayToHex(gray);
     case TileTypeConst.Rock:
-      return grayToHex(gray);
+      return tintedHex(lum);
     default:
-      return 0x000000;
+      return PIXI.bg;
   }
 }
 

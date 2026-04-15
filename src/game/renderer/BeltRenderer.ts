@@ -4,9 +4,10 @@ import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
+import { PIXI } from '@/design/tokens';
 
 export const BELT_INSET = 3;
-const BELT_PATH = 0x3a3125;
+const BELT_PATH = PIXI.border;
 
 export class BeltRenderer {
   private readonly beltContainer: Container;

@@ -3,13 +3,14 @@ import type { GameEngine } from '../engine/GameEngine';
 import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
 import type { SelectedTool, TileCoord } from '../types';
+import { PIXI } from '@/design/tokens';
 
 const TEX_SCALE = 2; // 2 pixels per tile for smoother edges
 const TEX_W = GRID_WIDTH * TEX_SCALE;
 const TEX_H = GRID_HEIGHT * TEX_SCALE;
 const FOG_ALPHA = 0.92;
 
-const REVEAL_PREVIEW_COLOR = 0xc084fc;
+const REVEAL_PREVIEW_COLOR = PIXI.accent;
 const REVEAL_PREVIEW_STROKE_ALPHA = 0.7;
 const REVEAL_PREVIEW_FILL_ALPHA = 0.08;
 const REVEAL_PREVIEW_STROKE_WIDTH = 2;

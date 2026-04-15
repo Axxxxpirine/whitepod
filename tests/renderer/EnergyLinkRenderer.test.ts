@@ -11,6 +11,7 @@ import {
   type EnergyLinkStyle,
 } from '@/game/renderer/EnergyLinkRenderer';
 import { TileType } from '@/game/types';
+import { PIXI } from '@/design/tokens';
 
 type RendererTestApi = {
   linkSegments: EnergyLinkSegment[];
@@ -50,7 +51,7 @@ afterEach(() => {
 describe('EnergyLinkRenderer helpers', () => {
   it('returns the expected default style in normal mode', () => {
     expect(getEnergyLinkStyle('normal')).toEqual({
-      color: 0x111111,
+      color: PIXI.border,
       width: 1,
       alpha: 0.4,
     });
@@ -58,7 +59,7 @@ describe('EnergyLinkRenderer helpers', () => {
 
   it('returns the highlighted style in energy-link mode', () => {
     expect(getEnergyLinkStyle('energy_link')).toEqual({
-      color: 0xf8e16c,
+      color: PIXI.accent,
       width: 2,
       alpha: 0.95,
     });

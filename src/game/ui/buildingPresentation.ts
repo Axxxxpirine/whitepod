@@ -12,6 +12,7 @@ import {
 } from '../data/buildingCatalog';
 import type { BuildingId, BuildingTypeId, SelectedTool } from '../types';
 import type { GameEngine } from '../engine/GameEngine';
+import { PIXI } from '@/design/tokens';
 
 /**
  * Toolbar entries. Each entry is either a placeable building (kind: 'building',
@@ -56,82 +57,81 @@ export interface VirtualToolbarEntry {
 
 export type ToolbarEntry = BuildingToolbarEntry | VirtualToolbarEntry;
 
-// Highlights are brighter siblings of each family's building tile color (see
-// BuildingRenderer BUILDING_TINTS). Belt + energy-link own their own hues
-// (pink, purple) since they have no tile tint to echo. Picked to be mutually
-// distinguishable and to stay clear of the map palette (moss / grey / deep
-// blue).
+// Toolbar palette mapped to the Architect's Drawing Board design system.
+// Functional families share tokens (extractor & battery = warm; storage &
+// energy_link = cyan; merger & watchtower = violet) — overlap is acceptable
+// since icons + hotkey badges carry identity alongside color.
 export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
     typeId: EXTRACTOR_BUILDING_TYPE_ID,
     shortcut: '1',
-    activeClass: 'bg-amber-400',
+    activeClass: 'bg-accent-warm',
     highlightFamily: [EXTRACTOR_BUILDING_TYPE_ID],
-    highlightColor: 0xfbbf24,
+    highlightColor: PIXI.accentWarm,
   },
   {
     kind: 'building',
     typeId: STORAGE_BUILDING_TYPE_ID,
     shortcut: '2',
-    activeClass: 'bg-cyan-400',
+    activeClass: 'bg-accent',
     highlightFamily: [STORAGE_BUILDING_TYPE_ID],
-    highlightColor: 0x22d3ee,
+    highlightColor: PIXI.accent,
   },
   {
     kind: 'tool',
     tool: 'belt',
     label: 'Convoyeur',
     shortcut: '3',
-    activeClass: 'bg-pink-400',
+    activeClass: 'bg-ink',
     highlightFamily: [
       BELT_STRAIGHT_BUILDING_TYPE_ID,
       BELT_CORNER_CW_BUILDING_TYPE_ID,
       BELT_CORNER_CCW_BUILDING_TYPE_ID,
     ],
-    highlightColor: 0xec4899,
+    highlightColor: PIXI.ink,
   },
   {
     kind: 'building',
     typeId: SOLAR_PANEL_BUILDING_TYPE_ID,
     shortcut: '4',
-    activeClass: 'bg-green-400',
+    activeClass: 'bg-ok',
     highlightFamily: [SOLAR_PANEL_BUILDING_TYPE_ID],
-    highlightColor: 0x4ade80,
+    highlightColor: PIXI.ok,
   },
   {
     kind: 'building',
     typeId: BATTERY_BASIC_BUILDING_TYPE_ID,
     shortcut: '5',
-    activeClass: 'bg-teal-400',
+    activeClass: 'bg-accent-warm',
     highlightFamily: [BATTERY_BASIC_BUILDING_TYPE_ID],
-    highlightColor: 0x2dd4bf,
+    highlightColor: PIXI.accentWarm,
   },
   {
     kind: 'building',
     typeId: MERGER_BASIC_BUILDING_TYPE_ID,
     shortcut: '6',
-    activeClass: 'bg-violet-400',
+    activeClass: 'bg-accent-violet',
     highlightFamily: [MERGER_BASIC_BUILDING_TYPE_ID],
-    highlightColor: 0xc084fc,
+    highlightColor: PIXI.accentViolet,
   },
   {
     kind: 'tool',
     tool: 'energy_link',
     label: 'Lien énergie',
     shortcut: '7',
-    activeClass: 'bg-purple-400',
+    activeClass: 'bg-accent',
     highlightFamily: [],
-    highlightColor: 0xa855f7,
+    highlightColor: PIXI.accent,
     highlightMode: 'energy-network',
   },
   {
     kind: 'building',
     typeId: WATCHTOWER_BUILDING_TYPE_ID,
     shortcut: '8',
-    activeClass: 'bg-violet-400',
+    activeClass: 'bg-accent-violet',
     highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
-    highlightColor: 0xc084fc,
+    highlightColor: PIXI.accentViolet,
   },
 ];
 

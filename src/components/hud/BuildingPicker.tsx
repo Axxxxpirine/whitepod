@@ -74,57 +74,73 @@ export function BuildingPicker() {
         const active = isEntryActive(entry, selectedTool);
         const key = entry.kind === 'building' ? `building:${entry.typeId}` : `tool:${entry.tool}`;
         const label = entryLabel(entry);
+        const tooltip = `${label} (${entry.shortcut.toUpperCase()})`;
+        const tooltipId = `${key.replace(/[^a-z0-9_-]/gi, '-')}-tooltip`;
         const icon = getToolbarIcon(entry);
         const IconComponent = icon.kind === 'lucide' ? icon.Icon : null;
 
         return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => selectEntry(entry)}
-            aria-pressed={active}
-            aria-label={label}
-            title={`${label} (${entry.shortcut.toUpperCase()})`}
-            className={[
-              'relative flex h-14 w-14 cursor-pointer flex-col items-center justify-center',
-              'overflow-hidden rounded-xl border border-white/10 transition-all',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
-              active ? 'bg-white/15' : 'bg-white/10 hover:bg-white/20',
-            ].join(' ')}
-            style={
-              active
-                ? { boxShadow: `0 0 0 2px ${hexColor(entry.highlightColor)}` }
-                : undefined
-            }
-          >
-            {/* Sprite or lucide icon */}
-            <div className="flex h-8 w-8 items-center justify-center">
-              {icon.kind === 'sprite' ? (
-                <img
-                  src={icon.src}
-                  alt=""
-                  className="h-8 w-8 object-contain"
-                  draggable={false}
-                />
-              ) : (
-                IconComponent && (
-                  <IconComponent
-                    className={`h-5 w-5 transition-colors ${active ? 'text-white' : 'text-white/70'}`}
+          <div key={key} className="group relative">
+            <button
+              type="button"
+              onClick={() => selectEntry(entry)}
+              aria-pressed={active}
+              aria-label={label}
+              aria-describedby={tooltipId}
+              className={[
+                'relative flex h-14 w-14 cursor-pointer flex-col items-center justify-center',
+                'overflow-hidden rounded-xl border border-white/10 transition-all',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
+                active ? 'bg-white/15' : 'bg-white/10 hover:bg-white/20',
+              ].join(' ')}
+              style={
+                active
+                  ? { boxShadow: `0 0 0 2px ${hexColor(entry.highlightColor)}` }
+                  : undefined
+              }
+            >
+              {/* Sprite or lucide icon */}
+              <div className="flex h-8 w-8 items-center justify-center">
+                {icon.kind === 'sprite' ? (
+                  <img
+                    src={icon.src}
+                    alt=""
+                    className="h-8 w-8 object-contain"
+                    draggable={false}
                   />
-                )
-              )}
-            </div>
+                ) : (
+                  IconComponent && (
+                    <IconComponent
+                      className={`h-5 w-5 transition-colors ${active ? 'text-white' : 'text-white/70'}`}
+                    />
+                  )
+                )}
+              </div>
 
-            {/* Shortcut badge — top-right corner */}
-            <span className="absolute right-1 top-0.5 font-mono text-[9px] text-white/50">
-              {entry.shortcut.toUpperCase()}
-            </span>
+              {/* Shortcut badge — top-right corner */}
+              <span className="absolute right-1 top-0.5 font-mono text-[9px] text-white/50">
+                {entry.shortcut.toUpperCase()}
+              </span>
 
-            {/* Family color strip — bottom edge, always visible */}
+              {/* Family color strip — bottom edge, always visible */}
+              <div
+                className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : 'opacity-35'}`}
+              />
+            </button>
+
             <div
-              className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : 'opacity-35'}`}
-            />
-          </button>
+              id={tooltipId}
+              role="tooltip"
+              className={[
+                'pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2',
+                'rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[10px] text-white/80 shadow-xl backdrop-blur-sm',
+                'whitespace-nowrap opacity-0 transition-opacity duration-150',
+                'group-hover:opacity-100 group-focus-within:opacity-100',
+              ].join(' ')}
+            >
+              {tooltip}
+            </div>
+          </div>
         );
       })}
     </div>
