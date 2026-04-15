@@ -31,6 +31,8 @@ function App() {
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
   const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
+  const buildPalette = useGameStore(s => s.buildPalette)
+  const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const getBuildOptionsAtSelectedCell = useGameStore(s => s.getBuildOptionsAtSelectedCell)
   const placeStationAtSelectedCell = useGameStore(s => s.placeStationAtSelectedCell)
   const placeStation = useGameStore(s => s.placeStation)
@@ -45,6 +47,8 @@ function App() {
   const loopRef = useRef<GameLoop | null>(null)
   const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
+  const [canvasZoom, setCanvasZoom] = useState<number>(1.25)
+  const [debugOpen, setDebugOpen] = useState<boolean>(false)
 
   useEffect(() => {
     setSeedInput(String(seed))
@@ -94,7 +98,10 @@ function App() {
 
   return (
     <div className="app-shell app-shell--overlay min-h-screen">
-      <PixiCanvas className="canvas-stage canvas-stage--background" />
+      <PixiCanvas
+        className="canvas-stage canvas-stage--background"
+        style={{ transform: `scale(${canvasZoom})`, transformOrigin: 'top left' }}
+      />
 
       <header className="hud-topbar panel-surface panel-dark hud-layer">
         <div>
@@ -157,7 +164,25 @@ function App() {
               <h2>Build</h2>
               <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
             </div>
+            <div className="hud-actions hud-actions--dense">
+              {([
+                ['extractor', 'Extractor'],
+                ['conveyor', 'Conveyor'],
+                ['factory', 'Factory'],
+                ['storage', 'Storage'],
+              ] as const).map(([kind, label]) => (
+                <button
+                  key={kind}
+                  className={`hud-button ${buildPalette === kind ? 'primary' : ''}`}
+                  onClick={() => setBuildPalette(kind)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <p className="hud-muted">
+              Active: {buildPalette}
+              <br />
               {selectedBuildCell
                 ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
                 : hoveredBuildCell
@@ -250,6 +275,12 @@ function App() {
           {mode === 'debug' ? <span className="hud-badge hud-badge--accent">Debug</span> : null}
         </div>
         <div className="hud-bottom-right">
+          <div className="hud-zoom-group">
+            <button className="hud-button" onClick={() => setCanvasZoom(z => Math.max(0.75, Math.round((z - 0.125) * 1000) / 1000))}>-</button>
+            <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
+            <button className="hud-button" onClick={() => setCanvasZoom(z => Math.min(2, Math.round((z + 0.125) * 1000) / 1000))}>+</button>
+            <button className="hud-button" onClick={() => setCanvasZoom(1.25)}>Reset</button>
+          </div>
           <label className="hud-inline-field">
             <span>Mode</span>
             <select className="hud-select" value={mode} onChange={e => setMode(e.target.value as 'player' | 'debug')}>
@@ -257,10 +288,15 @@ function App() {
               <option value="debug">Debug</option>
             </select>
           </label>
+          {mode === 'debug' ? (
+            <button className="hud-button primary" onClick={() => setDebugOpen(open => !open)}>
+              {debugOpen ? 'Hide debug' : 'Show debug'}
+            </button>
+          ) : null}
         </div>
       </footer>
 
-      {mode === 'debug' ? <div className="panel-surface panel-dark hud-debug hud-layer"><PetriNetDebugger /></div> : null}
+      {mode === 'debug' && debugOpen ? <div className="panel-surface panel-dark hud-debug hud-layer"><PetriNetDebugger /></div> : null}
     </div>
   )
 }

@@ -98,4 +98,8 @@ export interface PixiExport {
     bus: Record<string, number>
     stock: Record<string, number>
   }
+  viewport?: {
+    cellSize: number
+    zoom: number
+  }
 }

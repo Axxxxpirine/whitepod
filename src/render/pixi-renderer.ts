@@ -10,7 +10,7 @@ interface PixiRendererConfig {
 }
 
 const DEFAULT_CONFIG: PixiRendererConfig = {
-  cellSize: 10,
+  cellSize: 24,
   cellsPerSide: 128,
   backgroundColors: {
     init: 0x2d1b69,
@@ -30,6 +30,7 @@ export class PixiRenderer {
   private app: Application | null = null
   private config: PixiRendererConfig
   private container: Container | null = null
+  private mountNode: HTMLElement | null = null
   
   private cellLayer: Graphics | null = null
   private tokenLayer: Graphics | null = null
@@ -41,6 +42,14 @@ export class PixiRenderer {
     this.config = { ...DEFAULT_CONFIG, ...config }
 
     void this.initApplication()
+  }
+
+  public attachTo(node: HTMLElement | null): void {
+    this.mountNode = node
+
+    if (this.app && node && this.app.canvas.parentElement !== node) {
+      node.replaceChildren(this.app.canvas)
+    }
   }
 
   private async initApplication(): Promise<void> {
@@ -57,9 +66,8 @@ export class PixiRenderer {
       autoDensity: true,
     })
 
-    const container = document.getElementById('pixi-canvas')
-    if (container) {
-      container.appendChild(this.app.canvas)
+    if (this.mountNode) {
+      this.mountNode.replaceChildren(this.app.canvas)
     }
 
     this.createLayers()

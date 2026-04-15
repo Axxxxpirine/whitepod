@@ -63,6 +63,9 @@ export interface GameState {
   getBuildOptionsAtSelectedCell: () => Array<{ transitionId: string; name: string; enabled: boolean; reason?: string }>
   placeStationAtSelectedCell: (transitionId: string) => { ok: boolean; reason?: string }
   removeStation: (stationId: string) => void
+  setBuildPalette: (kind: 'extractor' | 'conveyor' | 'factory' | 'storage') => void
+  buildPalette: 'extractor' | 'conveyor' | 'factory' | 'storage'
+  getPreferredTransitionIdForPalette: () => string | null
 
   requestSystemTransition: (transitionId: 'init' | 'launch' | 'terminate') => void
 
@@ -76,6 +79,7 @@ export interface GameState {
 const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
 const EXTRACT_PREFIX = 'extract__'
 const AUTOSAVE_TICK_INTERVAL = 30
+const PIXI_CELL_SIZE = 24
 
 type PersistedGameState = Pick<
   GameState,
@@ -272,6 +276,7 @@ export const useGameStore = create<GameState>()(
       requestedSystemTransitionIds: [],
       selectedBuildCell: null,
       hoveredBuildCell: null,
+      buildPalette: 'extractor',
 
       phase: 'init',
       tokens: {},
@@ -450,14 +455,41 @@ export const useGameStore = create<GameState>()(
         set({ selectedBuildCell: null, hoveredBuildCell: null })
       },
 
+      setBuildPalette: kind => {
+        set({ buildPalette: kind })
+      },
+
       getBuildOptionsAtSelectedCell: () => {
-        const { metadata, grid, selectedBuildCell } = get()
+        const { metadata, grid, selectedBuildCell, buildPalette } = get()
         if (!metadata || !selectedBuildCell) return []
-        const transitions = metadata.gameSystem.transitions.filter(t => t.kind === 'station' && t.activation === 'placed')
+        const transitions = metadata.gameSystem.transitions.filter(t => {
+          if (t.kind !== 'station' || t.activation !== 'placed') return false
+          if (buildPalette === 'factory') return t.stationKind !== 'extract'
+          if (buildPalette === 'extractor') return t.stationKind === 'extract'
+          if (buildPalette === 'storage') return t.stationKind === 'store'
+          if (buildPalette === 'conveyor') return t.stationKind === 'convey'
+          return true
+        })
         return transitions.map(t => {
           const reason = getBuildReason(grid, t.id, selectedBuildCell.x, selectedBuildCell.y)
           return { transitionId: t.id, name: t.name_fr ?? t.id, enabled: reason === null, reason: reason ?? undefined }
         })
+      },
+
+      getPreferredTransitionIdForPalette: () => {
+        const { metadata, buildPalette } = get()
+        if (!metadata) return null
+
+        const transitions = metadata.gameSystem.transitions.filter(t => {
+          if (t.kind !== 'station' || t.activation !== 'placed') return false
+          if (buildPalette === 'factory') return t.stationKind !== 'extract'
+          if (buildPalette === 'extractor') return t.stationKind === 'extract'
+          if (buildPalette === 'storage') return t.stationKind === 'store'
+          if (buildPalette === 'conveyor') return t.stationKind === 'convey'
+          return false
+        })
+
+        return transitions[0]?.id ?? null
       },
 
       placeStationAtSelectedCell: transitionId => {
@@ -551,6 +583,7 @@ export const useGameStore = create<GameState>()(
             stations: stations.map(s => ({ ...s, active: true })),
           },
           layerTokens: buildLayerTokens(tokens),
+          viewport: { cellSize: PIXI_CELL_SIZE, zoom: 1 },
         }
       },
 

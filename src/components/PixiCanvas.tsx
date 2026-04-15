@@ -11,6 +11,9 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<PixiRenderer | null>(null)
   const selectBuildCell = useGameStore(s => s.selectBuildCell)
+  const placeStationAtSelectedCell = useGameStore(s => s.placeStationAtSelectedCell)
+  const buildPalette = useGameStore(s => s.buildPalette)
+  const getPreferredTransitionIdForPalette = useGameStore(s => s.getPreferredTransitionIdForPalette)
   const hoverBuildCell = useGameStore(s => s.hoverBuildCell)
   const getPixiExport = useGameStore(s => s.getPixiExport)
 
@@ -20,6 +23,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
 
     const renderer = new PixiRenderer()
     rendererRef.current = renderer
+    renderer.attachTo(container)
 
     window.__whitepodOnPixiUpdate = (exportData) => {
       renderer.update(exportData)
@@ -34,7 +38,13 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       const x = Math.floor((event.clientX - rect.left) / cellSize)
       const y = Math.floor((event.clientY - rect.top) / cellSize)
       if (x < 0 || y < 0 || x >= exportData.grid.width || y >= exportData.grid.height) return
+
       selectBuildCell(x, y)
+
+      const transitionId = getPreferredTransitionIdForPalette()
+      if (!transitionId) return
+
+      placeStationAtSelectedCell(transitionId)
     }
 
     const handleMove = (event: MouseEvent) => {
@@ -60,18 +70,20 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
 
     return () => {
       window.__whitepodOnPixiUpdate = undefined
+      renderer.attachTo(null)
       container.removeEventListener('click', handleClick)
       container.removeEventListener('mousemove', handleMove)
       container.removeEventListener('mouseleave', handleLeave)
       renderer.destroy()
     }
-  }, [getPixiExport, hoverBuildCell, selectBuildCell])
+  }, [buildPalette, getPixiExport, getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtSelectedCell, selectBuildCell])
 
   return (
     <div
       ref={containerRef}
+      id="pixi-canvas"
       className={className}
-      style={{ width: '100%', height: '100%', minHeight: '640px', ...style }}
+      style={{ width: '100%', height: '100%', minHeight: '72vh', ...style }}
     />
   )
 }
