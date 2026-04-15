@@ -24,6 +24,8 @@ describe('GameHUD', () => {
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       sessionEpoch: 0,
+      pendingEnergyLinkSource: null,
+      linkSolarOnPlacement: true,
     });
     window.sessionStorage.clear();
   });

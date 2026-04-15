@@ -35,7 +35,8 @@ export type BuildingTypeId = string;
 export type SelectedTool =
   | { readonly kind: 'select' }
   | { readonly kind: 'building'; readonly buildingType: BuildingTypeId }
-  | { readonly kind: 'belt' };
+  | { readonly kind: 'belt' }
+  | { readonly kind: 'energy_link' };
 
 export interface Footprint {
   readonly w: number;
@@ -66,6 +67,10 @@ export interface BuildingType {
   readonly requiresResourceDeposit?: boolean;
   readonly forbidsResourceDeposit?: boolean;
   readonly ports: readonly Port[];
+  readonly energy?: {
+    readonly production?: number;
+    readonly consumption?: number;
+  };
 }
 
 export interface Building {
@@ -160,3 +165,10 @@ export type PlaceBeltResult =
       readonly ok: false;
       readonly reason: BeltFailure;
     };
+
+export interface EnergyNetworkBalance {
+  readonly buildingIds: readonly BuildingId[];
+  readonly production: number;
+  readonly consumption: number;
+  readonly remaining: number;
+}

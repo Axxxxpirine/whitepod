@@ -6,6 +6,7 @@ import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
 import { BeltRenderer } from '@/game/renderer/BeltRenderer';
+import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
@@ -17,7 +18,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
-import { getBuildingType } from '@/game/data/buildingCatalog';
+import { getBuildingType, SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
 
 const WORLD_SAVE_DELAY_MS = 150;
@@ -83,6 +84,7 @@ export function GameCanvas() {
     let buildingRenderer: BuildingRenderer | null = null;
     let beltRenderer: BeltRenderer | null = null;
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
+    let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -181,6 +183,11 @@ export function GameCanvas() {
         const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = useGameStore.getState();
         return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
       });
+      energyLinkRenderer = new EnergyLinkRenderer(app, engine, () => {
+        const { selectedBuildingId } = useGameStore.getState();
+        return { inspectedBuildingId: selectedBuildingId };
+      });
+
       const currentInputHandler = new InputHandler(
         engine,
         () => useGameStore.getState().selectedTool,
@@ -200,14 +207,43 @@ export function GameCanvas() {
           state.setSelectedBuildingAnchor(null);
         }
       });
-      currentInputHandler.setBuildingPlacedCallback(() => {
+      currentInputHandler.setBuildingPlacedCallback((buildingId) => {
         const state = useGameStore.getState();
-        state.setSelectedTool({ kind: 'select' });
         state.setSelectedBuilding(null);
         state.setSelectedBuildingAnchor(null);
-      });
-      const canvas = app.canvas;
 
+        if (
+          state.selectedTool.kind === 'building' &&
+          state.selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID &&
+          state.linkSolarOnPlacement
+        ) {
+          state.setPendingEnergyLinkSource(buildingId);
+          state.setSelectedTool({ kind: 'energy_link' });
+          return;
+        }
+
+        state.setPendingEnergyLinkSource(null);
+        state.setSelectedTool({ kind: 'select' });
+      });
+      currentInputHandler.setEnergyLinkClickCallback((clickedBuildingId) => {
+        const state = useGameStore.getState();
+        const sourceId = state.pendingEnergyLinkSource;
+
+        if (sourceId === null) {
+          state.setPendingEnergyLinkSource(clickedBuildingId);
+          state.setSelectedBuilding(clickedBuildingId);
+          return;
+        }
+
+        if (sourceId === clickedBuildingId) return;
+
+        engine.connectBuildings(sourceId, clickedBuildingId);
+        state.setPendingEnergyLinkSource(null);
+        state.setSelectedTool({ kind: 'select' });
+        state.setSelectedBuilding(sourceId);
+      });
+
+      const canvas = app.canvas;
       handlePointerDown = (e) => {
         currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
         currentBeltToolController.onPointerDown(e.offsetX, e.offsetY, e.button);
@@ -255,9 +291,7 @@ export function GameCanvas() {
       window.addEventListener('keydown', handleKeyDown);
 
       resizeObserver = new ResizeObserver(() => {
-        if (app) {
-          engine.viewport.resize(app.screen.width, app.screen.height);
-        }
+        if (app) engine.viewport.resize(app.screen.width, app.screen.height);
       });
       resizeObserver.observe(container);
 
@@ -266,23 +300,17 @@ export function GameCanvas() {
         const { selectedBuildingAnchor, selectedBuildingId } = state;
 
         if (selectedBuildingId === null) {
-          if (selectedBuildingAnchor !== null) {
-            state.setSelectedBuildingAnchor(null);
-          }
+          if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
         } else {
           const building = engine.getBuildings().get(selectedBuildingId);
           if (!building) {
             state.setSelectedBuilding(null);
-            if (selectedBuildingAnchor !== null) {
-              state.setSelectedBuildingAnchor(null);
-            }
+            if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
           } else {
             const type = getBuildingType(building.typeId);
             if (!type) {
               state.setSelectedBuilding(null);
-              if (selectedBuildingAnchor !== null) {
-                state.setSelectedBuildingAnchor(null);
-              }
+              if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
             } else {
               const worldX = building.origin.x * TILE_SIZE + (type.footprint.w * TILE_SIZE) / 2;
               const worldY = building.origin.y * TILE_SIZE + type.footprint.h * TILE_SIZE;
@@ -303,6 +331,7 @@ export function GameCanvas() {
         buildingRenderer!.render();
         beltRenderer!.render();
         placementPreviewRenderer!.render();
+        energyLinkRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -332,6 +361,7 @@ export function GameCanvas() {
         useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
         beltRenderer?.destroy();
+        energyLinkRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         gridRenderer?.destroy();
