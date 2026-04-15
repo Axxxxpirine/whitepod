@@ -112,7 +112,7 @@ export function GameCanvas() {
       app = new Application();
       await app.init({
         resizeTo: container,
-        backgroundColor: 0x000000,
+        backgroundColor: 0xe0e0e0,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
