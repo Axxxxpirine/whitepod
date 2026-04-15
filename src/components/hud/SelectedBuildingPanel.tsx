@@ -11,7 +11,6 @@ export function SelectedBuildingPanel() {
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
-
   if (!engine || selectedBuildingId === null || !selectedBuildingAnchor) return null;
   const building = engine.getBuildings().get(selectedBuildingId);
   if (!building) return null;
