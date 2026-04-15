@@ -116,14 +116,6 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     highlightColor: 0xc084fc,
   },
   {
-    kind: 'building',
-    typeId: WATCHTOWER_BUILDING_TYPE_ID,
-    shortcut: '8',
-    activeClass: 'bg-violet-400',
-    highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
-    highlightColor: 0xc084fc,
-  },
-  {
     kind: 'tool',
     tool: 'energy_link',
     label: 'Lien énergie',
@@ -132,6 +124,14 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     highlightFamily: [],
     highlightColor: 0xa855f7,
     highlightMode: 'energy-network',
+  },
+  {
+    kind: 'building',
+    typeId: WATCHTOWER_BUILDING_TYPE_ID,
+    shortcut: '8',
+    activeClass: 'bg-violet-400',
+    highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
+    highlightColor: 0xc084fc,
   },
 ];
 

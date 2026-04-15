@@ -1,13 +1,9 @@
 import { useCallback, useEffect } from 'react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentation';
+import { getToolbarIcon } from '@/game/ui/toolbarIcons';
 import type { SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
-
-const INACTIVE_CLASS =
-  'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20';
-const ACTIVE_BASE =
-  'cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors';
 
 function isEntryActive(entry: ToolbarEntry, tool: SelectedTool): boolean {
   if (entry.kind === 'building') {
@@ -25,6 +21,10 @@ function toolForEntry(entry: ToolbarEntry, active: boolean): SelectedTool {
 function entryLabel(entry: ToolbarEntry): string {
   if (entry.kind === 'tool') return entry.label;
   return entry.label ?? getBuildingType(entry.typeId)?.name ?? entry.typeId;
+}
+
+function hexColor(n: number): string {
+  return `#${n.toString(16).padStart(6, '0')}`;
 }
 
 export function BuildingPicker() {
@@ -69,27 +69,64 @@ export function BuildingPicker() {
   }, [selectEntry]);
 
   return (
-    <>
+    <div role="toolbar" aria-label="Sélection de bâtiment" className="flex items-center gap-1">
       {toolbarEntries.map((entry) => {
         const active = isEntryActive(entry, selectedTool);
         const key = entry.kind === 'building' ? `building:${entry.typeId}` : `tool:${entry.tool}`;
+        const label = entryLabel(entry);
+        const icon = getToolbarIcon(entry);
+        const IconComponent = icon.kind === 'lucide' ? icon.Icon : null;
+
         return (
           <button
             key={key}
             type="button"
             onClick={() => selectEntry(entry)}
             aria-pressed={active}
-            aria-label={entryLabel(entry)}
-            title={`${entryLabel(entry)} (${entry.shortcut.toUpperCase()})`}
-            className={active ? `${ACTIVE_BASE} ${entry.activeClass}` : INACTIVE_CLASS}
+            aria-label={label}
+            title={`${label} (${entry.shortcut.toUpperCase()})`}
+            className={[
+              'relative flex h-14 w-14 cursor-pointer flex-col items-center justify-center',
+              'overflow-hidden rounded-xl border border-white/10 transition-all',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
+              active ? 'bg-white/15' : 'bg-white/10 hover:bg-white/20',
+            ].join(' ')}
+            style={
+              active
+                ? { boxShadow: `0 0 0 2px ${hexColor(entry.highlightColor)}` }
+                : undefined
+            }
           >
-            {entryLabel(entry)}
-            <span className="ml-1.5 font-mono text-[10px] opacity-60">
+            {/* Sprite or lucide icon */}
+            <div className="flex h-8 w-8 items-center justify-center">
+              {icon.kind === 'sprite' ? (
+                <img
+                  src={icon.src}
+                  alt=""
+                  className="h-8 w-8 object-contain"
+                  draggable={false}
+                />
+              ) : (
+                IconComponent && (
+                  <IconComponent
+                    className={`h-5 w-5 transition-colors ${active ? 'text-white' : 'text-white/70'}`}
+                  />
+                )
+              )}
+            </div>
+
+            {/* Shortcut badge — top-right corner */}
+            <span className="absolute right-1 top-0.5 font-mono text-[9px] text-white/50">
               {entry.shortcut.toUpperCase()}
             </span>
+
+            {/* Family color strip — bottom edge, always visible */}
+            <div
+              className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : 'opacity-35'}`}
+            />
           </button>
         );
       })}
-    </>
+    </div>
   );
 }

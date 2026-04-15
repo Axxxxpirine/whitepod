@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Settings, Zap } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
-import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
@@ -13,14 +12,12 @@ export function GameHUD() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
-  const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
-  const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
+const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
-  const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
-  const resetSession = useGameStore((s) => s.resetSession);
+const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
 
   const [worldTick, setWorldTick] = useState(0);
@@ -33,6 +30,8 @@ export function GameHUD() {
 
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,8 +44,7 @@ export function GameHUD() {
     if (!source) return null;
     return getBuildingType(source.typeId)?.name ?? null;
   }, [engine, pendingEnergyLinkSource]);
-  const buildingRotationLabel = directionLabel(currentBuildingRotation);
-  const globalEnergy = useMemo(() => {
+const globalEnergy = useMemo(() => {
     void energyVersion;
     void simulationTime;
     return engine ? engine.getEnergyGlobalStats() : null;
@@ -107,9 +105,16 @@ export function GameHUD() {
     }
   };
 
-  const rotatePlacement = () => {
-    rotateBuildingRotation();
-  };
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [settingsOpen]);
 
   const handleResetSession = () => {
     if (!window.confirm('Reset the current session and start a new game?')) {
@@ -345,71 +350,80 @@ export function GameHUD() {
 
           <div className="flex items-center justify-self-center gap-2">
             <BuildingPicker />
-            {selectedTool.kind === 'building' && (
-              <button
-                type="button"
-                onClick={rotatePlacement}
-                className="cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20"
-                title="Rotation (R)"
-              >
-                Rotation: {buildingRotationLabel}
-              </button>
-            )}
           </div>
 
           <div className="flex items-center justify-self-end gap-2">
-            <button
-              type="button"
-              onClick={handleResetSession}
-              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/90 transition-colors hover:bg-white/20"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
-              aria-pressed={linkSolarOnPlacement}
-              className={
-                linkSolarOnPlacement
-                  ? 'cursor-pointer rounded-xl bg-emerald-400/90 px-3 py-2 text-xs font-semibold text-black transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/80 transition-colors hover:bg-white/20'
-              }
-              title="Après pose d'un panneau solaire, passe en mode lien"
-            >
-              Lier après pose: {linkSolarOnPlacement ? 'ON' : 'OFF'}
-            </button>
             {energyLinkSelected && (
               <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
                 Source: {pendingEnergyLinkSourceName ?? '-'}
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => setConsoleOpen((o) => !o)}
-              aria-expanded={consoleOpen}
-              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 font-mono text-xs text-white/90 transition-colors hover:bg-white/20"
-              title="Toggle console"
-            >
-              {consoleOpen ? 'Close' : '>_'}
-            </button>
+            <div className="relative" ref={settingsRef}>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((o) => !o)}
+                aria-expanded={settingsOpen}
+                aria-label="Paramètres"
+                title="Paramètres"
+                className={`cursor-pointer rounded-xl px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}`}
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+
+              {settingsOpen && (
+                <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-xl border border-white/15 bg-black/85 p-2 shadow-2xl backdrop-blur-md">
+                  <p className="mb-1.5 px-2 text-[10px] font-medium uppercase tracking-wider text-white/40">
+                    Paramètres
+                  </p>
+
+                  {/* Lier après pose */}
+                  <button
+                    type="button"
+                    onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
+                    aria-pressed={linkSolarOnPlacement}
+                    title="Après pose d'un panneau solaire, passe en mode lien"
+                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
+                  >
+                    <span>Lier après pose</span>
+                    <span
+                      className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${linkSolarOnPlacement ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/10 text-white/40'}`}
+                    >
+                      {linkSolarOnPlacement ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Console */}
+                  <button
+                    type="button"
+                    onClick={() => setConsoleOpen((o) => !o)}
+                    aria-pressed={consoleOpen}
+                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
+                  >
+                    <span>Console</span>
+                    <span className="ml-3 font-mono text-[10px] text-white/40">&gt;_</span>
+                  </button>
+
+                  <div className="my-1.5 border-t border-white/10" />
+
+                  {/* Reset */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      handleResetSession();
+                    }}
+                    className="flex w-full items-center rounded-lg px-2 py-1.5 text-xs text-red-400/80 transition-colors hover:bg-red-400/10 hover:text-red-400"
+                  >
+                    Reset session
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function directionLabel(direction: Direction): string {
-  switch (direction) {
-    case Direction.North:
-      return 'N';
-    case Direction.East:
-      return 'E';
-    case Direction.South:
-      return 'S';
-    case Direction.West:
-      return 'W';
-  }
 }
 
 function formatSimulationTime(simulationTime: number): string {
