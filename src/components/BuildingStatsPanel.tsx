@@ -1,9 +1,10 @@
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Battery, Pickaxe, Sun, Zap } from 'lucide-react';
+import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
+  MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
@@ -11,7 +12,7 @@ import {
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import type { Building } from '@/game/types';
+import { PortKind, type Building } from '@/game/types';
 
 interface BuildingStatsPanelProps {
   building: Building;
@@ -80,6 +81,45 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
         </>
       );
     }
+  } else if (building.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
+    const buildingType = getBuildingType(building.typeId);
+    const totalInputs = buildingType?.ports.filter((p) => p.kind === PortKind.Input).length ?? 3;
+    const connections = engine.getConnectionsOf(building.id);
+    const connectedInputs = connections.filter((c) => c.to.building === building.id).length;
+
+    // Collect resource types from powered extractors upstream of each connected input.
+    const resourceSet = new Set<string>();
+    for (const connection of connections) {
+      if (connection.to.building !== building.id) continue;
+      // Trace upstream through the incoming belt chain to find the extractor.
+      const visited = new Set<number>();
+      const queue: number[] = [connection.from.building];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (visited.has(current)) continue;
+        visited.add(current);
+        const upstream = engine.getBuildings().get(current);
+        if (!upstream) continue;
+        if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+          if (engine.getBuildingPowerState(upstream.id) === 'powered') {
+            resourceSet.add(resourceTypeLabel(engine.getResourceAt(upstream.origin.x, upstream.origin.y)));
+          }
+          break;
+        }
+        for (const conn of engine.getConnectionsOf(current)) {
+          if (conn.to.building === current) queue.push(conn.from.building);
+        }
+      }
+    }
+
+    const resourceList = resourceSet.size > 0 ? [...resourceSet].join(', ') : 'Aucune';
+
+    rows = (
+      <>
+        <StatRow icon={GitMerge} label="Entrees" value={`${connectedInputs}/${totalInputs}`} />
+        <StatRow icon={Activity} label="Ressources" value={resourceList} />
+      </>
+    );
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
     const network = engine.getEnergyNetworkForBuilding(building.id);
