@@ -1,9 +1,11 @@
+import { GameCanvas } from '@/components/GameCanvas';
+
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-2xl font-bold">Whitepod</h1>
+    <div className="w-screen h-screen">
+      <GameCanvas />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
