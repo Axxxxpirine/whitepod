@@ -1,5 +1,10 @@
 import type { GamePhase, Transition, TokenRef } from '../types'
 
+export interface PetriNetEngineSnapshot {
+  tokens: Record<string, number>
+  terminated: boolean
+}
+
 export interface TickInput {
   activeTransitionIds: readonly string[]
   requestedTransitionIds?: readonly string[]
@@ -65,6 +70,22 @@ export class PetriNetEngine {
       if (qty !== 0) out[place] = qty
     }
     return out
+  }
+
+  getSnapshot(): PetriNetEngineSnapshot {
+    return {
+      tokens: this.getTokensSnapshot(),
+      terminated: this.terminated,
+    }
+  }
+
+  loadSnapshot(snapshot: PetriNetEngineSnapshot): void {
+    this.tokens.clear()
+    for (const [place, qty] of Object.entries(snapshot.tokens)) {
+      if (!Number.isFinite(qty) || qty === 0) continue
+      this.tokens.set(place, qty)
+    }
+    this.terminated = snapshot.terminated
   }
 
   canFire(transitionId: string): boolean {

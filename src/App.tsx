@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ResourceId } from '@/core/grid/manager'
+import { PetriNetDebugger } from '@/components/debug/PetriNetDebugger'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 
@@ -16,9 +17,17 @@ function App() {
   const countDeposits = useGameStore(s => s.countDeposits)
   const requestSystemTransition = useGameStore(s => s.requestSystemTransition)
   const tick = useGameStore(s => s.tick)
+  const resetSave = useGameStore(s => s.resetSave)
+  const newGame = useGameStore(s => s.newGame)
+  const seed = useGameStore(s => s.seed)
 
   const loopRef = useRef<GameLoop | null>(null)
   const [selectedStationId, setSelectedStationId] = useState<string>('')
+  const [seedInput, setSeedInput] = useState<string>(String(seed))
+
+  useEffect(() => {
+    setSeedInput(String(seed))
+  }, [seed])
 
   useEffect(() => {
     let cancelled = false
@@ -68,9 +77,27 @@ function App() {
         </div>
       </header>
 
-      <section className="flex flex-wrap items-center gap-2">
-        <span className="text-sm">Phase:</span>
-        <code className="text-sm">{phase}</code>
+       <section className="flex flex-wrap items-center gap-2">
+         <span className="text-sm">Phase:</span>
+         <code className="text-sm">{phase}</code>
+         <span className="text-sm">Seed:</span>
+         <code className="text-sm">{seed}</code>
+         <input
+           className="border rounded px-2 py-1 text-sm w-28"
+           value={seedInput}
+           onChange={e => setSeedInput(e.target.value)}
+         />
+         <button
+           className="border rounded px-2 py-1 text-sm"
+           onClick={() => {
+             const nextSeed = Number.parseInt(seedInput, 10)
+             if (!Number.isInteger(nextSeed)) return
+             newGame(nextSeed)
+           }}
+         >
+           New game
+         </button>
+
         <button
           className="border rounded px-2 py-1 text-sm"
           onClick={() => requestSystemTransition('init')}
@@ -91,6 +118,9 @@ function App() {
         </button>
         <button className="border rounded px-2 py-1 text-sm" onClick={() => tick()}>
           Tick now
+        </button>
+        <button className="border rounded px-2 py-1 text-sm" onClick={() => resetSave()}>
+          Reset save
         </button>
       </section>
 
@@ -150,6 +180,8 @@ function App() {
           {JSON.stringify(tokens, null, 2)}
         </pre>
       </section>
+
+      {mode === 'debug' ? <PetriNetDebugger /> : null}
     </div>
   )
 }

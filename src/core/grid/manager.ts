@@ -18,6 +18,8 @@ export interface StationPlacement {
 
 interface Rng {
   next: () => number
+  getState: () => number
+  setState: (state: number) => void
 }
 
 function createSeededRng(seed: number): Rng {
@@ -27,6 +29,10 @@ function createSeededRng(seed: number): Rng {
     next: () => {
       s = (s * 9301 + 49297) % 233280
       return s / 233280
+    },
+    getState: () => s,
+    setState: state => {
+      s = state
     },
   }
 }
@@ -41,6 +47,20 @@ export interface DepositConfig {
 }
 
 export type DepositConfigByResourceId = Record<ResourceId, DepositConfig>
+
+export interface GridSnapshot {
+  version: 1
+  rngState: number
+  nextStationSeq: number
+  deposits: Array<{
+    id: string
+    x: number
+    y: number
+    resourceId: ResourceId
+    remaining: number
+  }>
+  stations: StationPlacement[]
+}
 
 export class GridManager {
   readonly width = 128
@@ -89,6 +109,58 @@ export class GridManager {
     this.stationPosToId.clear()
 
     this.generateDeposits()
+  }
+
+  getSnapshot(): GridSnapshot {
+    return {
+      version: 1,
+      rngState: this.rng.getState(),
+      nextStationSeq: this.nextStationSeq,
+      deposits: this.deposits
+        .filter(d => d.remaining > 0)
+        .map(d => ({
+          id: d.id,
+          x: d.x,
+          y: d.y,
+          resourceId: d.resourceId,
+          remaining: d.remaining,
+        }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+      stations: this.listStations(),
+    }
+  }
+
+  loadSnapshot(snapshot: GridSnapshot): void {
+    if (snapshot.version !== 1) throw new Error(`Unsupported grid snapshot version ${snapshot.version}`)
+
+    this.rng.setState(snapshot.rngState)
+    this.nextStationSeq = snapshot.nextStationSeq
+
+    this.deposits = []
+    this.depositsById.clear()
+    this.depositsByPos.clear()
+
+    for (const d of snapshot.deposits) {
+      const deposit: ResourceDeposit = {
+        id: d.id,
+        x: d.x,
+        y: d.y,
+        resourceId: d.resourceId,
+        remaining: d.remaining,
+        reservedTick: null,
+      }
+      this.deposits.push(deposit)
+      this.depositsById.set(deposit.id, deposit)
+      this.depositsByPos.set(key(deposit.x, deposit.y), deposit)
+    }
+
+    this.stationsById.clear()
+    this.stationPosToId.clear()
+
+    for (const station of snapshot.stations) {
+      this.stationsById.set(station.id, station)
+      this.stationPosToId.set(key(station.x, station.y), station.id)
+    }
   }
 
   listStations(): StationPlacement[] {

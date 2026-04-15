@@ -14,8 +14,12 @@ export class GameLoop {
       if (!this.running) return
 
       if (timestamp - this.lastTick >= 1000) {
-        const exportData = useGameStore.getState().tick()
-        this.dispatchToPixi(exportData)
+        const state = useGameStore.getState()
+        const shouldAutoTick = state.mode === 'player' || state.autoTickEnabled
+        if (shouldAutoTick) {
+          const exportData = state.tick()
+          this.dispatchToPixi(exportData)
+        }
         this.lastTick = timestamp
       }
 

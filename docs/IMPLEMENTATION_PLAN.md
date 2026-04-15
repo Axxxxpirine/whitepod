@@ -14,6 +14,55 @@
 
 ---
 
+## 0. État Actuel (implémenté)
+
+### 0.1 Résumé
+
+✅ Un socle fonctionnel existe déjà pour la Phase 1 → Phase 3 :
+
+- **DSL canonique** : `docs/lunar-chemistry-petrinet.dsl`
+  - `run` gating explicite pour les transitions *station*
+  - dépôts de ressources configurés via `@resource` (`depositCount`, `depositCapacity`)
+- **Compilateur DSL** : `scripts/dsl/*` + script `npm run generate:lunar-chemistry`
+  - sorties générées : `public/data/lunar-chemistry.*.json`
+- **Moteur PetriNet (station-driven)** : `src/core/petri-net/engine.ts`
+  - `init`, `launch`, `terminate` en **manual activation**
+- **Grille + dépôts** : `src/core/grid/manager.ts`
+  - dépôts à capacité (`remaining`)
+  - réservation 1 unité / dépôt / tick (`reservedTick`)
+  - extraction possible uniquement si dépôt adjacent (player mode)
+- **Store Zustand + persistance** : `src/store/game-store.ts`
+  - persistance via `zustand/middleware/persist` (clé localStorage: `whitepod-save`)
+  - snapshots sérialisables engine + grid
+- **GameLoop + export** : `src/engine/game-loop.ts`
+  - tick 1s + dispatch `window.__whitepodOnPixiUpdate` + event `whitepod-pixi-update`
+- **UI minimale** : `src/App.tsx`
+  - mode `player|debug`, seed + new game, reset save, stations, tokens
+- **Tests** : Vitest (DSL compiler, engine, grid, snapshots, store hydration)
+
+### 0.2 Commandes (reprise de session)
+
+Environnement recommandé (Nix) :
+
+- `nix develop`
+- `npm ci`
+- `npm run generate:lunar-chemistry` (à faire après toute modification du DSL)
+- `npm test`
+- `npm run dev`
+
+Pour repartir de zéro côté sauvegarde :
+
+- UI : bouton "Reset save"
+- ou supprimer la clé localStorage `whitepod-save`
+
+### 0.3 Prochaines étapes prioritaires
+
+- **Exporter l'état complet pour Pixi** (dépôts + stations + grid sparse) dans `PixiExport`.
+- **Implémenter un premier renderer PixiJS** (Phase 5) consommant l'export.
+- Ajouter un UI de placement sur grille (au lieu du placement automatique).
+
+---
+
 ## 1. Architecture Globale
 
 ### 1.1 Flux de Données
@@ -77,6 +126,8 @@ Auto-save (30s) → Launch rocket → Done → Terminate
 ## 2. Spécifications Détaillées
 
 ### 2.1 Types Core (`src/core/types.ts`)
+
+Note: l'implémentation réelle de `src/core/types.ts` est plus concise que l'exemple ci-dessous (et `PixiExport` est actuellement minimal: `timestamp`, `phase`, `tokens`). L'extension de `PixiExport` pour PixiJS fait partie des prochaines étapes.
 
 ```typescript
 // Transition simplifiée pour moteur interne
@@ -154,6 +205,8 @@ export interface TileAnimation {
 ```
 
 ### 2.2 Moteur PetriNet (`src/core/petri-net/engine.ts`)
+
+Note: l'implémentation réelle est **station-driven** (seules les transitions actives/placées tirent). Les transitions `init`, `launch`, `terminate` sont **manual activation** (tirées uniquement sur requête).
 
 ```typescript
 /**
@@ -251,6 +304,8 @@ export class PetriNetEngine {
 ```
 
 ### 2.3 Gestionnaire de Grille (`src/core/grid/manager.ts`)
+
+Note: l'implémentation réelle gère des dépôts à capacité (`remaining`) avec **réservation 1 unité / dépôt / tick** et snapshots sérialisables.
 
 ```typescript
 /**
@@ -759,42 +814,44 @@ echo "Directory: public/assets/"
 ### Phase 1: Core Types & Engine (Priorité Haute)
 
 **Fichiers**:
-1. `src/core/types.ts` - Toutes les interfaces TypeScript
-2. `src/core/petri-net/engine.ts` - Moteur réseau de Pétri
-3. `src/core/grid/manager.ts` - Gestionnaire grille 128x128
+1. `src/core/types.ts` - Types core
+2. `src/core/petri-net/engine.ts` - PetriNet station-driven + snapshots
+3. `src/core/grid/manager.ts` - Grille + dépôts + réservations + snapshots
 
 **Délivrables**:
-- [ ] Compilation TypeScript sans erreur
-- [ ] Tests unitaires PetriNet engine (10+ tests)
-- [ ] Tests unitaires Grid manager (8+ tests)
-- [ ] Documentation JSDoc sur classes principales
+- [x] Compilation TypeScript sans erreur
+- [x] Tests unitaires PetriNet engine (incl. snapshots)
+- [x] Tests unitaires Grid manager (incl. snapshots)
+- [ ] Documentation JSDoc sur classes principales (à faire)
 
 ### Phase 2: Store & Data Pipeline (Priorité Haute)
 
 **Fichiers**:
-4. `src/store/game-store.ts` - Zustand store avec persistence
-5. `src/data/converter.ts` - Convertisseur JSON → Transition
-6. `src/data/transitions-loader.ts` - Loader transitions
-7. `src/data/metadata-loader.ts` - Loader métadonnées (optionnel)
+4. `src/store/game-store.ts` - Zustand store + persist + hydration
+5. `src/data/lunar-chemistry-loader.ts` - Loader transitions + metadata depuis `public/data/`
+6. `public/data/lunar-chemistry.game-system.transitions.json` - Artifacts (générés)
+7. `public/data/lunar-chemistry.metadata.json` - Artifacts (générés)
+8. `scripts/generate-lunar-chemistry.js` + `scripts/dsl/*` - Compilateur DSL → artifacts
 
 **Délivrables**:
-- [ ] Store Zustand opérationnel
-- [ ] Persistence localStorage (auto-save 30s)
-- [ ] Loader transitions fonctionnel
-- [ ] Tests integration store
+- [x] Store Zustand opérationnel
+- [x] Persistence localStorage (snapshots engine + grid)
+- [x] Loader transitions + metadata fonctionnels (`/data/...`)
+- [x] Test d'hydratation store (mock fetch + localStorage)
+- [ ] Auto-save toutes les 30 secondes (actuellement: persistance à chaque tick/interaction)
 
 ### Phase 3: Game Loop & Integration (Priorité Haute)
 
 **Fichiers**:
-8. `src/engine/game-loop.ts` - Game loop avec callback PixiJS
-9. `src/main.tsx` - Initialisation application
-10. `src/App.tsx` - Container principal
+9. `src/engine/game-loop.ts` - Game loop (1s tick) + dispatch Pixi
+10. `src/main.tsx` - Initialisation application
+11. `src/App.tsx` - UI minimale (mode, seed, stations, tokens)
 
 **Délivrables**:
-- [ ] Game loop fonctionnel (1s tick)
-- [ ] Callback PixiJS configuré
-- [ ] Application React initialisée
-- [ ] Export JSON visible dans console
+- [x] Game loop fonctionnel (1s tick)
+- [x] Callback PixiJS configuré (`window.__whitepodOnPixiUpdate`)
+- [x] Application React mountée
+- [ ] Export JSON complet pour Pixi (grid/dépôts/stations/animations)
 
 ### Phase 4: Asset Pipeline (Priorité Moyenne)
 
@@ -912,6 +969,7 @@ whitepod/
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "generate:lunar-chemistry": "node scripts/generate-lunar-chemistry.js",
     "assets:extract": "tsx scripts/extract-resources.ts",
     "assets:prompts": "tsx scripts/generate-asset-prompts.ts",
     "assets:generate": "tsx scripts/generate-images.ts",
@@ -949,25 +1007,24 @@ whitepod/
 ## 8. Critères d'Acceptation
 
 ### Phase 1: Core Types & Engine
-- [ ] TypeScript compilation sans erreurs
-- [ ] Lint sans warnings
-- [ ] Tests unitaires: 100% couverture PetriNet engine
-- [ ] Tests unitaires: 100% couverture Grid manager
+- [x] TypeScript compilation sans erreurs
+- [x] Lint sans warnings
+- [x] Tests unitaires PetriNet engine (incl. snapshots)
+- [x] Tests unitaires Grid manager (incl. snapshots)
 - [ ] Documentation JSDoc complète
 
 ### Phase 2: Store & Data Pipeline
-- [ ] Store Zustand initialisé
-- [ ] Persistence localStorage fonctionnelle
-- [ ] Auto-save toutes les 30 secondes
-- [ ] Loader transitions: 182+ transitions chargées
-- [ ] Convertisseur JSON → Transition: 100% correct
+- [x] Store Zustand initialisé
+- [x] Persistence localStorage fonctionnelle (snapshots sérialisables)
+- [ ] Auto-save toutes les 30 secondes (actuellement: persistance à chaque tick/interaction)
+- [x] Loader transitions: JSON servie via `public/data/*`
+- [x] DSL → JSON: compilateur + validation
 
 ### Phase 3: Game Loop & Integration
-- [ ] Game loop démarré: 1s tick fonctionnel
-- [ ] Callback PixiJS configuré
-- [ ] Application React mountée
-- [ ] Export JSON visible: format correct
-- [ ] Console logs: timestamp, phase, tokens
+- [x] Game loop démarré: 1s tick fonctionnel
+- [x] Callback PixiJS configuré
+- [x] Application React mountée
+- [ ] Export Pixi complet: grid/dépôts/stations/animations
 
 ### Phase 4: Asset Pipeline
 - [ ] Extraction ressources: 61 ressources extraites
@@ -1088,10 +1145,10 @@ Ce plan exhaustif couvre l'ensemble de l'implémentation du moteur Whitepod, de 
 
 **Prochaines étapes** (dans une session ultérieure):
 
-1. **Phase 1**: Implémenter types core + PetriNet engine + Grid manager
-2. **Phase 2**: Implémenter Zustand store + data loaders
-3. **Phase 3**: Implémenter game loop + intégration React
-4. **Phase 4**: Implémenter asset pipeline + scripts
-5. **Phase 5**: (Future) Implémenter PixiJS renderer
+1. **Phase 1**: ✅ Types core + PetriNet engine + Grid manager
+2. **Phase 2**: ✅ Store Zustand + loaders + persistance
+3. **Phase 3**: ✅ Game loop + intégration React (UI minimale)
+4. **Phase 4**: ⏳ Asset pipeline + scripts (non implémenté)
+5. **Phase 5**: ⏳ PixiJS renderer + export Pixi complet
 
 Le plan est prêt pour l'implémentation.
