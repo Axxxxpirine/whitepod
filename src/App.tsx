@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ResourceId } from '@/core/grid/manager'
 import { PixiCanvas } from '@/components/PixiCanvas'
-import { PetriNetDebugger } from '@/components/debug/PetriNetDebugger'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
+import './App.css'
 
 function statusLabel(phase: string): string {
   switch (phase) {
@@ -75,7 +75,6 @@ function App() {
   const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
   const [canvasZoom, setCanvasZoom] = useState<number>(1.75)
-  const [debugOpen, setDebugOpen] = useState<boolean>(false)
 
   useEffect(() => {
     setSeedInput(String(seed))
@@ -166,7 +165,6 @@ function App() {
             <span>Mode</span>
             <select className="hud-select" value={mode} onChange={e => setMode(e.target.value as 'player' | 'debug')}>
               <option value="player">Player</option>
-              <option value="debug">Debug</option>
             </select>
           </div>
           <div className="hud-metric"><span>Phase</span><strong>{statusLabel(phase)}</strong></div>
@@ -334,8 +332,7 @@ function App() {
         <div className="hud-bottom-left">
           <span className="hud-badge">{statusLabel(phase)}</span>
           <span className="hud-badge">Seed {seed}</span>
-          {mode === 'debug' ? <span className="hud-badge hud-badge--accent">Debug</span> : null}
-          <span className="hud-badge">Debug via top-right Mode</span>
+          <span className="hud-badge">Player HUD</span>
         </div>
         <div className="hud-bottom-right">
           <div className="hud-zoom-group">
@@ -348,18 +345,10 @@ function App() {
             <span>Mode</span>
             <select className="hud-select" value={mode} onChange={e => setMode(e.target.value as 'player' | 'debug')}>
               <option value="player">Player</option>
-              <option value="debug">Debug</option>
             </select>
           </label>
-          {mode === 'debug' ? (
-            <button className="hud-button primary" onClick={() => setDebugOpen(open => !open)}>
-              {debugOpen ? 'Hide debug' : 'Show debug'}
-            </button>
-          ) : null}
         </div>
       </footer>
-
-      {mode === 'debug' && debugOpen ? <div className="panel-surface panel-dark hud-debug hud-layer"><PetriNetDebugger /></div> : null}
     </div>
   )
 }
