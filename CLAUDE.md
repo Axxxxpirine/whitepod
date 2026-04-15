@@ -34,6 +34,7 @@ Jeu de gestion et d'optimisation industrielle sur grille. Le joueur incarne l'ar
 - Les commits doivent etre atomiques : un commit = un changement logique coherent.
 - Messages de commit clairs et concis, en anglais, au present imperatif (ex: `Add grid rendering`, `Fix energy propagation bug`).
 - Faire des commits frequents pour faciliter le suivi et les reverts si necessaire.
+- Avant d'avancer dans l'implementation ou de considerer une tache terminee, s'assurer que `npm run lint`, `npm run build` et `npm test -- --run` passent localement. Si l'une de ces verifications echoue, corriger avant de continuer.
 - Avant de pousser, s'assurer que le code compile, que les tests passent et que le linter est satisfait.
 - Utiliser les Pull Requests pour toute integration vers `main`. Decrire le contexte, les changements et comment tester.
 - Garder les PR petites et focalisees sur un seul sujet pour faciliter la review.

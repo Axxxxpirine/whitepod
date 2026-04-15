@@ -29,9 +29,9 @@ describe('coords', () => {
       const positions = [
         { x: 0, y: 0 },
         { x: 42, y: 13 },
-        { x: 499, y: 499 },
-        { x: 0, y: 499 },
-        { x: 499, y: 0 },
+        { x: GRID_WIDTH - 1, y: GRID_HEIGHT - 1 },
+        { x: 0, y: GRID_HEIGHT - 1 },
+        { x: GRID_WIDTH - 1, y: 0 },
       ];
       for (const { x, y } of positions) {
         expect(toCoord(toIndex(x, y))).toEqual({ x, y });
@@ -41,7 +41,7 @@ describe('coords', () => {
 
   describe('isInBounds', () => {
     it('returns true for center tile', () => {
-      expect(isInBounds(250, 250)).toBe(true);
+      expect(isInBounds(Math.floor(GRID_WIDTH / 2), Math.floor(GRID_HEIGHT / 2))).toBe(true);
     });
 
     it('returns true for all corners', () => {
