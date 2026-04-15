@@ -71,7 +71,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
     <div
       ref={containerRef}
       className={className}
-      style={{ width: '1280px', height: '1280px', ...style }}
+      style={{ width: '100%', height: '100%', minHeight: '640px', ...style }}
     />
   )
 }

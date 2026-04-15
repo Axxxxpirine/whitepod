@@ -5,6 +5,21 @@ import { PetriNetDebugger } from '@/components/debug/PetriNetDebugger'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 
+function statusLabel(phase: string): string {
+  switch (phase) {
+    case 'initializing':
+      return 'Initializing'
+    case 'running':
+      return 'Running'
+    case 'done':
+      return 'Completed'
+    case 'terminated':
+      return 'Terminated'
+    default:
+      return phase
+  }
+}
+
 function App() {
   const loadSystem = useGameStore(s => s.loadSystem)
   const mode = useGameStore(s => s.mode)
@@ -67,169 +82,161 @@ function App() {
   const effectiveSelectedStationId = selectedStationId || stationOptions[0]?.id || ''
   const buildOptions = getBuildOptionsAtSelectedCell()
 
+  const tokenEntries = Object.entries(tokens)
+    .filter(([, value]) => value > 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+
   return (
-    <div className="min-h-screen p-6 space-y-6 pt-24">
-      <div className="fixed top-0 left-0 right-0 z-20 border-b bg-white/95 backdrop-blur px-6 py-3">
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <div className="font-semibold">Build</div>
-          <div className="text-gray-600">
-            {selectedBuildCell
-              ? `Cellule ${selectedBuildCell.x},${selectedBuildCell.y}`
-              : hoveredBuildCell
-                ? `Survol ${hoveredBuildCell.x},${hoveredBuildCell.y}`
-                : 'Clique une cellule pour construire'}
-          </div>
-          <button className="border rounded px-2 py-1" onClick={() => clearBuildSelection()}>
-            Clear
-          </button>
+    <div className="app-shell min-h-screen">
+      <header className="hud-topbar panel-surface">
+        <div>
+          <p className="hud-eyebrow">Whitepod</p>
+          <h1 className="hud-title">Lunar factory control</h1>
         </div>
-        {selectedBuildCell ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {buildOptions.map(option => (
-              <button
-                key={option.transitionId}
-                className={`border rounded px-3 py-1 text-sm ${option.enabled ? 'bg-white' : 'bg-gray-100 text-gray-400'}`}
-                title={option.reason}
-                disabled={!option.enabled}
-                onClick={() => {
-                  if (!option.enabled) return
-                  placeStationAtSelectedCell(option.transitionId)
-                }}
-              >
-                {option.name}
-                {!option.enabled && option.reason ? ` (${option.reason})` : ''}
-              </button>
-            ))}
+        <div className="hud-topbar-meta">
+          <div className="hud-metric">
+            <span>Mode</span>
+            <select className="hud-select" value={mode} onChange={e => setMode(e.target.value as 'player' | 'debug')}>
+              <option value="player">Player</option>
+              <option value="debug">Debug</option>
+            </select>
           </div>
-        ) : null}
-      </div>
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Whitepod</h1>
-        <div className="flex items-center gap-3">
-          <label className="text-sm">Mode</label>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={mode}
-            onChange={e => setMode(e.target.value as 'player' | 'debug')}
-          >
-            <option value="player">player</option>
-            <option value="debug">debug</option>
-          </select>
+          <div className="hud-metric"><span>Phase</span><strong>{statusLabel(phase)}</strong></div>
+          <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
         </div>
       </header>
 
-       <section className="flex flex-wrap items-center gap-2">
-         <span className="text-sm">Phase:</span>
-         <code className="text-sm">{phase}</code>
-         <span className="text-sm">Seed:</span>
-         <code className="text-sm">{seed}</code>
-         <input
-           className="border rounded px-2 py-1 text-sm w-28"
-           value={seedInput}
-           onChange={e => setSeedInput(e.target.value)}
-         />
-         <button
-           className="border rounded px-2 py-1 text-sm"
-           onClick={() => {
-             const nextSeed = Number.parseInt(seedInput, 10)
-             if (!Number.isInteger(nextSeed)) return
-             newGame(nextSeed)
-           }}
-         >
-           New game
-         </button>
+      <main className="hud-grid">
+        <aside className="hud-column">
+          <section className="panel-surface hud-panel is-quiet">
+            <div className="panel-header">
+              <h2>Session</h2>
+            </div>
+            <div className="hud-stack">
+              <label className="hud-field">
+                <span>Seed</span>
+                <input className="hud-input" value={seedInput} onChange={e => setSeedInput(e.target.value)} />
+              </label>
+              <div className="hud-actions">
+                <button className="hud-button primary" onClick={() => {
+                  const nextSeed = Number.parseInt(seedInput, 10)
+                  if (!Number.isInteger(nextSeed)) return
+                  newGame(nextSeed)
+                }}>
+                  New game
+                </button>
+                <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
+              </div>
+              <div className="hud-actions">
+                <button className="hud-button" onClick={() => requestSystemTransition('init')}>Init</button>
+                <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch</button>
+                <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
+                <button className="hud-button" onClick={() => tick()}>Tick now</button>
+              </div>
+            </div>
+          </section>
 
-        <button
-          className="border rounded px-2 py-1 text-sm"
-          onClick={() => requestSystemTransition('init')}
-        >
-          Init
-        </button>
-        <button
-          className="border rounded px-2 py-1 text-sm"
-          onClick={() => requestSystemTransition('launch')}
-        >
-          Launch
-        </button>
-        <button
-          className="border rounded px-2 py-1 text-sm"
-          onClick={() => requestSystemTransition('terminate')}
-        >
-          Terminate
-        </button>
-        <button className="border rounded px-2 py-1 text-sm" onClick={() => tick()}>
-          Tick now
-        </button>
-        <button className="border rounded px-2 py-1 text-sm" onClick={() => resetSave()}>
-          Reset save
-        </button>
-      </section>
+          <section className="panel-surface hud-panel is-quiet">
+            <div className="panel-header">
+              <h2>Build</h2>
+              <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
+            </div>
+            <p className="hud-muted">
+              {selectedBuildCell
+                ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
+                : hoveredBuildCell
+                  ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
+                  : 'Select a grid cell to build.'}
+            </p>
+            {selectedBuildCell ? (
+              <div className="hud-chip-list">
+                {buildOptions.map(option => (
+                  <button
+                    key={option.transitionId}
+                    className={`hud-chip ${option.enabled ? '' : 'is-disabled'}`}
+                    title={option.reason}
+                    disabled={!option.enabled}
+                    onClick={() => {
+                      if (!option.enabled) return
+                      placeStationAtSelectedCell(option.transitionId)
+                    }}
+                  >
+                    <span>{option.name}</span>
+                    {!option.enabled && option.reason ? <small>{option.reason}</small> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {effectiveSelectedStationId.startsWith('extract__') ? (
+              <p className="hud-muted">
+                Units available: <code>{countDeposits(effectiveSelectedStationId.slice('extract__'.length) as ResourceId)}</code>
+              </p>
+            ) : null}
+          </section>
+        </aside>
 
-      <section className="space-y-2">
-        <h2 className="font-semibold">Stations</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="border rounded px-2 py-1 text-sm min-w-80"
-            value={effectiveSelectedStationId}
-            onChange={e => setSelectedStationId(e.target.value)}
-          >
-            {stationOptions.map(t => (
-              <option key={t.id} value={t.id}>
-                {t.id} {t.name_fr ? `— ${t.name_fr}` : ''}
-              </option>
-            ))}
-          </select>
-          <button
-            className="border rounded px-2 py-1 text-sm"
-            onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}
-          >
-            Place
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {stations.length === 0 ? (
-            <span className="text-sm text-gray-600">No stations placed.</span>
-          ) : (
-            stations.map(s => (
-              <button
-                key={s.id}
-                className="border rounded px-2 py-1 text-sm"
-                onClick={() => removeStation(s.id)}
-                title="Remove station"
-              >
-                {s.id}: {s.transitionId} @({s.x},{s.y})
-              </button>
-            ))
-          )}
-        </div>
-
-        {effectiveSelectedStationId.startsWith('extract__') ? (
-          <div className="text-sm text-gray-600">
-            Units available:{' '}
-            <code>
-              {countDeposits(effectiveSelectedStationId.slice('extract__'.length) as ResourceId)}
-            </code>
-            . Extract stations are auto-placed adjacent to a matching deposit.
+        <section className="hud-canvas panel-surface is-canvas">
+          <div className="panel-header hud-canvas-header is-canvas-header">
+            <h2>Factory view</h2>
+            <span className="hud-muted">Click a cell to place</span>
           </div>
-        ) : null}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-semibold">Tokens (non-zero)</h2>
-        <pre className="bg-gray-50 border rounded p-3 text-xs overflow-auto">
-          {JSON.stringify(tokens, null, 2)}
-        </pre>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-semibold">Lunar Factory Visualization</h2>
-          <div className="border-2 border-indigo-500 rounded-lg overflow-hidden">
-            <PixiCanvas />
+          <div className="canvas-frame is-viewfinder">
+            <PixiCanvas className="canvas-stage" />
           </div>
         </section>
 
-      {mode === 'debug' ? <PetriNetDebugger /> : null}
+        <aside className="hud-column">
+          <section className="panel-surface hud-panel is-quiet">
+            <div className="panel-header">
+              <h2>Stations</h2>
+            </div>
+            <div className="hud-stack">
+              <div className="hud-row">
+                <select className="hud-select hud-select-wide" value={effectiveSelectedStationId} onChange={e => setSelectedStationId(e.target.value)}>
+                  {stationOptions.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.id}{t.name_fr ? ` — ${t.name_fr}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <button className="hud-button primary" onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
+              </div>
+              <div className="hud-chip-list compact">
+                {stations.length === 0 ? (
+                  <span className="hud-muted">No stations placed.</span>
+                ) : (
+                  stations.map(s => (
+                    <button key={s.id} className="hud-chip" onClick={() => removeStation(s.id)} title="Remove station">
+                      {s.id} · {s.transitionId} @({s.x},{s.y})
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="panel-surface hud-panel is-quiet">
+            <div className="panel-header">
+              <h2>Tokens</h2>
+              <span className="hud-muted">Non-zero</span>
+            </div>
+            {tokenEntries.length === 0 ? (
+              <p className="hud-muted">No active tokens.</p>
+            ) : (
+              <div className="token-grid">
+                {tokenEntries.map(([key, value]) => (
+                  <div key={key} className="token-card">
+                    <span>{key}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </aside>
+      </main>
+
+      {mode === 'debug' ? <div className="panel-surface hud-debug is-quiet"><PetriNetDebugger /></div> : null}
     </div>
   )
 }
