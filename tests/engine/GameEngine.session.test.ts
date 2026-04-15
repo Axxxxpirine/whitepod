@@ -59,4 +59,27 @@ describe('GameEngine session snapshots', () => {
       ),
     ).toThrow(/Invalid connection/);
   });
+
+  it('restores placed belts from a serialized snapshot', () => {
+    const engine = new GameEngine(640, 480);
+    engine.grid.fill(TileType.Ground);
+    const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
+    const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
+    const placed = engine.placeBelt(
+      { building: source, port: 'out_east' },
+      { building: target, port: 'in_west' },
+    );
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+
+    const world = engine.serializeWorld();
+    const restored = GameEngine.fromSnapshot(world, 640, 480);
+
+    for (const segmentId of placed.segmentIds) {
+      const building = restored.getBuildings().get(segmentId);
+      expect(building).not.toBeUndefined();
+      expect(building?.typeId.startsWith('belt_')).toBe(true);
+    }
+    expect(restored.getConnections().size).toBe(engine.getConnections().size);
+  });
 });

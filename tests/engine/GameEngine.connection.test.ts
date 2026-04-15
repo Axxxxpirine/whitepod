@@ -234,16 +234,33 @@ describe('GameEngine connections', () => {
     expect(id).not.toBeNull();
   });
 
-  it('20. connect(rotation=East) equivalent to rotation=North during no-op', () => {
-    // Rotation is currently a no-op in the transform helpers. Placing with
-    // rotation=East must yield the same adjacency behavior as rotation=North.
+  it('20. rotation rotates ports CW (screen y-down): out_east on rotation=East points South', () => {
+    // Under real rotation, a 1x1 node with out_east (side=East) rotated CW by East
+    // produces a world-side of South. The matching input must then sit on the
+    // south-adjacent tile with its rotated side facing North.
+    //
+    // A at (5,5) rot=East: out_east.side = (East + East) % 4 = South. Expected
+    // neighbor tile = (5, 6).
+    // B at (5,6) rot=East: in_west.side = (West + East) % 4 = North. Faces (5,5).
+    // → tile match + opposite sides → connection OK.
     const a = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 }, Direction.East)!;
-    const b = engine.placeBuilding('placeholder_node_1x1', { x: 6, y: 5 }, Direction.East)!;
+    const b = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 6 }, Direction.East)!;
     const id = engine.connect(
       { building: a, port: 'out_east' },
       { building: b, port: 'in_west' },
     );
     expect(id).not.toBeNull();
+
+    // Same buildings placed side-by-side horizontally with rotation=East no
+    // longer connect (out_east now points South, not East).
+    const c = engine.placeBuilding('placeholder_node_1x1', { x: 20, y: 20 }, Direction.East)!;
+    const d = engine.placeBuilding('placeholder_node_1x1', { x: 21, y: 20 }, Direction.East)!;
+    expect(
+      engine.canConnect(
+        { building: c, port: 'out_east' },
+        { building: d, port: 'in_west' },
+      ),
+    ).toEqual({ ok: false, reason: 'ports_not_adjacent' });
   });
 
   it('disconnect removes the connection and frees both ports', () => {

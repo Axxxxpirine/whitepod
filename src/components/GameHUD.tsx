@@ -3,7 +3,9 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
+  isBeltTypeId,
 } from '@/game/data/buildingCatalog';
+import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 
 export function GameHUD() {
@@ -12,9 +14,11 @@ export function GameHUD() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
   const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
+  const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
+  const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -24,6 +28,7 @@ export function GameHUD() {
     selectedTool.kind === 'building' && selectedTool.buildingType === EXTRACTOR_BUILDING_TYPE_ID;
   const storageSelected =
     selectedTool.kind === 'building' && selectedTool.buildingType === STORAGE_BUILDING_TYPE_ID;
+  const beltSelected = selectedTool.kind === 'belt';
   const selectedBuilding =
     engine && selectedBuildingId !== null ? engine.getBuildings().get(selectedBuildingId) ?? null : null;
   const selectedBuildingName = selectedBuilding ? getBuildingType(selectedBuilding.typeId)?.name ?? null : null;
@@ -37,6 +42,7 @@ export function GameHUD() {
   const showSelectedBuildingPanel = Boolean(
     engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
   );
+  const buildingRotationLabel = directionLabel(currentBuildingRotation);
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -85,9 +91,25 @@ export function GameHUD() {
     );
   };
 
+  const toggleBeltTool = () => {
+    clearSelectedBuilding();
+    setSelectedTool(beltSelected ? { kind: 'select' } : { kind: 'belt' });
+  };
+
+  const rotatePlacement = () => {
+    rotateBuildingRotation();
+  };
+
   const handleDeleteSelectedBuilding = () => {
     if (!engine || selectedBuildingId === null) return;
-    if (engine.removeBuilding(selectedBuildingId)) {
+
+    const building = engine.getBuildings().get(selectedBuildingId);
+    if (!building) return;
+
+    const removed = isBeltTypeId(building.typeId)
+      ? engine.removeBelt(selectedBuildingId)
+      : engine.removeBuilding(selectedBuildingId);
+    if (removed) {
       clearSelectedBuilding();
     }
   };
@@ -198,6 +220,28 @@ export function GameHUD() {
             >
               Stockage
             </button>
+            <button
+              type="button"
+              onClick={toggleBeltTool}
+              aria-pressed={beltSelected}
+              className={
+                beltSelected
+                  ? 'cursor-pointer rounded-xl bg-lime-300 px-4 py-2 text-sm font-semibold text-black shadow-lg transition-colors'
+                  : 'cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20'
+              }
+            >
+              Convoyeur
+            </button>
+            {selectedTool.kind === 'building' && (
+              <button
+                type="button"
+                onClick={rotatePlacement}
+                className="cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20"
+                title="Rotation (R)"
+              >
+                Rotation: {buildingRotationLabel}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center justify-self-end gap-2">
@@ -222,4 +266,17 @@ export function GameHUD() {
       </div>
     </div>
   );
+}
+
+function directionLabel(direction: Direction): string {
+  switch (direction) {
+    case Direction.North:
+      return 'N';
+    case Direction.East:
+      return 'E';
+    case Direction.South:
+      return 'S';
+    case Direction.West:
+      return 'W';
+  }
 }

@@ -34,7 +34,8 @@ export type BuildingTypeId = string;
 
 export type SelectedTool =
   | { readonly kind: 'select' }
-  | { readonly kind: 'building'; readonly buildingType: BuildingTypeId };
+  | { readonly kind: 'building'; readonly buildingType: BuildingTypeId }
+  | { readonly kind: 'belt' };
 
 export interface Footprint {
   readonly w: number;
@@ -105,3 +106,57 @@ export type ConnectionFailure =
 export type ConnectionResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: ConnectionFailure };
+
+// ─── Belts ────────────────────────────────────────────────────────────────
+// A belt segment is a 1x1 Building of type 'belt_straight' or 'belt_corner'.
+// A conveyor is the connected component of belt-typed buildings in the
+// ConnectionRegistry graph — it has no dedicated entity or registry.
+
+export interface BeltSegment {
+  readonly coord: TileCoord;
+  readonly typeId: BuildingTypeId;
+  readonly rotation: Direction;
+}
+
+// An endpoint in a PendingConnection can reference either an existing building
+// (when connecting to the extractor/storage at the ends of the conveyor) or a
+// not-yet-committed segment by its index within the BeltPlan.segments array.
+export type PendingEndpoint =
+  | { readonly kind: 'building'; readonly building: BuildingId; readonly port: PortId }
+  | { readonly kind: 'segment'; readonly segmentIndex: number; readonly port: PortId };
+
+export interface PendingConnection {
+  readonly from: PendingEndpoint;
+  readonly to: PendingEndpoint;
+}
+
+export interface BeltPlan {
+  readonly segments: readonly BeltSegment[];
+  readonly connections: readonly PendingConnection[];
+}
+
+export type BeltFailure =
+  | 'no_path'
+  | 'source_port_taken'
+  | 'target_port_taken'
+  | 'port_kind_mismatch'
+  | 'unknown_building'
+  | 'unknown_port'
+  | 'self_connection'
+  | 'id_overflow'
+  | 'tiles_blocked';
+
+export type BeltResult =
+  | { readonly ok: true; readonly plan: BeltPlan }
+  | { readonly ok: false; readonly reason: BeltFailure };
+
+export type PlaceBeltResult =
+  | {
+      readonly ok: true;
+      readonly segmentIds: readonly BuildingId[];
+      readonly plan: BeltPlan;
+    }
+  | {
+      readonly ok: false;
+      readonly reason: BeltFailure;
+    };

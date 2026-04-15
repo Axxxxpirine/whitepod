@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EXTRACTOR_BUILDING_TYPE_ID, getBuildingType } from '@/game/data/buildingCatalog';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { getPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
-import { ResourceType, TileType, type SelectedTool } from '@/game/types';
+import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -15,7 +15,13 @@ describe('getPlacementPreviewModel', () => {
     const engine = makeEngine();
     const selectedTool: SelectedTool = { kind: 'select' };
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, { x: 10, y: 10 });
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 10, y: 10 },
+      null,
+      Direction.North,
+    );
 
     expect(preview).toBeNull();
   });
@@ -24,7 +30,7 @@ describe('getPlacementPreviewModel', () => {
     const engine = makeEngine();
     const selectedTool: SelectedTool = { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID };
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, null);
+    const preview = getPlacementPreviewModel(engine, selectedTool, null, null, Direction.North);
 
     expect(preview).toBeNull();
   });
@@ -34,13 +40,21 @@ describe('getPlacementPreviewModel', () => {
     const selectedTool: SelectedTool = { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID };
     engine.grid.setResource(8, 8, ResourceType.IronOre);
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, { x: 8, y: 8 });
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 8, y: 8 },
+      null,
+      Direction.East,
+    );
 
     expect(preview).toEqual({
+      kind: 'building',
       origin: { x: 8, y: 8 },
       footprint: { w: 1, h: 1 },
       isValid: true,
       buildingTypeId: EXTRACTOR_BUILDING_TYPE_ID,
+      rotation: Direction.East,
     });
   });
 
@@ -48,7 +62,13 @@ describe('getPlacementPreviewModel', () => {
     const engine = makeEngine();
     const selectedTool: SelectedTool = { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID };
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, { x: 8, y: 8 });
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 8, y: 8 },
+      null,
+      Direction.North,
+    );
 
     expect(preview).toMatchObject({
       origin: { x: 8, y: 8 },
@@ -63,7 +83,13 @@ describe('getPlacementPreviewModel', () => {
     engine.grid.setResource(14, 14, ResourceType.Coal);
     engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 14, y: 14 });
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, { x: 14, y: 14 });
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 14, y: 14 },
+      null,
+      Direction.North,
+    );
 
     expect(preview).toMatchObject({
       origin: { x: 14, y: 14 },
@@ -77,8 +103,38 @@ describe('getPlacementPreviewModel', () => {
     const selectedTool: SelectedTool = { kind: 'building', buildingType: 'placeholder_3x3' };
     const footprint = getBuildingType('placeholder_3x3')!.footprint;
 
-    const preview = getPlacementPreviewModel(engine, selectedTool, { x: 20, y: 20 });
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 20, y: 20 },
+      null,
+      Direction.South,
+    );
 
-    expect(preview?.footprint).toEqual(footprint);
+    expect(preview?.kind).toBe('building');
+    if (!preview || preview.kind !== 'building') {
+      throw new Error('expected building preview');
+    }
+    expect(preview.footprint).toEqual(footprint);
+  });
+
+  it('returns the belt preview as-is when the belt tool is selected', () => {
+    const engine = makeEngine();
+    const selectedTool: SelectedTool = { kind: 'belt' };
+    const beltPreview = {
+      kind: 'belt' as const,
+      isValid: true,
+      tiles: [{ coord: { x: 6, y: 4 }, tint: 0x22c55e }],
+    };
+
+    const preview = getPlacementPreviewModel(
+      engine,
+      selectedTool,
+      { x: 10, y: 10 },
+      beltPreview,
+      Direction.North,
+    );
+
+    expect(preview).toEqual(beltPreview);
   });
 });

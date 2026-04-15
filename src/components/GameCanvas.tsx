@@ -5,8 +5,10 @@ import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
+import { BeltRenderer } from '@/game/renderer/BeltRenderer';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
+import { BeltToolController } from '@/game/engine/BeltToolController';
 import {
   createSessionId,
   loadPersistedSession,
@@ -56,6 +58,7 @@ function selectedToolsEqual(
 ): boolean {
   if (left.kind !== right.kind) return false;
   if (left.kind === 'select' && right.kind === 'select') return true;
+  if (left.kind === 'belt' && right.kind === 'belt') return true;
   if (left.kind === 'building' && right.kind === 'building') {
     return left.buildingType === right.buildingType;
   }
@@ -78,13 +81,15 @@ export function GameCanvas() {
     let gridRenderer: GridRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
     let buildingRenderer: BuildingRenderer | null = null;
+    let beltRenderer: BeltRenderer | null = null;
     let placementPreviewRenderer: PlacementPreviewRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
-    let handlePointerUp: (() => void) | null = null;
+    let handlePointerUp: ((e: PointerEvent) => void) | null = null;
     let handlePointerLeave: (() => void) | null = null;
     let handleContextMenu: ((e: MouseEvent) => void) | null = null;
     let handleWheel: ((e: WheelEvent) => void) | null = null;
+    let handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let unsubscribeEngine: (() => void) | null = null;
     let unsubscribeTool: (() => void) | null = null;
@@ -102,7 +107,6 @@ export function GameCanvas() {
         autoDensity: true,
       });
 
-      // Mark init as complete so the cleanup knows it's safe to call destroy()
       initCompleted = true;
 
       if (destroyed) {
@@ -112,7 +116,6 @@ export function GameCanvas() {
 
       container.appendChild(app.canvas);
 
-      // Load resource sprites before generating the map
       await loadResourceTextures();
 
       if (destroyed) {
@@ -133,6 +136,7 @@ export function GameCanvas() {
       const state = useGameStore.getState();
       state.setSelectedBuilding(null);
       state.setSelectedBuildingAnchor(null);
+      state.setBeltPreview(null);
       setSelectedTool(selectedTool);
       setEngine(engine);
 
@@ -172,11 +176,22 @@ export function GameCanvas() {
       gridRenderer = new GridRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
       buildingRenderer = new BuildingRenderer(app, engine);
+      beltRenderer = new BeltRenderer(app, engine);
       placementPreviewRenderer = new PlacementPreviewRenderer(app, engine, () => {
-        const { selectedTool, hoverTile } = useGameStore.getState();
-        return { selectedTool, hoverTile };
+        const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = useGameStore.getState();
+        return { selectedTool, hoverTile, beltPreview, currentBuildingRotation };
       });
-      const currentInputHandler = new InputHandler(engine, () => useGameStore.getState().selectedTool);
+      const currentInputHandler = new InputHandler(
+        engine,
+        () => useGameStore.getState().selectedTool,
+        () => useGameStore.getState().currentBuildingRotation,
+      );
+      const currentBeltToolController = new BeltToolController(
+        engine,
+        () => useGameStore.getState().selectedTool,
+        useGameStore.getState().setBeltPreview,
+      );
+
       currentInputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
       currentInputHandler.setBuildingSelectedCallback((buildingId) => {
         const state = useGameStore.getState();
@@ -195,15 +210,19 @@ export function GameCanvas() {
 
       handlePointerDown = (e) => {
         currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
+        currentBeltToolController.onPointerDown(e.offsetX, e.offsetY, e.button);
       };
       handlePointerMove = (e) => {
         currentInputHandler.onPointerMove(e.offsetX, e.offsetY);
+        currentBeltToolController.onPointerMove(e.offsetX, e.offsetY);
       };
-      handlePointerUp = () => {
+      handlePointerUp = (e) => {
         currentInputHandler.onPointerUp();
+        currentBeltToolController.onPointerUp(e.offsetX, e.offsetY, e.button);
       };
       handlePointerLeave = () => {
         currentInputHandler.onPointerLeave();
+        currentBeltToolController.onPointerLeave();
       };
       handleContextMenu = (e) => {
         e.preventDefault();
@@ -212,6 +231,20 @@ export function GameCanvas() {
         e.preventDefault();
         currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode);
       };
+      handleKeyDown = (e) => {
+        const target = e.target;
+        if (
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          (target instanceof HTMLElement && target.isContentEditable)
+        ) {
+          return;
+        }
+        if ((e.key === 'r' || e.key === 'R') && useGameStore.getState().selectedTool.kind === 'building') {
+          useGameStore.getState().rotateBuildingRotation();
+        }
+        currentBeltToolController.onKeyDown(e.key);
+      };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
       canvas.addEventListener('pointermove', handlePointerMove);
@@ -219,6 +252,7 @@ export function GameCanvas() {
       canvas.addEventListener('pointerleave', handlePointerLeave);
       canvas.addEventListener('contextmenu', handleContextMenu);
       canvas.addEventListener('wheel', handleWheel, { passive: false });
+      window.addEventListener('keydown', handleKeyDown);
 
       resizeObserver = new ResizeObserver(() => {
         if (app) {
@@ -267,6 +301,7 @@ export function GameCanvas() {
         gridRenderer!.render();
         resourceRenderer!.render();
         buildingRenderer!.render();
+        beltRenderer!.render();
         placementPreviewRenderer!.render();
         engine.grid.clearDirty();
       });
@@ -276,8 +311,6 @@ export function GameCanvas() {
 
     return () => {
       destroyed = true;
-      // Only destroy if init() completed — otherwise the async init() will
-      // see destroyed=true and call destroy() itself after app.init() finishes.
       if (initCompleted) {
         const shouldPersistOnCleanup = useGameStore.getState().engine === currentEngine;
         if (shouldPersistOnCleanup) {
@@ -295,7 +328,10 @@ export function GameCanvas() {
         if (app?.canvas && handlePointerLeave) app.canvas.removeEventListener('pointerleave', handlePointerLeave);
         if (app?.canvas && handleContextMenu) app.canvas.removeEventListener('contextmenu', handleContextMenu);
         if (app?.canvas && handleWheel) app.canvas.removeEventListener('wheel', handleWheel);
+        if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
+        useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
+        beltRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         gridRenderer?.destroy();

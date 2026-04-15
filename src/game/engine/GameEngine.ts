@@ -8,7 +8,7 @@ import {
   worldSideOf,
   worldTileOf,
 } from '../data/ConnectionRegistry';
-import { getBuildingType, validateCatalog } from '../data/buildingCatalog';
+import { getBuildingType, isBeltTypeId, validateCatalog } from '../data/buildingCatalog';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -22,7 +22,9 @@ import {
   type Connection,
   type ConnectionId,
   type ConnectionResult,
+  type PendingEndpoint,
   type PlacementResult,
+  type PlaceBeltResult,
   type Port,
   type PortId,
   type ResourceType as ResourceTypeT,
@@ -33,6 +35,7 @@ import { DEFAULT_MAP_SEED } from '../constants';
 import { isInBounds } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
+import { planBelt } from './BeltRouter';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -186,6 +189,82 @@ export class GameEngine {
     return id;
   }
 
+  canPlaceBelt(from: PortEndpoint, to: PortEndpoint) {
+    return planBelt(this, from, to);
+  }
+
+  placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
+    const planned = this.canPlaceBelt(from, to);
+    if (!planned.ok) return planned;
+
+    const placedSegmentIds: BuildingId[] = [];
+
+    for (const segment of planned.plan.segments) {
+      if (!this.buildings.hasIdCapacity()) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return { ok: false, reason: 'id_overflow' };
+      }
+
+      const placement = this.canPlaceBuilding(segment.typeId, segment.coord, segment.rotation);
+      if (!placement.ok) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return {
+          ok: false,
+          reason: placement.reason === 'id_overflow' ? 'id_overflow' : 'tiles_blocked',
+        };
+      }
+
+      const id = this.placeBuilding(segment.typeId, segment.coord, segment.rotation);
+      if (id === null) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return {
+          ok: false,
+          reason: this.buildings.hasIdCapacity() ? 'tiles_blocked' : 'id_overflow',
+        };
+      }
+
+      placedSegmentIds.push(id);
+    }
+
+    for (const pending of planned.plan.connections) {
+      if (!this.connections.hasIdCapacity()) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return { ok: false, reason: 'id_overflow' };
+      }
+
+      const pendingFrom = this.resolvePendingEndpoint(pending.from, placedSegmentIds);
+      const pendingTo = this.resolvePendingEndpoint(pending.to, placedSegmentIds);
+      if (!pendingFrom || !pendingTo) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return { ok: false, reason: 'tiles_blocked' };
+      }
+
+      const connectionId = this.connect(pendingFrom, pendingTo);
+      if (connectionId === null) {
+        this.rollbackPlacedBelts(placedSegmentIds);
+        return { ok: false, reason: 'tiles_blocked' };
+      }
+    }
+
+    return {
+      ok: true,
+      segmentIds: placedSegmentIds,
+      plan: planned.plan,
+    };
+  }
+
+  removeBelt(segmentId: BuildingId): boolean {
+    const building = this.buildings.get(segmentId);
+    if (!building || !isBeltTypeId(building.typeId)) return false;
+
+    const component = this.collectConnectedBeltComponent(segmentId);
+    let removedAny = false;
+    for (const beltId of component) {
+      removedAny = this.removeBuilding(beltId) || removedAny;
+    }
+    return removedAny;
+  }
+
   disconnect(id: ConnectionId): boolean {
     const disconnected = this.connections.unregister(id);
     if (disconnected) {
@@ -233,6 +312,52 @@ export class GameEngine {
     const expectedTileB: TileCoord = { x: tileA.x + step.x, y: tileA.y + step.y };
     if (expectedTileB.x !== tileB.x || expectedTileB.y !== tileB.y) return false;
     return sideA === oppositeSide(sideB);
+  }
+
+  private resolvePendingEndpoint(
+    endpoint: PendingEndpoint,
+    placedSegmentIds: readonly BuildingId[],
+  ): PortEndpoint | null {
+    if (endpoint.kind === 'building') {
+      return { building: endpoint.building, port: endpoint.port };
+    }
+
+    const buildingId = placedSegmentIds[endpoint.segmentIndex];
+    if (buildingId === undefined) return null;
+    return { building: buildingId, port: endpoint.port };
+  }
+
+  private rollbackPlacedBelts(placedSegmentIds: readonly BuildingId[]): void {
+    for (let i = placedSegmentIds.length - 1; i >= 0; i--) {
+      this.removeBuilding(placedSegmentIds[i]);
+    }
+  }
+
+  private collectConnectedBeltComponent(startId: BuildingId): readonly BuildingId[] {
+    const seen = new Set<BuildingId>();
+    const queue: BuildingId[] = [startId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (seen.has(currentId)) continue;
+      seen.add(currentId);
+
+      for (const connection of this.getConnectionsOf(currentId)) {
+        const neighborId = this.otherEndpointBuilding(connection, currentId);
+        if (neighborId === null || seen.has(neighborId)) continue;
+        const neighbor = this.buildings.get(neighborId);
+        if (!neighbor || !isBeltTypeId(neighbor.typeId)) continue;
+        queue.push(neighborId);
+      }
+    }
+
+    return Array.from(seen);
+  }
+
+  private otherEndpointBuilding(connection: Connection, currentId: BuildingId): BuildingId | null {
+    if (connection.from.building === currentId) return connection.to.building;
+    if (connection.to.building === currentId) return connection.from.building;
+    return null;
   }
 
   getBuildingAt(x: number, y: number): Building | null {

@@ -17,19 +17,46 @@ export interface SerializedConnectionRegistry {
   readonly connections: readonly Connection[];
 }
 
-// Rotation is a no-op in v1. Helpers exist as a seam so that when rotation
-// becomes effective, every call site already goes through the transform.
-export function worldSideOf(port: Port, _rotation: Direction): Direction {
-  return port.side;
+// Rotation rotates each port's local side CW by `rotation` (N=0, E=1, S=2, W=3).
+// worldTileOf rotates the port's local offset around the footprint bounding box
+// center (screen-y-down convention: 90° CW = top-right goes to bottom-right).
+// Non-square footprints are supported; the bounding box dimensions swap for
+// Direction.East / West.
+export function worldSideOf(port: Port, rotation: Direction): Direction {
+  return ((port.side + rotation) % 4) as Direction;
 }
 
 export function worldTileOf(
   port: Port,
   origin: TileCoord,
-  _rotation: Direction,
-  _footprint: Footprint,
+  rotation: Direction,
+  footprint: Footprint,
 ): TileCoord {
-  return { x: origin.x + port.offset.x, y: origin.y + port.offset.y };
+  const { x, y } = port.offset;
+  const { w, h } = footprint;
+  let localX: number;
+  let localY: number;
+  switch (rotation) {
+    case Direction.North:
+      localX = x;
+      localY = y;
+      break;
+    case Direction.East:
+      // 90° CW (screen y-down): (x, y) → (h-1-y, x), bounding box becomes (h, w)
+      localX = h - 1 - y;
+      localY = x;
+      break;
+    case Direction.South:
+      localX = w - 1 - x;
+      localY = h - 1 - y;
+      break;
+    case Direction.West:
+      // 270° CW = 90° CCW: (x, y) → (y, w-1-x), bounding box becomes (h, w)
+      localX = y;
+      localY = w - 1 - x;
+      break;
+  }
+  return { x: origin.x + localX, y: origin.y + localY };
 }
 
 export function oppositeSide(side: Direction): Direction {

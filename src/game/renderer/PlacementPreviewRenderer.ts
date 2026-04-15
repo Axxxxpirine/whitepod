@@ -1,8 +1,10 @@
 import { Container, Graphics, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
+import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import type { SelectedTool, TileCoord } from '../types';
-import { getPlacementPreviewModel } from './placementPreviewModel';
+import { getPlacementPreviewModel, type BeltPlacementPreviewModel } from './placementPreviewModel';
+import { drawBuildingPortMarkers } from './buildingPortMarkers';
 
 const PREVIEW_INSET = 2;
 const VALID_FILL = 0x22c55e;
@@ -13,6 +15,8 @@ const INVALID_STROKE = 0xfca5a5;
 interface PreviewState {
   readonly selectedTool: SelectedTool;
   readonly hoverTile: TileCoord | null;
+  readonly beltPreview: BeltPlacementPreviewModel | null;
+  readonly currentBuildingRotation: import('../types').Direction;
 }
 
 export class PlacementPreviewRenderer {
@@ -38,8 +42,14 @@ export class PlacementPreviewRenderer {
     this.previewContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.previewContainer.scale.set(viewport.zoom);
 
-    const { selectedTool, hoverTile } = this.getPreviewState();
-    const preview = getPlacementPreviewModel(this.engine, selectedTool, hoverTile);
+    const { selectedTool, hoverTile, beltPreview, currentBuildingRotation } = this.getPreviewState();
+    const preview = getPlacementPreviewModel(
+      this.engine,
+      selectedTool,
+      hoverTile,
+      beltPreview,
+      currentBuildingRotation,
+    );
 
     if (!preview) {
       this.previewGraphic.visible = false;
@@ -51,16 +61,41 @@ export class PlacementPreviewRenderer {
     const fillAlpha = preview.isValid ? 0.22 : 0.24;
     const strokeColor = preview.isValid ? VALID_STROKE : INVALID_STROKE;
 
-    this.previewGraphic
-      .clear()
-      .rect(
-        preview.origin.x * TILE_SIZE + PREVIEW_INSET,
-        preview.origin.y * TILE_SIZE + PREVIEW_INSET,
-        preview.footprint.w * TILE_SIZE - PREVIEW_INSET * 2,
-        preview.footprint.h * TILE_SIZE - PREVIEW_INSET * 2,
-      )
-      .fill({ color: fillColor, alpha: fillAlpha })
-      .stroke({ color: strokeColor, width: 1, alpha: 0.95 });
+    this.previewGraphic.clear();
+
+    if (preview.kind === 'belt') {
+      for (const tile of preview.tiles) {
+        this.previewGraphic
+          .rect(
+            tile.coord.x * TILE_SIZE + PREVIEW_INSET,
+            tile.coord.y * TILE_SIZE + PREVIEW_INSET,
+            TILE_SIZE - PREVIEW_INSET * 2,
+            TILE_SIZE - PREVIEW_INSET * 2,
+          )
+          .fill({ color: tile.tint, alpha: fillAlpha })
+          .stroke({ color: strokeColor, width: 1, alpha: 0.95 });
+      }
+    } else {
+      this.previewGraphic
+        .rect(
+          preview.origin.x * TILE_SIZE + PREVIEW_INSET,
+          preview.origin.y * TILE_SIZE + PREVIEW_INSET,
+          preview.footprint.w * TILE_SIZE - PREVIEW_INSET * 2,
+          preview.footprint.h * TILE_SIZE - PREVIEW_INSET * 2,
+        )
+        .fill({ color: fillColor, alpha: fillAlpha })
+        .stroke({ color: strokeColor, width: 1, alpha: 0.95 });
+
+      const type = getBuildingType(preview.buildingTypeId);
+      if (type) {
+        drawBuildingPortMarkers(this.previewGraphic, {
+          id: 0,
+          typeId: preview.buildingTypeId,
+          origin: preview.origin,
+          rotation: preview.rotation,
+        }, type);
+      }
+    }
     this.previewGraphic.visible = true;
   }
 

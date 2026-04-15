@@ -5,7 +5,7 @@ import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionS
 import { useGameStore } from '@/store/useGameStore';
 import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 import { GameEngine } from '@/game/engine/GameEngine';
-import { ResourceType, TileType } from '@/game/types';
+import { Direction, ResourceType, TileType } from '@/game/types';
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -21,15 +21,18 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      beltPreview: null,
+      currentBuildingRotation: Direction.North,
       sessionEpoch: 0,
     });
     window.sessionStorage.clear();
   });
 
-  it('renders the bottom navbar with the extractor button', () => {
+  it('renders the bottom navbar with the placement buttons', () => {
     render(<GameHUD />);
 
     expect(screen.getByRole('button', { name: 'Extracteur' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Convoyeur' })).toBeInTheDocument();
     expect(screen.getByText('12, 7')).toBeInTheDocument();
   });
 
@@ -56,6 +59,42 @@ describe('GameHUD', () => {
 
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
     expect(screen.getByRole('button', { name: 'Extracteur' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('activates belt placement on first click', () => {
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Convoyeur' }));
+
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'belt' });
+    expect(screen.getByRole('button', { name: 'Convoyeur' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('toggles belt placement back to select mode on second click', () => {
+    useGameStore.setState({
+      selectedTool: { kind: 'belt' },
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Convoyeur' }));
+
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+    expect(screen.getByRole('button', { name: 'Convoyeur' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('rotates building placement from the HUD', () => {
+    useGameStore.setState({
+      selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+      currentBuildingRotation: Direction.North,
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rotation: N' }));
+
+    expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.East);
+    expect(screen.getByRole('button', { name: 'Rotation: E' })).toBeInTheDocument();
   });
 
   it('renders the selected building panel when a building is selected', () => {
@@ -95,7 +134,7 @@ describe('GameHUD', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
   });
 
-  it('clears the selected building panel when switching to placement mode', () => {
+  it('clears the selected building panel when switching tools', () => {
     const engine = makeEngine();
     engine.grid.setResource(8, 8, ResourceType.IronOre);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
@@ -132,6 +171,8 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
       selectedBuildingId: 12,
       selectedBuildingAnchor: { x: 120, y: 160 },
+      beltPreview: { kind: 'belt', isValid: true, tiles: [] },
+      currentBuildingRotation: Direction.South,
     });
 
     render(<GameHUD />);
@@ -143,6 +184,8 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
     expect(useGameStore.getState().selectedBuildingId).toBeNull();
     expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
+    expect(useGameStore.getState().beltPreview).toBeNull();
+    expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
     expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });

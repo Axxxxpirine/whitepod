@@ -46,6 +46,21 @@ describe('sessionStorage persistence', () => {
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
 
+  it('accepts belt as a persisted selected tool', () => {
+    const engine = makeEngine();
+
+    saveWorldSession(engine, 'session-a');
+    saveViewSession({
+      engine,
+      selectedTool: { kind: 'belt' },
+      sessionId: 'session-a',
+    });
+
+    const loaded = loadPersistedSession(640, 480);
+
+    expect(loaded?.selectedTool).toEqual({ kind: 'belt' });
+  });
+
   it('ignores a view snapshot with a mismatched session id', () => {
     const engine = makeEngine();
     saveWorldSession(engine, 'session-a');
