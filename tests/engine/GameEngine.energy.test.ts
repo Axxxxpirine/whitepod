@@ -308,6 +308,30 @@ describe('GameEngine energy networks', () => {
     );
   });
 
+  it('does not discharge a battery when the network deficit exceeds available battery power', () => {
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const extractorIds: number[] = [];
+
+    for (let i = 0; i < 6; i++) {
+      const x = 4 + i * 2;
+      engine.placeResource(x, 1, ResourceType.IronOre);
+      const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x, y: 1 })!;
+      extractorIds.push(extractorId);
+      expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
+    }
+
+    const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
+    engine.batteryCharges.set(batteryId, battery.capacity);
+
+    engine.update(120);
+
+    expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(battery.capacity, 5);
+    expect(engine.getResourceCounts().ironOre).toBe(0);
+    for (const extractorId of extractorIds) {
+      expect(engine.getBuildingPowerState(extractorId)).toBe('unpowered');
+    }
+  });
+
   it('reports global energy storage totals across all batteries', () => {
     const batteryA = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const batteryB = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 5, y: 1 })!;
