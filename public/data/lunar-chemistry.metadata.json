@@ -1,0 +1,4964 @@
+{
+  "version": 1,
+  "canonical": {
+    "places": [
+      {
+        "id": "air_filtration",
+        "tier": 3,
+        "name_fr": "Filtration d'air"
+      },
+      {
+        "id": "aluminum_ingots",
+        "tier": 2,
+        "name_fr": "Lingots d'aluminium"
+      },
+      {
+        "id": "aluminum_oxide",
+        "tier": 1,
+        "name_fr": "Oxyde d'aluminium"
+      },
+      {
+        "id": "ammonia",
+        "tier": 1,
+        "name_fr": "Ammoniac"
+      },
+      {
+        "id": "carbon_dioxide",
+        "tier": 1,
+        "name_fr": "Dioxyde de carbone"
+      },
+      {
+        "id": "carbon_fiber",
+        "tier": 3,
+        "name_fr": "Fibre de carbone"
+      },
+      {
+        "id": "cargo_container",
+        "tier": 3,
+        "name_fr": "Conteneur cargo"
+      },
+      {
+        "id": "ceramic_plates",
+        "tier": 2,
+        "name_fr": "Plaques céramiques"
+      },
+      {
+        "id": "combustion_chamber",
+        "tier": 3,
+        "name_fr": "Chambre de combustion"
+      },
+      {
+        "id": "communication_antenna",
+        "tier": 3,
+        "name_fr": "Antenne de communication"
+      },
+      {
+        "id": "crew_module",
+        "tier": 3,
+        "name_fr": "Module équipage"
+      },
+      {
+        "id": "done",
+        "name_fr": "Terminé",
+        "kind": "control"
+      },
+      {
+        "id": "emergency_system",
+        "tier": 3,
+        "name_fr": "Système d'urgence"
+      },
+      {
+        "id": "escape_rocket",
+        "tier": 3,
+        "name_fr": "Fusée de sauvetage"
+      },
+      {
+        "id": "fertilizer_pellets",
+        "tier": 3,
+        "name_fr": "Pellets d'engrais"
+      },
+      {
+        "id": "flight_computer",
+        "tier": 3,
+        "name_fr": "Ordinateur de bord"
+      },
+      {
+        "id": "fuel_injector",
+        "tier": 3,
+        "name_fr": "Injecteur de carburant"
+      },
+      {
+        "id": "fuel_pump",
+        "tier": 3,
+        "name_fr": "Pompe à carburant"
+      },
+      {
+        "id": "fuel_tank",
+        "tier": 3,
+        "name_fr": "Réservoir de carburant"
+      },
+      {
+        "id": "fuel_valve",
+        "tier": 3,
+        "name_fr": "Valve de carburant"
+      },
+      {
+        "id": "glass_panels",
+        "tier": 3,
+        "name_fr": "Panneaux de verre"
+      },
+      {
+        "id": "graphite",
+        "tier": 2,
+        "name_fr": "Graphite"
+      },
+      {
+        "id": "hatch_doors",
+        "tier": 3,
+        "name_fr": "Portes d'écoutille"
+      },
+      {
+        "id": "heat_shield",
+        "tier": 3,
+        "name_fr": "Bouclier thermique"
+      },
+      {
+        "id": "hydrogen_fuel",
+        "tier": 2,
+        "name_fr": "Carburant hydrogène"
+      },
+      {
+        "id": "instrumentation",
+        "tier": 3,
+        "name_fr": "Instrumentation"
+      },
+      {
+        "id": "iron_bars",
+        "tier": 2,
+        "name_fr": "Barres de fer"
+      },
+      {
+        "id": "iron_oxide",
+        "tier": 1,
+        "name_fr": "Oxyde de fer"
+      },
+      {
+        "id": "landing_gear",
+        "tier": 3,
+        "name_fr": "Train d'atterrissage"
+      },
+      {
+        "id": "launch_adapter",
+        "tier": 3,
+        "name_fr": "Adaptateur de lancement"
+      },
+      {
+        "id": "life_support_gas",
+        "tier": 3,
+        "name_fr": "Gaz de support vie"
+      },
+      {
+        "id": "life_support_tank",
+        "tier": 3,
+        "name_fr": "Réservoir support vie"
+      },
+      {
+        "id": "liquid_oxygen",
+        "tier": 2,
+        "name_fr": "Oxygène liquide"
+      },
+      {
+        "id": "lunar_helium3",
+        "tier": 0,
+        "name_fr": "Hélium-3 lunaire"
+      },
+      {
+        "id": "lunar_hydrogen",
+        "tier": 0,
+        "name_fr": "Hydrogène lunaire"
+      },
+      {
+        "id": "lunar_oxygen",
+        "tier": 0,
+        "name_fr": "Oxygène lunaire"
+      },
+      {
+        "id": "lunar_regolith",
+        "tier": 0,
+        "name_fr": "Régolithe lunaire"
+      },
+      {
+        "id": "methane",
+        "tier": 1,
+        "name_fr": "Méthane"
+      },
+      {
+        "id": "navigation_system",
+        "tier": 3,
+        "name_fr": "Système de navigation"
+      },
+      {
+        "id": "nitrogen_fertilizer",
+        "tier": 2,
+        "name_fr": "Engrais azoté"
+      },
+      {
+        "id": "nitrogen_gas",
+        "tier": 1,
+        "name_fr": "Azote (gaz)"
+      },
+      {
+        "id": "nozzle",
+        "tier": 3,
+        "name_fr": "Tuyère"
+      },
+      {
+        "id": "oxidizer_pump",
+        "tier": 3,
+        "name_fr": "Pompe d'oxydant"
+      },
+      {
+        "id": "oxidizer_tank",
+        "tier": 3,
+        "name_fr": "Réservoir d'oxydant"
+      },
+      {
+        "id": "oxidizer_valve",
+        "tier": 3,
+        "name_fr": "Valve d'oxydant"
+      },
+      {
+        "id": "polymer_plastic",
+        "tier": 3,
+        "name_fr": "Plastique polymère"
+      },
+      {
+        "id": "power_batteries",
+        "tier": 3,
+        "name_fr": "Batteries"
+      },
+      {
+        "id": "rocket_fuel",
+        "tier": 3,
+        "name_fr": "Propergol"
+      },
+      {
+        "id": "rocket_ready",
+        "tier": 3,
+        "name_fr": "Fusée prête"
+      },
+      {
+        "id": "run",
+        "name_fr": "Exécution",
+        "kind": "control"
+      },
+      {
+        "id": "seals_gaskets",
+        "tier": 3,
+        "name_fr": "Joints et garnitures"
+      },
+      {
+        "id": "silicon_dioxide",
+        "tier": 1,
+        "name_fr": "Dioxyde de silicium"
+      },
+      {
+        "id": "silicon_wafers",
+        "tier": 2,
+        "name_fr": "Wafers de silicium"
+      },
+      {
+        "id": "solar_panels",
+        "tier": 3,
+        "name_fr": "Panneaux solaires"
+      },
+      {
+        "id": "start",
+        "name_fr": "Démarrage",
+        "kind": "control"
+      },
+      {
+        "id": "steel_bars",
+        "tier": 3,
+        "name_fr": "Barres d'acier"
+      },
+      {
+        "id": "structural_frame",
+        "tier": 3,
+        "name_fr": "Structure principale"
+      },
+      {
+        "id": "synthetic_methane",
+        "tier": 2,
+        "name_fr": "Méthane synthétique"
+      },
+      {
+        "id": "thermal_control",
+        "tier": 3,
+        "name_fr": "Contrôle thermique"
+      },
+      {
+        "id": "thrust_controller",
+        "tier": 3,
+        "name_fr": "Contrôleur de poussée"
+      },
+      {
+        "id": "water",
+        "tier": 1,
+        "name_fr": "Eau"
+      },
+      {
+        "id": "water_recycler",
+        "tier": 3,
+        "name_fr": "Recycleur d'eau"
+      },
+      {
+        "id": "windows",
+        "tier": 3,
+        "name_fr": "Hublots"
+      },
+      {
+        "id": "wiring_harness",
+        "tier": 3,
+        "name_fr": "Faisceau de câbles"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "air_filtration",
+        "name_fr": "Filtration d'air",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "aluminum_ingots",
+        "name_fr": "Réduction",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "aluminum_oxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "ammonia_synthesis",
+        "name_fr": "Synthèse d'ammoniac",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "assemble_rocket",
+        "name_fr": "Assemblage complet",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "carbon_dioxide",
+        "name_fr": "Synthèse de CO2",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "carbon_fiber",
+        "name_fr": "Composite",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "cargo_container",
+        "name_fr": "Conteneur cargo",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "ceramic_plates",
+        "name_fr": "Céramique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "combustion_chamber",
+        "name_fr": "Chambre de combustion",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "communication_antenna",
+        "name_fr": "Antenne de communication",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "crew_module",
+        "name_fr": "Module équipage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "emergency_system",
+        "name_fr": "Système d'urgence",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "escape_rocket",
+        "name_fr": "Fusée de sauvetage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "fertilizer_pellets",
+        "name_fr": "Granulation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "flight_computer",
+        "name_fr": "Ordinateur de bord",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "fuel_injector",
+        "name_fr": "Injecteur carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "fuel_pump",
+        "name_fr": "Pompe carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "fuel_tank",
+        "name_fr": "Réservoir de carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "fuel_valve",
+        "name_fr": "Valve carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "glass_panels",
+        "name_fr": "Fabrication",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "graphite",
+        "name_fr": "Extraction carbone",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "hatch_doors",
+        "name_fr": "Porte d'écoutille",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "heat_shield",
+        "name_fr": "Bouclier thermique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "hydrogen_fuel",
+        "name_fr": "Traitement de l'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "init",
+        "name_fr": "Initialisation",
+        "kind": "system",
+        "activation": "manual"
+      },
+      {
+        "id": "instrumentation",
+        "name_fr": "Instrumentation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "iron_bars",
+        "name_fr": "Réduction",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "iron_oxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "landing_gear",
+        "name_fr": "Train d'atterrissage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "launch",
+        "name_fr": "Décollage",
+        "kind": "system",
+        "activation": "manual"
+      },
+      {
+        "id": "launch_adapter",
+        "name_fr": "Adaptateur de lancement",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "life_support_gas",
+        "name_fr": "Gaz support vie",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "life_support_tank",
+        "name_fr": "Réservoir support vie",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "liquid_oxygen",
+        "name_fr": "Traitement de l'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "lunar_helium3_extraction",
+        "name_fr": "Extrait l'hélium-3 présent dans le régolithe lunaire (potentiel pour fusion nucléaire future)",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract"
+      },
+      {
+        "id": "lunar_hydrogen_extraction",
+        "name_fr": "Extrait l'hydrogène lunaire présent dans le régolithe (composant essentiel pour l'eau et le carburant)",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract"
+      },
+      {
+        "id": "lunar_oxygen_extraction",
+        "name_fr": "Extrait l'oxygène lunaire présent dans les oxydes minéraux (essentiel pour la vie et l'oxydant)",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract"
+      },
+      {
+        "id": "lunar_regolith_extraction",
+        "name_fr": "Extrait le régolithe lunaire (poussière et roche de surface, base pour matériaux de construction)",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract"
+      },
+      {
+        "id": "methane_synthesis",
+        "name_fr": "Synthèse de méthane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "navigation_system",
+        "name_fr": "Système de navigation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "nitrogen_fertilizer",
+        "name_fr": "Traitement",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "nitrogen_gas",
+        "name_fr": "Synthèse d'azote moléculaire",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "nozzle",
+        "name_fr": "Tuyère",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "oxidizer_pump",
+        "name_fr": "Pompe oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "oxidizer_tank",
+        "name_fr": "Réservoir d'oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "oxidizer_valve",
+        "name_fr": "Valve oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "polymer_plastic",
+        "name_fr": "Polymérisation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "power_batteries",
+        "name_fr": "Batteries principales",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "rocket_fuel",
+        "name_fr": "Propergol",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "seals_gaskets",
+        "name_fr": "Joints et garnitures",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "silicon_dioxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "silicon_wafers",
+        "name_fr": "Purification",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "solar_panels",
+        "name_fr": "Panneaux solaires",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "steel_bars",
+        "name_fr": "Alliage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "structural_frame",
+        "name_fr": "Structure principale",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "synthetic_methane",
+        "name_fr": "Raffinage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "terminate",
+        "name_fr": "Terminaison",
+        "kind": "system",
+        "activation": "manual"
+      },
+      {
+        "id": "thermal_control",
+        "name_fr": "Contrôle thermique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "thrust_controller",
+        "name_fr": "Contrôleur de poussée",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "water_recycler",
+        "name_fr": "Recyclage d'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "water_synthesis",
+        "name_fr": "Synthèse d'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "windows",
+        "name_fr": "Hublots",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "wiring_harness",
+        "name_fr": "Câblage électrique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      }
+    ],
+    "arcs": [
+      {
+        "transitionId": "water_synthesis",
+        "direction": "in",
+        "placeId": "lunar_hydrogen",
+        "meta": {
+          "role": "réactif"
+        },
+        "lineNo": 176
+      },
+      {
+        "transitionId": "water_synthesis",
+        "direction": "in",
+        "placeId": "lunar_oxygen",
+        "meta": {
+          "role": "réactif"
+        },
+        "lineNo": 177
+      },
+      {
+        "transitionId": "water_synthesis",
+        "direction": "out",
+        "placeId": "water",
+        "meta": {
+          "role": "produit"
+        },
+        "lineNo": 178
+      }
+    ]
+  },
+  "gameSystem": {
+    "places": [
+      {
+        "id": "air_filtration_bus",
+        "resourceId": "air_filtration",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Filtration d'air"
+      },
+      {
+        "id": "air_filtration_stock",
+        "resourceId": "air_filtration",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Filtration d'air"
+      },
+      {
+        "id": "air_filtration_surface",
+        "resourceId": "air_filtration",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Filtration d'air"
+      },
+      {
+        "id": "aluminum_ingots_bus",
+        "resourceId": "aluminum_ingots",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Lingots d'aluminium"
+      },
+      {
+        "id": "aluminum_ingots_stock",
+        "resourceId": "aluminum_ingots",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Lingots d'aluminium"
+      },
+      {
+        "id": "aluminum_ingots_surface",
+        "resourceId": "aluminum_ingots",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Lingots d'aluminium"
+      },
+      {
+        "id": "aluminum_oxide_bus",
+        "resourceId": "aluminum_oxide",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Oxyde d'aluminium"
+      },
+      {
+        "id": "aluminum_oxide_stock",
+        "resourceId": "aluminum_oxide",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Oxyde d'aluminium"
+      },
+      {
+        "id": "aluminum_oxide_surface",
+        "resourceId": "aluminum_oxide",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Oxyde d'aluminium"
+      },
+      {
+        "id": "ammonia_bus",
+        "resourceId": "ammonia",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Ammoniac"
+      },
+      {
+        "id": "ammonia_stock",
+        "resourceId": "ammonia",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Ammoniac"
+      },
+      {
+        "id": "ammonia_surface",
+        "resourceId": "ammonia",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Ammoniac"
+      },
+      {
+        "id": "carbon_dioxide_bus",
+        "resourceId": "carbon_dioxide",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Dioxyde de carbone"
+      },
+      {
+        "id": "carbon_dioxide_stock",
+        "resourceId": "carbon_dioxide",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Dioxyde de carbone"
+      },
+      {
+        "id": "carbon_dioxide_surface",
+        "resourceId": "carbon_dioxide",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Dioxyde de carbone"
+      },
+      {
+        "id": "carbon_fiber_bus",
+        "resourceId": "carbon_fiber",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Fibre de carbone"
+      },
+      {
+        "id": "carbon_fiber_stock",
+        "resourceId": "carbon_fiber",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Fibre de carbone"
+      },
+      {
+        "id": "carbon_fiber_surface",
+        "resourceId": "carbon_fiber",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Fibre de carbone"
+      },
+      {
+        "id": "cargo_container_bus",
+        "resourceId": "cargo_container",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Conteneur cargo"
+      },
+      {
+        "id": "cargo_container_stock",
+        "resourceId": "cargo_container",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Conteneur cargo"
+      },
+      {
+        "id": "cargo_container_surface",
+        "resourceId": "cargo_container",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Conteneur cargo"
+      },
+      {
+        "id": "ceramic_plates_bus",
+        "resourceId": "ceramic_plates",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Plaques céramiques"
+      },
+      {
+        "id": "ceramic_plates_stock",
+        "resourceId": "ceramic_plates",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Plaques céramiques"
+      },
+      {
+        "id": "ceramic_plates_surface",
+        "resourceId": "ceramic_plates",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Plaques céramiques"
+      },
+      {
+        "id": "combustion_chamber_bus",
+        "resourceId": "combustion_chamber",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Chambre de combustion"
+      },
+      {
+        "id": "combustion_chamber_stock",
+        "resourceId": "combustion_chamber",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Chambre de combustion"
+      },
+      {
+        "id": "combustion_chamber_surface",
+        "resourceId": "combustion_chamber",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Chambre de combustion"
+      },
+      {
+        "id": "communication_antenna_bus",
+        "resourceId": "communication_antenna",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Antenne de communication"
+      },
+      {
+        "id": "communication_antenna_stock",
+        "resourceId": "communication_antenna",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Antenne de communication"
+      },
+      {
+        "id": "communication_antenna_surface",
+        "resourceId": "communication_antenna",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Antenne de communication"
+      },
+      {
+        "id": "crew_module_bus",
+        "resourceId": "crew_module",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Module équipage"
+      },
+      {
+        "id": "crew_module_stock",
+        "resourceId": "crew_module",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Module équipage"
+      },
+      {
+        "id": "crew_module_surface",
+        "resourceId": "crew_module",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Module équipage"
+      },
+      {
+        "id": "done",
+        "kind": "control",
+        "name_fr": "Terminé"
+      },
+      {
+        "id": "emergency_system_bus",
+        "resourceId": "emergency_system",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Système d'urgence"
+      },
+      {
+        "id": "emergency_system_stock",
+        "resourceId": "emergency_system",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Système d'urgence"
+      },
+      {
+        "id": "emergency_system_surface",
+        "resourceId": "emergency_system",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Système d'urgence"
+      },
+      {
+        "id": "escape_rocket_bus",
+        "resourceId": "escape_rocket",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Fusée de sauvetage"
+      },
+      {
+        "id": "escape_rocket_stock",
+        "resourceId": "escape_rocket",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Fusée de sauvetage"
+      },
+      {
+        "id": "escape_rocket_surface",
+        "resourceId": "escape_rocket",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Fusée de sauvetage"
+      },
+      {
+        "id": "fertilizer_pellets_bus",
+        "resourceId": "fertilizer_pellets",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Pellets d'engrais"
+      },
+      {
+        "id": "fertilizer_pellets_stock",
+        "resourceId": "fertilizer_pellets",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Pellets d'engrais"
+      },
+      {
+        "id": "fertilizer_pellets_surface",
+        "resourceId": "fertilizer_pellets",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Pellets d'engrais"
+      },
+      {
+        "id": "flight_computer_bus",
+        "resourceId": "flight_computer",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Ordinateur de bord"
+      },
+      {
+        "id": "flight_computer_stock",
+        "resourceId": "flight_computer",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Ordinateur de bord"
+      },
+      {
+        "id": "flight_computer_surface",
+        "resourceId": "flight_computer",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Ordinateur de bord"
+      },
+      {
+        "id": "fuel_injector_bus",
+        "resourceId": "fuel_injector",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Injecteur de carburant"
+      },
+      {
+        "id": "fuel_injector_stock",
+        "resourceId": "fuel_injector",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Injecteur de carburant"
+      },
+      {
+        "id": "fuel_injector_surface",
+        "resourceId": "fuel_injector",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Injecteur de carburant"
+      },
+      {
+        "id": "fuel_pump_bus",
+        "resourceId": "fuel_pump",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Pompe à carburant"
+      },
+      {
+        "id": "fuel_pump_stock",
+        "resourceId": "fuel_pump",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Pompe à carburant"
+      },
+      {
+        "id": "fuel_pump_surface",
+        "resourceId": "fuel_pump",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Pompe à carburant"
+      },
+      {
+        "id": "fuel_tank_bus",
+        "resourceId": "fuel_tank",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Réservoir de carburant"
+      },
+      {
+        "id": "fuel_tank_stock",
+        "resourceId": "fuel_tank",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Réservoir de carburant"
+      },
+      {
+        "id": "fuel_tank_surface",
+        "resourceId": "fuel_tank",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Réservoir de carburant"
+      },
+      {
+        "id": "fuel_valve_bus",
+        "resourceId": "fuel_valve",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Valve de carburant"
+      },
+      {
+        "id": "fuel_valve_stock",
+        "resourceId": "fuel_valve",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Valve de carburant"
+      },
+      {
+        "id": "fuel_valve_surface",
+        "resourceId": "fuel_valve",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Valve de carburant"
+      },
+      {
+        "id": "glass_panels_bus",
+        "resourceId": "glass_panels",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Panneaux de verre"
+      },
+      {
+        "id": "glass_panels_stock",
+        "resourceId": "glass_panels",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Panneaux de verre"
+      },
+      {
+        "id": "glass_panels_surface",
+        "resourceId": "glass_panels",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Panneaux de verre"
+      },
+      {
+        "id": "graphite_bus",
+        "resourceId": "graphite",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Graphite"
+      },
+      {
+        "id": "graphite_stock",
+        "resourceId": "graphite",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Graphite"
+      },
+      {
+        "id": "graphite_surface",
+        "resourceId": "graphite",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Graphite"
+      },
+      {
+        "id": "hatch_doors_bus",
+        "resourceId": "hatch_doors",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Portes d'écoutille"
+      },
+      {
+        "id": "hatch_doors_stock",
+        "resourceId": "hatch_doors",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Portes d'écoutille"
+      },
+      {
+        "id": "hatch_doors_surface",
+        "resourceId": "hatch_doors",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Portes d'écoutille"
+      },
+      {
+        "id": "heat_shield_bus",
+        "resourceId": "heat_shield",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Bouclier thermique"
+      },
+      {
+        "id": "heat_shield_stock",
+        "resourceId": "heat_shield",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Bouclier thermique"
+      },
+      {
+        "id": "heat_shield_surface",
+        "resourceId": "heat_shield",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Bouclier thermique"
+      },
+      {
+        "id": "hydrogen_fuel_bus",
+        "resourceId": "hydrogen_fuel",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Carburant hydrogène"
+      },
+      {
+        "id": "hydrogen_fuel_stock",
+        "resourceId": "hydrogen_fuel",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Carburant hydrogène"
+      },
+      {
+        "id": "hydrogen_fuel_surface",
+        "resourceId": "hydrogen_fuel",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Carburant hydrogène"
+      },
+      {
+        "id": "instrumentation_bus",
+        "resourceId": "instrumentation",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Instrumentation"
+      },
+      {
+        "id": "instrumentation_stock",
+        "resourceId": "instrumentation",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Instrumentation"
+      },
+      {
+        "id": "instrumentation_surface",
+        "resourceId": "instrumentation",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Instrumentation"
+      },
+      {
+        "id": "iron_bars_bus",
+        "resourceId": "iron_bars",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Barres de fer"
+      },
+      {
+        "id": "iron_bars_stock",
+        "resourceId": "iron_bars",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Barres de fer"
+      },
+      {
+        "id": "iron_bars_surface",
+        "resourceId": "iron_bars",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Barres de fer"
+      },
+      {
+        "id": "iron_oxide_bus",
+        "resourceId": "iron_oxide",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Oxyde de fer"
+      },
+      {
+        "id": "iron_oxide_stock",
+        "resourceId": "iron_oxide",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Oxyde de fer"
+      },
+      {
+        "id": "iron_oxide_surface",
+        "resourceId": "iron_oxide",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Oxyde de fer"
+      },
+      {
+        "id": "landing_gear_bus",
+        "resourceId": "landing_gear",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Train d'atterrissage"
+      },
+      {
+        "id": "landing_gear_stock",
+        "resourceId": "landing_gear",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Train d'atterrissage"
+      },
+      {
+        "id": "landing_gear_surface",
+        "resourceId": "landing_gear",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Train d'atterrissage"
+      },
+      {
+        "id": "launch_adapter_bus",
+        "resourceId": "launch_adapter",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Adaptateur de lancement"
+      },
+      {
+        "id": "launch_adapter_stock",
+        "resourceId": "launch_adapter",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Adaptateur de lancement"
+      },
+      {
+        "id": "launch_adapter_surface",
+        "resourceId": "launch_adapter",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Adaptateur de lancement"
+      },
+      {
+        "id": "life_support_gas_bus",
+        "resourceId": "life_support_gas",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Gaz de support vie"
+      },
+      {
+        "id": "life_support_gas_stock",
+        "resourceId": "life_support_gas",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Gaz de support vie"
+      },
+      {
+        "id": "life_support_gas_surface",
+        "resourceId": "life_support_gas",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Gaz de support vie"
+      },
+      {
+        "id": "life_support_tank_bus",
+        "resourceId": "life_support_tank",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Réservoir support vie"
+      },
+      {
+        "id": "life_support_tank_stock",
+        "resourceId": "life_support_tank",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Réservoir support vie"
+      },
+      {
+        "id": "life_support_tank_surface",
+        "resourceId": "life_support_tank",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Réservoir support vie"
+      },
+      {
+        "id": "liquid_oxygen_bus",
+        "resourceId": "liquid_oxygen",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Oxygène liquide"
+      },
+      {
+        "id": "liquid_oxygen_stock",
+        "resourceId": "liquid_oxygen",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Oxygène liquide"
+      },
+      {
+        "id": "liquid_oxygen_surface",
+        "resourceId": "liquid_oxygen",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Oxygène liquide"
+      },
+      {
+        "id": "lunar_helium3_bus",
+        "resourceId": "lunar_helium3",
+        "layer": "bus",
+        "tier": 0,
+        "name_fr": "Hélium-3 lunaire"
+      },
+      {
+        "id": "lunar_helium3_stock",
+        "resourceId": "lunar_helium3",
+        "layer": "stock",
+        "tier": 0,
+        "name_fr": "Hélium-3 lunaire"
+      },
+      {
+        "id": "lunar_helium3_surface",
+        "resourceId": "lunar_helium3",
+        "layer": "surface",
+        "tier": 0,
+        "name_fr": "Hélium-3 lunaire"
+      },
+      {
+        "id": "lunar_hydrogen_bus",
+        "resourceId": "lunar_hydrogen",
+        "layer": "bus",
+        "tier": 0,
+        "name_fr": "Hydrogène lunaire"
+      },
+      {
+        "id": "lunar_hydrogen_stock",
+        "resourceId": "lunar_hydrogen",
+        "layer": "stock",
+        "tier": 0,
+        "name_fr": "Hydrogène lunaire"
+      },
+      {
+        "id": "lunar_hydrogen_surface",
+        "resourceId": "lunar_hydrogen",
+        "layer": "surface",
+        "tier": 0,
+        "name_fr": "Hydrogène lunaire"
+      },
+      {
+        "id": "lunar_oxygen_bus",
+        "resourceId": "lunar_oxygen",
+        "layer": "bus",
+        "tier": 0,
+        "name_fr": "Oxygène lunaire"
+      },
+      {
+        "id": "lunar_oxygen_stock",
+        "resourceId": "lunar_oxygen",
+        "layer": "stock",
+        "tier": 0,
+        "name_fr": "Oxygène lunaire"
+      },
+      {
+        "id": "lunar_oxygen_surface",
+        "resourceId": "lunar_oxygen",
+        "layer": "surface",
+        "tier": 0,
+        "name_fr": "Oxygène lunaire"
+      },
+      {
+        "id": "lunar_regolith_bus",
+        "resourceId": "lunar_regolith",
+        "layer": "bus",
+        "tier": 0,
+        "name_fr": "Régolithe lunaire"
+      },
+      {
+        "id": "lunar_regolith_stock",
+        "resourceId": "lunar_regolith",
+        "layer": "stock",
+        "tier": 0,
+        "name_fr": "Régolithe lunaire"
+      },
+      {
+        "id": "lunar_regolith_surface",
+        "resourceId": "lunar_regolith",
+        "layer": "surface",
+        "tier": 0,
+        "name_fr": "Régolithe lunaire"
+      },
+      {
+        "id": "methane_bus",
+        "resourceId": "methane",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Méthane"
+      },
+      {
+        "id": "methane_stock",
+        "resourceId": "methane",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Méthane"
+      },
+      {
+        "id": "methane_surface",
+        "resourceId": "methane",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Méthane"
+      },
+      {
+        "id": "navigation_system_bus",
+        "resourceId": "navigation_system",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Système de navigation"
+      },
+      {
+        "id": "navigation_system_stock",
+        "resourceId": "navigation_system",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Système de navigation"
+      },
+      {
+        "id": "navigation_system_surface",
+        "resourceId": "navigation_system",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Système de navigation"
+      },
+      {
+        "id": "nitrogen_fertilizer_bus",
+        "resourceId": "nitrogen_fertilizer",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Engrais azoté"
+      },
+      {
+        "id": "nitrogen_fertilizer_stock",
+        "resourceId": "nitrogen_fertilizer",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Engrais azoté"
+      },
+      {
+        "id": "nitrogen_fertilizer_surface",
+        "resourceId": "nitrogen_fertilizer",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Engrais azoté"
+      },
+      {
+        "id": "nitrogen_gas_bus",
+        "resourceId": "nitrogen_gas",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Azote (gaz)"
+      },
+      {
+        "id": "nitrogen_gas_stock",
+        "resourceId": "nitrogen_gas",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Azote (gaz)"
+      },
+      {
+        "id": "nitrogen_gas_surface",
+        "resourceId": "nitrogen_gas",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Azote (gaz)"
+      },
+      {
+        "id": "nozzle_bus",
+        "resourceId": "nozzle",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Tuyère"
+      },
+      {
+        "id": "nozzle_stock",
+        "resourceId": "nozzle",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Tuyère"
+      },
+      {
+        "id": "nozzle_surface",
+        "resourceId": "nozzle",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Tuyère"
+      },
+      {
+        "id": "oxidizer_pump_bus",
+        "resourceId": "oxidizer_pump",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Pompe d'oxydant"
+      },
+      {
+        "id": "oxidizer_pump_stock",
+        "resourceId": "oxidizer_pump",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Pompe d'oxydant"
+      },
+      {
+        "id": "oxidizer_pump_surface",
+        "resourceId": "oxidizer_pump",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Pompe d'oxydant"
+      },
+      {
+        "id": "oxidizer_tank_bus",
+        "resourceId": "oxidizer_tank",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Réservoir d'oxydant"
+      },
+      {
+        "id": "oxidizer_tank_stock",
+        "resourceId": "oxidizer_tank",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Réservoir d'oxydant"
+      },
+      {
+        "id": "oxidizer_tank_surface",
+        "resourceId": "oxidizer_tank",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Réservoir d'oxydant"
+      },
+      {
+        "id": "oxidizer_valve_bus",
+        "resourceId": "oxidizer_valve",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Valve d'oxydant"
+      },
+      {
+        "id": "oxidizer_valve_stock",
+        "resourceId": "oxidizer_valve",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Valve d'oxydant"
+      },
+      {
+        "id": "oxidizer_valve_surface",
+        "resourceId": "oxidizer_valve",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Valve d'oxydant"
+      },
+      {
+        "id": "polymer_plastic_bus",
+        "resourceId": "polymer_plastic",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Plastique polymère"
+      },
+      {
+        "id": "polymer_plastic_stock",
+        "resourceId": "polymer_plastic",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Plastique polymère"
+      },
+      {
+        "id": "polymer_plastic_surface",
+        "resourceId": "polymer_plastic",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Plastique polymère"
+      },
+      {
+        "id": "power_batteries_bus",
+        "resourceId": "power_batteries",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Batteries"
+      },
+      {
+        "id": "power_batteries_stock",
+        "resourceId": "power_batteries",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Batteries"
+      },
+      {
+        "id": "power_batteries_surface",
+        "resourceId": "power_batteries",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Batteries"
+      },
+      {
+        "id": "rocket_fuel_bus",
+        "resourceId": "rocket_fuel",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Propergol"
+      },
+      {
+        "id": "rocket_fuel_stock",
+        "resourceId": "rocket_fuel",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Propergol"
+      },
+      {
+        "id": "rocket_fuel_surface",
+        "resourceId": "rocket_fuel",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Propergol"
+      },
+      {
+        "id": "rocket_ready_bus",
+        "resourceId": "rocket_ready",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Fusée prête"
+      },
+      {
+        "id": "rocket_ready_stock",
+        "resourceId": "rocket_ready",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Fusée prête"
+      },
+      {
+        "id": "rocket_ready_surface",
+        "resourceId": "rocket_ready",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Fusée prête"
+      },
+      {
+        "id": "run",
+        "kind": "control",
+        "name_fr": "Exécution"
+      },
+      {
+        "id": "seals_gaskets_bus",
+        "resourceId": "seals_gaskets",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Joints et garnitures"
+      },
+      {
+        "id": "seals_gaskets_stock",
+        "resourceId": "seals_gaskets",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Joints et garnitures"
+      },
+      {
+        "id": "seals_gaskets_surface",
+        "resourceId": "seals_gaskets",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Joints et garnitures"
+      },
+      {
+        "id": "silicon_dioxide_bus",
+        "resourceId": "silicon_dioxide",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Dioxyde de silicium"
+      },
+      {
+        "id": "silicon_dioxide_stock",
+        "resourceId": "silicon_dioxide",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Dioxyde de silicium"
+      },
+      {
+        "id": "silicon_dioxide_surface",
+        "resourceId": "silicon_dioxide",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Dioxyde de silicium"
+      },
+      {
+        "id": "silicon_wafers_bus",
+        "resourceId": "silicon_wafers",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Wafers de silicium"
+      },
+      {
+        "id": "silicon_wafers_stock",
+        "resourceId": "silicon_wafers",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Wafers de silicium"
+      },
+      {
+        "id": "silicon_wafers_surface",
+        "resourceId": "silicon_wafers",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Wafers de silicium"
+      },
+      {
+        "id": "solar_panels_bus",
+        "resourceId": "solar_panels",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Panneaux solaires"
+      },
+      {
+        "id": "solar_panels_stock",
+        "resourceId": "solar_panels",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Panneaux solaires"
+      },
+      {
+        "id": "solar_panels_surface",
+        "resourceId": "solar_panels",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Panneaux solaires"
+      },
+      {
+        "id": "start",
+        "kind": "control",
+        "name_fr": "Démarrage"
+      },
+      {
+        "id": "steel_bars_bus",
+        "resourceId": "steel_bars",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Barres d'acier"
+      },
+      {
+        "id": "steel_bars_stock",
+        "resourceId": "steel_bars",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Barres d'acier"
+      },
+      {
+        "id": "steel_bars_surface",
+        "resourceId": "steel_bars",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Barres d'acier"
+      },
+      {
+        "id": "structural_frame_bus",
+        "resourceId": "structural_frame",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Structure principale"
+      },
+      {
+        "id": "structural_frame_stock",
+        "resourceId": "structural_frame",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Structure principale"
+      },
+      {
+        "id": "structural_frame_surface",
+        "resourceId": "structural_frame",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Structure principale"
+      },
+      {
+        "id": "synthetic_methane_bus",
+        "resourceId": "synthetic_methane",
+        "layer": "bus",
+        "tier": 2,
+        "name_fr": "Méthane synthétique"
+      },
+      {
+        "id": "synthetic_methane_stock",
+        "resourceId": "synthetic_methane",
+        "layer": "stock",
+        "tier": 2,
+        "name_fr": "Méthane synthétique"
+      },
+      {
+        "id": "synthetic_methane_surface",
+        "resourceId": "synthetic_methane",
+        "layer": "surface",
+        "tier": 2,
+        "name_fr": "Méthane synthétique"
+      },
+      {
+        "id": "thermal_control_bus",
+        "resourceId": "thermal_control",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Contrôle thermique"
+      },
+      {
+        "id": "thermal_control_stock",
+        "resourceId": "thermal_control",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Contrôle thermique"
+      },
+      {
+        "id": "thermal_control_surface",
+        "resourceId": "thermal_control",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Contrôle thermique"
+      },
+      {
+        "id": "thrust_controller_bus",
+        "resourceId": "thrust_controller",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Contrôleur de poussée"
+      },
+      {
+        "id": "thrust_controller_stock",
+        "resourceId": "thrust_controller",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Contrôleur de poussée"
+      },
+      {
+        "id": "thrust_controller_surface",
+        "resourceId": "thrust_controller",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Contrôleur de poussée"
+      },
+      {
+        "id": "water_bus",
+        "resourceId": "water",
+        "layer": "bus",
+        "tier": 1,
+        "name_fr": "Eau"
+      },
+      {
+        "id": "water_recycler_bus",
+        "resourceId": "water_recycler",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Recycleur d'eau"
+      },
+      {
+        "id": "water_recycler_stock",
+        "resourceId": "water_recycler",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Recycleur d'eau"
+      },
+      {
+        "id": "water_recycler_surface",
+        "resourceId": "water_recycler",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Recycleur d'eau"
+      },
+      {
+        "id": "water_stock",
+        "resourceId": "water",
+        "layer": "stock",
+        "tier": 1,
+        "name_fr": "Eau"
+      },
+      {
+        "id": "water_surface",
+        "resourceId": "water",
+        "layer": "surface",
+        "tier": 1,
+        "name_fr": "Eau"
+      },
+      {
+        "id": "windows_bus",
+        "resourceId": "windows",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Hublots"
+      },
+      {
+        "id": "windows_stock",
+        "resourceId": "windows",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Hublots"
+      },
+      {
+        "id": "windows_surface",
+        "resourceId": "windows",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Hublots"
+      },
+      {
+        "id": "wiring_harness_bus",
+        "resourceId": "wiring_harness",
+        "layer": "bus",
+        "tier": 3,
+        "name_fr": "Faisceau de câbles"
+      },
+      {
+        "id": "wiring_harness_stock",
+        "resourceId": "wiring_harness",
+        "layer": "stock",
+        "tier": 3,
+        "name_fr": "Faisceau de câbles"
+      },
+      {
+        "id": "wiring_harness_surface",
+        "resourceId": "wiring_harness",
+        "layer": "surface",
+        "tier": 3,
+        "name_fr": "Faisceau de câbles"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "convey__air_filtration",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Filtration d'air"
+      },
+      {
+        "id": "convey__aluminum_ingots",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Lingots d'aluminium"
+      },
+      {
+        "id": "convey__aluminum_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Oxyde d'aluminium"
+      },
+      {
+        "id": "convey__ammonia",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Ammoniac"
+      },
+      {
+        "id": "convey__carbon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Dioxyde de carbone"
+      },
+      {
+        "id": "convey__carbon_fiber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Fibre de carbone"
+      },
+      {
+        "id": "convey__cargo_container",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Conteneur cargo"
+      },
+      {
+        "id": "convey__ceramic_plates",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Plaques céramiques"
+      },
+      {
+        "id": "convey__combustion_chamber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Chambre de combustion"
+      },
+      {
+        "id": "convey__communication_antenna",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Antenne de communication"
+      },
+      {
+        "id": "convey__crew_module",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Module équipage"
+      },
+      {
+        "id": "convey__emergency_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Système d'urgence"
+      },
+      {
+        "id": "convey__escape_rocket",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Fusée de sauvetage"
+      },
+      {
+        "id": "convey__fertilizer_pellets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Pellets d'engrais"
+      },
+      {
+        "id": "convey__flight_computer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Ordinateur de bord"
+      },
+      {
+        "id": "convey__fuel_injector",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Injecteur de carburant"
+      },
+      {
+        "id": "convey__fuel_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Pompe à carburant"
+      },
+      {
+        "id": "convey__fuel_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Réservoir de carburant"
+      },
+      {
+        "id": "convey__fuel_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Valve de carburant"
+      },
+      {
+        "id": "convey__glass_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Panneaux de verre"
+      },
+      {
+        "id": "convey__graphite",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Graphite"
+      },
+      {
+        "id": "convey__hatch_doors",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Portes d'écoutille"
+      },
+      {
+        "id": "convey__heat_shield",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Bouclier thermique"
+      },
+      {
+        "id": "convey__hydrogen_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Carburant hydrogène"
+      },
+      {
+        "id": "convey__instrumentation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Instrumentation"
+      },
+      {
+        "id": "convey__iron_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Barres de fer"
+      },
+      {
+        "id": "convey__iron_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Oxyde de fer"
+      },
+      {
+        "id": "convey__landing_gear",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Train d'atterrissage"
+      },
+      {
+        "id": "convey__launch_adapter",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Adaptateur de lancement"
+      },
+      {
+        "id": "convey__life_support_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Gaz de support vie"
+      },
+      {
+        "id": "convey__life_support_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Réservoir support vie"
+      },
+      {
+        "id": "convey__liquid_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Oxygène liquide"
+      },
+      {
+        "id": "convey__lunar_helium3",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Hélium-3 lunaire"
+      },
+      {
+        "id": "convey__lunar_hydrogen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Hydrogène lunaire"
+      },
+      {
+        "id": "convey__lunar_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Oxygène lunaire"
+      },
+      {
+        "id": "convey__lunar_regolith",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Régolithe lunaire"
+      },
+      {
+        "id": "convey__methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Méthane"
+      },
+      {
+        "id": "convey__navigation_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Système de navigation"
+      },
+      {
+        "id": "convey__nitrogen_fertilizer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Engrais azoté"
+      },
+      {
+        "id": "convey__nitrogen_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Azote (gaz)"
+      },
+      {
+        "id": "convey__nozzle",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Tuyère"
+      },
+      {
+        "id": "convey__oxidizer_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Pompe d'oxydant"
+      },
+      {
+        "id": "convey__oxidizer_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Réservoir d'oxydant"
+      },
+      {
+        "id": "convey__oxidizer_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Valve d'oxydant"
+      },
+      {
+        "id": "convey__polymer_plastic",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Plastique polymère"
+      },
+      {
+        "id": "convey__power_batteries",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Batteries"
+      },
+      {
+        "id": "convey__rocket_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Propergol"
+      },
+      {
+        "id": "convey__rocket_ready",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Fusée prête"
+      },
+      {
+        "id": "convey__seals_gaskets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Joints et garnitures"
+      },
+      {
+        "id": "convey__silicon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Dioxyde de silicium"
+      },
+      {
+        "id": "convey__silicon_wafers",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Wafers de silicium"
+      },
+      {
+        "id": "convey__solar_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Panneaux solaires"
+      },
+      {
+        "id": "convey__steel_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Barres d'acier"
+      },
+      {
+        "id": "convey__structural_frame",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Structure principale"
+      },
+      {
+        "id": "convey__synthetic_methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Méthane synthétique"
+      },
+      {
+        "id": "convey__thermal_control",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Contrôle thermique"
+      },
+      {
+        "id": "convey__thrust_controller",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Contrôleur de poussée"
+      },
+      {
+        "id": "convey__water",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Eau"
+      },
+      {
+        "id": "convey__water_recycler",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Recycleur d'eau"
+      },
+      {
+        "id": "convey__windows",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Hublots"
+      },
+      {
+        "id": "convey__wiring_harness",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "convey",
+        "name_fr": "Convoyage: Faisceau de câbles"
+      },
+      {
+        "id": "drain__air_filtration_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Filtration d'air (bus)"
+      },
+      {
+        "id": "drain__air_filtration_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Filtration d'air (stock)"
+      },
+      {
+        "id": "drain__air_filtration_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Filtration d'air (surface)"
+      },
+      {
+        "id": "drain__aluminum_ingots_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Lingots d'aluminium (bus)"
+      },
+      {
+        "id": "drain__aluminum_ingots_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Lingots d'aluminium (stock)"
+      },
+      {
+        "id": "drain__aluminum_ingots_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Lingots d'aluminium (surface)"
+      },
+      {
+        "id": "drain__aluminum_oxide_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde d'aluminium (bus)"
+      },
+      {
+        "id": "drain__aluminum_oxide_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde d'aluminium (stock)"
+      },
+      {
+        "id": "drain__aluminum_oxide_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde d'aluminium (surface)"
+      },
+      {
+        "id": "drain__ammonia_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ammoniac (bus)"
+      },
+      {
+        "id": "drain__ammonia_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ammoniac (stock)"
+      },
+      {
+        "id": "drain__ammonia_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ammoniac (surface)"
+      },
+      {
+        "id": "drain__carbon_dioxide_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de carbone (bus)"
+      },
+      {
+        "id": "drain__carbon_dioxide_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de carbone (stock)"
+      },
+      {
+        "id": "drain__carbon_dioxide_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de carbone (surface)"
+      },
+      {
+        "id": "drain__carbon_fiber_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fibre de carbone (bus)"
+      },
+      {
+        "id": "drain__carbon_fiber_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fibre de carbone (stock)"
+      },
+      {
+        "id": "drain__carbon_fiber_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fibre de carbone (surface)"
+      },
+      {
+        "id": "drain__cargo_container_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Conteneur cargo (bus)"
+      },
+      {
+        "id": "drain__cargo_container_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Conteneur cargo (stock)"
+      },
+      {
+        "id": "drain__cargo_container_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Conteneur cargo (surface)"
+      },
+      {
+        "id": "drain__ceramic_plates_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plaques céramiques (bus)"
+      },
+      {
+        "id": "drain__ceramic_plates_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plaques céramiques (stock)"
+      },
+      {
+        "id": "drain__ceramic_plates_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plaques céramiques (surface)"
+      },
+      {
+        "id": "drain__combustion_chamber_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Chambre de combustion (bus)"
+      },
+      {
+        "id": "drain__combustion_chamber_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Chambre de combustion (stock)"
+      },
+      {
+        "id": "drain__combustion_chamber_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Chambre de combustion (surface)"
+      },
+      {
+        "id": "drain__communication_antenna_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Antenne de communication (bus)"
+      },
+      {
+        "id": "drain__communication_antenna_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Antenne de communication (stock)"
+      },
+      {
+        "id": "drain__communication_antenna_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Antenne de communication (surface)"
+      },
+      {
+        "id": "drain__crew_module_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Module équipage (bus)"
+      },
+      {
+        "id": "drain__crew_module_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Module équipage (stock)"
+      },
+      {
+        "id": "drain__crew_module_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Module équipage (surface)"
+      },
+      {
+        "id": "drain__emergency_system_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système d'urgence (bus)"
+      },
+      {
+        "id": "drain__emergency_system_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système d'urgence (stock)"
+      },
+      {
+        "id": "drain__emergency_system_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système d'urgence (surface)"
+      },
+      {
+        "id": "drain__escape_rocket_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée de sauvetage (bus)"
+      },
+      {
+        "id": "drain__escape_rocket_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée de sauvetage (stock)"
+      },
+      {
+        "id": "drain__escape_rocket_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée de sauvetage (surface)"
+      },
+      {
+        "id": "drain__fertilizer_pellets_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pellets d'engrais (bus)"
+      },
+      {
+        "id": "drain__fertilizer_pellets_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pellets d'engrais (stock)"
+      },
+      {
+        "id": "drain__fertilizer_pellets_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pellets d'engrais (surface)"
+      },
+      {
+        "id": "drain__flight_computer_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ordinateur de bord (bus)"
+      },
+      {
+        "id": "drain__flight_computer_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ordinateur de bord (stock)"
+      },
+      {
+        "id": "drain__flight_computer_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Ordinateur de bord (surface)"
+      },
+      {
+        "id": "drain__fuel_injector_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Injecteur de carburant (bus)"
+      },
+      {
+        "id": "drain__fuel_injector_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Injecteur de carburant (stock)"
+      },
+      {
+        "id": "drain__fuel_injector_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Injecteur de carburant (surface)"
+      },
+      {
+        "id": "drain__fuel_pump_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe à carburant (bus)"
+      },
+      {
+        "id": "drain__fuel_pump_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe à carburant (stock)"
+      },
+      {
+        "id": "drain__fuel_pump_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe à carburant (surface)"
+      },
+      {
+        "id": "drain__fuel_tank_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir de carburant (bus)"
+      },
+      {
+        "id": "drain__fuel_tank_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir de carburant (stock)"
+      },
+      {
+        "id": "drain__fuel_tank_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir de carburant (surface)"
+      },
+      {
+        "id": "drain__fuel_valve_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve de carburant (bus)"
+      },
+      {
+        "id": "drain__fuel_valve_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve de carburant (stock)"
+      },
+      {
+        "id": "drain__fuel_valve_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve de carburant (surface)"
+      },
+      {
+        "id": "drain__glass_panels_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux de verre (bus)"
+      },
+      {
+        "id": "drain__glass_panels_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux de verre (stock)"
+      },
+      {
+        "id": "drain__glass_panels_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux de verre (surface)"
+      },
+      {
+        "id": "drain__graphite_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Graphite (bus)"
+      },
+      {
+        "id": "drain__graphite_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Graphite (stock)"
+      },
+      {
+        "id": "drain__graphite_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Graphite (surface)"
+      },
+      {
+        "id": "drain__hatch_doors_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Portes d'écoutille (bus)"
+      },
+      {
+        "id": "drain__hatch_doors_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Portes d'écoutille (stock)"
+      },
+      {
+        "id": "drain__hatch_doors_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Portes d'écoutille (surface)"
+      },
+      {
+        "id": "drain__heat_shield_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Bouclier thermique (bus)"
+      },
+      {
+        "id": "drain__heat_shield_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Bouclier thermique (stock)"
+      },
+      {
+        "id": "drain__heat_shield_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Bouclier thermique (surface)"
+      },
+      {
+        "id": "drain__hydrogen_fuel_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Carburant hydrogène (bus)"
+      },
+      {
+        "id": "drain__hydrogen_fuel_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Carburant hydrogène (stock)"
+      },
+      {
+        "id": "drain__hydrogen_fuel_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Carburant hydrogène (surface)"
+      },
+      {
+        "id": "drain__instrumentation_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Instrumentation (bus)"
+      },
+      {
+        "id": "drain__instrumentation_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Instrumentation (stock)"
+      },
+      {
+        "id": "drain__instrumentation_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Instrumentation (surface)"
+      },
+      {
+        "id": "drain__iron_bars_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres de fer (bus)"
+      },
+      {
+        "id": "drain__iron_bars_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres de fer (stock)"
+      },
+      {
+        "id": "drain__iron_bars_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres de fer (surface)"
+      },
+      {
+        "id": "drain__iron_oxide_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde de fer (bus)"
+      },
+      {
+        "id": "drain__iron_oxide_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde de fer (stock)"
+      },
+      {
+        "id": "drain__iron_oxide_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxyde de fer (surface)"
+      },
+      {
+        "id": "drain__landing_gear_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Train d'atterrissage (bus)"
+      },
+      {
+        "id": "drain__landing_gear_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Train d'atterrissage (stock)"
+      },
+      {
+        "id": "drain__landing_gear_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Train d'atterrissage (surface)"
+      },
+      {
+        "id": "drain__launch_adapter_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Adaptateur de lancement (bus)"
+      },
+      {
+        "id": "drain__launch_adapter_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Adaptateur de lancement (stock)"
+      },
+      {
+        "id": "drain__launch_adapter_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Adaptateur de lancement (surface)"
+      },
+      {
+        "id": "drain__life_support_gas_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Gaz de support vie (bus)"
+      },
+      {
+        "id": "drain__life_support_gas_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Gaz de support vie (stock)"
+      },
+      {
+        "id": "drain__life_support_gas_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Gaz de support vie (surface)"
+      },
+      {
+        "id": "drain__life_support_tank_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir support vie (bus)"
+      },
+      {
+        "id": "drain__life_support_tank_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir support vie (stock)"
+      },
+      {
+        "id": "drain__life_support_tank_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir support vie (surface)"
+      },
+      {
+        "id": "drain__liquid_oxygen_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène liquide (bus)"
+      },
+      {
+        "id": "drain__liquid_oxygen_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène liquide (stock)"
+      },
+      {
+        "id": "drain__liquid_oxygen_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène liquide (surface)"
+      },
+      {
+        "id": "drain__lunar_helium3_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hélium-3 lunaire (bus)"
+      },
+      {
+        "id": "drain__lunar_helium3_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hélium-3 lunaire (stock)"
+      },
+      {
+        "id": "drain__lunar_helium3_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hélium-3 lunaire (surface)"
+      },
+      {
+        "id": "drain__lunar_hydrogen_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hydrogène lunaire (bus)"
+      },
+      {
+        "id": "drain__lunar_hydrogen_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hydrogène lunaire (stock)"
+      },
+      {
+        "id": "drain__lunar_hydrogen_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hydrogène lunaire (surface)"
+      },
+      {
+        "id": "drain__lunar_oxygen_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène lunaire (bus)"
+      },
+      {
+        "id": "drain__lunar_oxygen_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène lunaire (stock)"
+      },
+      {
+        "id": "drain__lunar_oxygen_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Oxygène lunaire (surface)"
+      },
+      {
+        "id": "drain__lunar_regolith_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Régolithe lunaire (bus)"
+      },
+      {
+        "id": "drain__lunar_regolith_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Régolithe lunaire (stock)"
+      },
+      {
+        "id": "drain__lunar_regolith_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Régolithe lunaire (surface)"
+      },
+      {
+        "id": "drain__methane_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane (bus)"
+      },
+      {
+        "id": "drain__methane_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane (stock)"
+      },
+      {
+        "id": "drain__methane_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane (surface)"
+      },
+      {
+        "id": "drain__navigation_system_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système de navigation (bus)"
+      },
+      {
+        "id": "drain__navigation_system_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système de navigation (stock)"
+      },
+      {
+        "id": "drain__navigation_system_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Système de navigation (surface)"
+      },
+      {
+        "id": "drain__nitrogen_fertilizer_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Engrais azoté (bus)"
+      },
+      {
+        "id": "drain__nitrogen_fertilizer_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Engrais azoté (stock)"
+      },
+      {
+        "id": "drain__nitrogen_fertilizer_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Engrais azoté (surface)"
+      },
+      {
+        "id": "drain__nitrogen_gas_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Azote (gaz) (bus)"
+      },
+      {
+        "id": "drain__nitrogen_gas_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Azote (gaz) (stock)"
+      },
+      {
+        "id": "drain__nitrogen_gas_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Azote (gaz) (surface)"
+      },
+      {
+        "id": "drain__nozzle_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Tuyère (bus)"
+      },
+      {
+        "id": "drain__nozzle_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Tuyère (stock)"
+      },
+      {
+        "id": "drain__nozzle_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Tuyère (surface)"
+      },
+      {
+        "id": "drain__oxidizer_pump_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe d'oxydant (bus)"
+      },
+      {
+        "id": "drain__oxidizer_pump_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe d'oxydant (stock)"
+      },
+      {
+        "id": "drain__oxidizer_pump_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Pompe d'oxydant (surface)"
+      },
+      {
+        "id": "drain__oxidizer_tank_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir d'oxydant (bus)"
+      },
+      {
+        "id": "drain__oxidizer_tank_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir d'oxydant (stock)"
+      },
+      {
+        "id": "drain__oxidizer_tank_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Réservoir d'oxydant (surface)"
+      },
+      {
+        "id": "drain__oxidizer_valve_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve d'oxydant (bus)"
+      },
+      {
+        "id": "drain__oxidizer_valve_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve d'oxydant (stock)"
+      },
+      {
+        "id": "drain__oxidizer_valve_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Valve d'oxydant (surface)"
+      },
+      {
+        "id": "drain__polymer_plastic_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plastique polymère (bus)"
+      },
+      {
+        "id": "drain__polymer_plastic_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plastique polymère (stock)"
+      },
+      {
+        "id": "drain__polymer_plastic_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Plastique polymère (surface)"
+      },
+      {
+        "id": "drain__power_batteries_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Batteries (bus)"
+      },
+      {
+        "id": "drain__power_batteries_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Batteries (stock)"
+      },
+      {
+        "id": "drain__power_batteries_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Batteries (surface)"
+      },
+      {
+        "id": "drain__rocket_fuel_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Propergol (bus)"
+      },
+      {
+        "id": "drain__rocket_fuel_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Propergol (stock)"
+      },
+      {
+        "id": "drain__rocket_fuel_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Propergol (surface)"
+      },
+      {
+        "id": "drain__rocket_ready_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée prête (bus)"
+      },
+      {
+        "id": "drain__rocket_ready_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée prête (stock)"
+      },
+      {
+        "id": "drain__rocket_ready_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Fusée prête (surface)"
+      },
+      {
+        "id": "drain__seals_gaskets_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Joints et garnitures (bus)"
+      },
+      {
+        "id": "drain__seals_gaskets_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Joints et garnitures (stock)"
+      },
+      {
+        "id": "drain__seals_gaskets_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Joints et garnitures (surface)"
+      },
+      {
+        "id": "drain__silicon_dioxide_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de silicium (bus)"
+      },
+      {
+        "id": "drain__silicon_dioxide_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de silicium (stock)"
+      },
+      {
+        "id": "drain__silicon_dioxide_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Dioxyde de silicium (surface)"
+      },
+      {
+        "id": "drain__silicon_wafers_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Wafers de silicium (bus)"
+      },
+      {
+        "id": "drain__silicon_wafers_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Wafers de silicium (stock)"
+      },
+      {
+        "id": "drain__silicon_wafers_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Wafers de silicium (surface)"
+      },
+      {
+        "id": "drain__solar_panels_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux solaires (bus)"
+      },
+      {
+        "id": "drain__solar_panels_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux solaires (stock)"
+      },
+      {
+        "id": "drain__solar_panels_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Panneaux solaires (surface)"
+      },
+      {
+        "id": "drain__steel_bars_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres d'acier (bus)"
+      },
+      {
+        "id": "drain__steel_bars_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres d'acier (stock)"
+      },
+      {
+        "id": "drain__steel_bars_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Barres d'acier (surface)"
+      },
+      {
+        "id": "drain__structural_frame_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Structure principale (bus)"
+      },
+      {
+        "id": "drain__structural_frame_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Structure principale (stock)"
+      },
+      {
+        "id": "drain__structural_frame_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Structure principale (surface)"
+      },
+      {
+        "id": "drain__synthetic_methane_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane synthétique (bus)"
+      },
+      {
+        "id": "drain__synthetic_methane_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane synthétique (stock)"
+      },
+      {
+        "id": "drain__synthetic_methane_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Méthane synthétique (surface)"
+      },
+      {
+        "id": "drain__thermal_control_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôle thermique (bus)"
+      },
+      {
+        "id": "drain__thermal_control_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôle thermique (stock)"
+      },
+      {
+        "id": "drain__thermal_control_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôle thermique (surface)"
+      },
+      {
+        "id": "drain__thrust_controller_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôleur de poussée (bus)"
+      },
+      {
+        "id": "drain__thrust_controller_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôleur de poussée (stock)"
+      },
+      {
+        "id": "drain__thrust_controller_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Contrôleur de poussée (surface)"
+      },
+      {
+        "id": "drain__water_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Eau (bus)"
+      },
+      {
+        "id": "drain__water_recycler_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Recycleur d'eau (bus)"
+      },
+      {
+        "id": "drain__water_recycler_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Recycleur d'eau (stock)"
+      },
+      {
+        "id": "drain__water_recycler_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Recycleur d'eau (surface)"
+      },
+      {
+        "id": "drain__water_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Eau (stock)"
+      },
+      {
+        "id": "drain__water_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Eau (surface)"
+      },
+      {
+        "id": "drain__windows_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hublots (bus)"
+      },
+      {
+        "id": "drain__windows_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hublots (stock)"
+      },
+      {
+        "id": "drain__windows_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Hublots (surface)"
+      },
+      {
+        "id": "drain__wiring_harness_bus",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Faisceau de câbles (bus)"
+      },
+      {
+        "id": "drain__wiring_harness_stock",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Faisceau de câbles (stock)"
+      },
+      {
+        "id": "drain__wiring_harness_surface",
+        "kind": "system",
+        "activation": "always",
+        "name_fr": "Purge: Faisceau de câbles (surface)"
+      },
+      {
+        "id": "extract__air_filtration",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Filtration d'air"
+      },
+      {
+        "id": "extract__aluminum_ingots",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Lingots d'aluminium"
+      },
+      {
+        "id": "extract__aluminum_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Oxyde d'aluminium"
+      },
+      {
+        "id": "extract__ammonia",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Ammoniac"
+      },
+      {
+        "id": "extract__carbon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Dioxyde de carbone"
+      },
+      {
+        "id": "extract__carbon_fiber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Fibre de carbone"
+      },
+      {
+        "id": "extract__cargo_container",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Conteneur cargo"
+      },
+      {
+        "id": "extract__ceramic_plates",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Plaques céramiques"
+      },
+      {
+        "id": "extract__combustion_chamber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Chambre de combustion"
+      },
+      {
+        "id": "extract__communication_antenna",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Antenne de communication"
+      },
+      {
+        "id": "extract__crew_module",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Module équipage"
+      },
+      {
+        "id": "extract__emergency_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Système d'urgence"
+      },
+      {
+        "id": "extract__escape_rocket",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Fusée de sauvetage"
+      },
+      {
+        "id": "extract__fertilizer_pellets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Pellets d'engrais"
+      },
+      {
+        "id": "extract__flight_computer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Ordinateur de bord"
+      },
+      {
+        "id": "extract__fuel_injector",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Injecteur de carburant"
+      },
+      {
+        "id": "extract__fuel_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Pompe à carburant"
+      },
+      {
+        "id": "extract__fuel_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Réservoir de carburant"
+      },
+      {
+        "id": "extract__fuel_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Valve de carburant"
+      },
+      {
+        "id": "extract__glass_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Panneaux de verre"
+      },
+      {
+        "id": "extract__graphite",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Graphite"
+      },
+      {
+        "id": "extract__hatch_doors",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Portes d'écoutille"
+      },
+      {
+        "id": "extract__heat_shield",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Bouclier thermique"
+      },
+      {
+        "id": "extract__hydrogen_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Carburant hydrogène"
+      },
+      {
+        "id": "extract__instrumentation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Instrumentation"
+      },
+      {
+        "id": "extract__iron_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Barres de fer"
+      },
+      {
+        "id": "extract__iron_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Oxyde de fer"
+      },
+      {
+        "id": "extract__landing_gear",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Train d'atterrissage"
+      },
+      {
+        "id": "extract__launch_adapter",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Adaptateur de lancement"
+      },
+      {
+        "id": "extract__life_support_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Gaz de support vie"
+      },
+      {
+        "id": "extract__life_support_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Réservoir support vie"
+      },
+      {
+        "id": "extract__liquid_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Oxygène liquide"
+      },
+      {
+        "id": "extract__lunar_helium3",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Hélium-3 lunaire"
+      },
+      {
+        "id": "extract__lunar_hydrogen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Hydrogène lunaire"
+      },
+      {
+        "id": "extract__lunar_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Oxygène lunaire"
+      },
+      {
+        "id": "extract__lunar_regolith",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Régolithe lunaire"
+      },
+      {
+        "id": "extract__methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Méthane"
+      },
+      {
+        "id": "extract__navigation_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Système de navigation"
+      },
+      {
+        "id": "extract__nitrogen_fertilizer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Engrais azoté"
+      },
+      {
+        "id": "extract__nitrogen_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Azote (gaz)"
+      },
+      {
+        "id": "extract__nozzle",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Tuyère"
+      },
+      {
+        "id": "extract__oxidizer_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Pompe d'oxydant"
+      },
+      {
+        "id": "extract__oxidizer_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Réservoir d'oxydant"
+      },
+      {
+        "id": "extract__oxidizer_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Valve d'oxydant"
+      },
+      {
+        "id": "extract__polymer_plastic",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Plastique polymère"
+      },
+      {
+        "id": "extract__power_batteries",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Batteries"
+      },
+      {
+        "id": "extract__rocket_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Propergol"
+      },
+      {
+        "id": "extract__rocket_ready",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Fusée prête"
+      },
+      {
+        "id": "extract__seals_gaskets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Joints et garnitures"
+      },
+      {
+        "id": "extract__silicon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Dioxyde de silicium"
+      },
+      {
+        "id": "extract__silicon_wafers",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Wafers de silicium"
+      },
+      {
+        "id": "extract__solar_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Panneaux solaires"
+      },
+      {
+        "id": "extract__steel_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Barres d'acier"
+      },
+      {
+        "id": "extract__structural_frame",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Structure principale"
+      },
+      {
+        "id": "extract__synthetic_methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Méthane synthétique"
+      },
+      {
+        "id": "extract__thermal_control",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Contrôle thermique"
+      },
+      {
+        "id": "extract__thrust_controller",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Contrôleur de poussée"
+      },
+      {
+        "id": "extract__water",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Eau"
+      },
+      {
+        "id": "extract__water_recycler",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Recycleur d'eau"
+      },
+      {
+        "id": "extract__windows",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Hublots"
+      },
+      {
+        "id": "extract__wiring_harness",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "extract",
+        "name_fr": "Extraction: Faisceau de câbles"
+      },
+      {
+        "id": "init",
+        "name_fr": "Initialisation",
+        "kind": "system",
+        "activation": "manual"
+      },
+      {
+        "id": "launch",
+        "name_fr": "Décollage",
+        "kind": "system",
+        "activation": "manual"
+      },
+      {
+        "id": "recipe__air_filtration",
+        "name_fr": "Filtration d'air",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__aluminum_ingots",
+        "name_fr": "Réduction",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__aluminum_oxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__ammonia_synthesis",
+        "name_fr": "Synthèse d'ammoniac",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__assemble_rocket",
+        "name_fr": "Assemblage complet",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__carbon_dioxide",
+        "name_fr": "Synthèse de CO2",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__carbon_fiber",
+        "name_fr": "Composite",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__cargo_container",
+        "name_fr": "Conteneur cargo",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__ceramic_plates",
+        "name_fr": "Céramique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__combustion_chamber",
+        "name_fr": "Chambre de combustion",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__communication_antenna",
+        "name_fr": "Antenne de communication",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__crew_module",
+        "name_fr": "Module équipage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__emergency_system",
+        "name_fr": "Système d'urgence",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__escape_rocket",
+        "name_fr": "Fusée de sauvetage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__fertilizer_pellets",
+        "name_fr": "Granulation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__flight_computer",
+        "name_fr": "Ordinateur de bord",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__fuel_injector",
+        "name_fr": "Injecteur carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__fuel_pump",
+        "name_fr": "Pompe carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__fuel_tank",
+        "name_fr": "Réservoir de carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__fuel_valve",
+        "name_fr": "Valve carburant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__glass_panels",
+        "name_fr": "Fabrication",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__graphite",
+        "name_fr": "Extraction carbone",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__hatch_doors",
+        "name_fr": "Porte d'écoutille",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__heat_shield",
+        "name_fr": "Bouclier thermique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__hydrogen_fuel",
+        "name_fr": "Traitement de l'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__instrumentation",
+        "name_fr": "Instrumentation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__iron_bars",
+        "name_fr": "Réduction",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__iron_oxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__landing_gear",
+        "name_fr": "Train d'atterrissage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__launch_adapter",
+        "name_fr": "Adaptateur de lancement",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__life_support_gas",
+        "name_fr": "Gaz support vie",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__life_support_tank",
+        "name_fr": "Réservoir support vie",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__liquid_oxygen",
+        "name_fr": "Traitement de l'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__methane_synthesis",
+        "name_fr": "Synthèse de méthane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__navigation_system",
+        "name_fr": "Système de navigation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__nitrogen_fertilizer",
+        "name_fr": "Traitement",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__nitrogen_gas",
+        "name_fr": "Synthèse d'azote moléculaire",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__nozzle",
+        "name_fr": "Tuyère",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__oxidizer_pump",
+        "name_fr": "Pompe oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__oxidizer_tank",
+        "name_fr": "Réservoir d'oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__oxidizer_valve",
+        "name_fr": "Valve oxydant",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__polymer_plastic",
+        "name_fr": "Polymérisation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__power_batteries",
+        "name_fr": "Batteries principales",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__rocket_fuel",
+        "name_fr": "Propergol",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__seals_gaskets",
+        "name_fr": "Joints et garnitures",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__silicon_dioxide",
+        "name_fr": "Oxydation du régolithe",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__silicon_wafers",
+        "name_fr": "Purification",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__solar_panels",
+        "name_fr": "Panneaux solaires",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__steel_bars",
+        "name_fr": "Alliage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__structural_frame",
+        "name_fr": "Structure principale",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__synthetic_methane",
+        "name_fr": "Raffinage",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__thermal_control",
+        "name_fr": "Contrôle thermique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__thrust_controller",
+        "name_fr": "Contrôleur de poussée",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__water_recycler",
+        "name_fr": "Recyclage d'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__water_synthesis",
+        "name_fr": "Synthèse d'eau",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__windows",
+        "name_fr": "Hublots",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "recipe__wiring_harness",
+        "name_fr": "Câblage électrique",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "recipe"
+      },
+      {
+        "id": "store__air_filtration",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Filtration d'air"
+      },
+      {
+        "id": "store__aluminum_ingots",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Lingots d'aluminium"
+      },
+      {
+        "id": "store__aluminum_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Oxyde d'aluminium"
+      },
+      {
+        "id": "store__ammonia",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Ammoniac"
+      },
+      {
+        "id": "store__carbon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Dioxyde de carbone"
+      },
+      {
+        "id": "store__carbon_fiber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Fibre de carbone"
+      },
+      {
+        "id": "store__cargo_container",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Conteneur cargo"
+      },
+      {
+        "id": "store__ceramic_plates",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Plaques céramiques"
+      },
+      {
+        "id": "store__combustion_chamber",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Chambre de combustion"
+      },
+      {
+        "id": "store__communication_antenna",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Antenne de communication"
+      },
+      {
+        "id": "store__crew_module",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Module équipage"
+      },
+      {
+        "id": "store__emergency_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Système d'urgence"
+      },
+      {
+        "id": "store__escape_rocket",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Fusée de sauvetage"
+      },
+      {
+        "id": "store__fertilizer_pellets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Pellets d'engrais"
+      },
+      {
+        "id": "store__flight_computer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Ordinateur de bord"
+      },
+      {
+        "id": "store__fuel_injector",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Injecteur de carburant"
+      },
+      {
+        "id": "store__fuel_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Pompe à carburant"
+      },
+      {
+        "id": "store__fuel_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Réservoir de carburant"
+      },
+      {
+        "id": "store__fuel_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Valve de carburant"
+      },
+      {
+        "id": "store__glass_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Panneaux de verre"
+      },
+      {
+        "id": "store__graphite",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Graphite"
+      },
+      {
+        "id": "store__hatch_doors",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Portes d'écoutille"
+      },
+      {
+        "id": "store__heat_shield",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Bouclier thermique"
+      },
+      {
+        "id": "store__hydrogen_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Carburant hydrogène"
+      },
+      {
+        "id": "store__instrumentation",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Instrumentation"
+      },
+      {
+        "id": "store__iron_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Barres de fer"
+      },
+      {
+        "id": "store__iron_oxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Oxyde de fer"
+      },
+      {
+        "id": "store__landing_gear",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Train d'atterrissage"
+      },
+      {
+        "id": "store__launch_adapter",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Adaptateur de lancement"
+      },
+      {
+        "id": "store__life_support_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Gaz de support vie"
+      },
+      {
+        "id": "store__life_support_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Réservoir support vie"
+      },
+      {
+        "id": "store__liquid_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Oxygène liquide"
+      },
+      {
+        "id": "store__lunar_helium3",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Hélium-3 lunaire"
+      },
+      {
+        "id": "store__lunar_hydrogen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Hydrogène lunaire"
+      },
+      {
+        "id": "store__lunar_oxygen",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Oxygène lunaire"
+      },
+      {
+        "id": "store__lunar_regolith",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Régolithe lunaire"
+      },
+      {
+        "id": "store__methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Méthane"
+      },
+      {
+        "id": "store__navigation_system",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Système de navigation"
+      },
+      {
+        "id": "store__nitrogen_fertilizer",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Engrais azoté"
+      },
+      {
+        "id": "store__nitrogen_gas",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Azote (gaz)"
+      },
+      {
+        "id": "store__nozzle",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Tuyère"
+      },
+      {
+        "id": "store__oxidizer_pump",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Pompe d'oxydant"
+      },
+      {
+        "id": "store__oxidizer_tank",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Réservoir d'oxydant"
+      },
+      {
+        "id": "store__oxidizer_valve",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Valve d'oxydant"
+      },
+      {
+        "id": "store__polymer_plastic",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Plastique polymère"
+      },
+      {
+        "id": "store__power_batteries",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Batteries"
+      },
+      {
+        "id": "store__rocket_fuel",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Propergol"
+      },
+      {
+        "id": "store__rocket_ready",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Fusée prête"
+      },
+      {
+        "id": "store__seals_gaskets",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Joints et garnitures"
+      },
+      {
+        "id": "store__silicon_dioxide",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Dioxyde de silicium"
+      },
+      {
+        "id": "store__silicon_wafers",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Wafers de silicium"
+      },
+      {
+        "id": "store__solar_panels",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Panneaux solaires"
+      },
+      {
+        "id": "store__steel_bars",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Barres d'acier"
+      },
+      {
+        "id": "store__structural_frame",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Structure principale"
+      },
+      {
+        "id": "store__synthetic_methane",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Méthane synthétique"
+      },
+      {
+        "id": "store__thermal_control",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Contrôle thermique"
+      },
+      {
+        "id": "store__thrust_controller",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Contrôleur de poussée"
+      },
+      {
+        "id": "store__water",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Eau"
+      },
+      {
+        "id": "store__water_recycler",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Recycleur d'eau"
+      },
+      {
+        "id": "store__windows",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Hublots"
+      },
+      {
+        "id": "store__wiring_harness",
+        "kind": "station",
+        "activation": "placed",
+        "stationKind": "store",
+        "name_fr": "Stockage: Faisceau de câbles"
+      },
+      {
+        "id": "terminate",
+        "name_fr": "Terminaison",
+        "kind": "system",
+        "activation": "manual"
+      }
+    ],
+    "resources": [
+      "air_filtration",
+      "aluminum_ingots",
+      "aluminum_oxide",
+      "ammonia",
+      "carbon_dioxide",
+      "carbon_fiber",
+      "cargo_container",
+      "ceramic_plates",
+      "combustion_chamber",
+      "communication_antenna",
+      "crew_module",
+      "emergency_system",
+      "escape_rocket",
+      "fertilizer_pellets",
+      "flight_computer",
+      "fuel_injector",
+      "fuel_pump",
+      "fuel_tank",
+      "fuel_valve",
+      "glass_panels",
+      "graphite",
+      "hatch_doors",
+      "heat_shield",
+      "hydrogen_fuel",
+      "instrumentation",
+      "iron_bars",
+      "iron_oxide",
+      "landing_gear",
+      "launch_adapter",
+      "life_support_gas",
+      "life_support_tank",
+      "liquid_oxygen",
+      "lunar_helium3",
+      "lunar_hydrogen",
+      "lunar_oxygen",
+      "lunar_regolith",
+      "methane",
+      "navigation_system",
+      "nitrogen_fertilizer",
+      "nitrogen_gas",
+      "nozzle",
+      "oxidizer_pump",
+      "oxidizer_tank",
+      "oxidizer_valve",
+      "polymer_plastic",
+      "power_batteries",
+      "rocket_fuel",
+      "rocket_ready",
+      "seals_gaskets",
+      "silicon_dioxide",
+      "silicon_wafers",
+      "solar_panels",
+      "steel_bars",
+      "structural_frame",
+      "synthetic_methane",
+      "thermal_control",
+      "thrust_controller",
+      "water",
+      "water_recycler",
+      "windows",
+      "wiring_harness"
+    ]
+  }
+}

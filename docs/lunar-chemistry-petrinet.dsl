@@ -173,33 +173,32 @@ Transitions d'extraction (tier 0) qui nécessitent le token `run` (démarrage vi
 ## Niveau 1 : Composés Chimiques de Base
 Traitement simple des matières premières en composés chimiques fondamentaux
 
-@transition water_synthesis | {"name_fr":"Synthèse d'eau"}
 @arc water_synthesis in lunar_hydrogen | {"role":"réactif"}
 @arc water_synthesis in lunar_oxygen | {"role":"réactif"}
 @arc water_synthesis out water | {"role":"produit"}
 
-;water_synthesis lunar_hydrogen*2 lunar_oxygen -> water
+;water_synthesis run lunar_hydrogen*2 lunar_oxygen -> run water
 # Synthèse d'eau : 2 hydrogène + 1 oxygène (pour vie, recyclage et traitement carburant)
 
-;methane_synthesis lunar_hydrogen*4 lunar_oxygen -> methane
+;methane_synthesis run lunar_hydrogen*4 lunar_oxygen -> run methane
 # Synthèse de méthane : 4 hydrogène + 1 oxygène (carburant de base pour polymères)
 
-;ammonia_synthesis lunar_hydrogen*3 lunar_oxygen*2 -> ammonia
+;ammonia_synthesis run lunar_hydrogen*3 lunar_oxygen*2 -> run ammonia
 # Synthèse d'ammoniac : 3 hydrogène + 2 oxygène (engrais azoté pour systèmes agricoles)
 
-;silicon_dioxide lunar_regolith -> silicon_dioxide
+;silicon_dioxide run lunar_regolith -> run silicon_dioxide
 # Oxydation du régolithe : extraction de dioxyde de silicium (base pour wafers et verre)
 
-;iron_oxide lunar_regolith -> iron_oxide
+;iron_oxide run lunar_regolith -> run iron_oxide
 # Oxydation du régolithe : extraction d'oxyde de fer (base pour acier et structures)
 
-;aluminum_oxide lunar_regolith -> aluminum_oxide
+;aluminum_oxide run lunar_regolith -> run aluminum_oxide
 # Oxydation du régolithe : extraction d'oxyde d'aluminium (base pour aluminium et céramique)
 
-;carbon_dioxide lunar_hydrogen lunar_oxygen -> carbon_dioxide
+;carbon_dioxide run lunar_hydrogen lunar_oxygen -> run carbon_dioxide
 # Synthèse de CO2 : 1 hydrogène + 1 oxygène (base pour graphite et systèmes de support vie)
 
-;nitrogen_gas lunar_oxygen*3 -> nitrogen_gas
+;nitrogen_gas run lunar_oxygen*3 -> run nitrogen_gas
 # Synthèse d'azote moléculaire : 3 oxygène transformés (composant pour fibres carbone et engrais)
 
 ---
@@ -207,52 +206,52 @@ Traitement simple des matières premières en composés chimiques fondamentaux
 ## Niveau 2 : Matériaux Intermédiaires
 Synthèse complexe combinant les composés de base en matériaux utilisables
 
-;hydrogen_fuel water -> hydrogen_fuel
+;hydrogen_fuel run water -> run hydrogen_fuel
 # Traitement de l'eau : production de carburant hydrogène (composant du propergol)
 
-;liquid_oxygen water -> liquid_oxygen
+;liquid_oxygen run water -> run liquid_oxygen
 # Traitement de l'eau : production d'oxygène liquide (oxydant cryogénique)
 
-;synthetic_methane water methane -> synthetic_methane
+;synthetic_methane run water methane -> run synthetic_methane
 # Raffinage : méthane synthétique purifié (base pour plastiques polymères)
 
-;nitrogen_fertilizer water ammonia -> nitrogen_fertilizer
+;nitrogen_fertilizer run water ammonia -> run nitrogen_fertilizer
 # Traitement : engrais azoté concentré (pour systèmes agricoles en serre)
 
-;silicon_wafers silicon_dioxide -> silicon_wafers
+;silicon_wafers run silicon_dioxide -> run silicon_wafers
 # Purification : wafers de silicium pour électronique et panneaux solaires
 
-;iron_bars iron_oxide -> iron_bars
+;iron_bars run iron_oxide -> run iron_bars
 # Réduction : barres de fer pur (matériau de base pour structures métalliques)
 
-;aluminum_ingots aluminum_oxide -> aluminum_ingots
+;aluminum_ingots run aluminum_oxide -> run aluminum_ingots
 # Réduction : lingots d'aluminium pur (léger, pour structures et batteries)
 
-;graphite carbon_dioxide -> graphite
+;graphite run carbon_dioxide -> run graphite
 # Extraction carbone : graphite pur (composant pour batteries et composites)
 
-;steel_bars iron_bars aluminum_ingots -> steel_bars
+;steel_bars run iron_bars aluminum_ingots -> run steel_bars
 # Alliage : acier renforcé aluminium (structures principales de fusée)
 
-;glass_panels silicon_wafers -> glass_panels
+;glass_panels run silicon_wafers -> run glass_panels
 # Fabrication : panneaux de verre transparent (hublots et vitres)
 
-;ceramic_plates aluminum_oxide iron_oxide -> ceramic_plates
+;ceramic_plates run aluminum_oxide iron_oxide -> run ceramic_plates
 # Céramique : plaques de protection thermique (bouclier thermique)
 
-;carbon_fiber graphite nitrogen_gas -> carbon_fiber
+;carbon_fiber run graphite nitrogen_gas -> run carbon_fiber
 # Composite : fibre de carbone haute résistance (structures légères et câblage)
 
-;polymer_plastic synthetic_methane -> polymer_plastic
+;polymer_plastic run synthetic_methane -> run polymer_plastic
 # Polymérisation : plastique polymère (joints, gaskets et composants isolants)
 
-;fertilizer_pellets nitrogen_fertilizer -> fertilizer_pellets
+;fertilizer_pellets run nitrogen_fertilizer -> run fertilizer_pellets
 # Granulation : pellets d'engrais concentré (agriculture en serre lunaire)
 
-;rocket_fuel hydrogen_fuel liquid_oxygen -> rocket_fuel
+;rocket_fuel run hydrogen_fuel liquid_oxygen -> run rocket_fuel
 # Propergol : mélange hydrogène/oxygène liquide (carburant principal de fusée)
 
-;life_support_gas liquid_oxygen nitrogen_gas -> life_support_gas
+;life_support_gas run liquid_oxygen nitrogen_gas -> run life_support_gas
 # Gaz support vie : mélange respirable O2/N2 (systèmes de survit de l'équipage)
 
 ---
@@ -262,106 +261,106 @@ Assemblage des matériaux intermédiaires en composants fonctionnels de fusée
 
 ### Propulsion
 
-;fuel_tank steel_bars -> fuel_tank
+;fuel_tank run steel_bars -> run fuel_tank
 # Réservoir de carburant : structure en acier pour stockage hydrogène liquide
 
-;fuel_pump steel_bars graphite -> fuel_pump
+;fuel_pump run steel_bars graphite -> run fuel_pump
 # Pompe carburant : système de pompage haute pression avec joints en graphite
 
-;fuel_valve steel_bars ceramic_plates -> fuel_valve
+;fuel_valve run steel_bars ceramic_plates -> run fuel_valve
 # Valve carburant : système de contrôle de flux résistant à haute température
 
-;fuel_injector steel_bars silicon_wafers -> fuel_injector
+;fuel_injector run steel_bars silicon_wafers -> run fuel_injector
 # Injecteur carburant : système de pulvérisation de précision avec électronique
 
-;oxidizer_tank steel_bars -> oxidizer_tank
+;oxidizer_tank run steel_bars -> run oxidizer_tank
 # Réservoir d'oxydant : structure en acier pour stockage oxygène liquide cryogénique
 
-;oxidizer_pump steel_bars graphite -> oxidizer_pump
+;oxidizer_pump run steel_bars graphite -> run oxidizer_pump
 # Pompe oxydant : système de pompage cryogénique haute performance
 
-;oxidizer_valve steel_bars ceramic_plates -> oxidizer_valve
+;oxidizer_valve run steel_bars ceramic_plates -> run oxidizer_valve
 # Valve oxydant : contrôle de flux cryogénique résistant au froid extrême
 
-;combustion_chamber ceramic_plates steel_bars -> combustion_chamber
+;combustion_chamber run ceramic_plates steel_bars -> run combustion_chamber
 # Chambre de combustion : assemblage céramique/acier résistant aux hautes températures
 
-;nozzle ceramic_plates steel_bars -> nozzle
+;nozzle run ceramic_plates steel_bars -> run nozzle
 # Tuyère : expansion des gaz de combustion pour poussée maximale
 
 ### Contrôle et Navigation
 
-;thrust_controller silicon_wafers -> thrust_controller
+;thrust_controller run silicon_wafers -> run thrust_controller
 # Contrôleur de poussée : système électronique de régulation moteur
 
-;flight_computer silicon_wafers -> flight_computer
+;flight_computer run silicon_wafers -> run flight_computer
 # Ordinateur de bord : cerveau de la fusée pour calculs de trajectoire
 
-;navigation_system silicon_wafers carbon_fiber -> navigation_system
+;navigation_system run silicon_wafers carbon_fiber -> run navigation_system
 # Système de navigation : GPS et guidage inertiel avec antennes carbone
 
-;communication_antenna aluminum_ingots carbon_fiber -> communication_antenna
+;communication_antenna run aluminum_ingots carbon_fiber -> run communication_antenna
 # Antenne de communication : liaison radio Terre-Lune avec éléments carbone
 
 ### Support Vie
 
-;life_support_tank aluminum_ingots -> life_support_tank
+;life_support_tank run aluminum_ingots -> run life_support_tank
 # Réservoir support vie : stockage gaz respirable et ressources vitales
 
-;air_filtration life_support_gas -> air_filtration
+;air_filtration run life_support_gas -> run air_filtration
 # Filtration d'air : système de purification et recyclage de l'air
 
-;water_recycler life_support_gas -> water_recycler
+;water_recycler run life_support_gas -> run water_recycler
 # Recyclage d'eau : récupération et purification de l'eau de condensation
 
-;heat_shield ceramic_plates carbon_fiber -> heat_shield
+;heat_shield run ceramic_plates carbon_fiber -> run heat_shield
 # Bouclier thermique : protection céramique/carbone pour rentrée atmosphérique
 
-;thermal_control glass_panels -> thermal_control
+;thermal_control run glass_panels -> run thermal_control
 # Contrôle thermique : régulation de température des systèmes électroniques
 
 ### Énergie et Structures
 
-;power_batteries aluminum_ingots -> power_batteries
+;power_batteries run aluminum_ingots -> run power_batteries
 # Batteries principales : stockage d'énergie pour systèmes de bord
 
-;solar_panels silicon_wafers aluminum_ingots -> solar_panels
+;solar_panels run silicon_wafers aluminum_ingots -> run solar_panels
 # Panneaux solaires : production d'énergie pendant le vol et en orbite
 
-;structural_frame steel_bars aluminum_ingots -> structural_frame
+;structural_frame run steel_bars aluminum_ingots -> run structural_frame
 # Structure principale : armature de fusée combinant acier et aluminium
 
-;landing_gear steel_bars -> landing_gear
+;landing_gear run steel_bars -> run landing_gear
 # Train d'atterrissage : système de déploiement et amortisseurs pour atterrissage
 
-;cargo_container aluminum_ingots -> cargo_container
+;cargo_container run aluminum_ingots -> run cargo_container
 # Conteneur cargo : espace de stockage pour équipements et échantillons
 
-;crew_module aluminum_ingots glass_panels -> crew_module
+;crew_module run aluminum_ingots glass_panels -> run crew_module
 # Module équipage : cabine pressurisée avec hublots pour astronautes
 
-;hatch_doors aluminum_ingots ceramic_plates -> hatch_doors
+;hatch_doors run aluminum_ingots ceramic_plates -> run hatch_doors
 # Porte d'écoutille : système d'étanchéité et verrouillage pressurisé
 
-;windows glass_panels -> windows
+;windows run glass_panels -> run windows
 # Hublots : vitres renforcées pour observation et navigation visuelle
 
-;seals_gaskets polymer_plastic -> seals_gaskets
+;seals_gaskets run polymer_plastic -> run seals_gaskets
 # Joints et garnitures : étanchéité des modules pressurisés
 
-;wiring_harness carbon_fiber -> wiring_harness
+;wiring_harness run carbon_fiber -> run wiring_harness
 # Câblage électrique : réseau de connexion avec isolation en fibre carbone
 
-;instrumentation silicon_wafers -> instrumentation
+;instrumentation run silicon_wafers -> run instrumentation
 # Instrumentation : capteurs et instruments de mesure de vol
 
-;emergency_system silicon_wafers -> emergency_system
+;emergency_system run silicon_wafers -> run emergency_system
 # Système d'urgence : sauvegarde automatisée et alertes critiques
 
-;escape_rocket rocket_fuel -> escape_rocket
+;escape_rocket run rocket_fuel -> run escape_rocket
 # Fusée de sauvetage : système de propulsion d'évacuation d'urgence
 
-;launch_adapter structural_frame -> launch_adapter
+;launch_adapter run structural_frame -> run launch_adapter
 # Adaptateur de lancement : interface avec plateforme de lancement terrestre
 
 ---
@@ -369,7 +368,7 @@ Assemblage des matériaux intermédiaires en composants fonctionnels de fusée
 ## Assemblage Final : Construction de la Fusée
 Les 32 composants de niveau 3 convergent vers l'assemblage final
 
-;assemble_rocket fuel_tank fuel_pump fuel_valve fuel_injector oxidizer_tank oxidizer_pump oxidizer_valve combustion_chamber nozzle thrust_controller flight_computer navigation_system communication_antenna life_support_tank air_filtration water_recycler heat_shield thermal_control power_batteries solar_panels structural_frame landing_gear cargo_container crew_module hatch_doors windows seals_gaskets wiring_harness instrumentation emergency_system escape_rocket launch_adapter -> rocket_ready
+;assemble_rocket run fuel_tank fuel_pump fuel_valve fuel_injector oxidizer_tank oxidizer_pump oxidizer_valve combustion_chamber nozzle thrust_controller flight_computer navigation_system communication_antenna life_support_tank air_filtration water_recycler heat_shield thermal_control power_batteries solar_panels structural_frame landing_gear cargo_container crew_module hatch_doors windows seals_gaskets wiring_harness instrumentation emergency_system escape_rocket launch_adapter -> run rocket_ready
 # Assemblage complet : tous les composants sont intégrés pour former la fusée opérationnelle
 
 ;launch run rocket_ready -> done run
@@ -380,67 +379,7 @@ Les 32 composants de niveau 3 convergent vers l'assemblage final
 ## Purge (post-launch)
 Drain de toutes les places vers `done` avant terminaison.
 
-;drain__air_filtration done air_filtration -> done
-;drain__aluminum_ingots done aluminum_ingots -> done
-;drain__aluminum_oxide done aluminum_oxide -> done
-;drain__ammonia done ammonia -> done
-;drain__carbon_dioxide done carbon_dioxide -> done
-;drain__carbon_fiber done carbon_fiber -> done
-;drain__cargo_container done cargo_container -> done
-;drain__ceramic_plates done ceramic_plates -> done
-;drain__combustion_chamber done combustion_chamber -> done
-;drain__communication_antenna done communication_antenna -> done
-;drain__crew_module done crew_module -> done
-;drain__emergency_system done emergency_system -> done
-;drain__escape_rocket done escape_rocket -> done
-;drain__fertilizer_pellets done fertilizer_pellets -> done
-;drain__flight_computer done flight_computer -> done
-;drain__fuel_injector done fuel_injector -> done
-;drain__fuel_pump done fuel_pump -> done
-;drain__fuel_tank done fuel_tank -> done
-;drain__fuel_valve done fuel_valve -> done
-;drain__glass_panels done glass_panels -> done
-;drain__graphite done graphite -> done
-;drain__hatch_doors done hatch_doors -> done
-;drain__heat_shield done heat_shield -> done
-;drain__hydrogen_fuel done hydrogen_fuel -> done
-;drain__instrumentation done instrumentation -> done
-;drain__iron_bars done iron_bars -> done
-;drain__iron_oxide done iron_oxide -> done
-;drain__landing_gear done landing_gear -> done
-;drain__launch_adapter done launch_adapter -> done
-;drain__life_support_gas done life_support_gas -> done
-;drain__life_support_tank done life_support_tank -> done
-;drain__liquid_oxygen done liquid_oxygen -> done
-;drain__lunar_helium3 done lunar_helium3 -> done
-;drain__lunar_hydrogen done lunar_hydrogen -> done
-;drain__lunar_oxygen done lunar_oxygen -> done
-;drain__lunar_regolith done lunar_regolith -> done
-;drain__methane done methane -> done
-;drain__navigation_system done navigation_system -> done
-;drain__nitrogen_fertilizer done nitrogen_fertilizer -> done
-;drain__nitrogen_gas done nitrogen_gas -> done
-;drain__nozzle done nozzle -> done
-;drain__oxidizer_pump done oxidizer_pump -> done
-;drain__oxidizer_tank done oxidizer_tank -> done
-;drain__oxidizer_valve done oxidizer_valve -> done
-;drain__polymer_plastic done polymer_plastic -> done
-;drain__power_batteries done power_batteries -> done
-;drain__rocket_fuel done rocket_fuel -> done
-;drain__rocket_ready done rocket_ready -> done
-;drain__seals_gaskets done seals_gaskets -> done
-;drain__silicon_dioxide done silicon_dioxide -> done
-;drain__silicon_wafers done silicon_wafers -> done
-;drain__solar_panels done solar_panels -> done
-;drain__steel_bars done steel_bars -> done
-;drain__structural_frame done structural_frame -> done
-;drain__synthetic_methane done synthetic_methane -> done
-;drain__thermal_control done thermal_control -> done
-;drain__thrust_controller done thrust_controller -> done
-;drain__water done water -> done
-;drain__water_recycler done water_recycler -> done
-;drain__windows done windows -> done
-;drain__wiring_harness done wiring_harness -> done
+# NOTE: Les transitions `drain__*` sont dérivées automatiquement par le compilateur DSL.
 
 ;terminate done run -> ()
 # Terminaison : consomme `done` + `run` et termine le système
