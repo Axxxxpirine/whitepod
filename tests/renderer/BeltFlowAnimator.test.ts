@@ -5,10 +5,11 @@ import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { ResourceType, TileType, type BuildingId } from '@/game/types';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
+  MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 
-type AnimatorTestApi = { resolveResourceForBelt(id: BuildingId): ResourceType };
+type AnimatorTestApi = { resolveResourcesForBelt(id: BuildingId): ReadonlyArray<ResourceType> };
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -39,12 +40,12 @@ describe('BeltFlowAnimator', () => {
     const animator = createAnimator(engine);
     const firstSegmentId = belt.segmentIds[0]!;
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.None);
+    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([]);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.IronOre);
+    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.IronOre]);
 
     animator.destroy();
   });
@@ -69,11 +70,158 @@ describe('BeltFlowAnimator', () => {
     const firstSegmentId = belt.segmentIds[0]!;
     const animator = createAnimator(engine);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
+    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.Coal]);
 
     engine.grid.resourceAmount.fill(0);
 
-    expect((animator as unknown as AnimatorTestApi).resolveResourceForBelt(firstSegmentId)).toBe(ResourceType.Coal);
+    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(firstSegmentId)).toEqual([ResourceType.Coal]);
+
+    animator.destroy();
+  });
+
+  it('resolves a single resource type for a belt downstream of a merger with one input', () => {
+    const engine = makeEngine();
+    engine.placeResource(0, 1, ResourceType.Coal);
+
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 2 })!;
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
+
+    // Route extractor → merger's west input.
+    const inBelt = engine.placeBelt(
+      { building: extractorId, port: 'out_east' },
+      { building: mergerId, port: 'in_west' },
+    );
+    if (!inBelt.ok) throw new Error(`belt placement failed: ${inBelt.reason}`);
+
+    // Route merger output → target.
+    const outBelt = engine.placeBelt(
+      { building: mergerId, port: 'out_east' },
+      { building: targetId, port: 'in_west' },
+    );
+    if (!outBelt.ok) throw new Error(`output belt placement failed: ${outBelt.reason}`);
+
+    const animator = createAnimator(engine);
+    const outBeltFirstSegmentId = outBelt.segmentIds[0]!;
+
+    // Belt downstream of the merger should see the same resource type as the input.
+    expect((animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBeltFirstSegmentId))
+      .toEqual([ResourceType.Coal]);
+
+    animator.destroy();
+  });
+
+  it('resolves both resource types for a belt downstream of a merger with two different inputs', () => {
+    // Layout:
+    //   (0,0)=E2(iron)  (1,0)=belt  (2,0)=belt  (3,0)=corner→south
+    //   (0,1)=E1(coal)  (1,1)=belt  (2,1)=belt            (3,1)=Merger  (4,1)=belt  (5,1)=T
+    const engine = makeEngine();
+    engine.placeResource(0, 1, ResourceType.Coal);
+    engine.placeResource(0, 0, ResourceType.IronOre);
+
+    const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
+    const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
+    const extractor1Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!; // coal
+    const extractor2Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 0 })!; // iron
+    expect(engine.connectBuildings(solar1Id, extractor1Id)).toBe(true);
+    expect(engine.connectBuildings(solar2Id, extractor2Id)).toBe(true);
+
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
+
+    // E1(coal) → merger west input.
+    const belt1 = engine.placeBelt(
+      { building: extractor1Id, port: 'out_east' },
+      { building: mergerId, port: 'in_west' },
+    );
+    if (!belt1.ok) throw new Error(`belt1 failed: ${belt1.reason}`);
+
+    // E2(iron) → merger north input (router places a corner at (3,0)).
+    const belt2 = engine.placeBelt(
+      { building: extractor2Id, port: 'out_east' },
+      { building: mergerId, port: 'in_north' },
+    );
+    if (!belt2.ok) throw new Error(`belt2 failed: ${belt2.reason}`);
+
+    // Merger output → target.
+    const outBelt = engine.placeBelt(
+      { building: mergerId, port: 'out_east' },
+      { building: targetId, port: 'in_west' },
+    );
+    if (!outBelt.ok) throw new Error(`outBelt failed: ${outBelt.reason}`);
+
+    const animator = createAnimator(engine);
+    const outBeltFirstSegmentId = outBelt.segmentIds[0]!;
+    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBeltFirstSegmentId);
+
+    // Both resource types must appear; order is insertion-deterministic.
+    expect(resolved).toHaveLength(2);
+    expect(resolved).toContain(ResourceType.Coal);
+    expect(resolved).toContain(ResourceType.IronOre);
+
+    animator.destroy();
+  });
+
+  it('deduplicates resource types when two inputs carry the same resource', () => {
+    const engine = makeEngine();
+    engine.placeResource(0, 1, ResourceType.Coal);
+    engine.placeResource(0, 0, ResourceType.Coal); // same type on both inputs
+
+    const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
+    const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
+    const extractor1Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!;
+    const extractor2Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 0 })!;
+    expect(engine.connectBuildings(solar1Id, extractor1Id)).toBe(true);
+    expect(engine.connectBuildings(solar2Id, extractor2Id)).toBe(true);
+
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
+
+    const belt1 = engine.placeBelt(
+      { building: extractor1Id, port: 'out_east' },
+      { building: mergerId, port: 'in_west' },
+    );
+    if (!belt1.ok) throw new Error(`belt1 failed: ${belt1.reason}`);
+    const belt2 = engine.placeBelt(
+      { building: extractor2Id, port: 'out_east' },
+      { building: mergerId, port: 'in_north' },
+    );
+    if (!belt2.ok) throw new Error(`belt2 failed: ${belt2.reason}`);
+    const outBelt = engine.placeBelt(
+      { building: mergerId, port: 'out_east' },
+      { building: targetId, port: 'in_west' },
+    );
+    if (!outBelt.ok) throw new Error(`outBelt failed: ${outBelt.reason}`);
+
+    const animator = createAnimator(engine);
+    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBelt.segmentIds[0]!);
+
+    // Deduplicated: two coal inputs → still just [Coal].
+    expect(resolved).toEqual([ResourceType.Coal]);
+
+    animator.destroy();
+  });
+
+  it('returns empty array for belt downstream of merger with no inputs connected', () => {
+    const engine = makeEngine();
+
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
+
+    const outBelt = engine.placeBelt(
+      { building: mergerId, port: 'out_east' },
+      { building: targetId, port: 'in_west' },
+    );
+    if (!outBelt.ok) throw new Error(`outBelt failed: ${outBelt.reason}`);
+
+    const animator = createAnimator(engine);
+    const resolved = (animator as unknown as AnimatorTestApi).resolveResourcesForBelt(outBelt.segmentIds[0]!);
+
+    // No upstream extractor → no particles.
+    expect(resolved).toEqual([]);
 
     animator.destroy();
   });

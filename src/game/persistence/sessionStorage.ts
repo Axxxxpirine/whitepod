@@ -5,9 +5,9 @@ import {
   type SelectedTool,
 } from '@/game/types';
 
-export const WORLD_STORAGE_KEY = 'whitepod:session:world:v1';
-export const VIEW_STORAGE_KEY = 'whitepod:session:view:v1';
-const STORAGE_VERSION = 1;
+export const WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
+export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
+const STORAGE_VERSION = 2;
 const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
 interface PersistedWorldState {

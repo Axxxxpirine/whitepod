@@ -1,6 +1,6 @@
 import { Container, Sprite, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
-import { getBuildingType, isBeltTypeId, EXTRACTOR_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import { getBuildingType, isBeltTypeId, EXTRACTOR_BUILDING_TYPE_ID, MERGER_BASIC_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, ResourceType, type Building, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
@@ -8,7 +8,10 @@ import { getResourceTexture } from './TileSprite';
 import { BELT_INSET } from './BeltRenderer';
 
 const PARTICLE_SIZE = Math.round(TILE_SIZE * 0.7); // ~22px — 30% smaller than tile
-const PARTICLES_PER_BELT = 2;
+// Maximum particle slots per belt — equals the number of distinct real resource
+// types (Coal, IronOre, CopperOre). Capped at 4 to keep the key scheme safe.
+const MAX_PARTICLES_PER_BELT = 4;
+const DEFAULT_PARTICLES_PER_BELT = 2;
 const SPEED = 1 / 1000; // 1 full tile traversal per second (progress units per ms)
 
 interface Point {
@@ -18,7 +21,8 @@ interface Point {
 
 interface BeltFlowData {
   readonly building: Building;
-  readonly resourceType: ResourceTypeT;
+  /** All distinct resource types flowing through this belt (empty = nothing, render no particles). */
+  readonly resourceTypes: ReadonlyArray<ResourceTypeT>;
   readonly inPoint: Point;
   readonly center: Point;
   readonly outPoint: Point;
@@ -28,18 +32,18 @@ interface BeltFlowData {
 interface ActiveParticle {
   sprite: Sprite;
   beltId: BuildingId;
-  slot: 0 | 1;
+  slot: number;
 }
 
 export class BeltFlowAnimator {
   private readonly particleContainer: Container;
   private readonly engine: GameEngine;
   private readonly spritePool: Sprite[] = [];
-  // key = beltId * 2 + slot
+  // key = beltId * MAX_PARTICLES_PER_BELT + slot
   private readonly activeParticles: Map<number, ActiveParticle> = new Map();
   private flowCache: Map<BuildingId, BeltFlowData> = new Map();
-  // per-belt animation progress for both particle slots
-  private readonly progress: Map<BuildingId, [number, number]> = new Map();
+  // per-belt animation progress; length matches current slotCount for that belt
+  private readonly progress: Map<BuildingId, number[]> = new Map();
   private worldDirty = true;
   private readonly unsubscribeEngine: () => void;
 
@@ -61,15 +65,22 @@ export class BeltFlowAnimator {
     const step = deltaMS * SPEED;
 
     for (const [beltId, data] of this.flowCache) {
-      if (data.resourceType === ResourceType.None) continue;
+      if (data.resourceTypes.length === 0) continue;
+
+      const slotCount = Math.min(
+        Math.max(DEFAULT_PARTICLES_PER_BELT, data.resourceTypes.length),
+        MAX_PARTICLES_PER_BELT,
+      );
 
       let slots = this.progress.get(beltId);
-      if (!slots) {
-        slots = [data.phaseOffset, (data.phaseOffset + 0.5) % 1.0];
+      if (!slots || slots.length !== slotCount) {
+        // Initialize or reinitialize when slot count changes (e.g. resource added/removed).
+        slots = Array.from({ length: slotCount }, (_, i) => (data.phaseOffset + i / slotCount) % 1.0);
         this.progress.set(beltId, slots);
       }
-      slots[0] = (slots[0] + step) % 1.0;
-      slots[1] = (slots[1] + step) % 1.0;
+      for (let i = 0; i < slotCount; i++) {
+        slots[i] = (slots[i] + step) % 1.0;
+      }
     }
 
     // Remove progress for belts no longer in cache
@@ -91,7 +102,7 @@ export class BeltFlowAnimator {
     const wantedParticles = new Set<number>();
 
     for (const [beltId, data] of this.flowCache) {
-      if (data.resourceType === ResourceType.None) continue;
+      if (data.resourceTypes.length === 0) continue;
       const { origin } = data.building;
       if (
         origin.x < visibleRange.x0 ||
@@ -100,10 +111,11 @@ export class BeltFlowAnimator {
         origin.y > visibleRange.y1
       ) continue;
 
-      if (!this.progress.has(beltId)) continue;
+      const slots = this.progress.get(beltId);
+      if (!slots) continue;
 
-      for (let slot = 0; slot < PARTICLES_PER_BELT; slot++) {
-        wantedParticles.add(beltId * 2 + slot);
+      for (let slot = 0; slot < slots.length; slot++) {
+        wantedParticles.add(beltId * MAX_PARTICLES_PER_BELT + slot);
       }
     }
 
@@ -117,24 +129,29 @@ export class BeltFlowAnimator {
 
     // Update or acquire sprites for wanted particles
     for (const key of wantedParticles) {
-      const beltId = Math.floor(key / 2);
-      const slot = (key % 2) as 0 | 1;
+      const beltId = Math.floor(key / MAX_PARTICLES_PER_BELT);
+      const slot = key % MAX_PARTICLES_PER_BELT;
       const data = this.flowCache.get(beltId)!;
       const slots = this.progress.get(beltId)!;
       const t = slots[slot];
       const pos = this.interpolatePath(data, t);
+      // Each slot cycles through the available resource types so a belt carrying
+      // coal+iron shows alternating coal/iron particles.
+      const resourceType = data.resourceTypes[slot % data.resourceTypes.length];
 
-      let particle = this.activeParticles.get(key);
-      if (!particle) {
-        const sprite = this.acquireSprite(data.resourceType);
+      const existing = this.activeParticles.get(key);
+      let particle: ActiveParticle;
+      if (!existing) {
+        const sprite = this.acquireSprite(resourceType);
         this.particleContainer.addChild(sprite);
         particle = { sprite, beltId, slot };
         this.activeParticles.set(key, particle);
       } else {
-        const texture = getResourceTexture(data.resourceType);
-        if (texture && particle.sprite.texture !== texture) {
-          particle.sprite.texture = texture;
+        const texture = getResourceTexture(resourceType);
+        if (texture && existing.sprite.texture !== texture) {
+          existing.sprite.texture = texture;
         }
+        particle = existing;
       }
 
       particle.sprite.x = pos.x - PARTICLE_SIZE / 2;
@@ -172,11 +189,11 @@ export class BeltFlowAnimator {
       const inPoint = this.edgePoint(baseX, baseY, inSide);
       const outPoint = this.edgePoint(baseX, baseY, outSide);
 
-      const resourceType = this.resolveResourceForBelt(building.id);
+      const resourceTypes = this.resolveResourcesForBelt(building.id);
       // Deterministic stagger: golden ratio hash of building ID
       const phaseOffset = (building.id * 0.618033988749) % 1.0;
 
-      newCache.set(building.id, { building, resourceType, inPoint, center, outPoint, phaseOffset });
+      newCache.set(building.id, { building, resourceTypes, inPoint, center, outPoint, phaseOffset });
     }
 
     // Remove progress for belts that disappeared
@@ -189,9 +206,20 @@ export class BeltFlowAnimator {
     this.flowCache = newCache;
   }
 
-  private resolveResourceForBelt(beltId: BuildingId): ResourceTypeT {
+  /**
+   * Walk upstream from a belt (via belts and mergers) and collect all distinct
+   * resource types from powered extractors reachable along that path.
+   *
+   * Returns an empty array when no powered extractor is upstream (→ no particles).
+   * Returns a deduplicated, deterministically ordered list otherwise:
+   *   - 1 element: belt carries a single resource type (identical to previous behavior)
+   *   - 2+ elements: belt is downstream of a merger combining different resources
+   */
+  private resolveResourcesForBelt(beltId: BuildingId): ReadonlyArray<ResourceTypeT> {
     const visited = new Set<BuildingId>();
     const queue: BuildingId[] = [beltId];
+    // Use a Set for deduplication; insertion order gives deterministic output.
+    const found = new Set<ResourceTypeT>();
 
     while (queue.length > 0) {
       const current = queue.shift()!;
@@ -206,19 +234,20 @@ export class BeltFlowAnimator {
         if (!upstream) continue;
 
         if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
-          if (this.engine.getBuildingPowerState(upstream.id) !== 'powered') {
-            return ResourceType.None;
-          }
-          return this.engine.getResourceAt(upstream.origin.x, upstream.origin.y);
+          if (this.engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
+          const resource = this.engine.getResourceAt(upstream.origin.x, upstream.origin.y);
+          if (resource !== ResourceType.None) found.add(resource);
+          continue;
         }
 
-        if (isBeltTypeId(upstream.typeId)) {
+        // Traverse through belts and mergers transparently.
+        if (isBeltTypeId(upstream.typeId) || upstream.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
           queue.push(upstream.id);
         }
       }
     }
 
-    return ResourceType.None;
+    return [...found];
   }
 
   private edgePoint(baseX: number, baseY: number, side: Direction): Point {
