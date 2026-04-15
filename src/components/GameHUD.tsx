@@ -139,6 +139,9 @@ export function GameHUD() {
       ? engine.removeBelt(selectedBuildingId)
       : engine.removeBuilding(selectedBuildingId);
     if (removed) {
+      if (pendingEnergyLinkSource === selectedBuildingId) {
+        setPendingEnergyLinkSource(null);
+      }
       clearSelectedBuilding();
     }
   };

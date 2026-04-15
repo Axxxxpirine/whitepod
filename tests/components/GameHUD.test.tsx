@@ -155,6 +155,24 @@ describe('GameHUD', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer le bâtiment' })).not.toBeInTheDocument();
   });
 
+  it('clears pending energy-link source when deleting the selected building', () => {
+    const engine = makeEngine();
+    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+      pendingEnergyLinkSource: buildingId,
+    });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le bâtiment' }));
+
+    expect(useGameStore.getState().pendingEnergyLinkSource).toBeNull();
+  });
+
   it('keeps the console toggle working', () => {
     render(<GameHUD />);
 
