@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
-import { handleEnergyLinkClick, selectedToolsEqual } from '@/components/GameCanvas';
+import {
+  handleBuildingPlaced,
+  handleEnergyLinkClick,
+  selectedToolsEqual,
+} from '@/components/energyLinkHandlers';
+import { SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -68,5 +73,56 @@ describe('GameCanvas helpers', () => {
     expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(null);
     expect(setSelectedTool).toHaveBeenCalledWith({ kind: 'select' });
     expect(setSelectedBuilding).toHaveBeenCalledWith(solarId);
+  });
+
+  it('clears the pending source when an energy link change fails', () => {
+    const engine = makeEngine();
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    vi.spyOn(engine, 'connectBuildings').mockReturnValue(false);
+
+    const setPendingEnergyLinkSource = vi.fn();
+    const setSelectedBuilding = vi.fn();
+    const setSelectedTool = vi.fn();
+
+    handleEnergyLinkClick(
+      engine,
+      {
+        pendingEnergyLinkSource: solarId,
+        setPendingEnergyLinkSource,
+        setSelectedBuilding,
+        setSelectedTool,
+      },
+      extractorId,
+    );
+
+    expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(null);
+    expect(setSelectedTool).not.toHaveBeenCalled();
+    expect(setSelectedBuilding).not.toHaveBeenCalled();
+  });
+
+  it('switches to energy-link mode after placing a solar panel when auto-link is enabled', () => {
+    const setPendingEnergyLinkSource = vi.fn();
+    const setSelectedBuilding = vi.fn();
+    const setSelectedBuildingAnchor = vi.fn();
+    const setSelectedTool = vi.fn();
+
+    handleBuildingPlaced(
+      {
+        selectedTool: { kind: 'building', buildingType: SOLAR_PANEL_BUILDING_TYPE_ID },
+        linkSolarOnPlacement: true,
+        setPendingEnergyLinkSource,
+        setSelectedBuilding,
+        setSelectedBuildingAnchor,
+        setSelectedTool,
+      },
+      42,
+    );
+
+    expect(setSelectedBuilding).toHaveBeenCalledWith(null);
+    expect(setSelectedBuildingAnchor).toHaveBeenCalledWith(null);
+    expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(42);
+    expect(setSelectedTool).toHaveBeenCalledWith({ kind: 'energy_link' });
   });
 });

@@ -222,8 +222,8 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine });
     render(<GameHUD />);
 
-    expect(screen.getByText('Production électrique: 8kwh')).toBeInTheDocument();
-    expect(screen.getByText('Consommation électrique: 5kwh')).toBeInTheDocument();
-    expect(screen.getByText('Consommation restante: -2kwh')).toBeInTheDocument();
+    expect(screen.getByText('Production électrique: 8kWh')).toBeInTheDocument();
+    expect(screen.getByText('Consommation électrique: 5kWh')).toBeInTheDocument();
+    expect(screen.getByText('Bilan énergétique: -2kWh')).toBeInTheDocument();
   });
 });

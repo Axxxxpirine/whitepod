@@ -2,12 +2,18 @@ import type { BuildingId } from '../types';
 
 export class EnergyNetwork {
   private readonly adjacency = new Map<BuildingId, Set<BuildingId>>();
-  version = 0;
+  private versionValue = 0;
+  private readonly componentForCache = new Map<BuildingId, readonly BuildingId[]>();
+  private componentsCache: readonly (readonly BuildingId[])[] | null = null;
+
+  get version(): number {
+    return this.versionValue;
+  }
 
   registerBuilding(id: BuildingId): void {
     if (!this.adjacency.has(id)) {
       this.adjacency.set(id, new Set());
-      this.version++;
+      this.invalidateCaches();
     }
   }
 
@@ -19,7 +25,7 @@ export class EnergyNetwork {
       this.adjacency.get(neighborId)?.delete(id);
     }
     this.adjacency.delete(id);
-    this.version++;
+    this.invalidateCaches();
   }
 
   connect(a: BuildingId, b: BuildingId): boolean {
@@ -33,7 +39,9 @@ export class EnergyNetwork {
     aNeighbors.add(b);
     bNeighbors.add(a);
     const changed = aNeighbors.size !== before;
-    if (changed) this.version++;
+    if (changed) {
+      this.invalidateCaches();
+    }
     return changed;
   }
 
@@ -47,7 +55,7 @@ export class EnergyNetwork {
 
     aNeighbors.delete(b);
     bNeighbors.delete(a);
-    this.version++;
+    this.invalidateCaches();
     return true;
   }
 
@@ -57,7 +65,49 @@ export class EnergyNetwork {
 
   getComponentFor(startId: BuildingId): BuildingId[] {
     if (!this.adjacency.has(startId)) return [];
+    const cached = this.componentForCache.get(startId);
+    if (cached) {
+      return [...cached];
+    }
 
+    const component = this.computeComponentFor(startId);
+    const frozenComponent = Object.freeze([...component]);
+    for (const member of frozenComponent) {
+      this.componentForCache.set(member, frozenComponent);
+    }
+    return [...frozenComponent];
+  }
+
+  getNeighbors(id: BuildingId): BuildingId[] {
+    const neighbors = this.adjacency.get(id);
+    if (!neighbors) return [];
+    return Array.from(neighbors.values());
+  }
+
+  getComponents(): BuildingId[][] {
+    if (this.componentsCache) {
+      return this.componentsCache.map((component) => [...component]);
+    }
+
+    const visited = new Set<BuildingId>();
+    const components: BuildingId[][] = [];
+
+    for (const id of this.adjacency.keys()) {
+      if (visited.has(id)) continue;
+      const component = this.computeComponentFor(id);
+      const frozenComponent = Object.freeze([...component]);
+      for (const member of component) {
+        visited.add(member);
+        this.componentForCache.set(member, frozenComponent);
+      }
+      components.push([...frozenComponent]);
+    }
+
+    this.componentsCache = components.map((component) => Object.freeze([...component]));
+    return components;
+  }
+
+  private computeComponentFor(startId: BuildingId): BuildingId[] {
     const visited = new Set<BuildingId>();
     const queue: BuildingId[] = [startId];
     visited.add(startId);
@@ -78,25 +128,9 @@ export class EnergyNetwork {
     return queue;
   }
 
-  getNeighbors(id: BuildingId): BuildingId[] {
-    const neighbors = this.adjacency.get(id);
-    if (!neighbors) return [];
-    return Array.from(neighbors.values());
-  }
-
-  getComponents(): BuildingId[][] {
-    const visited = new Set<BuildingId>();
-    const components: BuildingId[][] = [];
-
-    for (const id of this.adjacency.keys()) {
-      if (visited.has(id)) continue;
-      const component = this.getComponentFor(id);
-      for (const member of component) {
-        visited.add(member);
-      }
-      components.push(component);
-    }
-
-    return components;
+  private invalidateCaches(): void {
+    this.versionValue += 1;
+    this.componentForCache.clear();
+    this.componentsCache = null;
   }
 }

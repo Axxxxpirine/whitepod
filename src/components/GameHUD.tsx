@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
@@ -18,6 +18,7 @@ export function GameHUD() {
   const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
   const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
+  const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
@@ -44,6 +45,12 @@ export function GameHUD() {
   const selectedBuilding =
     engine && selectedBuildingId !== null ? engine.getBuildings().get(selectedBuildingId) ?? null : null;
   const selectedBuildingName = selectedBuilding ? getBuildingType(selectedBuilding.typeId)?.name ?? null : null;
+  const pendingEnergyLinkSourceName = useMemo(() => {
+    if (!engine || pendingEnergyLinkSource === null) return null;
+    const source = engine.getBuildings().get(pendingEnergyLinkSource);
+    if (!source) return null;
+    return getBuildingType(source.typeId)?.name ?? null;
+  }, [engine, pendingEnergyLinkSource]);
   const anchorVisible =
     engine &&
     selectedBuildingAnchor &&
@@ -55,7 +62,10 @@ export function GameHUD() {
     engine && selectedBuilding && selectedBuildingName && selectedBuildingAnchor && anchorVisible,
   );
   const buildingRotationLabel = directionLabel(currentBuildingRotation);
-  const globalEnergy = engine ? engine.getEnergyGlobalStats() : null;
+  const globalEnergy = useMemo(() => {
+    void energyVersion;
+    return engine ? engine.getEnergyGlobalStats() : null;
+  }, [engine, energyVersion]);
 
 
   const executeCommand = useCallback(
@@ -158,10 +168,10 @@ export function GameHUD() {
       {globalEnergy && (
         <div className="absolute top-3 right-3">
           <div className="rounded-xl border border-white/15 bg-black/75 px-3 py-2 text-sm text-white/90 shadow-xl backdrop-blur-md">
-            <div>Production électrique: {globalEnergy.production}kwh</div>
-            <div>Consommation électrique: {globalEnergy.consumption}kwh</div>
+            <div>Production électrique: {globalEnergy.production}kWh</div>
+            <div>Consommation électrique: {globalEnergy.consumption}kWh</div>
             <div className={globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}>
-              Consommation restante: {globalEnergy.remaining}kwh
+              Bilan énergétique: {globalEnergy.remaining}kWh
             </div>
           </div>
         </div>
@@ -329,7 +339,7 @@ export function GameHUD() {
             </button>
             {energyLinkSelected && (
               <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
-                Source: {pendingEnergyLinkSource ?? '-'}
+                Source: {pendingEnergyLinkSourceName ?? '-'}
               </div>
             )}
             <button

@@ -18,8 +18,13 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
-import { getBuildingType, SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import { getBuildingType } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
+import {
+  handleBuildingPlaced,
+  handleEnergyLinkClick,
+  selectedToolsEqual,
+} from './energyLinkHandlers';
 
 const WORLD_SAVE_DELAY_MS = 150;
 const VIEW_SAVE_DELAY_MS = 100;
@@ -51,60 +56,6 @@ function createDebouncedTask(task: () => void, delayMs: number) {
       }
     },
   };
-}
-
-function selectedToolsEqual(
-  left: ReturnType<typeof useGameStore.getState>['selectedTool'],
-  right: ReturnType<typeof useGameStore.getState>['selectedTool'],
-): boolean {
-  if (left.kind !== right.kind) return false;
-  if (left.kind === 'select' && right.kind === 'select') return true;
-  if (left.kind === 'belt' && right.kind === 'belt') return true;
-  if (left.kind === 'building' && right.kind === 'building') {
-    return left.buildingType === right.buildingType;
-  }
-  return left.kind === 'energy_link' && right.kind === 'energy_link';
-}
-
-export { selectedToolsEqual };
-
-interface EnergyLinkClickState {
-  readonly pendingEnergyLinkSource: ReturnType<typeof useGameStore.getState>['pendingEnergyLinkSource'];
-  setPendingEnergyLinkSource: ReturnType<typeof useGameStore.getState>['setPendingEnergyLinkSource'];
-  setSelectedBuilding: ReturnType<typeof useGameStore.getState>['setSelectedBuilding'];
-  setSelectedTool: ReturnType<typeof useGameStore.getState>['setSelectedTool'];
-}
-
-export function handleEnergyLinkClick(
-  engine: GameEngine,
-  state: EnergyLinkClickState,
-  clickedBuildingId: number,
-): void {
-  const sourceId = state.pendingEnergyLinkSource;
-
-  if (sourceId !== null && !engine.getBuildings().has(sourceId)) {
-    state.setPendingEnergyLinkSource(null);
-    state.setSelectedBuilding(clickedBuildingId);
-    state.setPendingEnergyLinkSource(clickedBuildingId);
-    return;
-  }
-
-  if (sourceId === null) {
-    state.setPendingEnergyLinkSource(clickedBuildingId);
-    state.setSelectedBuilding(clickedBuildingId);
-    return;
-  }
-
-  if (sourceId === clickedBuildingId) return;
-
-  const linkChanged = engine.areBuildingsEnergyLinked(sourceId, clickedBuildingId)
-    ? engine.disconnectBuildings(sourceId, clickedBuildingId)
-    : engine.connectBuildings(sourceId, clickedBuildingId);
-  if (!linkChanged) return;
-
-  state.setPendingEnergyLinkSource(null);
-  state.setSelectedTool({ kind: 'select' });
-  state.setSelectedBuilding(sourceId);
 }
 
 export function GameCanvas() {
@@ -250,21 +201,7 @@ export function GameCanvas() {
       });
       currentInputHandler.setBuildingPlacedCallback((buildingId) => {
         const state = useGameStore.getState();
-        state.setSelectedBuilding(null);
-        state.setSelectedBuildingAnchor(null);
-
-        if (
-          state.selectedTool.kind === 'building' &&
-          state.selectedTool.buildingType === SOLAR_PANEL_BUILDING_TYPE_ID &&
-          state.linkSolarOnPlacement
-        ) {
-          state.setPendingEnergyLinkSource(buildingId);
-          state.setSelectedTool({ kind: 'energy_link' });
-          return;
-        }
-
-        state.setPendingEnergyLinkSource(null);
-        state.setSelectedTool({ kind: 'select' });
+        handleBuildingPlaced(state, buildingId);
       });
       currentInputHandler.setEnergyLinkClickCallback((clickedBuildingId) => {
         const state = useGameStore.getState();
