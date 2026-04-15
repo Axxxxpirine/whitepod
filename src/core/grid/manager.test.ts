@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { GridManager } from './manager'
 
 describe('GridManager extraction gating', () => {
-  it('only allows extraction when deposit adjacent', () => {
+  it('reserves one unit per deposit per tick', () => {
     const grid = new GridManager()
     grid.initialize(1)
 
@@ -10,11 +10,22 @@ describe('GridManager extraction gating', () => {
     expect(station).not.toBeNull()
 
     const placed = station!
-    expect(grid.canExtractAtStation(placed, 'lunar_hydrogen')).toBe(true)
 
-    const consumed = grid.consumeAdjacentDepositForStation(placed, 'lunar_hydrogen')
-    expect(consumed).toBe(true)
+    const before = grid.countAvailableUnits('lunar_hydrogen')
 
-    expect(grid.canExtractAtStation(placed, 'lunar_hydrogen')).toBe(false)
+    const depositIdTick0 = grid.reserveAdjacentDepositForStation(placed, 'lunar_hydrogen', 0)
+    expect(depositIdTick0).toBeTruthy()
+
+    const depositIdTick0Second = grid.reserveAdjacentDepositForStation(placed, 'lunar_hydrogen', 0)
+    expect(depositIdTick0Second).toBeNull()
+
+    grid.consumeReservedDeposit(depositIdTick0!)
+    expect(grid.countAvailableUnits('lunar_hydrogen')).toBe(before - 1)
+
+    const depositIdTick1 = grid.reserveAdjacentDepositForStation(placed, 'lunar_hydrogen', 1)
+    expect(depositIdTick1).toBeTruthy()
+
+    grid.consumeReservedDeposit(depositIdTick1!)
+    expect(grid.countAvailableUnits('lunar_hydrogen')).toBe(before - 2)
   })
 })

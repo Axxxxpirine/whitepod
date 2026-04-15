@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ResourceId } from '@/core/grid/manager'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 
@@ -9,9 +10,10 @@ function App() {
   const phase = useGameStore(s => s.phase)
   const tokens = useGameStore(s => s.tokens)
   const metadata = useGameStore(s => s.metadata)
-  const placedStationIds = useGameStore(s => s.placedStationIds)
+  const stations = useGameStore(s => s.stations)
   const placeStation = useGameStore(s => s.placeStation)
   const removeStation = useGameStore(s => s.removeStation)
+  const countDeposits = useGameStore(s => s.countDeposits)
   const requestSystemTransition = useGameStore(s => s.requestSystemTransition)
   const tick = useGameStore(s => s.tick)
 
@@ -115,24 +117,31 @@ function App() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {placedStationIds.length === 0 ? (
+          {stations.length === 0 ? (
             <span className="text-sm text-gray-600">No stations placed.</span>
           ) : (
-            placedStationIds
-              .slice()
-              .sort((a, b) => a.localeCompare(b))
-              .map(id => (
-                <button
-                  key={id}
-                  className="border rounded px-2 py-1 text-sm"
-                  onClick={() => removeStation(id)}
-                  title="Remove station"
-                >
-                  {id}
-                </button>
-              ))
+            stations.map(s => (
+              <button
+                key={s.id}
+                className="border rounded px-2 py-1 text-sm"
+                onClick={() => removeStation(s.id)}
+                title="Remove station"
+              >
+                {s.id}: {s.transitionId} @({s.x},{s.y})
+              </button>
+            ))
           )}
         </div>
+
+        {effectiveSelectedStationId.startsWith('extract__') ? (
+          <div className="text-sm text-gray-600">
+            Units available:{' '}
+            <code>
+              {countDeposits(effectiveSelectedStationId.slice('extract__'.length) as ResourceId)}
+            </code>
+            . Extract stations are auto-placed adjacent to a matching deposit.
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-2">

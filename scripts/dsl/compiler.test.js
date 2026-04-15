@@ -54,6 +54,9 @@ describe('DSL compiler', () => {
     expect(meta.canonical.places.length).toBeGreaterThan(10)
     expect(meta.gameSystem.resources.length).toBeGreaterThan(10)
 
+    expect(meta.gameSystem.grid.depositConfig.lunar_hydrogen.depositCapacity).toBeGreaterThan(0)
+    expect(meta.gameSystem.grid.depositConfig.lunar_hydrogen.depositCount).toBeGreaterThan(0)
+
     const init = meta.canonical.transitions.find(t => t.id === 'init')
     expect(init?.kind).toBe('system')
     expect(init?.activation).toBe('manual')

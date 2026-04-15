@@ -778,7 +778,7 @@
         "meta": {
           "role": "réactif"
         },
-        "lineNo": 176
+        "lineNo": 182
       },
       {
         "transitionId": "water_synthesis",
@@ -787,7 +787,7 @@
         "meta": {
           "role": "réactif"
         },
-        "lineNo": 177
+        "lineNo": 183
       },
       {
         "transitionId": "water_synthesis",
@@ -796,7 +796,7 @@
         "meta": {
           "role": "produit"
         },
-        "lineNo": 178
+        "lineNo": 184
       }
     ]
   },
@@ -4959,6 +4959,26 @@
       "water_recycler",
       "windows",
       "wiring_harness"
-    ]
+    ],
+    "grid": {
+      "depositConfig": {
+        "lunar_helium3": {
+          "depositCount": 10,
+          "depositCapacity": 3
+        },
+        "lunar_hydrogen": {
+          "depositCount": 20,
+          "depositCapacity": 5
+        },
+        "lunar_oxygen": {
+          "depositCount": 15,
+          "depositCapacity": 5
+        },
+        "lunar_regolith": {
+          "depositCount": 30,
+          "depositCapacity": 8
+        }
+      }
+    }
   }
 }

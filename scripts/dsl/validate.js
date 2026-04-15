@@ -20,7 +20,7 @@ export function classifyCanonicalTransition(transitionId) {
 }
 
 export function validateCanonicalAst(ast) {
-  const { places, transitionsMeta, transitions } = ast
+  const { places, resourcesMeta, transitionsMeta, transitions } = ast
 
   for (const requiredPlace of CONTROL_PLACES) {
     if (!places.has(requiredPlace)) throw new Error(`missing required control place '${requiredPlace}'`)
@@ -58,6 +58,26 @@ export function validateCanonicalAst(ast) {
       if (runIn < 1 || runOut < 1) {
         throw new Error(`station transition '${t.id}' must explicitly consume+produce 'run'`)
       }
+    }
+  }
+
+  // Validate deposit config
+  const requiredDepositResources = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
+  for (const resourceId of requiredDepositResources) {
+    const meta = resourcesMeta?.get(resourceId)
+    if (!meta) throw new Error(`missing @resource deposit config for '${resourceId}'`)
+
+    const depositCount = meta.depositCount
+    const depositCapacity = meta.depositCapacity
+    if (!Number.isInteger(depositCount) || depositCount < 1) {
+      throw new Error(`@resource '${resourceId}' depositCount must be an integer >= 1`)
+    }
+    if (!Number.isInteger(depositCapacity) || depositCapacity < 1) {
+      throw new Error(`@resource '${resourceId}' depositCapacity must be an integer >= 1`)
+    }
+
+    if (!places.has(resourceId)) {
+      throw new Error(`@resource '${resourceId}' must refer to an existing @place id`)
     }
   }
 

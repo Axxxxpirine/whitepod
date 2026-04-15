@@ -113,6 +113,15 @@ export function compileMetadata(ast) {
 
   gameSystemTransitions.sort((a, b) => a.id.localeCompare(b.id))
 
+  const depositConfig = {}
+  for (const resourceId of ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']) {
+    const meta = ast.resourcesMeta?.get(resourceId) ?? {}
+    depositConfig[resourceId] = {
+      depositCount: meta.depositCount,
+      depositCapacity: meta.depositCapacity,
+    }
+  }
+
   return {
     version: 1,
     canonical: {
@@ -124,6 +133,9 @@ export function compileMetadata(ast) {
       places: gameSystemPlaces,
       transitions: gameSystemTransitions,
       resources,
+      grid: {
+        depositConfig,
+      },
     },
   }
 }

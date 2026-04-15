@@ -5,7 +5,8 @@ export interface ResourceDeposit {
   x: number
   y: number
   resourceId: ResourceId
-  consumed: boolean
+  remaining: number
+  reservedTick: number | null
 }
 
 export interface StationPlacement {
@@ -34,6 +35,13 @@ function key(x: number, y: number): string {
   return `${x},${y}`
 }
 
+export interface DepositConfig {
+  depositCount: number
+  depositCapacity: number
+}
+
+export type DepositConfigByResourceId = Record<ResourceId, DepositConfig>
+
 export class GridManager {
   readonly width = 128
   readonly height = 128
@@ -42,7 +50,10 @@ export class GridManager {
   private nextStationSeq = 1
 
   private deposits: ResourceDeposit[]
+  private depositsById: Map<string, ResourceDeposit>
   private depositsByPos: Map<string, ResourceDeposit>
+
+  private depositConfig: DepositConfigByResourceId
 
   private stationsById: Map<string, StationPlacement>
   private stationPosToId: Map<string, string>
@@ -50,16 +61,28 @@ export class GridManager {
   constructor() {
     this.rng = createSeededRng(1)
     this.deposits = []
+    this.depositsById = new Map()
     this.depositsByPos = new Map()
+
+    this.depositConfig = {
+      lunar_helium3: { depositCount: 10, depositCapacity: 3 },
+      lunar_hydrogen: { depositCount: 20, depositCapacity: 5 },
+      lunar_oxygen: { depositCount: 15, depositCapacity: 5 },
+      lunar_regolith: { depositCount: 30, depositCapacity: 8 },
+    }
     this.stationsById = new Map()
     this.stationPosToId = new Map()
   }
 
-  initialize(seed: number): void {
+  initialize(seed: number, config?: Partial<DepositConfigByResourceId>): void {
     this.rng = createSeededRng(seed)
+    if (config) {
+      this.depositConfig = { ...this.depositConfig, ...config }
+    }
     this.nextStationSeq = 1
 
     this.deposits = []
+    this.depositsById.clear()
     this.depositsByPos.clear()
 
     this.stationsById.clear()
@@ -80,11 +103,11 @@ export class GridManager {
     this.stationPosToId.delete(key(station.x, station.y))
   }
 
-  listDeposits(options?: { resourceId?: ResourceId; includeConsumed?: boolean }): ResourceDeposit[] {
-    const { resourceId, includeConsumed } = options ?? {}
+  listDeposits(options?: { resourceId?: ResourceId; includeDepleted?: boolean }): ResourceDeposit[] {
+    const { resourceId, includeDepleted } = options ?? {}
     return this.deposits
       .filter(d => (resourceId ? d.resourceId === resourceId : true))
-      .filter(d => (includeConsumed ? true : !d.consumed))
+      .filter(d => (includeDepleted ? true : d.remaining > 0))
       .slice()
       .sort((a, b) => a.id.localeCompare(b.id))
   }
@@ -92,13 +115,21 @@ export class GridManager {
   countAvailableDeposits(resourceId: ResourceId): number {
     let count = 0
     for (const d of this.deposits) {
-      if (!d.consumed && d.resourceId === resourceId) count += 1
+      if (d.remaining > 0 && d.resourceId === resourceId) count += 1
     }
     return count
   }
 
+  countAvailableUnits(resourceId: ResourceId): number {
+    let total = 0
+    for (const d of this.deposits) {
+      if (d.remaining > 0 && d.resourceId === resourceId) total += d.remaining
+    }
+    return total
+  }
+
   placeStationNearDeposit(resourceId: ResourceId, transitionId: string): StationPlacement | null {
-    const deposit = this.deposits.find(d => !d.consumed && d.resourceId === resourceId)
+    const deposit = this.deposits.find(d => d.remaining > 0 && d.resourceId === resourceId)
     if (!deposit) return null
 
     const pos = this.findFirstFreeAdjacent(deposit.x, deposit.y)
@@ -118,17 +149,39 @@ export class GridManager {
     return null
   }
 
-  canExtractAtStation(station: StationPlacement, resourceId: ResourceId): boolean {
-    return this.findAdjacentDepositForStation(station, resourceId) !== null
+  reserveAdjacentDepositForStation(
+    station: StationPlacement,
+    resourceId: ResourceId,
+    tickIndex: number,
+  ): string | null {
+    const deposit = this.findAdjacentDepositForStation(station, resourceId, tickIndex)
+    if (!deposit) return null
+
+    deposit.reservedTick = tickIndex
+    return deposit.id
   }
 
-  consumeAdjacentDepositForStation(station: StationPlacement, resourceId: ResourceId): boolean {
-    const deposit = this.findAdjacentDepositForStation(station, resourceId)
-    if (!deposit) return false
+  reserveAnyDeposit(resourceId: ResourceId, tickIndex: number): string | null {
+    const deposit = this.deposits.find(
+      d => d.remaining > 0 && d.resourceId === resourceId && d.reservedTick !== tickIndex,
+    )
+    if (!deposit) return null
 
-    deposit.consumed = true
-    this.depositsByPos.delete(key(deposit.x, deposit.y))
-    return true
+    deposit.reservedTick = tickIndex
+    return deposit.id
+  }
+
+  consumeReservedDeposit(depositId: string): void {
+    const deposit = this.depositsById.get(depositId)
+    if (!deposit) return
+
+    if (deposit.remaining <= 0) return
+
+    deposit.remaining -= 1
+    if (deposit.remaining <= 0) {
+      this.depositsById.delete(depositId)
+      this.depositsByPos.delete(key(deposit.x, deposit.y))
+    }
   }
 
   private placeStationAt(x: number, y: number, transitionId: string): StationPlacement | null {
@@ -156,15 +209,9 @@ export class GridManager {
   }
 
   private generateDeposits(): void {
-    const counts: Record<ResourceId, number> = {
-      lunar_helium3: 10,
-      lunar_hydrogen: 20,
-      lunar_oxygen: 15,
-      lunar_regolith: 30,
-    }
-
-    for (const resourceId of Object.keys(counts) as ResourceId[]) {
-      const count = counts[resourceId]
+    for (const resourceId of Object.keys(this.depositConfig) as ResourceId[]) {
+      const { depositCount, depositCapacity } = this.depositConfig[resourceId]
+      const count = depositCount
       let created = 0
       let i = 0
       while (created < count) {
@@ -180,10 +227,12 @@ export class GridManager {
           x,
           y,
           resourceId,
-          consumed: false,
+          remaining: depositCapacity,
+          reservedTick: null,
         }
 
         this.deposits.push(deposit)
+        this.depositsById.set(deposit.id, deposit)
         this.depositsByPos.set(posKey, deposit)
         created++
 
@@ -217,6 +266,7 @@ export class GridManager {
   private findAdjacentDepositForStation(
     station: StationPlacement,
     resourceId: ResourceId,
+    tickIndex: number,
   ): ResourceDeposit | null {
     const neighbors = [
       [station.x - 1, station.y],
@@ -232,8 +282,9 @@ export class GridManager {
     for (const [nx, ny] of neighbors) {
       const deposit = this.depositsByPos.get(key(nx, ny))
       if (!deposit) continue
-      if (deposit.consumed) continue
+      if (deposit.remaining <= 0) continue
       if (deposit.resourceId !== resourceId) continue
+      if (deposit.reservedTick === tickIndex) continue
       return deposit
     }
 

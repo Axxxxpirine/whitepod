@@ -48,6 +48,9 @@ export interface LunarChemistryMetadata {
     places: PlaceMeta[]
     transitions: TransitionMeta[]
     resources: string[]
+    grid: {
+      depositConfig: Record<string, { depositCount: number; depositCapacity: number }>
+    }
   }
 }
 

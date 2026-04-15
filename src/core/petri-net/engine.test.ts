@@ -50,7 +50,7 @@ describe('PetriNetEngine (station-driven)', () => {
     expect(engine.getToken('start')).toBe(0)
   })
 
-  it('fires active station transitions at most once per tick', () => {
+  it('fires once per active entry (duplicates represent stations)', () => {
     const engine = new PetriNetEngine(transitions)
     engine.initialize()
 
@@ -58,8 +58,8 @@ describe('PetriNetEngine (station-driven)', () => {
 
     const { fired } = engine.tick({ activeTransitionIds: ['extract__x', 'extract__x'] })
 
-    expect(fired).toEqual(['extract__x'])
-    expect(engine.getToken('x_surface')).toBe(1)
+    expect(fired).toEqual(['extract__x', 'extract__x'])
+    expect(engine.getToken('x_surface')).toBe(2)
   })
 
   it('launch is manual and leads to done phase', () => {

@@ -103,6 +103,7 @@ function parseTransitionLine(line, lineNo) {
 
 export function parseDslText(text) {
   const places = new Map()
+  const resourcesMeta = new Map()
   const transitionsMeta = new Map()
   const arcs = []
   const transitions = []
@@ -119,6 +120,14 @@ export function parseDslText(text) {
       if (!id) throw new Error(`@place@${lineNo}: missing id`)
       if (places.has(id)) throw new Error(`@place@${lineNo}: duplicate place '${id}'`)
       places.set(id, { id, ...meta })
+      continue
+    }
+
+    if (line.startsWith('@resource')) {
+      const { id, meta } = parseDirective(line, '@resource', lineNo)
+      if (!id) throw new Error(`@resource@${lineNo}: missing id`)
+      if (resourcesMeta.has(id)) throw new Error(`@resource@${lineNo}: duplicate resource meta '${id}'`)
+      resourcesMeta.set(id, { id, ...meta })
       continue
     }
 
@@ -141,7 +150,7 @@ export function parseDslText(text) {
     }
   }
 
-  return { places, transitionsMeta, arcs, transitions }
+  return { places, resourcesMeta, transitionsMeta, arcs, transitions }
 }
 
 export function parseDslFile(filePath) {

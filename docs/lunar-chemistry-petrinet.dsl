@@ -83,6 +83,12 @@ Ces lignes enrichissent le réseau (places/transitions/arcs) sans affecter la si
 @place windows | {"tier":3,"name_fr":"Hublots"}
 @place wiring_harness | {"tier":3,"name_fr":"Faisceau de câbles"}
 
+### Ressources (dépôts sur la grille)
+@resource lunar_helium3 | {"depositCount":10,"depositCapacity":3}
+@resource lunar_hydrogen | {"depositCount":20,"depositCapacity":5}
+@resource lunar_oxygen | {"depositCount":15,"depositCapacity":5}
+@resource lunar_regolith | {"depositCount":30,"depositCapacity":8}
+
 ### Transitions
 @transition air_filtration | {"name_fr":"Filtration d'air"}
 @transition aluminum_ingots | {"name_fr":"Réduction"}
