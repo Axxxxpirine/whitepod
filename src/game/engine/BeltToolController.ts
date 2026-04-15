@@ -90,10 +90,8 @@ export class BeltToolController {
     this.setPreview(null);
   }
 
-  onKeyDown(key: string): void {
-    if (key === 'Escape') {
-      this.cancel();
-    }
+  hasPending(): boolean {
+    return this.pendingFrom !== null;
   }
 
   clearPendingPlacement(): void {

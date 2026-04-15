@@ -198,10 +198,30 @@ export class GameEngine {
   }
 
   removeBuilding(id: BuildingId): boolean {
+    return this.removeBuildingInternal(id, true);
+  }
+
+  private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean): boolean {
     const building = this.buildings.get(id);
     if (!building) return false;
     const type = getBuildingType(building.typeId);
     if (!type) return false;
+
+    if (cascadeBelts) {
+      const connectedBeltIds = new Set<BuildingId>();
+      for (const connection of this.getConnectionsOf(id)) {
+        const neighborId = this.otherEndpointBuilding(connection, id);
+        if (neighborId === null) continue;
+        const neighbor = this.buildings.get(neighborId);
+        if (!neighbor || !isBeltTypeId(neighbor.typeId)) continue;
+        connectedBeltIds.add(neighborId);
+      }
+
+      for (const beltId of connectedBeltIds) {
+        this.removeBelt(beltId);
+      }
+    }
+
     this.connections.unregisterAllFor(id);
     this.energyNetwork.unregisterBuilding(id);
     const removed = this.buildings.unregister(id, type.footprint);
@@ -429,7 +449,7 @@ export class GameEngine {
     const component = this.collectConnectedBeltComponent(segmentId);
     let removedAny = false;
     for (const beltId of component) {
-      removedAny = this.removeBuilding(beltId) || removedAny;
+      removedAny = this.removeBuildingInternal(beltId, false) || removedAny;
     }
     return removedAny;
   }

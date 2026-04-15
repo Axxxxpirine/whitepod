@@ -202,7 +202,7 @@ describe('GameEngine belts', () => {
     expect(engine.removeBelt(bare)).toBe(false);
   });
 
-  it('removeBuilding on the source leaves the belt chain orphaned on the map', () => {
+  it('removeBuilding on the source also removes the connected belt chain', () => {
     const { source, target } = placeEndpoints(engine, 5, 10, 5);
     const placed = engine.placeBelt(
       { building: source, port: 'out_east' },
@@ -214,10 +214,38 @@ describe('GameEngine belts', () => {
     expect(engine.removeBuilding(source)).toBe(true);
 
     for (const segmentId of placed.segmentIds) {
-      expect(engine.buildings.get(segmentId)).not.toBeNull();
+      expect(engine.buildings.get(segmentId)).toBeNull();
     }
-    expect(engine.getConnectionsOf(target)).toHaveLength(1);
-    expect(engine.getConnections().size).toBe(4);
+    expect(engine.getConnectionsOf(target)).toHaveLength(0);
+    expect(engine.getConnections().size).toBe(0);
+  });
+
+  it('removeBuilding on a storage removes every connected belt input', () => {
+    const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
+    const westSource = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 11 })!;
+    const northSource = engine.placeBuilding('placeholder_node_1x1', { x: 11, y: 5 }, Direction.East)!;
+
+    const west = engine.placeBelt(
+      { building: westSource, port: 'out_east' },
+      { building: storage, port: 'in_west' },
+    );
+    const north = engine.placeBelt(
+      { building: northSource, port: 'out_east' },
+      { building: storage, port: 'in_north' },
+    );
+
+    expect(west.ok).toBe(true);
+    expect(north.ok).toBe(true);
+    if (!west.ok || !north.ok) return;
+
+    expect(engine.removeBuilding(storage)).toBe(true);
+
+    for (const segmentId of [...west.segmentIds, ...north.segmentIds]) {
+      expect(engine.buildings.get(segmentId)).toBeNull();
+    }
+    expect(engine.getConnections().size).toBe(0);
+    expect(engine.buildings.get(westSource)?.typeId).toBe('placeholder_node_1x1');
+    expect(engine.buildings.get(northSource)?.typeId).toBe('placeholder_node_1x1');
   });
 
   it('supports four independent belt inputs into the storage, one per side', () => {

@@ -11,6 +11,7 @@ import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
 import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
+import { popCancelStack } from '@/game/input/CancelStack';
 import {
   createSessionId,
   loadPersistedSession,
@@ -19,6 +20,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import { loadResourceTextures } from '@/game/renderer/TileSprite';
+import type { SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { worldToScreen } from '@/game/engine/CoordinateTransform';
 import {
@@ -59,11 +61,19 @@ function createDebouncedTask(task: () => void, delayMs: number) {
   };
 }
 
+const CURSOR_CLASS: Record<SelectedTool['kind'], string> = {
+  select: 'cursor-default',
+  building: 'cursor-crosshair',
+  belt: 'cursor-crosshair',
+  energy_link: 'cursor-cell',
+};
+
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionEpoch = useGameStore((s) => s.sessionEpoch);
   const setEngine = useGameStore((s) => s.setEngine);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
+  const selectedToolKind = useGameStore((s) => s.selectedTool.kind);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -214,6 +224,14 @@ export function GameCanvas() {
         const state = useGameStore.getState();
         handleEnergyLinkClick(engine, state, clickedBuildingId);
       });
+      currentInputHandler.setOutOfGridClickCallback(() => {
+        popCancelStack(useGameStore, currentBeltToolController);
+      });
+      currentInputHandler.setInvalidPlacementCallback((origin, buildingType) => {
+        const type = getBuildingType(buildingType);
+        if (!type) return;
+        placementPreviewRenderer?.flashInvalid(origin, type.footprint);
+      });
 
       const canvas = app.canvas;
       handlePointerDown = (e) => {
@@ -250,8 +268,11 @@ export function GameCanvas() {
         }
         if ((e.key === 'r' || e.key === 'R') && useGameStore.getState().selectedTool.kind === 'building') {
           useGameStore.getState().rotateBuildingRotation();
+          return;
         }
-        currentBeltToolController.onKeyDown(e.key);
+        if (e.key === 'Escape') {
+          popCancelStack(useGameStore, currentBeltToolController);
+        }
       };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
@@ -346,5 +367,5 @@ export function GameCanvas() {
     };
   }, [sessionEpoch, setEngine, setSelectedTool]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
 }

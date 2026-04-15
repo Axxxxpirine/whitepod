@@ -14,6 +14,10 @@ export class InputHandler {
   private onBuildingPlaced: ((buildingId: BuildingId) => void) | null = null;
   private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
   private onEnergyLinkClick: ((buildingId: BuildingId) => void) | null = null;
+  private onOutOfGridClick: (() => void) | null = null;
+  private onInvalidPlacement:
+    | ((origin: { x: number; y: number }, buildingType: string) => void)
+    | null = null;
 
   constructor(
     engine: GameEngine,
@@ -41,6 +45,16 @@ export class InputHandler {
     this.onEnergyLinkClick = cb;
   }
 
+  setOutOfGridClickCallback(cb: (() => void) | null): void {
+    this.onOutOfGridClick = cb;
+  }
+
+  setInvalidPlacementCallback(
+    cb: ((origin: { x: number; y: number }, buildingType: string) => void) | null,
+  ): void {
+    this.onInvalidPlacement = cb;
+  }
+
   onPointerDown(screenX: number, screenY: number, button: number): void {
     if (button === 1 || button === 2) {
       this.isPanning = true;
@@ -52,7 +66,10 @@ export class InputHandler {
     if (button !== 0) return;
 
     const coord = screenToGrid(this.engine.viewport, screenX, screenY);
-    if (!isInBounds(coord.x, coord.y)) return;
+    if (!isInBounds(coord.x, coord.y)) {
+      this.onOutOfGridClick?.();
+      return;
+    }
 
     const selectedTool = this.getSelectedTool();
     if (selectedTool.kind === 'select') {
@@ -69,6 +86,8 @@ export class InputHandler {
       );
       if (buildingId !== null) {
         this.onBuildingPlaced?.(buildingId);
+      } else {
+        this.onInvalidPlacement?.(coord, selectedTool.buildingType);
       }
       return;
     }
