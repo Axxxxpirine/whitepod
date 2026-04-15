@@ -61,8 +61,16 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
 
       rows = (
         <>
-          <StatRow icon={Battery} label="Charge" value={`${percent}%`} />
-          <StatRow icon={Zap} label="Stockage" value={`${Math.round(charge * 10) / 10} / ${batterySpec.capacity} kWh`} />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Battery size={11} className="shrink-0 text-white/40" />
+              <span className="text-xs font-medium text-white/90">{percent}%</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Zap size={11} className="shrink-0 text-white/40" />
+              <span className="text-xs font-medium text-white/90">{Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh</span>
+            </div>
+          </div>
           <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full bg-teal-400 transition-all duration-300"
@@ -75,7 +83,7 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
     const network = engine.getEnergyNetworkForBuilding(building.id);
-    const bilanValue = network !== null ? `${network.remaining} kWh` : 'Reseau isole';
+    const bilanValue = network !== null ? `${Math.round(network.remaining)} kWh` : 'Reseau isole';
     const bilanClass =
       network === null ? 'text-white/50' : network.remaining >= 0 ? 'text-emerald-300' : 'text-red-300';
 
