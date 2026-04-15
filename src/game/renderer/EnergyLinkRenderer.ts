@@ -147,7 +147,26 @@ export class EnergyLinkRenderer {
     this.syncMode(this.getState().mode, now);
     const style = this.getCurrentStyle(now);
 
+    const visibleRange = this.engine.getVisibleTiles();
+    const wx0 = visibleRange.x0 * TILE_SIZE;
+    const wy0 = visibleRange.y0 * TILE_SIZE;
+    const wx1 = (visibleRange.x1 + 1) * TILE_SIZE;
+    const wy1 = (visibleRange.y1 + 1) * TILE_SIZE;
+
     for (const segment of this.linkSegments) {
+      // Skip segments where both endpoints are off-screen
+      const fv =
+        segment.fromCenter.x >= wx0 &&
+        segment.fromCenter.x <= wx1 &&
+        segment.fromCenter.y >= wy0 &&
+        segment.fromCenter.y <= wy1;
+      const tv =
+        segment.toCenter.x >= wx0 &&
+        segment.toCenter.x <= wx1 &&
+        segment.toCenter.y >= wy0 &&
+        segment.toCenter.y <= wy1;
+      if (!fv && !tv) continue;
+
       this.graphics
         .moveTo(segment.fromCenter.x, segment.fromCenter.y)
         .lineTo(segment.toCenter.x, segment.toCenter.y)

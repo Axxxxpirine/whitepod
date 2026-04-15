@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
 import {
@@ -18,9 +19,13 @@ import { BeltFlowStats } from './BeltFlowStats';
 interface BuildingStatsPanelProps {
   building: Building;
   engine: GameEngine;
+  /** Cache-buster: incremented on world changes so the panel recalculates. */
+  worldTick: number;
+  /** Cache-buster: incremented on energy topology changes. */
+  energyVersion: number;
 }
 
-export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps) {
+export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps) {
   if (isBeltTypeId(building.typeId)) return <BeltFlowStats building={building} engine={engine} />;
 
   let rows: React.ReactNode = null;
@@ -144,7 +149,7 @@ export function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps
       {rows}
     </div>
   );
-}
+});
 
 function StatRow({
   icon: Icon,

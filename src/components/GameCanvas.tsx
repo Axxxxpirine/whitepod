@@ -329,8 +329,11 @@ export function GameCanvas() {
           engine.update(dtSeconds * state.simulationSpeed);
         }
         beltFlowAnimator!.update(ticker.deltaMS);
-        if (state.simulationTime !== engine.simulationTime) {
-          state.setSimulationTime(engine.simulationTime);
+        // Quantize to in-game minutes so the store only updates when the displayed clock changes
+        const SIM_MINUTE = 1 / (24 * 60);
+        const quantized = Math.floor(engine.simulationTime / SIM_MINUTE) * SIM_MINUTE;
+        if (state.simulationTime !== quantized) {
+          state.setSimulationTime(quantized);
         }
         const { selectedBuildingAnchor, selectedBuildingId } = state;
 
@@ -350,12 +353,14 @@ export function GameCanvas() {
               const worldX = building.origin.x * TILE_SIZE + (type.footprint.w * TILE_SIZE) / 2;
               const worldY = building.origin.y * TILE_SIZE + type.footprint.h * TILE_SIZE;
               const anchor = worldToScreen(engine.viewport, worldX, worldY);
+              const ax = Math.round(anchor.sx);
+              const ay = Math.round(anchor.sy);
               if (
                 selectedBuildingAnchor === null ||
-                selectedBuildingAnchor.x !== anchor.sx ||
-                selectedBuildingAnchor.y !== anchor.sy
+                selectedBuildingAnchor.x !== ax ||
+                selectedBuildingAnchor.y !== ay
               ) {
-                state.setSelectedBuildingAnchor({ x: anchor.sx, y: anchor.sy });
+                state.setSelectedBuildingAnchor({ x: ax, y: ay });
               }
             }
           }

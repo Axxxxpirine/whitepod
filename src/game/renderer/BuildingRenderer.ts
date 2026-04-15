@@ -70,6 +70,7 @@ export class BuildingRenderer {
   private readonly activePortMarkers: Map<number, Graphics> = new Map();
   private readonly indicatorPool: Graphics[] = [];
   private readonly portMarkerPool: Graphics[] = [];
+  private readonly indicatorColorCache: Map<number, number> = new Map();
   private readonly engine: GameEngine;
 
   constructor(app: Application, engine: GameEngine) {
@@ -131,9 +132,8 @@ export class BuildingRenderer {
           portMarker = this.acquirePortMarker();
           this.portMarkerContainer.addChild(portMarker);
           this.activePortMarkers.set(building.id, portMarker);
+          drawBuildingPortMarkers(portMarker, building, type);
         }
-        portMarker.clear();
-        drawBuildingPortMarkers(portMarker, building, type);
         portMarker.visible = true;
       }
 
@@ -143,6 +143,7 @@ export class BuildingRenderer {
         this.releaseIndicator(building.id);
       } else {
         let indicator = this.activeIndicators.get(building.id);
+        const prevColor = this.indicatorColorCache.get(building.id);
         if (!indicator) {
           indicator = this.acquireIndicator();
           this.indicatorContainer.addChild(indicator);
@@ -150,10 +151,13 @@ export class BuildingRenderer {
         }
         indicator.x = building.origin.x * TILE_SIZE + POWER_INDICATOR_OFFSET;
         indicator.y = building.origin.y * TILE_SIZE + POWER_INDICATOR_OFFSET;
-        indicator.clear();
-        indicator.circle(0, 0, POWER_INDICATOR_RADIUS).fill({ color: indicatorColor, alpha: 1 });
-        indicator.stroke({ color: 0x111111, width: 1, alpha: 0.9 });
-        indicator.alpha = 1;
+        if (prevColor !== indicatorColor) {
+          indicator.clear();
+          indicator.circle(0, 0, POWER_INDICATOR_RADIUS).fill({ color: indicatorColor, alpha: 1 });
+          indicator.stroke({ color: 0x111111, width: 1, alpha: 0.9 });
+          indicator.alpha = 1;
+          this.indicatorColorCache.set(building.id, indicatorColor);
+        }
         indicator.visible = true;
       }
     }
@@ -195,6 +199,7 @@ export class BuildingRenderer {
     indicator.visible = false;
     this.indicatorPool.push(indicator);
     this.activeIndicators.delete(id);
+    this.indicatorColorCache.delete(id);
   }
 
   private releasePortMarker(id: number): void {
@@ -217,5 +222,6 @@ export class BuildingRenderer {
     this.activeSprites.clear();
     this.activePortMarkers.clear();
     this.activeIndicators.clear();
+    this.indicatorColorCache.clear();
   }
 }
