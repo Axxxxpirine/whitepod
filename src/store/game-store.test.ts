@@ -304,4 +304,66 @@ describe('useGameStore persistence hydrate', () => {
     expect(stored.state.gridSnapshot.version).toBe(1)
     expect(stored.state.saveRevision).toBeGreaterThanOrEqual(1)
   })
+
+  it('exports sparse Pixi data with deposits, stations and layer tokens', async () => {
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      { id: 'launch', consumes: [{ place: 'run', qty: 1 }], produces: [{ place: 'done', qty: 1 }] },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+      {
+        id: 'extract__lunar_hydrogen',
+        consumes: [{ place: 'run', qty: 1 }],
+        produces: [
+          { place: 'run', qty: 1 },
+          { place: 'lunar_hydrogen_surface', qty: 2 },
+          { place: 'lunar_hydrogen_bus', qty: 3 },
+          { place: 'lunar_hydrogen_stock', qty: 4 },
+        ],
+      },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [],
+        transitions: [],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 1, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 3 },
+            lunar_oxygen: { depositCount: 1, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 1, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+
+    const station = useGameStore.getState().grid.placeStationNearDeposit('lunar_hydrogen', 'extract__lunar_hydrogen')
+    expect(station).not.toBeNull()
+
+    const exportData = useGameStore.getState().getPixiExport()
+
+    expect(exportData.grid.cells.length).toBeGreaterThan(0)
+    expect(exportData.grid.deposits.length).toBeGreaterThan(0)
+    expect(exportData.grid.stations.length).toBe(1)
+    expect(exportData.grid.stations[0].active).toBe(true)
+    expect(exportData.layerTokens.surface).toEqual({})
+    expect(exportData.layerTokens.bus).toEqual({})
+    expect(exportData.layerTokens.stock).toEqual({})
+  })
 })

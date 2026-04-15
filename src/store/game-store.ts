@@ -62,6 +62,7 @@ export interface GameState {
   countDeposits: (resourceId: ResourceId) => number
 
   tick: () => PixiExport
+  getPixiExport: () => PixiExport
 }
 
 const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
@@ -195,6 +196,30 @@ function updateDebugTokenStats(
   }
 
   return next
+}
+
+function buildLayerTokens(tokens: Record<string, number>): PixiExport['layerTokens'] {
+  const surface: Record<string, number> = {}
+  const bus: Record<string, number> = {}
+  const stock: Record<string, number> = {}
+
+  for (const [place, qty] of Object.entries(tokens)) {
+    if (place.endsWith('_surface')) {
+      surface[place] = qty
+      continue
+    }
+
+    if (place.endsWith('_bus')) {
+      bus[place] = qty
+      continue
+    }
+
+    if (place.endsWith('_stock')) {
+      stock[place] = qty
+    }
+  }
+
+  return { surface, bus, stock }
 }
 
 export const useGameStore = create<GameState>()(
@@ -407,6 +432,49 @@ export const useGameStore = create<GameState>()(
         return get().grid.countAvailableUnits(resourceId)
       },
 
+      getPixiExport: () => {
+        const { engine, grid } = get()
+        const deposits = grid.listDeposits({ includeDepleted: false })
+        const stations = grid.listStations()
+        const tokens = engine?.getTokensSnapshot() ?? {}
+
+        return {
+          timestamp: Date.now(),
+          phase: engine?.getPhase() ?? 'init',
+          tokens,
+          grid: {
+            width: 128,
+            height: 128,
+            cells: [
+              ...deposits.map(d => ({
+                x: d.x,
+                y: d.y,
+                kind: 'deposit' as const,
+                id: d.id,
+                resourceId: d.resourceId,
+                remaining: d.remaining,
+              })),
+              ...stations.map(s => ({
+                x: s.x,
+                y: s.y,
+                kind: 'station' as const,
+                id: s.id,
+                transitionId: s.transitionId,
+              })),
+            ],
+            deposits: deposits.map(d => ({
+              id: d.id,
+              x: d.x,
+              y: d.y,
+              resourceId: d.resourceId,
+              remaining: d.remaining,
+            })),
+            stations: stations.map(s => ({ ...s, active: true })),
+          },
+          layerTokens: buildLayerTokens(tokens),
+        }
+      },
+
       debugResetStats: () => {
         const { tickIndex } = get()
         set({
@@ -553,26 +621,8 @@ export const useGameStore = create<GameState>()(
         const firedSystemTransition = fired.some(id => SYSTEM_TRANSITIONS.has(id))
         const shouldAutosave = nextTickIndex % AUTOSAVE_TICK_INTERVAL === 0 || firedSystemTransition
         const timestamp = Date.now()
-
-        const deposits = grid.listDeposits({ includeDepleted: false })
-        const gridStations = grid.listStations()
         const tokensSnapshot = engine.getTokensSnapshot()
-
-        const layerTokens = {
-          surface: {} as Record<string, number>,
-          bus: {} as Record<string, number>,
-          stock: {} as Record<string, number>,
-        }
-
-        for (const [place, qty] of Object.entries(tokensSnapshot)) {
-          if (place.endsWith('_surface')) {
-            layerTokens.surface[place] = qty
-          } else if (place.endsWith('_bus')) {
-            layerTokens.bus[place] = qty
-          } else if (place.endsWith('_stock')) {
-            layerTokens.stock[place] = qty
-          }
-        }
+        const gridStations = grid.listStations()
 
         set(state => {
           const base = {
@@ -611,24 +661,7 @@ export const useGameStore = create<GameState>()(
           }
         })
 
-        return {
-          timestamp,
-          phase: engine.getPhase(),
-          tokens: tokensSnapshot,
-          grid: {
-            width: 128,
-            height: 128,
-            deposits: deposits.map(d => ({
-              id: d.id,
-              x: d.x,
-              y: d.y,
-              resourceId: d.resourceId,
-              remaining: d.remaining,
-            })),
-            stations: gridStations,
-          },
-          layerTokens,
-        }
+        return get().getPixiExport()
       },
     }),
     {
