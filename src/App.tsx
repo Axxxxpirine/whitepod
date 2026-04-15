@@ -87,10 +87,12 @@ function App() {
     .sort(([a], [b]) => a.localeCompare(b))
 
   return (
-    <div className="app-shell min-h-screen">
-      <header className="hud-topbar panel-surface">
+    <div className="app-shell app-shell--overlay min-h-screen">
+      <PixiCanvas className="canvas-stage canvas-stage--background" />
+
+      <header className="hud-topbar panel-surface panel-dark hud-layer">
         <div>
-          <p className="hud-eyebrow">Whitepod</p>
+          <p className="hud-eyebrow">Whitepod control room</p>
           <h1 className="hud-title">Lunar factory control</h1>
         </div>
         <div className="hud-topbar-meta">
@@ -106,11 +108,12 @@ function App() {
         </div>
       </header>
 
-      <main className="hud-grid">
-        <aside className="hud-column">
-          <section className="panel-surface hud-panel is-quiet">
-            <div className="panel-header">
+      <main className="hud-layer-grid hud-layer">
+        <aside className="hud-column hud-column--left">
+          <section className="panel-surface panel-dark hud-panel">
+            <div className="panel-header panel-header--dark">
               <h2>Session</h2>
+              <span className="hud-badge">Live</span>
             </div>
             <div className="hud-stack">
               <label className="hud-field">
@@ -127,7 +130,7 @@ function App() {
                 </button>
                 <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
               </div>
-              <div className="hud-actions">
+              <div className="hud-actions hud-actions--dense">
                 <button className="hud-button" onClick={() => requestSystemTransition('init')}>Init</button>
                 <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch</button>
                 <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
@@ -136,8 +139,8 @@ function App() {
             </div>
           </section>
 
-          <section className="panel-surface hud-panel is-quiet">
-            <div className="panel-header">
+          <section className="panel-surface panel-dark hud-panel">
+            <div className="panel-header panel-header--dark">
               <h2>Build</h2>
               <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
             </div>
@@ -175,20 +178,11 @@ function App() {
           </section>
         </aside>
 
-        <section className="hud-canvas panel-surface is-canvas">
-          <div className="panel-header hud-canvas-header is-canvas-header">
-            <h2>Factory view</h2>
-            <span className="hud-muted">Click a cell to place</span>
-          </div>
-          <div className="canvas-frame is-viewfinder">
-            <PixiCanvas className="canvas-stage" />
-          </div>
-        </section>
-
-        <aside className="hud-column">
-          <section className="panel-surface hud-panel is-quiet">
-            <div className="panel-header">
+        <aside className="hud-column hud-column--right">
+          <section className="panel-surface panel-dark hud-panel">
+            <div className="panel-header panel-header--dark">
               <h2>Stations</h2>
+              <span className="hud-badge">Placement</span>
             </div>
             <div className="hud-stack">
               <div className="hud-row">
@@ -215,10 +209,10 @@ function App() {
             </div>
           </section>
 
-          <section className="panel-surface hud-panel is-quiet">
-            <div className="panel-header">
+          <section className="panel-surface panel-dark hud-panel">
+            <div className="panel-header panel-header--dark">
               <h2>Tokens</h2>
-              <span className="hud-muted">Non-zero</span>
+              <span className="hud-badge">Non-zero</span>
             </div>
             {tokenEntries.length === 0 ? (
               <p className="hud-muted">No active tokens.</p>
@@ -236,7 +230,24 @@ function App() {
         </aside>
       </main>
 
-      {mode === 'debug' ? <div className="panel-surface hud-debug is-quiet"><PetriNetDebugger /></div> : null}
+      <footer className="hud-bottom panel-surface panel-dark hud-layer">
+        <div className="hud-bottom-left">
+          <span className="hud-badge">{statusLabel(phase)}</span>
+          <span className="hud-badge">Seed {seed}</span>
+          {mode === 'debug' ? <span className="hud-badge hud-badge--accent">Debug</span> : null}
+        </div>
+        <div className="hud-bottom-right">
+          <label className="hud-inline-field">
+            <span>Mode</span>
+            <select className="hud-select" value={mode} onChange={e => setMode(e.target.value as 'player' | 'debug')}>
+              <option value="player">Player</option>
+              <option value="debug">Debug</option>
+            </select>
+          </label>
+        </div>
+      </footer>
+
+      {mode === 'debug' ? <div className="panel-surface panel-dark hud-debug hud-layer"><PetriNetDebugger /></div> : null}
     </div>
   )
 }
