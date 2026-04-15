@@ -88,7 +88,7 @@ describe('GameHUD', () => {
     expect(screen.getByRole('button', { name: 'Convoyeur' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('rotates building placement from the HUD', () => {
+  it('rotation button was removed from the HUD (R key still works via GameCanvas)', () => {
     useGameStore.setState({
       selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
       currentBuildingRotation: Direction.North,
@@ -96,10 +96,7 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rotation: N' }));
-
-    expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.East);
-    expect(screen.getByRole('button', { name: 'Rotation: E' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Rotation/ })).not.toBeInTheDocument();
   });
 
   it('renders the selected building panel when a building is selected', () => {
@@ -176,17 +173,16 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().pendingEnergyLinkSource).toBeNull();
   });
 
-  it('keeps the console toggle working', () => {
+  it('keeps the console toggle working via settings popover', () => {
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: '>_' }));
+    // Open settings popover, then click Console
+    fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
+    fireEvent.click(screen.getByRole('button', { name: /Console/ }));
     expect(screen.getByPlaceholderText('engine.placeResource(10, 10, 1)')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByPlaceholderText('engine.placeResource(10, 10, 1)')).not.toBeInTheDocument();
   });
 
-  it('resets the session from the HUD', () => {
+  it('resets the session from the settings popover', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
     window.sessionStorage.setItem(WORLD_STORAGE_KEY, 'world');
     window.sessionStorage.setItem(VIEW_STORAGE_KEY, 'view');
@@ -200,7 +196,9 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    // Open settings popover, then click Reset session
+    fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
+    fireEvent.click(screen.getByRole('button', { name: /Reset session/ }));
 
     expect(confirm).toHaveBeenCalled();
     expect(useGameStore.getState().sessionEpoch).toBe(1);
