@@ -4,6 +4,20 @@ import { GRID_CELL_SIZE, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import type { AssetManifest } from './asset-manifest'
 import { TextureRepository } from './texture-repository'
 
+const DEPOSIT_COLORS: Record<string, number> = {
+  lunar_helium3: 0x67e8f9,
+  lunar_hydrogen: 0x60a5fa,
+  lunar_oxygen: 0x34d399,
+  lunar_regolith: 0xf59e0b,
+}
+
+const STATION_COLORS: Record<string, number> = {
+  extract: 0xfb923c,
+  convey: 0xa78bfa,
+  recipe: 0xf472b6,
+  store: 0x22d3ee,
+}
+
 export class PixiRuntime {
   private app: Application | null = null
   private root: Container | null = null
@@ -61,7 +75,12 @@ export class PixiRuntime {
 
     for (const cell of exportData.grid.cells) {
       const graphic = new Graphics()
-      graphic.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).fill(cell.kind === 'station' ? 0x2b394a : 0x202434)
+      const fill = cell.kind === 'deposit'
+        ? DEPOSIT_COLORS[cell.resourceId ?? ''] ?? 0x4f46e5
+        : STATION_COLORS[this.stationKind(cell.transitionId)] ?? 0x94a3b8
+
+      graphic.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).fill({ color: fill, alpha: cell.kind === 'deposit' ? 0.72 : 0.58 })
+      graphic.stroke({ width: 1, color: 0xffffff, alpha: cell.kind === 'deposit' ? 0.12 : 0.08 })
       graphic.x = cell.x * GRID_CELL_SIZE
       graphic.y = cell.y * GRID_CELL_SIZE
       this.worldLayer.addChild(graphic)
@@ -69,6 +88,7 @@ export class PixiRuntime {
 
     for (const deposit of exportData.grid.deposits) {
       const sprite = new Sprite(this.textureRepository.getByBaseId(deposit.resourceId, 'icon') ?? undefined)
+      sprite.tint = DEPOSIT_COLORS[deposit.resourceId] ?? 0xffffff
       sprite.x = deposit.x * GRID_CELL_SIZE + 2
       sprite.y = deposit.y * GRID_CELL_SIZE + 2
       sprite.width = GRID_CELL_SIZE - 4
@@ -79,6 +99,7 @@ export class PixiRuntime {
     for (const station of exportData.grid.stations) {
       const texture = this.textureRepository.getByBaseId(this.stationBaseId(station.transitionId), 'tile')
       const sprite = new Sprite(texture ?? undefined)
+      sprite.tint = STATION_COLORS[this.stationKind(station.transitionId)] ?? 0xffffff
       sprite.x = station.x * GRID_CELL_SIZE
       sprite.y = station.y * GRID_CELL_SIZE
       sprite.width = GRID_CELL_SIZE
@@ -93,6 +114,14 @@ export class PixiRuntime {
     if (transitionId.startsWith('recipe__')) return 'factory'
     if (transitionId.startsWith('store__')) return 'storage'
     return 'fallback_station'
+  }
+
+  private stationKind(transitionId?: string): 'extract' | 'convey' | 'recipe' | 'store' {
+    if (!transitionId) return 'recipe'
+    if (transitionId.startsWith('extract__')) return 'extract'
+    if (transitionId.startsWith('convey__')) return 'convey'
+    if (transitionId.startsWith('recipe__')) return 'recipe'
+    return 'store'
   }
 
   private renderTokens(layerTokens: PixiExport['layerTokens']): void {

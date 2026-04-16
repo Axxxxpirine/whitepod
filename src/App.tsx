@@ -445,9 +445,15 @@ function App() {
                 <RuntimeSettingsPopover
                   autoTickEnabled={autoTickEnabled}
                   demoModeEnabled={demoModeEnabled}
+                  demonstrationEnabled={demonstrationEnabled}
                   simulationSpeed={simulationSpeed}
                   onToggleAutoTick={() => setAutoTickEnabled(!autoTickEnabled)}
                   onToggleDemoMode={() => setDemoModeEnabled(!demoModeEnabled)}
+                  onToggleDemonstration={() => {
+                    const nextEnabled = !demonstrationEnabled
+                    setDemonstrationEnabled(nextEnabled)
+                    if (nextEnabled) setAutoTickEnabled(true)
+                  }}
                   onChangeSimulationSpeed={setSimulationSpeed}
                   onResetSave={resetSave}
                   onNewGame={() => {

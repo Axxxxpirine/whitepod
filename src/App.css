@@ -336,6 +336,46 @@
   border-color: rgba(168, 85, 247, 0.35);
 }
 
+.hud-speed-slider {
+  width: 100%;
+  accent-color: #34d399;
+}
+
+.hud-speed-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hud-speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(180deg, #86efac, #34d399);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+  cursor: pointer;
+}
+
+.hud-speed-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hud-speed-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(180deg, #86efac, #34d399);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+  cursor: pointer;
+}
+
 .hud-button.primary {
   background: rgba(52, 211, 153, 0.12);
   border-color: rgba(52, 211, 153, 0.2);
