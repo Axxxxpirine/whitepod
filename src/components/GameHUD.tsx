@@ -208,36 +208,42 @@ export function GameHUD() {
             {globalEnergy && (
               <>
                 <div className="label mb-1.5 text-ink-muted">Énergie</div>
-                <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+                <div className="flex items-center gap-1">
+                  <span className="label text-ink-muted">{globalEnergy.surplusPower >= 0 ? 'Surplus' : 'Déficit'}</span>
                   <div className="flex items-center gap-1">
                     <Icon
                       icon={Zap}
                       size={13}
-                      className={globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}
+                      className={globalEnergy.surplusPower >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
-                      className={`font-bold tabular-nums ${globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}`}
+                      className={`font-bold tabular-nums ${globalEnergy.surplusPower >= 0 ? 'text-ok' : 'text-error'}`}
                     >
-                      {globalEnergy.remaining >= 0 ? '+' : ''}
-                      {Math.round(globalEnergy.remaining * 10) / 10} kW
+                      {globalEnergy.surplusPower >= 0 ? '+' : ''}
+                      {Math.round(globalEnergy.surplusPower * 10) / 10} kW
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
-                    <span className="text-ok">↑</span>
-                    {Math.round(globalEnergy.production * 10) / 10} kW
-                  </div>
-                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
-                    <span className="text-accent-warm">↓</span>
-                    {Math.round(globalEnergy.consumption * 10) / 10} kW
-                  </div>
                 </div>
-                {energyStorage && energyStorage.capacity > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1 text-xs tabular-nums text-ink-muted">
-                    <span className="text-accent-warm">⬢</span>
-                    Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
-                    {Math.round(energyStorage.capacity * 10) / 10} kWh
-                  </div>
-                )}
+                <div className="mt-1 text-xs tabular-nums text-ink-muted">
+                  <span>Prod. {Math.round(globalEnergy.production * 10) / 10} kW</span>
+                  <span className="mx-2">|</span>
+                  <span>Utilisée {Math.round(globalEnergy.servedConsumption * 10) / 10} kW</span>
+                  <span className="mx-2">|</span>
+                  <span>Demande {Math.round(globalEnergy.demandedConsumption * 10) / 10} kW</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
+                  {globalEnergy.unservedLoad > 0 && (
+                    <span className="text-accent-warm">
+                      Non servie {Math.round(globalEnergy.unservedLoad * 10) / 10} kW
+                    </span>
+                  )}
+                  {energyStorage && energyStorage.capacity > 0 && (
+                    <span>
+                      Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
+                      {Math.round(energyStorage.capacity * 10) / 10} kWh
+                    </span>
+                  )}
+                </div>
               </>
             )}
 

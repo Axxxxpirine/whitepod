@@ -657,7 +657,8 @@ describe('Edge cases & invariants', () => {
     expect(stats.onlineConsumers).toBe(2);
     expect(stats.offlineConsumers).toBe(0);
     expect(stats.production).toBe(20);
-    expect(stats.consumption).toBe(8);
+    expect(stats.servedConsumption).toBe(8);
+    expect(stats.demandedConsumption).toBe(8);
   });
 
   it('storage totals track correctly as batteries join and leave', () => {

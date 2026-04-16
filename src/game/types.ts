@@ -181,10 +181,21 @@ export interface EnergyNetworkBalance {
 
 export type PowerState = 'neutral' | 'powered' | 'unpowered';
 
-export interface EnergyGlobalStats {
+export interface EnergyDisplayStats {
   readonly production: number;
-  readonly consumption: number;
-  readonly remaining: number;
+  readonly servedConsumption: number;
+  readonly demandedConsumption: number;
+  readonly surplusPower: number;
+  readonly demandBalance: number;
+  readonly unservedLoad: number;
+}
+
+export interface EnergyNetworkStats extends EnergyDisplayStats {
+  readonly buildingIds: readonly BuildingId[];
+  readonly isPowered: boolean;
+}
+
+export interface EnergyGlobalStats extends EnergyDisplayStats {
   readonly onlineConsumers: number;
   readonly offlineConsumers: number;
 }
