@@ -61,9 +61,9 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const visibleStock = RESOURCE_ENTRIES.filter((r) => stock[r.key] > 0);
 
     rows = visibleStock.length > 0 ? (
-      <div className="flex flex-wrap justify-around gap-1 py-0.5">
+      <div className="grid grid-cols-3 gap-1">
         {visibleStock.map((r) => (
-          <ResourceStockRow key={r.key} sprite={r.sprite} alt={resourceTypeLabel(r.type)} count={stock[r.key]} />
+          <ResourceStockCard key={r.key} sprite={r.sprite} alt={resourceTypeLabel(r.type)} count={stock[r.key]} />
         ))}
       </div>
     ) : (
@@ -229,11 +229,16 @@ function StatRow({
   );
 }
 
-function ResourceStockRow({ sprite, alt, count }: { sprite: string; alt: string; count: number }) {
+function ResourceStockCard({ sprite, alt, count }: { sprite: string; alt: string; count: number }) {
   return (
-    <div className="flex items-center gap-1">
-      <img src={sprite} className="h-3.5 w-3.5 object-contain" alt={alt} />
-      <span className="text-xs font-medium tabular-nums text-ink">{count}</span>
+    <div className="rounded-sm border border-border bg-surface-2/60 px-1.5 py-1.5">
+      <div className="relative flex min-h-11 items-center justify-center">
+        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[10px] tabular-nums text-ink">
+          {count}
+        </span>
+        <img src={sprite} className="h-8 w-8 object-contain" alt={alt} />
+      </div>
+      <div className="mt-1 text-center text-[11px] leading-tight text-ink">{alt}</div>
     </div>
   );
 }
