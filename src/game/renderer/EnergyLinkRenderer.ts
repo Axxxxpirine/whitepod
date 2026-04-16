@@ -407,7 +407,9 @@ export class EnergyLinkRenderer {
       }
     }
 
-    this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
+    if (this.currentMode === 'energy_link') {
+      this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
+    }
 
     const previewState = this.getState();
     if (previewState.pendingSourceId !== null && previewState.mouseWorldPos !== null) {
