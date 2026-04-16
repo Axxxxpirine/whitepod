@@ -31,7 +31,6 @@ describe('GameHUD', () => {
       linkSolarOnPlacement: true,
       idleSummary: null,
     });
-    window.sessionStorage.clear();
     const local = window.localStorage as unknown;
     if (
       typeof local === 'object' &&
@@ -197,8 +196,8 @@ describe('GameHUD', () => {
 
   it('resets the session from the HUD', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
-    window.sessionStorage.setItem(WORLD_STORAGE_KEY, 'world');
-    window.sessionStorage.setItem(VIEW_STORAGE_KEY, 'view');
+    window.localStorage.setItem(WORLD_STORAGE_KEY, 'world');
+    window.localStorage.setItem(VIEW_STORAGE_KEY, 'view');
     useGameStore.setState({
       selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
       selectedBuildingId: 12,
@@ -218,8 +217,8 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
     expect(useGameStore.getState().beltPreview).toBeNull();
     expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
-    expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
   it('shows simulation time in the HUD panel', () => {

@@ -7,7 +7,6 @@ export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
 export const LEGACY_WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
 export const LEGACY_VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
 export const IDLE_SIDECAR_KEY = 'whitepod:idle-sidecar:v1';
-export const LEGACY_LOCALSTORAGE_WORLD_KEY = 'whitepod:session:world:v3';
 
 const WORLD_STORAGE_VERSION = 3;
 const WORLD_IDLE_VERSION = 1;
@@ -77,22 +76,22 @@ function isStorageLike(value: unknown): value is Storage {
   );
 }
 
-function getWorldStorage(): Storage | null {
-  if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.sessionStorage)) return window.sessionStorage;
-  return null;
-}
-
-function getViewStorage(): Storage | null {
-  if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.sessionStorage)) return window.sessionStorage;
-  return null;
-}
-
-function getSidecarStorage(): Storage | null {
+function getLocalStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
   if (isStorageLike(window.localStorage)) return window.localStorage;
   return null;
+}
+
+function getWorldStorage(): Storage | null {
+  return getLocalStorage();
+}
+
+function getViewStorage(): Storage | null {
+  return getLocalStorage();
+}
+
+function getSidecarStorage(): Storage | null {
+  return getLocalStorage();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -281,28 +280,6 @@ function readViewState(): PersistedViewState | null {
   return null;
 }
 
-function migrateLocalStorageWorldToSessionStorage(): void {
-  const sidecarStorage = getSidecarStorage();
-  const worldStorage = getWorldStorage();
-  if (!sidecarStorage || !worldStorage) return;
-
-  const raw = sidecarStorage.getItem(LEGACY_LOCALSTORAGE_WORLD_KEY);
-  if (!raw) return;
-
-  try {
-    if (!worldStorage.getItem(WORLD_STORAGE_KEY)) {
-      const parsed: unknown = JSON.parse(raw);
-      if (isPersistedWorldStateV3(parsed) || isPersistedWorldStateV2(parsed)) {
-        worldStorage.setItem(WORLD_STORAGE_KEY, raw);
-      }
-    }
-  } catch {
-    // fall through — remove the legacy key regardless
-  }
-
-  sidecarStorage.removeItem(LEGACY_LOCALSTORAGE_WORLD_KEY);
-}
-
 export function readIdleSidecar(): IdleSidecar | null {
   const storage = getSidecarStorage();
   if (!storage) return null;
@@ -367,13 +344,12 @@ export function createSessionId(): string {
 }
 
 export function clearPersistedSession(): void {
-  getWorldStorage()?.removeItem(WORLD_STORAGE_KEY);
-  getWorldStorage()?.removeItem(LEGACY_WORLD_STORAGE_KEY);
-
-  const viewStorage = getViewStorage();
-  viewStorage?.removeItem(VIEW_STORAGE_KEY);
+  const storage = getLocalStorage();
+  storage?.removeItem(WORLD_STORAGE_KEY);
+  storage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
+  storage?.removeItem(VIEW_STORAGE_KEY);
   if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
-    viewStorage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
+    storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
   }
 
   clearIdleSidecar();
@@ -429,8 +405,6 @@ export function saveViewSession(args: {
 }
 
 export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {
-  migrateLocalStorageWorldToSessionStorage();
-
   const worldStorage = getWorldStorage();
   if (!worldStorage) return null;
 

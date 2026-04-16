@@ -108,6 +108,7 @@ export function GameCanvas() {
     let handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
     let handleVisibilityChange: (() => void) | null = null;
     let handleBeforeUnload: (() => void) | null = null;
+    let handlePageHide: (() => void) | null = null;
     let simState: 'ACTIVE' | 'PAUSED' = 'ACTIVE';
     let pausedAtWallClockMs: number | null = null;
     let resizeObserver: ResizeObserver | null = null;
@@ -374,6 +375,13 @@ export function GameCanvas() {
           writeIdleSidecar(sessionId, Date.now());
         }
       };
+      handlePageHide = () => {
+        worldSaver?.flush();
+        viewSaver?.flush();
+        if (simState !== 'PAUSED') {
+          writeIdleSidecar(sessionId, Date.now());
+        }
+      };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
       canvas.addEventListener('pointermove', handlePointerMove);
@@ -384,6 +392,7 @@ export function GameCanvas() {
       window.addEventListener('keydown', handleKeyDown);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('pagehide', handlePageHide);
 
       resizeObserver = new ResizeObserver(() => {
         if (app) engine.viewport.resize(app.screen.width, app.screen.height);
@@ -470,6 +479,7 @@ export function GameCanvas() {
         if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
         if (handleVisibilityChange) document.removeEventListener('visibilitychange', handleVisibilityChange);
         if (handleBeforeUnload) window.removeEventListener('beforeunload', handleBeforeUnload);
+        if (handlePageHide) window.removeEventListener('pagehide', handlePageHide);
         useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
         buildingHighlightRenderer?.destroy();

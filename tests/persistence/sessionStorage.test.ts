@@ -25,14 +25,13 @@ function makeEngine() {
   return engine;
 }
 
-describe('sessionStorage persistence', () => {
+describe('persistent storage', () => {
   beforeEach(() => {
     clearPersistedSession();
-    window.sessionStorage.clear();
     window.localStorage.clear();
   });
 
-  it('saves and reloads the world and view state from sessionStorage', () => {
+  it('saves and reloads the world and view state from localStorage', () => {
     const engine = makeEngine();
     engine.viewport.pan(120, 40);
     engine.viewport.zoomAt(320, 240, 1.3);
@@ -44,9 +43,8 @@ describe('sessionStorage persistence', () => {
       sessionId: 'session-a',
     });
 
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
-    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
-
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).not.toBeNull();
     const loaded = loadPersistedSession(640, 480);
 
     expect(loaded).not.toBeNull();
@@ -75,7 +73,7 @@ describe('sessionStorage persistence', () => {
   it('ignores a view snapshot with a mismatched session id', () => {
     const engine = makeEngine();
     saveWorldSession(engine, 'session-a');
-    window.sessionStorage.setItem(
+    window.localStorage.setItem(
       VIEW_STORAGE_KEY,
       JSON.stringify({
         version: 2,
@@ -89,56 +87,41 @@ describe('sessionStorage persistence', () => {
 
     expect(loaded?.selectedTool).toEqual({ kind: 'select' });
     expect(loaded?.engine.getViewportSnapshot()).toEqual(new GameEngine(640, 480).getViewportSnapshot());
-    expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
   it('purges invalid world payloads and returns null', () => {
-    window.sessionStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
-    window.sessionStorage.setItem(VIEW_STORAGE_KEY, '{"version":1,"oops":true}');
+    window.localStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
+    window.localStorage.setItem(VIEW_STORAGE_KEY, '{"version":1,"oops":true}');
 
     const loaded = loadPersistedSession(640, 480);
 
     expect(loaded).toBeNull();
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
-    expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('migrates a legacy v2 sessionStorage world to v3', () => {
+  it('migrates a legacy v2 world payload to the durable store', () => {
     const engine = makeEngine();
     saveWorldSession(engine, 'session-legacy');
-    const v3Payload = window.sessionStorage.getItem(WORLD_STORAGE_KEY);
+    const v3Payload = window.localStorage.getItem(WORLD_STORAGE_KEY);
     expect(v3Payload).not.toBeNull();
 
-    window.sessionStorage.removeItem(WORLD_STORAGE_KEY);
-    window.sessionStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
+    window.localStorage.removeItem(WORLD_STORAGE_KEY);
+    window.localStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
 
     const loaded = loadPersistedSession(640, 480);
     expect(loaded).not.toBeNull();
     expect(loaded?.sessionId).toBe('session-legacy');
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
-    expect(window.sessionStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
   });
 
-  it('migrates a PR-era localStorage world payload back into sessionStorage', () => {
-    const engine = makeEngine();
-    saveWorldSession(engine, 'session-from-localstorage');
-    const payload = window.sessionStorage.getItem(WORLD_STORAGE_KEY)!;
-    window.sessionStorage.removeItem(WORLD_STORAGE_KEY);
-    window.localStorage.setItem(WORLD_STORAGE_KEY, payload);
-
-    const loaded = loadPersistedSession(640, 480);
-
-    expect(loaded).not.toBeNull();
-    expect(loaded?.sessionId).toBe('session-from-localstorage');
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
-    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
-  });
 });
 
 describe('idle sidecar', () => {
   beforeEach(() => {
     clearPersistedSession();
-    window.sessionStorage.clear();
     window.localStorage.clear();
   });
 
