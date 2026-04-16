@@ -15,6 +15,7 @@ import {
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { BeltFlowStats } from './BeltFlowStats';
+import { Icon } from './ui';
 
 interface BuildingStatsPanelProps {
   building: Building;
@@ -71,11 +72,11 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
         <>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Battery size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+              <Icon icon={Battery} size={11} className="text-ink-muted" />
               <span className="text-xs font-medium tabular-nums text-ink">{percent}%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Zap size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+              <Icon icon={Zap} size={11} className="text-ink-muted" />
               <span className="text-xs font-medium tabular-nums text-ink">
                 {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
               </span>
@@ -155,7 +156,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 });
 
 function StatRow({
-  icon: Icon,
+  icon,
   label,
   value,
   valueClass,
@@ -167,7 +168,7 @@ function StatRow({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <Icon size={11} strokeWidth={1.5} className="shrink-0 text-ink-muted" />
+      <Icon icon={icon} size={11} className="text-ink-muted" />
       <span className="label text-ink-muted">{label}</span>
       <span className={`ml-auto text-xs font-medium tabular-nums ${valueClass ?? 'text-ink'}`}>{value}</span>
     </div>

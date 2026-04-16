@@ -115,6 +115,9 @@ The approved HUD includes:
 | Date | Decision | Rationale |
 |---|---|---|
 | 2026-04-16 | Initial design system created | Synthesis of automation-sim category research + first-principles take that the name "Whitepod" argues against the genre's grimy palette. Approved variant A (Stitch). |
+| 2026-04-16 | Drop `--color-accent-violet` token | Violet is listed as a category anti-pattern ("AI-slop"). Merger & watchtower re-mapped to `--color-ink-muted`; icon + hotkey badge still carry identity. |
+| 2026-04-16 | Re-add Google Fonts link in `index.html` | Without it, every font variable silently degrades to system fallbacks (Georgia for headings, system-ui for body, SFMono for data), breaking the "headings MUST be Newsreader" anti-pattern rule. Kept Google Fonts over `@fontsource` to avoid adding a dependency. |
+| 2026-04-16 | Align grid tokens to DESIGN.md values | `--color-grid-tile` and `--color-grid-line` had drifted in tokens.ts/index.css to brighter values. Reverted to `#181A1F` / `#2A3038`. Dropped unused `--color-grid-tile-rock`. |
 
 ---
 

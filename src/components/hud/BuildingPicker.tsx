@@ -121,7 +121,7 @@ export function BuildingPicker() {
               </div>
 
               {/* Shortcut badge — top-right corner */}
-              <span className="absolute right-1 top-0.5 tabular-nums text-[9px] text-ink-muted">
+              <span className="absolute right-1 top-0.5 tabular-nums text-[11px] text-ink-muted">
                 {entry.shortcut.toUpperCase()}
               </span>
 
@@ -136,7 +136,7 @@ export function BuildingPicker() {
               role="tooltip"
               className={[
                 'pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2',
-                'rounded-md border border-border bg-surface px-2 py-1 text-[10px] text-ink',
+                'rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-ink',
                 'whitespace-nowrap opacity-0 transition-opacity duration-150',
                 'group-hover:opacity-100 group-focus-within:opacity-100',
               ].join(' ')}

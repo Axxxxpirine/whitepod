@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
-import { Icon, Chip, PanelHeading } from './ui';
+import { Icon, Chip, Panel, PanelHeading } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -136,7 +136,7 @@ export function GameHUD() {
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
-          <div className="min-w-[180px] rounded-md border border-border bg-surface/90 px-3 py-2.5 text-sm text-ink backdrop-blur-md">
+          <Panel className="min-w-[180px] px-3 py-2.5 text-sm text-ink">
             {resourceCounts && (
               <>
                 <div className="label mb-1.5 text-ink-muted">Ressources</div>
@@ -204,7 +204,7 @@ export function GameHUD() {
                 type="button"
                 onClick={() => setDebugOpen((value) => !value)}
                 aria-expanded={debugOpen}
-                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[10px] text-ink-muted transition-colors hover:bg-border"
+                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
               >
                 {debugOpen ? '▲' : '▼'}
               </button>
@@ -277,14 +277,14 @@ export function GameHUD() {
                 </div>
               </div>
             )}
-          </div>
+          </Panel>
         </div>
       )}
 
       <SelectedBuildingPanel />
 
       {consoleOpen && (
-        <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-md border border-border bg-surface/95 tabular-nums text-xs backdrop-blur-sm">
+        <Panel elevated className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden tabular-nums text-xs">
           <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
               <div className="text-ink-muted">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
@@ -316,7 +316,7 @@ export function GameHUD() {
               autoFocus
             />
           </div>
-        </div>
+        </Panel>
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
@@ -325,7 +325,7 @@ export function GameHUD() {
             <div className="pointer-events-auto flex flex-col items-start gap-2">
               <ToolModeIndicator />
               {hoverTile && (
-                <div className="inline-flex rounded-sm border border-border bg-surface/92 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+                <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
                   {hoverTile.x}, {hoverTile.y}
                 </div>
               )}
@@ -333,14 +333,14 @@ export function GameHUD() {
           </div>
 
           <div className="pointer-events-auto justify-self-center">
-            <div className="flex flex-col items-center gap-2 rounded-md border border-border bg-surface/94 px-3 py-2.5 text-ink backdrop-blur-md">
+            <Panel className="flex flex-col items-center gap-2 px-3 py-2.5 text-ink">
               <PanelHeading className="text-xs text-ink-muted">Construction</PanelHeading>
               <BuildingPicker />
-            </div>
+            </Panel>
           </div>
 
           <div className="flex min-w-0 items-end justify-self-end">
-            <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-surface/92 px-2 py-2 text-ink backdrop-blur-md">
+            <Panel className="pointer-events-auto flex items-center gap-2 px-2 py-2 text-ink">
               {energyLinkSelected && (
                 <div className="flex items-center gap-2 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-ink-muted">
                   <span className="label">Source</span>
@@ -360,7 +360,7 @@ export function GameHUD() {
                 </button>
 
                 {settingsOpen && (
-                  <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-md border border-border bg-surface/95 p-2 backdrop-blur-md">
+                  <Panel elevated className="absolute bottom-full right-0 mb-2 min-w-48 p-2">
                     <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
 
                     <button
@@ -383,7 +383,7 @@ export function GameHUD() {
                       className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Console</span>
-                      <span className="ml-3 tabular-nums text-[10px] text-ink-muted">&gt;_</span>
+                      <span className="ml-3 tabular-nums text-[11px] text-ink-muted">&gt;_</span>
                     </button>
 
                     <div className="my-1.5 border-t border-border" />
@@ -398,10 +398,10 @@ export function GameHUD() {
                     >
                       Reset session
                     </button>
-                  </div>
+                  </Panel>
                 )}
               </div>
-            </div>
+            </Panel>
           </div>
         </div>
       </div>

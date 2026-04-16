@@ -9,12 +9,10 @@
   --color-ink-muted:       #8A8F98;
   --color-accent:          #6EE7FF;
   --color-accent-warm:     #F2B36B;
-  --color-accent-violet:   #A78BFA;
   --color-ok:              #5EE2A0;
   --color-error:           #FF6B6B;
-  --color-grid-tile:       #242830;
-  --color-grid-tile-rock:  #2F343C;
-  --color-grid-line:       #3A3F48;
+  --color-grid-tile:       #181A1F;
+  --color-grid-line:       #2A3038;
 
   --font-serif: "Newsreader", ui-serif, Georgia, serif;
   --font-sans:  "Geist", ui-sans-serif, system-ui, sans-serif;

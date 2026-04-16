@@ -59,8 +59,8 @@ export type ToolbarEntry = BuildingToolbarEntry | VirtualToolbarEntry;
 
 // Toolbar palette mapped to the Architect's Drawing Board design system.
 // Functional families share tokens (extractor & battery = warm; storage &
-// energy_link = cyan; merger & watchtower = violet) — overlap is acceptable
-// since icons + hotkey badges carry identity alongside color.
+// energy_link = cyan; merger & watchtower = muted neutral) — overlap is
+// acceptable since icons + hotkey badges carry identity alongside color.
 export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
@@ -111,9 +111,9 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     kind: 'building',
     typeId: MERGER_BASIC_BUILDING_TYPE_ID,
     shortcut: '6',
-    activeClass: 'bg-accent-violet',
+    activeClass: 'bg-ink-muted',
     highlightFamily: [MERGER_BASIC_BUILDING_TYPE_ID],
-    highlightColor: PIXI.accentViolet,
+    highlightColor: PIXI.inkMuted,
   },
   {
     kind: 'tool',
@@ -129,9 +129,9 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     kind: 'building',
     typeId: WATCHTOWER_BUILDING_TYPE_ID,
     shortcut: '8',
-    activeClass: 'bg-accent-violet',
+    activeClass: 'bg-ink-muted',
     highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
-    highlightColor: PIXI.accentViolet,
+    highlightColor: PIXI.inkMuted,
   },
 ];
 
