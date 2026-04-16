@@ -15,7 +15,6 @@ import { FogOfWarRenderer } from '@/game/renderer/FogOfWarRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
-import { PIXI } from '@/design/tokens';
 import {
   createSessionId,
   loadPersistedSession,
@@ -115,7 +114,7 @@ export function GameCanvas() {
       app = new Application();
       await app.init({
         resizeTo: container,
-        backgroundColor: PIXI.bg,
+        backgroundColor: 0xe0e0e0,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
