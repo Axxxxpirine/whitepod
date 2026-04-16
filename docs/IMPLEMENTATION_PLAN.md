@@ -4,7 +4,7 @@
 
 **Whitepod** est un jeu de gestion et d'optimisation industrielle sur grille lunaire. Le joueur incarne l'architecte d'un système automatisé vivant : il observe un territoire, organise l'implantation de son infrastructure, anticipe les contraintes de circulation et d'énergie, puis affine en continu la structure de son réseau pour transformer un espace brut en machine cohérente, stable et évolutive.
 
-**Objectif actuel** : consolider une boucle de jeu jouable avec rendu PixiJS, HUD React tuilé, persistance locale, et base de debug/inspection pour les itérations suivantes.
+**Objectif actuel** : consolider une boucle de jeu joueur jouable avec rendu PixiJS, HUD React compact, persistance locale, aide de progression par tier, et garde-fous d'économie sur le build.
 
 **Stack Technique** :
 - TypeScript, React 19, Zustand (state management)
@@ -36,16 +36,24 @@
   - persistance via `zustand/middleware/persist` (clé localStorage: `whitepod-save`)
   - snapshots sérialisables engine + grid
   - auto-save cadence 30 ticks + flush sur actions majeures
+  - les placements de stations débitent désormais les tokens requis par leur coût de build
+  - les transitions non payables ne sont plus proposées comme options de construction
 - **GameLoop + export** : `src/engine/game-loop.ts`
   - tick 1s + dispatch `window.__whitepodOnPixiUpdate` + event `whitepod-pixi-update`
 - **HUD joueur tuilé** : `src/App.tsx`, `src/App.css`
-  - header, résumé, sidebars, viewport central, footer
+  - header, résumé, sidebars, viewport central compact
   - plus d'overlay absolu pour les panneaux HUD
   - panneaux à scroll interne pour éviter les collisions de layout
   - le rendu Pixi est désormais dans un panneau dédié au centre
+  - bouton `Help` avec guide de progression par tier
+  - bouton `Run simulation` pour démarrer proprement la boucle joueur
+  - runtime overlays visibles dans le viewport (selection, outil actif, popover settings)
 - **Renderer Pixi** : `src/components/PixiCanvas.tsx`, `src/render/pixi-renderer.ts`
-  - grille 128x128, dépôts/stations, overlays de tokens
+  - grille 64x64, tuiles 24px, dépôts/stations, overlays de tokens
   - zoom UI côté React avec viewport scrollable
+- **Planification / aide au build** : `src/core/build-planning.ts`, `src/components/help/TierGuideModal.tsx`
+  - synthèse des coûts de build à partir des transitions runtime
+  - génération d'un guide `tier N -> tier N+1` à partir des métadonnées + transitions
 - **Debug PetriNet Simulator** (code conservé, hors surface joueur pour l'instant) :
   - `src/components/debug/PetriNetDebugger.tsx` (controls, stats, filters)
   - `src/components/debug/petri/PetriNetDiagram.tsx` (SVG + minimap + ROI)
@@ -54,7 +62,7 @@
 - **Validation actuelle** :
   - `npm run build` ✅
   - `npm test` ✅
-  - `npm run lint` ✅
+  - `npm run lint` : toujours dans la routine de vérification, non revalidé dans cette session de handoff
 - **Tests** : Vitest (DSL compiler, engine, grid, snapshots, store hydration)
 
 ### 0.2 Commandes (reprise de session)
@@ -78,10 +86,10 @@ Pour repartir de zéro côté sauvegarde :
 
 ### 0.3 Prochaines étapes prioritaires
 
-- **Comparer avec la future base `main` rafraîchie** : réévaluer les écarts une fois la branche cible disponible localement.
-- **Affiner le HUD tuilé** : proportions desktop/mobile, hiérarchie visuelle, ergonomie des sidebars.
-- **Ajuster le viewport central** : zoom par défaut, occupation de l'espace, comportement de scroll, confort sur laptop.
-- **Vérifier précisément le mapping pointeur → cellule** dans le nouveau layout tuilé (clic/hover/placement) avec QA manuelle.
+- **Décider si le coût de build doit rester couplé aux inputs des transitions runtime** ou être déplacé vers un modèle d'économie dédié.
+- **Vérifier l'UX du guide `Help`** : vocabulaire, densité d'information, ordre des conseils, clarté desktop/mobile.
+- **Vérifier précisément le mapping pointeur → cellule** dans le layout compact (clic/hover/placement) avec QA manuelle.
+- **Ajuster l'équilibrage** après réduction de grille (`64x64`) et baisse du nombre de dépôts.
 - **Stabiliser le contrat PixiExport/renderer** : diffing strategy, cleanup, resize behavior, update policy.
 - **Compléter l'intégration PixiJS** : tests d'intégration, performances, animation playback.
 - **Décider du sort du debug UI** : réintégration contrôlée, séparation sur route dédiée, ou nettoyage des dépendances (`dagre`, `marked`) si non retenu.
@@ -102,8 +110,9 @@ Pour repartir de zéro côté sauvegarde :
 - Installer deps: `npm install`
 - Vérifier l'état: `npm test && npm run lint && npm run build`
 - Lancer: `npm run dev`
-- Vérifier en priorité le layout HUD tuilé sur desktop + mobile
-- Vérifier les interactions grille: hover, clic, placement, zoom
+- Vérifier en priorité le layout HUD compact sur desktop + mobile
+- Vérifier les interactions grille: hover, clic, placement, zoom, filtres buildables
+- Vérifier le guide `Help` et le bouton `Run simulation`
 - Debugger si besoin via les composants debug existants, mais ils ne sont plus branchés au HUD joueur courant
 
 ### 0.6 Handoff de cette session
@@ -111,10 +120,15 @@ Pour repartir de zéro côté sauvegarde :
 - Le HUD overlay a été remplacé par un **layout tuilé** en flux normal.
 - La grille Pixi n'est plus un fond plein écran, mais un **viewport central dédié**.
 - Les panneaux `Build Library`, `Stations` et `Tokens` ont un **scroll interne** pour éviter les chevauchements.
+- Le layout a encore été **compacté**: footer retiré, densité augmentée, zoom déplacé dans le header du viewport.
 - Le sélecteur de mode a été retiré de la surface joueur; le HUD affiche simplement `player`.
 - `src/App.css` est désormais bien importé par `src/App.tsx`.
-- Le zoom par défaut du viewport a été réduit pour mieux rentrer dans le panneau central (`0.625`).
-- Les vérifications de base sont vertes: build, tests, lint.
+- Une **fenêtre d'aide** guide désormais la progression par tier pour atteindre les ressources du tier suivant.
+- Le bouton **`Run simulation`** remplace l'ancien démarrage implicite côté joueur.
+- Les options de build sont désormais **filtrées par payabilité**, et le placement d'une station **débite réellement** les tokens consommés.
+- La grille runtime est passée en **64x64** avec tuiles **24px**; la densité de dépôts a été abaissée pour rester cohérente.
+- Le zoom par défaut du viewport a été réduit pour mieux rentrer dans le panneau central (`0.5`).
+- Les vérifications revalidées dans cette session sont vertes: build, tests.
 
 ---
 
@@ -156,7 +170,7 @@ Pour repartir de zéro côté sauvegarde :
 ### 1.2 Cycle de Jeu
 
 ```
-Init (seed) → Load transitions → Grid generation → 
+Run simulation / Init (seed) → Load transitions → Grid generation → 
 PetriNet start → Game loop (1s tick) → Pixi export → 
 Auto-save (30s) → Launch rocket → Done → Terminate
 ```
@@ -185,6 +199,8 @@ Auto-save (30s) → Launch rocket → Done → Terminate
 ### 2.1 Types Core (`src/core/types.ts`)
 
 Note: l'implémentation réelle de `src/core/types.ts` expose déjà un `PixiExport` complet pour le renderer: `timestamp`, `phase`, `tokens`, `grid.cells`, `grid.deposits`, `grid.stations` et `layerTokens`.
+
+Note importante: les extraits de cette section restent des schémas de conception utiles, mais ne sont pas tous des copies exactes du code courant. La vérité source reste le code dans `src/`.
 
 ```typescript
 // Transition simplifiée pour moteur interne
@@ -243,8 +259,8 @@ export interface PixiExport {
   timestamp: number;
   phase: string;              // 'initializing' | 'running' | 'done' | 'terminated'
   grid: {
-    width: 128;
-    height: 128;
+    width: number;
+    height: number;
     cells: GridCellExport[];
   };
   tokens: Record<string, number>;
@@ -366,14 +382,14 @@ Note: l'implémentation réelle gère des dépôts à capacité (`remaining`) av
 
 ```typescript
 /**
- * Gestionnaire de grille 128x128 pour Whitepod.
+ * Gestionnaire de grille 64x64 pour Whitepod.
  * 
  * Gère les gisements de ressources tier0, les stations de production,
  * et la génération déterministe par seed.
  */
 export class GridManager {
-  private width = 128;
-  private height = 128;
+  private width = 64;
+  private height = 64;
   private grid: Map<string, GridCell> = new Map(); // key: `${x},${y}`
   private deposits: ResourceDeposit[] = [];
   private stations: Map<string, ProductionStation> = new Map();
@@ -389,10 +405,10 @@ export class GridManager {
     const rng = this.seededRandom(this.seed);
     
     const counts = {
-      lunar_helium3: 10,
-      lunar_hydrogen: 20,
-      lunar_oxygen: 15,
-      lunar_regolith: 30
+      lunar_helium3: 3,
+      lunar_hydrogen: 5,
+      lunar_oxygen: 4,
+      lunar_regolith: 8
     };
 
     for (const [type, count] of Object.entries(counts)) {
