@@ -31,9 +31,7 @@ import { getBuildingType } from '@/game/data/buildingCatalog';
 import { finalizePendingScenarioInstall } from '@/game/scenarios/applyScenario';
 import { createDevScenarioApi, hasPendingScenarioInstall } from '@/game/scenarios/devScenarios';
 import { worldToScreen, screenToWorld } from '@/game/engine/CoordinateTransform';
-import { BotController } from '@/game/bot/BotController';
-import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
-import { parseSeedInput } from '@/game/bot/seedInput';
+import { createBotSession } from '@/game/bot/botSession';
 import {
   handleBuildingPlaced,
   handleEnergyLinkClick,
@@ -90,9 +88,7 @@ export function GameCanvas() {
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const selectedToolKind = useGameStore((s) => s.selectedTool.kind);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
-  const setSelectedBotProfileId = useGameStore((s) => s.setSelectedBotProfileId);
   const setSeedInput = useGameStore((s) => s.setSeedInput);
-  const setBotControls = useGameStore((s) => s.setBotControls);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -129,8 +125,7 @@ export function GameCanvas() {
     let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let currentEngine: GameEngine | null = null;
-    let botController: BotController | null = null;
-    let unsubscribeBotProfile: (() => void) | null = null;
+    let botSession: ReturnType<typeof createBotSession> | null = null;
 
     const init = async () => {
       app = new Application();
@@ -168,11 +163,10 @@ export function GameCanvas() {
       const currentState = useGameStore.getState();
       const initialBotProfileId = loadedSession?.selectedBotProfileId ?? currentState.selectedBotProfileId;
       const initialSeedInput = loadedSession?.seedInput ?? currentState.seedInput;
-      const parsedSeed = parseSeedInput(initialSeedInput);
-      const mapSeed = parsedSeed ?? engine.mapSeed ?? DEFAULT_MAP_SEED;
+      const mapSeed = Number.parseInt(initialSeedInput.trim(), 10);
 
       if (!loadedSession) {
-        engine.generateMap(mapSeed);
+        engine.generateMap(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED);
       }
 
       const nowAtMount = Date.now();
@@ -195,8 +189,7 @@ export function GameCanvas() {
       state.setIdleSummary(initialIdleSummary.appliedSeconds > 0 ? initialIdleSummary : null);
       setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
-      setSelectedBotProfileId(initialBotProfileId);
-      setSeedInput(String(mapSeed));
+      setSeedInput(String(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED));
       setEngine(engine);
       finalizePendingScenarioInstall();
 
@@ -242,20 +235,7 @@ export function GameCanvas() {
         (window as unknown as { engine: DevEngine }).engine = devEngine;
       }
 
-      botController = new BotController(engine, (bot) => {
-        useGameStore.getState().setBot(bot);
-      }, initialBotProfileId ?? DEFAULT_BOT_PROFILE_ID);
-
-      setBotControls({
-        start: () => botController?.start(),
-        stop: () => botController?.stop(),
-      });
-
-      unsubscribeBotProfile = useGameStore.subscribe((nextState, previousState) => {
-        if (nextState.selectedBotProfileId !== previousState.selectedBotProfileId) {
-          botController?.setProfile(nextState.selectedBotProfileId);
-        }
-      });
+      botSession = createBotSession({ engine, initialProfileId: initialBotProfileId });
 
       const MIN_IDLE_MS = 1000;
 
@@ -532,9 +512,7 @@ export function GameCanvas() {
           worldSaver?.flush();
           viewSaver?.flush();
         }
-        setBotControls(null);
-        botController?.destroy();
-        unsubscribeBotProfile?.();
+        botSession?.destroy();
         worldSaver?.cancel();
         viewSaver?.cancel();
         unsubscribeTool?.();
@@ -566,12 +544,10 @@ export function GameCanvas() {
     };
   }, [
     sessionEpoch,
-    setBotControls,
     setEngine,
-    setSelectedBotProfileId,
-    setSeedInput,
     setSelectedTool,
     setSimulationTime,
+    setSeedInput,
   ]);
 
   return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
