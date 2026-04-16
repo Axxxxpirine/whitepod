@@ -4,8 +4,8 @@ Jeu de gestion et d’optimisation industrielle sur grille.
 
 ## État actuel
 
-- Phase 4: assets générés avec manifest
-- Phase 5: renderer Pixi en stabilisation
+- Phase 4: assets intégrés depuis `output/whitepod-assets` via manifest
+- Phase 5: renderer Pixi et HUD en stabilisation visuelle
 - Simulation mode: disponible pour démo autonome
 
 ## Stack
@@ -25,6 +25,13 @@ Jeu de gestion et d’optimisation industrielle sur grille.
 - `npm run build`
 - `npm test`
 - `npm run assets:build`
+
+## Assets
+
+- Source canonique: `output/whitepod-assets/`
+- Assets servis par l'app: `public/assets/raw/`
+- Manifest runtime: `public/assets/manifest.json`
+- Build: `bash scripts/build-assets.sh`
 
 Currently, two official plugins are available:
 

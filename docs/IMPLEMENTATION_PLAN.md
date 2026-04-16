@@ -935,7 +935,7 @@ echo "Directory: public/assets/"
 **Fichiers**:
 11. `scripts/extract-resources.mjs` - Extraction ressources
 12. `scripts/generate-asset-prompts.mjs` - Génération prompts
-13. `scripts/generate-images.mjs` - Génération images + manifest
+13. `scripts/generate-images.mjs` - Copie `output/whitepod-assets` + génération manifest
 14. `scripts/build-assets.sh` - Build script
 15. `scripts/validate-assets.mjs` - Validation manifest/paths
 16. `public/assets/README.md` - Documentation assets
@@ -943,7 +943,7 @@ echo "Directory: public/assets/"
 **Délivrables**:
 - [x] Pipeline extraction fonctionnel
 - [x] Prompts générés (61 ressources + stations + fallbacks)
-- [x] Structure assets prête
+- [x] `output/whitepod-assets` intégré comme source canonique
 - [x] Documentation complète
 - [x] Mapping asset-ID ↔ ResourceId défini
 
@@ -958,7 +958,7 @@ echo "Directory: public/assets/"
 
 **Délivrables**:
 - [x] Renderer PixiJS de base fonctionnel
-- [ ] Sprite sheets chargés (4x4 animation)
+- [x] Art de surface, dépôts et stations branché au pack source
 - [ ] Animations fluides (60 FPS)
 - [x] Visualisation basique tokens/grid
 - [ ] Integration tests (update, cleanup, resize)
