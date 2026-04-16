@@ -85,5 +85,22 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
     }
   }, [exportData, getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtCell, selectBuildCell])
 
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    const resize = () => {
+      const rect = node.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        rendererRef.current?.resize(rect.width, rect.height)
+      }
+    }
+
+    resize()
+    const observer = new ResizeObserver(resize)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
   return <div ref={containerRef} className={className} style={{ display: 'block', width: '100%', height: '100%', minWidth: 0, minHeight: 0, ...style }} />
 }
