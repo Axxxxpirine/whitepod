@@ -358,7 +358,7 @@ export class BeltFlowAnimator {
   private edgePoint(baseX: number, baseY: number, side: Direction): Point {
     const centerX = baseX + TILE_SIZE / 2;
     const centerY = baseY + TILE_SIZE / 2;
-    const edgeOffset = TILE_SIZE / 2 - BELT_INSET - 1;
+    const edgeOffset = TILE_SIZE / 2 - BELT_INSET;
 
     switch (side) {
       case Direction.North:

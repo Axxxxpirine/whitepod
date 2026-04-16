@@ -6,7 +6,7 @@ import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
 import { PIXI } from '@/design/tokens';
 
-export const BELT_INSET = 3;
+export const BELT_INSET = 0;
 const BELT_PATH = PIXI.border;
 
 export class BeltRenderer {
@@ -84,15 +84,13 @@ export class BeltRenderer {
       .moveTo(inPoint.x, inPoint.y)
       .lineTo(center.x, center.y)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_PATH, width: 1.5, alpha: 0.45 });
-
-    this.graphics.circle(outPoint.x, outPoint.y, 2).fill({ color: BELT_PATH, alpha: 0.45 });
+      .stroke({ color: BELT_PATH, width: 1.5, alpha: 0.225 });
   }
 
   private edgePoint(baseX: number, baseY: number, side: Direction): TileCoord {
     const centerX = baseX + TILE_SIZE / 2;
     const centerY = baseY + TILE_SIZE / 2;
-    const edgeOffset = TILE_SIZE / 2 - BELT_INSET - 1;
+    const edgeOffset = TILE_SIZE / 2 - BELT_INSET;
 
     switch (side) {
       case Direction.North:
