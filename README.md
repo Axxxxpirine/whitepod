@@ -96,11 +96,13 @@ engine.screenToTile(screenX, screenY)               // → { x, y }
 
 ## Session persistence
 
-- The current game session is saved automatically in `sessionStorage`.
-- The saved session is scoped to the current browser tab and restored on reload.
-- Persisted state includes the world, buildings, connections, camera position, zoom, and selected tool.
+- The world state is saved automatically in `localStorage` and restored on reload.
+- Offline progression (IDLE) is applied on startup and when returning to a visible/focused tab.
+- The catch-up is exact (replays simulation updates) and capped to 8 hours per batch.
+- Camera position and selected tool are saved separately in `sessionStorage`.
+- Persisted state includes the world, buildings, connections, simulation clock, and battery charge state.
 - Temporary UI state such as hover and console history is not persisted.
-- Use the `Reset` button in the HUD to clear the current tab session and start a fresh game.
+- Use the `Reset` button in the HUD to clear the current session and start a fresh game.
 
 ## Project structure
 

@@ -29,8 +29,17 @@ describe('GameHUD', () => {
       sessionEpoch: 0,
       pendingEnergyLinkSource: null,
       linkSolarOnPlacement: true,
+      idleSummary: null,
     });
     window.sessionStorage.clear();
+    const local = window.localStorage as unknown;
+    if (
+      typeof local === 'object' &&
+      local !== null &&
+      typeof (local as Storage).clear === 'function'
+    ) {
+      (local as Storage).clear();
+    }
   });
 
   it('renders the bottom navbar with the placement buttons', () => {

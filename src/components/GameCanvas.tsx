@@ -21,6 +21,7 @@ import {
   saveViewSession,
   saveWorldSession,
 } from '@/game/persistence/sessionStorage';
+import { applyIdleCatchup, setIdleLastSavedAtMs } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
 import type { SelectedTool } from '@/game/types';
@@ -103,6 +104,8 @@ export function GameCanvas() {
     let handleContextMenu: ((e: MouseEvent) => void) | null = null;
     let handleWheel: ((e: WheelEvent) => void) | null = null;
     let handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
+    let handleVisibilityChange: (() => void) | null = null;
+    let handleWindowFocus: (() => void) | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let unsubscribeEngine: (() => void) | null = null;
     let unsubscribeTool: (() => void) | null = null;
@@ -142,21 +145,31 @@ export function GameCanvas() {
       currentEngine = engine;
       const sessionId = loadedSession?.sessionId ?? createSessionId();
       const selectedTool = loadedSession?.selectedTool ?? { kind: 'select' as const };
+      const initialLastSavedAtMs = loadedSession?.lastSavedAtMs ?? null;
 
       if (!loadedSession) {
         engine.generateMap(DEFAULT_MAP_SEED);
       }
 
       const state = useGameStore.getState();
+      setIdleLastSavedAtMs(engine, initialLastSavedAtMs);
+      const initialIdleSummary = applyIdleCatchup(engine, Date.now());
+
       state.setSelectedBuilding(null);
       state.setSelectedBuildingAnchor(null);
       state.setBeltPreview(null);
+      state.setIdleSummary(initialIdleSummary.appliedSeconds > 0 ? initialIdleSummary : null);
       setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
       setEngine(engine);
 
+      const persistWorld = () => {
+        const savedAt = saveWorldSession(engine, sessionId, Date.now());
+        setIdleLastSavedAtMs(engine, savedAt);
+      };
+
       worldSaver = createDebouncedTask(() => {
-        saveWorldSession(engine, sessionId);
+        persistWorld();
       }, WORLD_SAVE_DELAY_MS);
       viewSaver = createDebouncedTask(() => {
         saveViewSession({
@@ -169,6 +182,8 @@ export function GameCanvas() {
       if (!loadedSession) {
         worldSaver.flush();
         viewSaver.flush();
+      } else if (initialIdleSummary.appliedSeconds > 0) {
+        worldSaver.flush();
       }
 
       unsubscribeEngine = engine.subscribe((kind) => {
@@ -183,6 +198,14 @@ export function GameCanvas() {
       if (import.meta.env.DEV) {
         (window as unknown as { engine: GameEngine }).engine = engine;
       }
+
+      const applyIdleBatchCatchup = () => {
+        const idleSummary = applyIdleCatchup(engine, Date.now());
+        if (idleSummary.appliedSeconds <= 0) return;
+        useGameStore.getState().setIdleSummary(idleSummary);
+        useGameStore.getState().setSimulationTime(engine.simulationTime);
+        persistWorld();
+      };
 
       gridRenderer = new GridRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
@@ -308,6 +331,16 @@ export function GameCanvas() {
           popCancelStack(useGameStore, currentBeltToolController);
         }
       };
+      handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          applyIdleBatchCatchup();
+        }
+      };
+      handleWindowFocus = () => {
+        if (document.visibilityState === 'visible') {
+          applyIdleBatchCatchup();
+        }
+      };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
       canvas.addEventListener('pointermove', handlePointerMove);
@@ -316,6 +349,8 @@ export function GameCanvas() {
       canvas.addEventListener('contextmenu', handleContextMenu);
       canvas.addEventListener('wheel', handleWheel, { passive: false });
       window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleWindowFocus);
 
       resizeObserver = new ResizeObserver(() => {
         if (app) engine.viewport.resize(app.screen.width, app.screen.height);
@@ -397,6 +432,8 @@ export function GameCanvas() {
         if (app?.canvas && handleContextMenu) app.canvas.removeEventListener('contextmenu', handleContextMenu);
         if (app?.canvas && handleWheel) app.canvas.removeEventListener('wheel', handleWheel);
         if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
+        if (handleVisibilityChange) document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (handleWindowFocus) window.removeEventListener('focus', handleWindowFocus);
         useGameStore.getState().setBeltPreview(null);
         placementPreviewRenderer?.destroy();
         buildingHighlightRenderer?.destroy();

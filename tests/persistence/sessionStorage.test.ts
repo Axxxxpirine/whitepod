@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  LEGACY_WORLD_STORAGE_KEY,
   VIEW_STORAGE_KEY,
   WORLD_STORAGE_KEY,
   clearPersistedSession,
@@ -9,6 +10,20 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
+
+function getWorldStorageForTest(): Storage {
+  const local = window.localStorage as unknown;
+  if (
+    typeof local === 'object' &&
+    local !== null &&
+    typeof (local as Storage).setItem === 'function' &&
+    typeof (local as Storage).getItem === 'function' &&
+    typeof (local as Storage).removeItem === 'function'
+  ) {
+    return local as Storage;
+  }
+  return window.sessionStorage;
+}
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -23,6 +38,7 @@ function makeEngine() {
 describe('sessionStorage persistence', () => {
   beforeEach(() => {
     clearPersistedSession();
+    window.sessionStorage.clear();
   });
 
   it('saves and reloads the world and view state', () => {
@@ -83,13 +99,32 @@ describe('sessionStorage persistence', () => {
   });
 
   it('purges invalid world payloads and returns null', () => {
-    window.sessionStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
+    const worldStorage = getWorldStorageForTest();
+    worldStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
     window.sessionStorage.setItem(VIEW_STORAGE_KEY, '{"version":1,"oops":true}');
 
     const loaded = loadPersistedSession(640, 480);
 
     expect(loaded).toBeNull();
-    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+    expect(worldStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+  });
+
+  it('migrates a legacy world snapshot from sessionStorage v2 to localStorage v3', () => {
+    const worldStorage = getWorldStorageForTest();
+    const engine = makeEngine();
+    saveWorldSession(engine, 'session-legacy', 12345);
+    const v3Payload = worldStorage.getItem(WORLD_STORAGE_KEY);
+    expect(v3Payload).not.toBeNull();
+
+    window.sessionStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
+    worldStorage.removeItem(WORLD_STORAGE_KEY);
+
+    const loaded = loadPersistedSession(640, 480);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.sessionId).toBe('session-legacy');
+    expect(loaded?.lastSavedAtMs).toBeTypeOf('number');
+    expect(worldStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.sessionStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
   });
 });
