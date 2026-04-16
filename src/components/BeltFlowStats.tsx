@@ -2,19 +2,14 @@ import { Activity } from 'lucide-react';
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
-import { ResourceType, type Building, type ResourceType as ResourceTypeT } from '@/game/types';
+import { getResourceSprite } from '@/game/ui/resourcePresentation';
+import { type Building, type ResourceType as ResourceTypeT } from '@/game/types';
 import { Icon } from './ui';
 
 interface BeltFlowStatsProps {
   building: Building;
   engine: GameEngine;
 }
-
-const SPRITE_BY_RESOURCE: Record<number, string> = {
-  [ResourceType.Regolith]: 'sprites/regolith.png',
-  [ResourceType.Hydrogen]: 'sprites/hydrogen.png',
-  [ResourceType.Oxygen]: 'sprites/oxygen.png',
-};
 
 export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
   const entries = resolveBeltFlow(engine, building.id);
@@ -42,7 +37,7 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
 }
 
 function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT; ratePerMinute: number }) {
-  const sprite = SPRITE_BY_RESOURCE[resourceType];
+  const sprite = getResourceSprite(resourceType);
   const label = resourceTypeLabel(resourceType);
   const rateText = `${ratePerMinute}/min`;
 

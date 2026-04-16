@@ -311,7 +311,9 @@ describe('GameEngine energy networks', () => {
 
     expect(steadyEngine.getResourceCounts().regolith).toBe(250);
     expect(steadyEngine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
-    expect(steadyEngine.getResourceRates()).toEqual({ regolith: EXTRACTOR_RATE_PER_MIN, hydrogen: 0, oxygen: 0 });
+    expect(steadyEngine.getResourceRates().regolith).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(steadyEngine.getResourceRates().hydrogen).toBe(0);
+    expect(steadyEngine.getResourceRates().oxygen).toBe(0);
   });
 
   it('keeps a battery-backed extractor producing after many extraction intervals', () => {
@@ -335,7 +337,9 @@ describe('GameEngine energy networks', () => {
 
     expect(engine.getResourceCounts().regolith).toBe(250);
     expect(engine.grid.getResourceAmount(7, 1)).toBe(initialAmount);
-    expect(engine.getResourceRates()).toEqual({ regolith: EXTRACTOR_RATE_PER_MIN, hydrogen: 0, oxygen: 0 });
+    expect(engine.getResourceRates().regolith).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(engine.getResourceRates().hydrogen).toBe(0);
+    expect(engine.getResourceRates().oxygen).toBe(0);
   });
 
   it('charges an empty battery to full with two solar panels over a daylight-aware simulation', () => {

@@ -311,6 +311,51 @@ describe('processProcessors', () => {
     expect(engine.playerStock.nitrogenGas).toBe(1);
     expect(engine.playerStock.oxygen).toBe(3);
   });
+
+  it('getResourceRates includes processor output and input consumption', () => {
+    const engine = steadyEngine();
+    const converter = poweredConverter(engine, 10, 10);
+    engine.setProcessorRecipe(converter, 'iron_oxide');
+    engine.playerStock.regolith = 100;
+
+    const rates = engine.getResourceRates();
+    // iron_oxide: 1 Regolith → 1 IronOxide, 2s cycle
+    // Output: (1/2)*60 = 30/min
+    // Input: -(1/2)*60 = -30/min
+    expect(rates.ironOxide).toBe(30);
+    expect(rates.regolith).toBe(-30);
+  });
+
+  it('getResourceRates shows zero for processor without sufficient inputs', () => {
+    const engine = steadyEngine();
+    const converter = poweredConverter(engine, 10, 10);
+    engine.setProcessorRecipe(converter, 'iron_oxide');
+    engine.playerStock.regolith = 0; // no inputs
+
+    const rates = engine.getResourceRates();
+    expect(rates.ironOxide).toBe(0);
+    expect(rates.regolith).toBe(0);
+  });
+
+  it('getResourceRates combines extractor and processor rates for net flow', () => {
+    const engine = steadyEngine();
+
+    // Powered extractor producing regolith at 30/min
+    engine.placeResource(5, 5, ResourceType.Regolith);
+    const extractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 5, y: 5 })!;
+    const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 4, y: 5 })!;
+    engine.connectBuildings(solar, extractor);
+
+    // Powered converter consuming regolith at 30/min, producing ironOxide at 30/min
+    const converter = poweredConverter(engine, 10, 10);
+    engine.setProcessorRecipe(converter, 'iron_oxide');
+    engine.playerStock.regolith = 100;
+
+    const rates = engine.getResourceRates();
+    // Extractor: +30 regolith/min, Converter: -30 regolith/min → net 0
+    expect(rates.regolith).toBe(0);
+    expect(rates.ironOxide).toBe(30);
+  });
 });
 
 // -- Synthesizer tests --

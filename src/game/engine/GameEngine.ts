@@ -669,17 +669,52 @@ export class GameEngine {
     return { ...this.playerStock };
   }
 
-  getResourceRates(): { regolith: number; hydrogen: number; oxygen: number } {
-    let regolith = 0, hydrogen = 0, oxygen = 0;
+  getResourceRates(): ResourceStock {
+    const rates: ResourceStock = {
+      regolith: 0, hydrogen: 0, oxygen: 0,
+      ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+    };
+
+    // Extractors: add production rate for base resources
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
-      if (resource === ResourceType.Regolith) regolith += EXTRACTOR_RATE_PER_MIN;
-      else if (resource === ResourceType.Hydrogen) hydrogen += EXTRACTOR_RATE_PER_MIN;
-      else if (resource === ResourceType.Oxygen) oxygen += EXTRACTOR_RATE_PER_MIN;
+      const key = GameEngine.RESOURCE_STOCK_KEY[resource];
+      if (key) rates[key] += EXTRACTOR_RATE_PER_MIN;
     }
-    return { regolith, hydrogen, oxygen };
+
+    // Processors: add output rate, subtract input rates (net flow)
+    for (const [id, state] of this.processorStates) {
+      if (!state.recipeId) continue;
+      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      const recipe = getRecipe(state.recipeId);
+      if (!recipe) continue;
+
+      // Only count rate if inputs are available (mirrors processProcessors logic)
+      let canProduce = true;
+      for (const input of recipe.inputs) {
+        const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
+        if (!key || this.playerStock[key] < input.amount) {
+          canProduce = false;
+          break;
+        }
+      }
+      if (!canProduce) continue;
+
+      // Output rate
+      const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType];
+      if (outKey) rates[outKey] += (recipe.output.amount / recipe.cycleSeconds) * 60;
+
+      // Input consumption rates (negative)
+      for (const input of recipe.inputs) {
+        const inKey = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
+        if (inKey) rates[inKey] -= (input.amount / recipe.cycleSeconds) * 60;
+      }
+    }
+
+    return rates;
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {

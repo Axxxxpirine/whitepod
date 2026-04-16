@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
+import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
@@ -56,13 +57,16 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     );
   } else if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
     const stock = engine.getResourceCounts();
+    const visibleStock = RESOURCE_ENTRIES.filter((r) => stock[r.key] > 0);
 
-    rows = (
-      <div className="flex justify-around py-0.5">
-        <ResourceStockRow sprite="sprites/regolith.png" alt="Régolithe" count={stock.regolith} />
-        <ResourceStockRow sprite="sprites/hydrogen.png" alt="Hydrogène" count={stock.hydrogen} />
-        <ResourceStockRow sprite="sprites/oxygen.png" alt="Oxygène" count={stock.oxygen} />
+    rows = visibleStock.length > 0 ? (
+      <div className="flex flex-wrap justify-around gap-1 py-0.5">
+        {visibleStock.map((r) => (
+          <ResourceStockRow key={r.key} sprite={r.sprite} alt={resourceTypeLabel(r.type)} count={stock[r.key]} />
+        ))}
       </div>
+    ) : (
+      <div className="py-0.5 text-center text-xs text-ink-muted">Stockage vide</div>
     );
   } else if (building.typeId === BATTERY_BASIC_BUILDING_TYPE_ID) {
     const batterySpec = getBuildingType(building.typeId)?.energy?.battery;
