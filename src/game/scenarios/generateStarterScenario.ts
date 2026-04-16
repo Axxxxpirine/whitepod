@@ -268,7 +268,7 @@ export function generateStarterScenario(screenWidth: number, screenHeight: numbe
   const viewport = {
     centerX: (baseAnchor.x + 0.5) * TILE_SIZE,
     centerY: (baseAnchor.y + 0.5) * TILE_SIZE,
-    zoom: 1,
+    zoom: 0.7,
   };
   engine.viewport.restore(viewport);
 

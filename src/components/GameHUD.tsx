@@ -352,7 +352,7 @@ export function GameHUD() {
                         key={scenario.id}
                         type="button"
                         onClick={() => applyScenarioGenerator(scenario.id)}
-                        className="flex cursor-pointer items-center gap-1.5 rounded-sm border border-accent/30 bg-accent/5 px-2 py-1.5 text-xs text-accent transition-colors hover:border-accent/50 hover:bg-accent/10 active:bg-accent/15"
+                        className="flex w-1/2 cursor-pointer items-center gap-1.5 rounded-sm border border-accent/30 bg-accent/5 px-2 py-1.5 text-xs text-accent transition-colors hover:border-accent/50 hover:bg-accent/10 active:bg-accent/15"
                       >
                         <Shuffle size={10} strokeWidth={1.5} className="shrink-0" />
                         <span>{scenario.label}</span>
