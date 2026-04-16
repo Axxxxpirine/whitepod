@@ -1,7 +1,7 @@
 import { generateSimpleScenario } from './generators/generateSimpleScenario';
 import { generateMediumScenario } from './generators/generateMediumScenario';
 import { generateComplexScenario } from './generators/generateComplexScenario';
-import { generateFullIsruScenario } from './generators/generateFullIsruScenario';
+import { generateBuildAllScenario } from './generators/generateBuildAllScenario';
 import type { ScenarioGeneratorDefinition, ScenarioGeneratorListEntry } from './types';
 
 const generators = [
@@ -27,7 +27,7 @@ const generators = [
     id: 'tier-build-all',
     label: 'Build All',
     description: 'Complete pipeline: all 4 converters + all 5 synthesizers. All 12 resource types produced.',
-    generate: generateFullIsruScenario,
+    generate: generateBuildAllScenario,
   },
 ] as const satisfies readonly ScenarioGeneratorDefinition[];
 

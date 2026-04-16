@@ -1,6 +1,6 @@
 import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
-import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
+import { Direction, ResourceType, TileType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
 
 export interface PreparedEngine {
   readonly engine: GameEngine;
@@ -131,6 +131,32 @@ export function countVisibleUncoveredDeposits(engine: GameEngine): number {
 /** Count how many distinct energy networks the engine currently has (connected components). */
 export function countEnergyNetworks(engine: GameEngine): number {
   return engine.getEnergyNetworkBalances().length;
+}
+
+/**
+ * Clears terrain to Ground and reveals fog within a circle of `radius` tiles
+ * around `(cx, cy)`.
+ *
+ * Call at the start of a scenario generator after `prepareEngine` to guarantee
+ * that every building footprint and belt corridor in the build zone is passable,
+ * regardless of the random terrain produced by `generateMap`.
+ */
+export function prepareBuildZone(engine: GameEngine, cx: number, cy: number, radius: number): void {
+  engine.grid.revealCircle(cx, cy, radius);
+  const r2 = radius * radius;
+  const x0 = Math.max(0, Math.floor(cx - radius));
+  const y0 = Math.max(0, Math.floor(cy - radius));
+  const x1 = Math.min(GRID_WIDTH - 1, Math.ceil(cx + radius));
+  const y1 = Math.min(GRID_HEIGHT - 1, Math.ceil(cy + radius));
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy <= r2) {
+        engine.placeTile(x, y, TileType.Ground);
+      }
+    }
+  }
 }
 
 export function prepareEngine(screenWidth: number, screenHeight: number, rng: () => number, scenarioSeed: number): PreparedEngine {

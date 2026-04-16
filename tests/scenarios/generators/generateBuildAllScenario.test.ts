@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateFullIsruScenario } from '@/game/scenarios/generators/generateFullIsruScenario';
+import { generateBuildAllScenario } from '@/game/scenarios/generators/generateBuildAllScenario';
 import {
   CONVERTER_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
@@ -10,9 +10,9 @@ import {
 } from '@/game/data/buildingCatalog';
 import { ResourceType } from '@/game/types';
 
-describe('generateFullIsruScenario', () => {
+describe('generateBuildAllScenario', () => {
   it('places all processor types and storage', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
 
     const extractors   = buildings.filter((b) => b.typeId === EXTRACTOR_BUILDING_TYPE_ID);
@@ -27,13 +27,13 @@ describe('generateFullIsruScenario', () => {
   });
 
   it('has at least 2 disjoint energy subnets', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const networks = result.engine.getEnergyNetworkBalances();
     expect(networks.length).toBeGreaterThanOrEqual(2);
   });
 
   it('all processors have active recipes', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
     const processors = buildings.filter((b) => isProcessorTypeId(b.typeId));
 
@@ -46,7 +46,7 @@ describe('generateFullIsruScenario', () => {
   });
 
   it('produces all 12 resource types after simulation', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const counts = result.engine.getResourceCounts();
 
     // Base resources (extracted)
@@ -69,7 +69,7 @@ describe('generateFullIsruScenario', () => {
   });
 
   it('exposes all 3 base resource types as visible deposits', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const types = new Set<ResourceType>();
     const visible = result.engine.getVisibleTiles();
     for (let y = visible.y0; y <= visible.y1; y++) {
@@ -86,7 +86,7 @@ describe('generateFullIsruScenario', () => {
   });
 
   it('has belt segments connecting the ceramic_plates pipeline', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
     const belts = buildings.filter((b) => isBeltTypeId(b.typeId));
 
@@ -113,7 +113,7 @@ describe('generateFullIsruScenario', () => {
   });
 
   it('returns select tool and valid viewport', () => {
-    const result = generateFullIsruScenario(640, 480);
+    const result = generateBuildAllScenario(640, 480);
     expect(result.selectedTool).toEqual({ kind: 'select' });
     expect(result.viewport.zoom).toBeCloseTo(0.35);
   });
