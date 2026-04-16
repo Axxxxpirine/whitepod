@@ -345,7 +345,6 @@ export function GameHUD() {
 
                 <div className="space-y-1">
                   <div className="label text-ink-muted">Scenario Generator</div>
-                  <p className="text-[11px] text-ink-muted">Replaces current session.</p>
                   <div className="flex flex-col gap-1">
                     {scenarioGenerators.map((scenario) => (
                       <button

@@ -361,7 +361,6 @@ describe('GameHUD', () => {
 
     expect(screen.getByText('Scenario Generator')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Generate Starter Scenario/i })).toBeInTheDocument();
-    expect(screen.getByText('Replaces current session.')).toBeInTheDocument();
   });
 
   it('generates a playable starter scenario from the debug panel', () => {
