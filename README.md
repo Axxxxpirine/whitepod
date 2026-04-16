@@ -43,6 +43,8 @@ npm run dev   # → http://localhost:5173
 
 In development, the game engine is exposed as `window.engine`. Open the browser devtools console to interact with it directly.
 
+For a fuller reference of executable game primitives and failure modes, see [PRIMITIVES.md](/Users/elliotbartholme/Documents/whitepod/PRIMITIVES.md).
+
 ### Resources
 
 ```js
