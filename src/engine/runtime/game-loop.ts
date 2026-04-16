@@ -12,9 +12,11 @@ export class GameLoop {
     const loop = (timestamp: number) => {
       if (!this.running) return
 
-      if (timestamp - this.lastTick >= 1000) {
-        const state = useGameStore.getState()
-        if (state.mode === 'player' || state.autoTickEnabled) state.tick()
+      const state = useGameStore.getState()
+      const interval = state.demoModeEnabled ? 2200 : 1000
+
+      if (timestamp - this.lastTick >= interval) {
+        if (state.mode === 'player' || state.autoTickEnabled || state.demoModeEnabled) state.tick()
         this.lastTick = timestamp
       }
 

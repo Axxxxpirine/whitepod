@@ -42,8 +42,12 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
   }, [])
 
   useEffect(() => {
-    rendererRef.current?.update(exportData)
-  }, [exportData])
+    const interval = window.setInterval(() => {
+      rendererRef.current?.update(useGameStore.getState().getPixiExport())
+    }, 250)
+
+    return () => window.clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const node = containerRef.current

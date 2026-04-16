@@ -15,6 +15,7 @@ function describePalette(kind: 'extractor' | 'conveyor' | 'factory' | 'storage')
 
 export function RuntimeToolIndicator() {
   const buildPalette = useGameStore((s) => s.buildPalette)
+  const demoModeEnabled = useGameStore((s) => s.demoModeEnabled)
   const selectedBuildTransitionId = useGameStore((s) => s.selectedBuildTransitionId)
   const selectedBuildCell = useGameStore((s) => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore((s) => s.hoveredBuildCell)
@@ -24,6 +25,7 @@ export function RuntimeToolIndicator() {
 
   return (
     <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/70 px-3 py-1.5 text-xs text-white/85 shadow-xl backdrop-blur-md">
+      {demoModeEnabled && <span className="rounded-md bg-sky-400/20 px-1.5 py-0.5 font-mono text-[10px] text-sky-300">DEMO</span>}
       <span className="font-medium">
         <span className="text-white/50">Mode&nbsp;·&nbsp;</span>
         {describePalette(buildPalette)}

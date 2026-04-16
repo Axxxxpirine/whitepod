@@ -238,6 +238,7 @@ function App() {
         <div>
           <p className="hud-eyebrow">Whitepod control room</p>
           <h1 className="hud-title">Lunar factory control</h1>
+          {demoModeEnabled && <p className="mt-1 text-[10px] uppercase tracking-[0.35em] text-sky-300">Demo Mode</p>}
         </div>
         <div className="hud-header-actions">
           <div className="hud-topbar-meta">

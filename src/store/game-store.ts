@@ -30,6 +30,7 @@ export interface GameState {
   autosaveTickIndex: number
   saveRevision: number
   tickIndex: number
+  demoStepIndex: number
 
   stations: StationPlacement[]
   requestedSystemTransitionIds: string[]
@@ -43,6 +44,7 @@ export interface GameState {
   autoTickEnabled: boolean
   demonstrationEnabled: boolean
   demoModeEnabled: boolean
+   demoLoopEnabled: boolean
   lastFiredTransitionIds: string[]
   pixiActivities: PixiActivity[]
   fireEventSeq: number
@@ -57,6 +59,7 @@ export interface GameState {
   setAutoTickEnabled: (enabled: boolean) => void
   setDemonstrationEnabled: (enabled: boolean) => void
   setDemoModeEnabled: (enabled: boolean) => void
+   setDemoLoopEnabled: (enabled: boolean) => void
   resetSave: () => void
   newGame: (seed: number) => void
 
@@ -90,12 +93,17 @@ const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
 const EXTRACT_PREFIX = 'extract__'
 const AUTOSAVE_TICK_INTERVAL = 30
 const RESOURCE_ORDER: ResourceId[] = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
-const DEMO_BUILD_TARGETS = {
-  extractor: ['extract__lunar_hydrogen', 'extract__lunar_oxygen', 'extract__lunar_regolith', 'extract__lunar_helium3'],
-  conveyor: ['convey__lunar_hydrogen', 'convey__lunar_oxygen', 'convey__lunar_regolith', 'convey__lunar_helium3'],
-  storage: ['store__lunar_hydrogen', 'store__lunar_oxygen', 'store__lunar_regolith', 'store__lunar_helium3'],
-  factory: ['recipe__assemble_rocket'],
-} as const
+const DEMO_SCRIPT_DELAY_TICKS = 2
+const DEMO_SCRIPT = [
+  'init',
+  'extract__lunar_hydrogen',
+  'convey__lunar_hydrogen',
+  'store__lunar_hydrogen',
+  'recipe__assemble_rocket',
+  'convey__rocket_ready',
+  'store__rocket_ready',
+  'launch',
+] as const
 
 type PersistedGameState = Pick<
   GameState,
@@ -457,14 +465,6 @@ function runDemonstrationBuildStep(
   return []
 }
 
-function pickDemoStationTransition(
-  buildPalette: 'extractor' | 'conveyor' | 'factory' | 'storage',
-  getPreferredTransitionIdForPalette: () => string | null,
-): string | null {
-  const preferred = getPreferredTransitionIdForPalette()
-  if (preferred) return preferred
-  return DEMO_BUILD_TARGETS[buildPalette][0] ?? null
-}
 
 function buildTickActivities(
   transitions: readonly Transition[],
@@ -549,6 +549,7 @@ export const useGameStore = create<GameState>()(
       autosaveTickIndex: 0,
       saveRevision: 0,
       tickIndex: 0,
+      demoStepIndex: 0,
 
       stations: [],
       requestedSystemTransitionIds: [],
@@ -563,6 +564,7 @@ export const useGameStore = create<GameState>()(
       autoTickEnabled: true,
       demonstrationEnabled: false,
       demoModeEnabled: false,
+      demoLoopEnabled: true,
       lastFiredTransitionIds: [],
       pixiActivities: [],
       fireEventSeq: 0,
@@ -605,9 +607,11 @@ export const useGameStore = create<GameState>()(
           metadata,
           engine,
           tickIndex: autosaveTickIndex,
+          demoStepIndex: 0,
           autoTickEnabled: mode === 'player',
           demonstrationEnabled: false,
           demoModeEnabled: false,
+          demoLoopEnabled: true,
           engineSnapshot: engine.getSnapshot(),
 
           gridSnapshot: grid.getSnapshot(),
@@ -660,6 +664,10 @@ export const useGameStore = create<GameState>()(
         }))
       },
 
+      setDemoLoopEnabled: enabled => {
+        set({ demoLoopEnabled: enabled })
+      },
+
       resetSave: () => {
         try {
           window.localStorage.removeItem('whitepod-save')
@@ -687,8 +695,10 @@ export const useGameStore = create<GameState>()(
           autosaveTickIndex: 0,
           saveRevision: state.saveRevision + 1,
           tickIndex: 0,
+          demoStepIndex: 0,
           demonstrationEnabled: false,
           demoModeEnabled: false,
+          demoLoopEnabled: true,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -726,8 +736,10 @@ export const useGameStore = create<GameState>()(
           autosaveTickIndex: 0,
           saveRevision: state.saveRevision + 1,
           tickIndex: 0,
+          demoStepIndex: 0,
           demonstrationEnabled: false,
           demoModeEnabled: false,
+          demoLoopEnabled: true,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -1038,7 +1050,7 @@ export const useGameStore = create<GameState>()(
           metadata,
           demonstrationEnabled,
           demoModeEnabled,
-          buildPalette,
+          demoLoopEnabled,
         } = get()
         if (!engine) throw new Error('Engine not loaded')
 
@@ -1046,20 +1058,56 @@ export const useGameStore = create<GameState>()(
           ? runDemonstrationBuildStep(metadata, transitions, grid, engine)
           : []
 
-        const demoAutoBuildTransitionId = demoModeEnabled
-          ? pickDemoStationTransition(buildPalette, () => get().getPreferredTransitionIdForPalette())
-          : null
-
-        if (demoModeEnabled && demoAutoBuildTransitionId) {
-          const placement = get().placeStationAtSelectedCell(demoAutoBuildTransitionId)
-          if (placement.ok) {
+        if (demoModeEnabled) {
+          const currentStep = get().demoStepIndex
+          const nextStep = currentStep + 1
+          if (nextStep < DEMO_SCRIPT_DELAY_TICKS) {
+            set({ demoStepIndex: nextStep })
             return get().getPixiExport()
+          }
+
+          const demoStep = DEMO_SCRIPT[Math.min(Math.floor(currentStep / DEMO_SCRIPT_DELAY_TICKS), DEMO_SCRIPT.length - 1)]
+          if (demoStep === 'init') {
+            set(state => ({
+              demoStepIndex: nextStep,
+              requestedSystemTransitionIds: uniqueAppend(state.requestedSystemTransitionIds, 'init'),
+            }))
+          } else if (demoStep === 'launch') {
+            set(state => ({
+              demoStepIndex: nextStep,
+              requestedSystemTransitionIds: uniqueAppend(state.requestedSystemTransitionIds, 'launch'),
+            }))
+          } else {
+            const placement = get().getPreferredTransitionIdForPalette()
+            if (placement) {
+              set({ demoStepIndex: nextStep })
+              void get().placeStation(placement)
+              return get().getPixiExport()
+            }
+          }
+
+          if (demoLoopEnabled && currentStep > DEMO_SCRIPT.length * DEMO_SCRIPT_DELAY_TICKS * 2) {
+            set({ demoStepIndex: 0 })
           }
         }
 
         const stations = grid.listStations()
 
         const phase = engine.getPhase()
+
+        if (demoModeEnabled && phase === 'done' && demoLoopEnabled) {
+          set(state => ({
+            demoStepIndex: 0,
+            requestedSystemTransitionIds: [],
+            demonstrationEnabled: true,
+            demoModeEnabled: true,
+            autoTickEnabled: true,
+            phase: 'init',
+            tokens: state.tokens,
+          }))
+          engine.initialize()
+          return get().getPixiExport()
+        }
         let effectiveRequestedTransitionIds = requestedSystemTransitionIds
 
         if (demonstrationEnabled && phase === 'init') {
