@@ -49,9 +49,9 @@ describe('dev scenario api', () => {
         description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
       },
       {
-        id: 'tier-full-isru',
-        label: 'Full ISRU',
-        description: 'Complete pipeline: extractors + converters + synthesizer. All base + refined resources.',
+        id: 'tier-full-tier0',
+        label: 'Full Tier 0',
+        description: 'Complete pipeline: all 4 converters + all 5 synthesizers. All 12 resource types produced.',
       },
     ]);
   });

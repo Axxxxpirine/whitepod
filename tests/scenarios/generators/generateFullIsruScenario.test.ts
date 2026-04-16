@@ -11,18 +11,18 @@ import {
 import { ResourceType } from '@/game/types';
 
 describe('generateFullIsruScenario', () => {
-  it('places extractors, converters, a synthesizer, and storage', () => {
+  it('places all processor types and storage', () => {
     const result = generateFullIsruScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
 
-    const extractors = buildings.filter((b) => b.typeId === EXTRACTOR_BUILDING_TYPE_ID);
-    const converters = buildings.filter((b) => b.typeId === CONVERTER_BUILDING_TYPE_ID);
+    const extractors   = buildings.filter((b) => b.typeId === EXTRACTOR_BUILDING_TYPE_ID);
+    const converters   = buildings.filter((b) => b.typeId === CONVERTER_BUILDING_TYPE_ID);
     const synthesizers = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
-    const storages = buildings.filter((b) => b.typeId === STORAGE_BUILDING_TYPE_ID);
+    const storages     = buildings.filter((b) => b.typeId === STORAGE_BUILDING_TYPE_ID);
 
-    expect(extractors.length).toBeGreaterThanOrEqual(3);
-    expect(converters.length).toBeGreaterThanOrEqual(2);
-    expect(synthesizers.length).toBeGreaterThanOrEqual(1);
+    expect(extractors.length).toBeGreaterThanOrEqual(4);
+    expect(converters.length).toBeGreaterThanOrEqual(4);
+    expect(synthesizers.length).toBeGreaterThanOrEqual(5);
     expect(storages.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -37,7 +37,7 @@ describe('generateFullIsruScenario', () => {
     const buildings = [...result.engine.getBuildings().values()];
     const processors = buildings.filter((b) => isProcessorTypeId(b.typeId));
 
-    expect(processors.length).toBeGreaterThanOrEqual(3);
+    expect(processors.length).toBeGreaterThanOrEqual(9);
     for (const processor of processors) {
       const state = result.engine.getProcessorState(processor.id);
       expect(state).toBeDefined();
@@ -45,15 +45,26 @@ describe('generateFullIsruScenario', () => {
     }
   });
 
-  it('produces refined resources after simulation', () => {
+  it('produces all 12 resource types after simulation', () => {
     const result = generateFullIsruScenario(640, 480);
     const counts = result.engine.getResourceCounts();
 
-    // Converters should have produced tier-1 refined resources
+    // Base resources (extracted)
+    expect(counts.regolith).toBeGreaterThan(0);
+    expect(counts.hydrogen).toBeGreaterThan(0);
+    expect(counts.oxygen).toBeGreaterThan(0);
+
+    // Converter outputs (tier 1)
     expect(counts.ironOxide).toBeGreaterThan(0);
     expect(counts.aluminumOxide).toBeGreaterThan(0);
+    expect(counts.siliconDioxide).toBeGreaterThan(0);
+    expect(counts.nitrogenGas).toBeGreaterThan(0);
 
-    // Synthesizer should have produced tier-2 from converter outputs
+    // Synthesizer outputs (tier 1 + tier 2)
+    expect(counts.water).toBeGreaterThan(0);
+    expect(counts.methane).toBeGreaterThan(0);
+    expect(counts.carbonDioxide).toBeGreaterThan(0);
+    expect(counts.ammonia).toBeGreaterThan(0);
     expect(counts.ceramicPlates).toBeGreaterThan(0);
   });
 
@@ -74,37 +85,36 @@ describe('generateFullIsruScenario', () => {
     expect(types.has(ResourceType.Oxygen)).toBe(true);
   });
 
-  it('has belt segments connecting extractors to converters and converters to synthesizer', () => {
+  it('has belt segments connecting the ceramic_plates pipeline', () => {
     const result = generateFullIsruScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
     const belts = buildings.filter((b) => isBeltTypeId(b.typeId));
 
     // At minimum: 2 chains (extractor→converter) + 2 chains (converter→synth) + 2 (extractor→storage)
-    // Each chain has at least 1 belt segment
     expect(belts.length).toBeGreaterThanOrEqual(6);
 
-    // Verify converters have connections on both sides (input + output)
+    // At least 2 converters have both input and output belt connections (the main pipeline)
     const converters = buildings.filter((b) => b.typeId === CONVERTER_BUILDING_TYPE_ID);
-    for (const converter of converters) {
+    const convertersWithBelts = converters.filter((converter) => {
       const connections = result.engine.getConnectionsOf(converter.id);
-      const inputs = connections.filter((c) => c.to.building === converter.id);
+      const inputs  = connections.filter((c) => c.to.building === converter.id);
       const outputs = connections.filter((c) => c.from.building === converter.id);
-      expect(inputs.length).toBeGreaterThanOrEqual(1);
-      expect(outputs.length).toBeGreaterThanOrEqual(1);
-    }
+      return inputs.length >= 1 && outputs.length >= 1;
+    });
+    expect(convertersWithBelts.length).toBeGreaterThanOrEqual(2);
 
-    // Verify synthesizer has connections on input side
+    // At least 1 synthesizer has ≥2 belt input connections (the ceramic_plates synth)
     const synths = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
-    for (const synth of synths) {
+    const synthsWithInputs = synths.filter((synth) => {
       const connections = result.engine.getConnectionsOf(synth.id);
-      const inputs = connections.filter((c) => c.to.building === synth.id);
-      expect(inputs.length).toBeGreaterThanOrEqual(2);
-    }
+      return connections.filter((c) => c.to.building === synth.id).length >= 2;
+    });
+    expect(synthsWithInputs.length).toBeGreaterThanOrEqual(1);
   });
 
   it('returns select tool and valid viewport', () => {
     const result = generateFullIsruScenario(640, 480);
     expect(result.selectedTool).toEqual({ kind: 'select' });
-    expect(result.viewport.zoom).toBeCloseTo(0.45);
+    expect(result.viewport.zoom).toBeCloseTo(0.35);
   });
 });

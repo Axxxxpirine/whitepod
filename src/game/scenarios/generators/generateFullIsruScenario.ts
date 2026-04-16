@@ -1,24 +1,34 @@
 /**
- * Full ISRU (In-Situ Resource Utilisation) scenario generator.
+ * Full Tier 0 scenario generator.
  *
- * Demonstrates the complete resource processing pipeline with visible
- * conveyor chains connecting every stage:
+ * Demonstrates the complete resource processing pipeline with all 12 resource types:
+ *   – 3 base resources extracted: Regolith, Hydrogen, Oxygen
+ *   – 4 converter outputs (tier 1): IronOxide, AluminumOxide, SiliconDioxide, NitrogenGas
+ *   – 5 synthesizer outputs (tier 1–2): Water, Methane, CarbonDioxide, Ammonia, CeramicPlates
  *
- *   Processing chain (west → east):
- *     – Extractor (Regolith) → belt → Converter 1 (IronOxide) → belt → Synthesizer.in_1
- *     – Extractor (Regolith) → belt → Converter 2 (AluminumOxide) → belt → Synthesizer.in_2
+ *   Belt pipeline (west → east):
+ *     – Extractor (Regolith) → Converter 1 (IronOxide)      → Synthesizer.in_1
+ *     – Extractor (Regolith) → Converter 2 (AluminumOxide)  → Synthesizer.in_2
  *     → Synthesizer produces CeramicPlates
+ *
+ *   Standalone processors (consume / produce via playerStock):
+ *     – Converter 3 (SiliconDioxide): 4× Regolith → SiliconDioxide
+ *     – Converter 4 (NitrogenGas):   3× Oxygen   → NitrogenGas
+ *     – Synthesizer (Water):        2H₂ + O₂     → Water
+ *     – Synthesizer (Methane):      4H₂ + O₂     → Methane
+ *     – Synthesizer (CO₂):          H₂  + O₂     → CarbonDioxide
+ *     – Synthesizer (Ammonia):      3H₂ + 2O₂    → Ammonia
  *
  *   Storage wing (south):
  *     – Extractor (Hydrogen) → belt → Storage
  *     – Extractor (Oxygen)   → belt → Storage
  *
  *   Energy:
- *     – Subnet A: solars + battery → extractors
- *     – Subnet B: solars + battery → converters + synthesizer
+ *     – Subnet A: 4 solars + battery → all 4 extractors
+ *     – Subnet B: 8 solars + battery → all 4 converters + all 5 synthesizers (74 kW demand)
  *
- *   All 3 base resources extracted, 2 tier-1 refined, 1 tier-2 synthesized.
- *   Belt flow is fully visible through the entire pipeline.
+ *   All processors are pre-seeded with 200 units of each base resource so they
+ *   start cycling immediately. Running 90 s produces every resource type.
  */
 
 import {
@@ -49,61 +59,36 @@ export function generateFullIsruScenario(screenWidth: number, screenHeight: numb
   const rng = mulberry32(scenarioSeed);
   const { engine, baseAnchor, mirrorY } = prepareEngine(screenWidth, screenHeight, rng, scenarioSeed);
 
-  // Force mirrorX = 1: the processing chain relies on west→east port flow
-  // (extractor.out_east → converter.in_west → converter.out_east → synthesizer.in_west).
-  // Mirroring X would reverse the chain direction while ports keep facing fixed
-  // directions, making belt routing unreliable. Y-axis mirror still provides variety.
+  // Force mirrorX = 1: the processing chain relies on west→east port flow.
+  // Y-axis mirror still provides visual variety across runs.
   const toWorld = (dx: number, dy: number): TileCoord =>
     clampTile({ x: baseAnchor.x + dx, y: baseAnchor.y + dy * mirrorY });
-
-  // ============================================================
-  //  Layout overview (relative offsets from baseAnchor)
-  //
-  //  Processing chain (two parallel rows, west→east):
-  //
-  //    Row 1 (y = -4):
-  //      Extractor(-14,-4) → belt → Converter1(-8,-5) → belt → Synth(2,-5)
-  //                                  (3×3, in@(-8,-4)W, out@(-6,-4)E)     (4×4, in_1@(2,-4)W)
-  //
-  //    Row 2 (y = -1):
-  //      Extractor(-14,-1) → belt → Converter2(-8,-2) → belt → Synth(2,-5)
-  //                                  (3×3, in@(-8,-1)W, out@(-6,-1)E)     (in_2@(2,-3)W)
-  //
-  //  Storage wing (south, y = 4):
-  //    Extractor(-14, 4) → belt → Storage(-4, 3)
-  //    Extractor(-14, 7) → belt → Storage(-4, 3)
-  //
-  //  Solar farms:
-  //    Farm A (north-west): powers extractors
-  //    Farm B (north-east): powers converters + synthesizer
-  // ============================================================
 
   // ============================================================
   //  Resource deposits
   // ============================================================
 
-  // Processing chain extractors (Regolith — feeds converters)
+  // Chain extractor deposits — feed converters via belt
   const chainDeposits = [
     { coord: toWorld(-14, -4), type: ResourceType.Regolith },
     { coord: toWorld(-14, -1), type: ResourceType.Regolith },
   ];
 
-  // Storage wing extractors (Hydrogen + Oxygen)
+  // Storage wing deposits — same x column as chain extractors, safe dy range
   const storageDeposits = [
     { coord: toWorld(-14, 4), type: ResourceType.Hydrogen },
     { coord: toWorld(-14, 7), type: ResourceType.Oxygen },
   ];
 
-  // Decorative deposits
+  // Decorative uncovered deposits — kept within ±8 (x) / ±6 (y) of baseAnchor so they
+  // are always inside the initial viewport used by countVisibleUncoveredDeposits.
   const decorativeDeposits: [number, number, ResourceType][] = [
-    [-16, -7, ResourceType.Regolith],
-    [-16, 9, ResourceType.Hydrogen],
-    [10, -9, ResourceType.Oxygen],
-    [10, 8, ResourceType.Regolith],
-    [-4, -9, ResourceType.Hydrogen],
-    [4, 9, ResourceType.Oxygen],
-    [-10, 9, ResourceType.Regolith],
-    [8, -9, ResourceType.Hydrogen],
+    [-5, -5, ResourceType.Regolith],
+    [-5,  5, ResourceType.Hydrogen],
+    [ 0, -5, ResourceType.Oxygen],
+    [ 0,  4, ResourceType.Regolith],
+    [ 6, -5, ResourceType.Hydrogen],
+    [ 6,  5, ResourceType.Oxygen],
   ];
 
   for (const { coord, type } of [...chainDeposits, ...storageDeposits]) {
@@ -115,35 +100,40 @@ export function generateFullIsruScenario(screenWidth: number, screenHeight: numb
   }
 
   // ============================================================
-  //  Buildings — Processing chain
+  //  Buildings — Belt-connected pipeline (CeramicPlates)
+  //
+  //  Layout (offsets from baseAnchor, mirrorX = 1):
+  //
+  //    y = -4  Ext1(-14,-4) ──── Conv1(-8,-5) out(-6,-4)E ─── Synth5.in_1(2,-4)W
+  //    y = -1  Ext2(-14,-1) ──── Conv2(-8,-2) out(-6,-1)E ─── Synth5.in_2(2,-3)W
+  //                                                             Synth5(2,-5) [ceramic_plates]
   // ============================================================
 
-  // Extractors feeding converters
   const chainExtractor1 = mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, chainDeposits[0].coord, 0, rng);
   const chainExtractor2 = mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, chainDeposits[1].coord, 0, rng);
 
-  // Converter 1: Regolith → IronOxide (3×3)
-  // Port 'in' at offset(0,1) facing West → world input at (-8, -4)
-  // Port 'out' at offset(2,1) facing East → world output at (-6, -4)
-  const converter1 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, -5), 3, rng);
+  const converter1 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, -5), 3, rng); // IronOxide
+  const converter2 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, -2), 3, rng); // AluminumOxide
 
-  // Converter 2: Regolith → AluminumOxide (3×3)
-  // Port 'in' at offset(0,1) facing West → world input at (-8, -1)
-  // Port 'out' at offset(2,1) facing East → world output at (-6, -1)
-  const converter2 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, -2), 3, rng);
+  const synthCeramic = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(2, -5), 3, rng);
 
-  // Synthesizer: IronOxide + AluminumOxide → CeramicPlates (4×4)
-  // Port 'in_1' at offset(0,1) facing West → world input at (2, -4)
-  // Port 'in_2' at offset(0,2) facing West → world input at (2, -3)
-  // Port 'out' at offset(3,2) facing East → world output at (5, -3)
-  const synthesizer = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(2, -5), 3, rng);
+  // ============================================================
+  //  Buildings — Standalone processors (consume/produce via playerStock)
+  // ============================================================
+
+  const converter3 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, 1), 3, rng); // SiliconDioxide
+  const converter4 = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(-8, 4), 3, rng); // NitrogenGas
+
+  const synthWater   = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(8, -5), 3, rng);
+  const synthMethane = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(8, -1), 3, rng);
+  const synthCo2     = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(8,  3), 3, rng);
+  const synthAmmonia = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(8,  7), 3, rng);
 
   // ============================================================
   //  Buildings — Storage wing
   // ============================================================
 
   const storage = mustPlaceBuilding(engine, STORAGE_BUILDING_TYPE_ID, toWorld(-4, 3), 3, rng);
-
   const storageExtractor1 = mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, storageDeposits[0].coord, 0, rng);
   const storageExtractor2 = mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, storageDeposits[1].coord, 0, rng);
 
@@ -151,7 +141,7 @@ export function generateFullIsruScenario(screenWidth: number, screenHeight: numb
   //  Solar farms + batteries
   // ============================================================
 
-  // Farm A (powers all 4 extractors): 4 solars, 16kW for 4×4kW extractors
+  // Farm A — powers all 4 extractors (4 solars = 40 kW for 4×4 kW = 16 kW demand)
   const solarAOffsets: [number, number][] = [
     [-14, -8], [-12, -8], [-10, -8], [-14, -10],
   ];
@@ -160,51 +150,46 @@ export function generateFullIsruScenario(screenWidth: number, screenHeight: numb
   );
   const batteryA = mustPlaceBuilding(engine, BATTERY_BASIC_BUILDING_TYPE_ID, toWorld(-11, -6), 3, rng);
 
-  // Farm B (powers converters + synthesizer): 4 solars, 40kW for 6+6+10=22kW
+  // Farm B — powers all 9 processors (8 solars = 80 kW for 4×6 kW + 5×10 kW = 74 kW demand)
   const solarBOffsets: [number, number][] = [
-    [0, -9], [2, -9], [4, -9], [6, -9],
+    [2, -10], [4, -10], [6, -10], [8, -10], [10, -10], [12, -10], [14, -10], [16, -10],
   ];
   const solarBIds = solarBOffsets.map(([dx, dy]) =>
     mustPlaceBuilding(engine, SOLAR_PANEL_BUILDING_TYPE_ID, toWorld(dx, dy), 3, rng),
   );
-  const batteryB = mustPlaceBuilding(engine, BATTERY_BASIC_BUILDING_TYPE_ID, toWorld(-2, -8), 3, rng);
+  const batteryB = mustPlaceBuilding(engine, BATTERY_BASIC_BUILDING_TYPE_ID, toWorld(6, -8), 3, rng);
 
   // ============================================================
   //  Energy networks (two subnets)
   // ============================================================
 
-  // Subnet A: solars → batteryA → extractors
-  for (const solarId of solarAIds) {
-    mustConnect(engine, solarId, batteryA);
-  }
+  // Subnet A: solars → batteryA → all extractors
+  for (const solarId of solarAIds) mustConnect(engine, solarId, batteryA);
   mustConnect(engine, batteryA, chainExtractor1);
   mustConnect(engine, batteryA, chainExtractor2);
   mustConnect(engine, batteryA, storageExtractor1);
   mustConnect(engine, batteryA, storageExtractor2);
 
-  // Subnet B: solars → batteryB → converters + synthesizer
-  for (const solarId of solarBIds) {
-    mustConnect(engine, solarId, batteryB);
-  }
+  // Subnet B: solars → batteryB → all processors
+  for (const solarId of solarBIds) mustConnect(engine, solarId, batteryB);
   mustConnect(engine, batteryB, converter1);
   mustConnect(engine, batteryB, converter2);
-  mustConnect(engine, batteryB, synthesizer);
+  mustConnect(engine, batteryB, converter3);
+  mustConnect(engine, batteryB, converter4);
+  mustConnect(engine, batteryB, synthCeramic);
+  mustConnect(engine, batteryB, synthWater);
+  mustConnect(engine, batteryB, synthMethane);
+  mustConnect(engine, batteryB, synthCo2);
+  mustConnect(engine, batteryB, synthAmmonia);
 
   // ============================================================
-  //  Belt topology — full pipeline
+  //  Belt topology — ceramic_plates pipeline
   // ============================================================
 
-  // Chain 1: Extractor → Converter 1 input
   tryBelt(engine, { building: chainExtractor1, port: 'out_east' }, { building: converter1, port: 'in' });
-
-  // Chain 2: Extractor → Converter 2 input
   tryBelt(engine, { building: chainExtractor2, port: 'out_east' }, { building: converter2, port: 'in' });
-
-  // Converter 1 output → Synthesizer in_1
-  tryBelt(engine, { building: converter1, port: 'out' }, { building: synthesizer, port: 'in_1' });
-
-  // Converter 2 output → Synthesizer in_2
-  tryBelt(engine, { building: converter2, port: 'out' }, { building: synthesizer, port: 'in_2' });
+  tryBelt(engine, { building: converter1, port: 'out' }, { building: synthCeramic, port: 'in_1' });
+  tryBelt(engine, { building: converter2, port: 'out' }, { building: synthCeramic, port: 'in_2' });
 
   // Storage wing: extractors → storage
   const storageInputPorts = ['in_west', 'in_south', 'in_north', 'in_east'] as const;
@@ -215,34 +200,45 @@ export function generateFullIsruScenario(screenWidth: number, screenHeight: numb
   }
 
   // ============================================================
-  //  Recipe assignment
+  //  Recipe assignment — all 9 processors
   // ============================================================
+
   engine.setProcessorRecipe(converter1, 'iron_oxide');
   engine.setProcessorRecipe(converter2, 'aluminum_oxide');
-  engine.setProcessorRecipe(synthesizer, 'ceramic_plates');
+  engine.setProcessorRecipe(converter3, 'silicon_dioxide');
+  engine.setProcessorRecipe(converter4, 'nitrogen_gas');
+  engine.setProcessorRecipe(synthCeramic, 'ceramic_plates');
+  engine.setProcessorRecipe(synthWater, 'water');
+  engine.setProcessorRecipe(synthMethane, 'methane');
+  engine.setProcessorRecipe(synthCo2, 'carbon_dioxide');
+  engine.setProcessorRecipe(synthAmmonia, 'ammonia');
 
   // ============================================================
-  //  Simulation — let the pipeline run to accumulate resources
+  //  Simulation — produce all 12 resource types
   // ============================================================
+
   engine.setSimulationTime(0.28 + rng() * 0.16);
 
-  // Seed base resources so converters can start immediately
-  engine.playerStock.regolith = 20;
-  engine.playerStock.hydrogen = 10;
-  engine.playerStock.oxygen = 10;
+  // Seed generous stock so all 9 processors can start immediately.
+  // Converters need Regolith (up to 48/min for silicon_dioxide) and Oxygen (45/min for nitrogen_gas).
+  // Synthesizers need Hydrogen (up to 48/min for methane) and Oxygen (various rates).
+  engine.playerStock.regolith = 200;
+  engine.playerStock.hydrogen = 200;
+  engine.playerStock.oxygen   = 200;
 
-  // Run 60s: extractors feed converters via playerStock,
-  // converters produce IronOxide + AluminumOxide,
-  // synthesizer consumes both for CeramicPlates.
-  advanceSimulation(engine, 60, 0.2);
+  // 90 s is enough for every processor to complete multiple cycles.
+  advanceSimulation(engine, 90, 0.2);
+
+  // Set viewport first so countVisibleUncoveredDeposits uses the intended tile range.
+  const viewport = makeViewport(engine, baseAnchor, 0.35);
 
   if (countVisibleUncoveredDeposits(engine) < 4) {
-    throw new Error('Generated full-ISRU scenario did not preserve enough visible deposits');
+    throw new Error('Generated Full Tier 0 scenario did not preserve enough visible deposits');
   }
 
   return {
     engine,
     selectedTool: { kind: 'select' },
-    viewport: makeViewport(engine, baseAnchor, 0.45),
+    viewport,
   };
 }
