@@ -1,10 +1,12 @@
 import { Application, Container, Graphics, Text } from 'pixi.js'
 import type { PixiExport, GamePhase } from '@/core/types'
+import { GRID_CELL_SIZE, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import type { ResourceId } from '@/core/grid/manager'
 
 interface PixiRendererConfig {
   cellSize: number
-  cellsPerSide: number
+  gridWidth: number
+  gridHeight: number
   backgroundColors: Record<GamePhase, number>
   depositColors: Record<ResourceId, number>
 }
@@ -12,8 +14,9 @@ interface PixiRendererConfig {
 type StationCategory = 'extractor' | 'conveyor' | 'factory' | 'storage'
 
 const DEFAULT_CONFIG: PixiRendererConfig = {
-  cellSize: 12,
-  cellsPerSide: 128,
+  cellSize: GRID_CELL_SIZE,
+  gridWidth: GRID_WIDTH,
+  gridHeight: GRID_HEIGHT,
   backgroundColors: {
     init: 0x2d1b69,
     running: 0x1a1a2e,
@@ -55,13 +58,13 @@ export class PixiRenderer {
   }
 
   private async initApplication(): Promise<void> {
-    const { cellSize, cellsPerSide } = this.config
+    const { cellSize, gridHeight, gridWidth } = this.config
     
     this.app = new Application()
     
     await this.app.init({
-      width: cellsPerSide * cellSize,
-      height: cellsPerSide * cellSize,
+      width: gridWidth * cellSize,
+      height: gridHeight * cellSize,
       backgroundColor: this.config.backgroundColors.running,
       antialias: true,
       resolution: window.devicePixelRatio || 1,

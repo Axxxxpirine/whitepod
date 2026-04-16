@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { RuntimeSelectionPanel } from '@/components/runtime/RuntimeSelectionPanel'
+import { RuntimeSettingsPopover } from '@/components/runtime/RuntimeSettingsPopover'
+import { RuntimeToolIndicator } from '@/components/runtime/RuntimeToolIndicator'
 import type { ResourceId } from '@/core/grid/manager'
+import { GRID_CELL_SIZE, GRID_WIDTH } from '@/core/grid/config'
 import { PixiCanvas } from '@/components/PixiCanvas'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 import './App.css'
 
-const PIXI_CANVAS_BASE_SIZE = 128 * 12
+const PIXI_CANVAS_BASE_SIZE = GRID_WIDTH * GRID_CELL_SIZE
 
 function statusLabel(phase: string): string {
   switch (phase) {
@@ -57,10 +61,12 @@ function App() {
   const tokens = useGameStore(s => s.tokens)
   const metadata = useGameStore(s => s.metadata)
   const stations = useGameStore(s => s.stations)
+  const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
   const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
   const buildPalette = useGameStore(s => s.buildPalette)
+  const setAutoTickEnabled = useGameStore(s => s.setAutoTickEnabled)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
   const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
@@ -279,13 +285,29 @@ function App() {
             </div>
           </div>
           <div className="hud-viewport-body">
-            <PixiCanvas
-              className="canvas-stage"
+            <div
+              className="relative flex-none"
               style={{
                 width: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
                 height: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
               }}
-            />
+            >
+              <PixiCanvas className="canvas-stage" />
+              <RuntimeToolIndicator />
+              <RuntimeSelectionPanel />
+              <div className="pointer-events-auto absolute right-3 top-3 z-20">
+                <RuntimeSettingsPopover
+                  autoTickEnabled={autoTickEnabled}
+                  onToggleAutoTick={() => setAutoTickEnabled(!autoTickEnabled)}
+                  onResetSave={resetSave}
+                  onNewGame={() => {
+                    const nextSeed = Number.parseInt(seedInput, 10)
+                    if (!Number.isInteger(nextSeed)) return
+                    newGame(nextSeed)
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </section>
 

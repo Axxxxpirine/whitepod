@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import type { PixiExport } from '@/core/types'
 import { PixiRenderer } from './pixi-renderer'
 
@@ -51,8 +52,8 @@ describe('PixiRenderer', () => {
       phase: 'running',
       tokens: {},
       grid: {
-        width: 128,
-        height: 128,
+        width: GRID_WIDTH,
+        height: GRID_HEIGHT,
         cells: [
           { x: 1, y: 2, kind: 'deposit', id: 'deposit_1', resourceId: 'lunar_hydrogen', remaining: 3 },
           { x: 3, y: 4, kind: 'station', id: 'station_1', transitionId: 'extract__lunar_hydrogen' },

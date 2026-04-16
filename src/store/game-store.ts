@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { GamePhase, LunarChemistryMetadata, PixiExport, Transition } from '@/core/types'
+import { GRID_CELL_SIZE } from '@/core/grid/config'
 import {
   GridManager,
   type DepositConfigByResourceId,
@@ -82,7 +83,6 @@ export interface GameState {
 const SYSTEM_TRANSITIONS = new Set(['init', 'launch', 'terminate'])
 const EXTRACT_PREFIX = 'extract__'
 const AUTOSAVE_TICK_INTERVAL = 30
-const PIXI_CELL_SIZE = 24
 const RESOURCE_ORDER: ResourceId[] = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
 
 type PersistedGameState = Pick<
@@ -589,8 +589,8 @@ export const useGameStore = create<GameState>()(
           phase: engine?.getPhase() ?? 'init',
           tokens,
           grid: {
-            width: 128,
-            height: 128,
+            width: grid.width,
+            height: grid.height,
             cells: [
               ...deposits.map(d => ({
                 x: d.x,
@@ -618,7 +618,7 @@ export const useGameStore = create<GameState>()(
             stations: stations.map(s => ({ ...s, active: true })),
           },
           layerTokens: buildLayerTokens(tokens),
-          viewport: { cellSize: PIXI_CELL_SIZE, zoom: 1 },
+          viewport: { cellSize: GRID_CELL_SIZE, zoom: 1 },
         }
       },
 

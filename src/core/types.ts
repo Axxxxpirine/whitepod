@@ -87,8 +87,8 @@ export interface PixiExport {
   phase: GamePhase
   tokens: Record<string, number>
   grid: {
-    width: 128
-    height: 128
+    width: number
+    height: number
     cells: PixiGridCell[]
     deposits: PixiGridDeposit[]
     stations: PixiGridStation[]

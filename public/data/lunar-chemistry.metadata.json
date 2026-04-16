@@ -4963,19 +4963,19 @@
     "grid": {
       "depositConfig": {
         "lunar_helium3": {
-          "depositCount": 10,
+          "depositCount": 3,
           "depositCapacity": 3
         },
         "lunar_hydrogen": {
-          "depositCount": 20,
+          "depositCount": 5,
           "depositCapacity": 5
         },
         "lunar_oxygen": {
-          "depositCount": 15,
+          "depositCount": 4,
           "depositCapacity": 5
         },
         "lunar_regolith": {
-          "depositCount": 30,
+          "depositCount": 8,
           "depositCapacity": 8
         }
       }

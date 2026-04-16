@@ -1,3 +1,5 @@
+import { DEFAULT_GRID_DEPOSIT_CONFIG, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
+
 export type ResourceId = 'lunar_helium3' | 'lunar_hydrogen' | 'lunar_oxygen' | 'lunar_regolith'
 
 export interface ResourceDeposit {
@@ -63,8 +65,8 @@ export interface GridSnapshot {
 }
 
 export class GridManager {
-  readonly width = 128
-  readonly height = 128
+  readonly width = GRID_WIDTH
+  readonly height = GRID_HEIGHT
 
   private rng: Rng
   private nextStationSeq = 1
@@ -84,12 +86,7 @@ export class GridManager {
     this.depositsById = new Map()
     this.depositsByPos = new Map()
 
-    this.depositConfig = {
-      lunar_helium3: { depositCount: 10, depositCapacity: 3 },
-      lunar_hydrogen: { depositCount: 20, depositCapacity: 5 },
-      lunar_oxygen: { depositCount: 15, depositCapacity: 5 },
-      lunar_regolith: { depositCount: 30, depositCapacity: 8 },
-    }
+    this.depositConfig = { ...DEFAULT_GRID_DEPOSIT_CONFIG }
     this.stationsById = new Map()
     this.stationPosToId = new Map()
   }
