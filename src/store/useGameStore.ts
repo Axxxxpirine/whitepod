@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { clearPersistedSession } from '@/game/persistence/sessionStorage';
+import {
+  getDefaultSettings,
+  loadPersistedSettings,
+  savePersistedSettings,
+} from '@/game/persistence/settingsStorage';
 import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
 import { Direction, type BuildingId, type SelectedTool } from '@/game/types';
 
@@ -13,6 +18,7 @@ interface GameState {
   engine: GameEngine | null;
   simulationTime: number;
   simulationSpeed: number;
+  musicVolume: number;
   selectedTool: SelectedTool;
   hoverTile: { x: number; y: number } | null;
   selectedBuildingId: BuildingId | null;
@@ -27,6 +33,7 @@ interface GameState {
   initEngine: (engine: GameEngine) => void;
   setSimulationTime: (value: number) => void;
   setSimulationSpeed: (value: number) => void;
+  setMusicVolume: (value: number) => void;
   setSelectedTool: (tool: SelectedTool) => void;
   setHoverTile: (tile: { x: number; y: number } | null) => void;
   setSelectedBuilding: (id: BuildingId | null) => void;
@@ -40,10 +47,14 @@ interface GameState {
   setLinkSolarOnPlacement: (value: boolean) => void;
 }
 
+const loadedSettings = loadPersistedSettings();
+const defaultSettings = getDefaultSettings();
+
 export const useGameStore = create<GameState>((set) => ({
   engine: null,
   simulationTime: 0,
   simulationSpeed: 1,
+  musicVolume: loadedSettings.musicVolume ?? defaultSettings.musicVolume,
   selectedTool: { kind: 'select' },
   hoverTile: null,
   selectedBuildingId: null,
@@ -58,6 +69,12 @@ export const useGameStore = create<GameState>((set) => ({
   initEngine: (engine) => set({ engine }),
   setSimulationTime: (value) => set({ simulationTime: value }),
   setSimulationSpeed: (value) => set({ simulationSpeed: Math.max(0, value) }),
+  setMusicVolume: (value) =>
+    set(() => {
+      const musicVolume = Math.min(1, Math.max(0, value));
+      savePersistedSettings({ musicVolume });
+      return { musicVolume };
+    }),
   setSelectedTool: (tool) =>
     set((state) => ({
       selectedTool: tool,
