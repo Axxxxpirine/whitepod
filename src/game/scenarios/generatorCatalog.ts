@@ -1,6 +1,7 @@
 import { generateSimpleScenario } from './generators/generateSimpleScenario';
 import { generateMediumScenario } from './generators/generateMediumScenario';
 import { generateComplexScenario } from './generators/generateComplexScenario';
+import { generateFullIsruScenario } from './generators/generateFullIsruScenario';
 import type { ScenarioGeneratorDefinition, ScenarioGeneratorListEntry } from './types';
 
 const generators = [
@@ -21,6 +22,12 @@ const generators = [
     label: 'Complex',
     description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
     generate: generateComplexScenario,
+  },
+  {
+    id: 'tier-full-isru',
+    label: 'Full ISRU',
+    description: 'Complete pipeline: extractors + converters + synthesizer. All base + refined resources.',
+    generate: generateFullIsruScenario,
   },
 ] as const satisfies readonly ScenarioGeneratorDefinition[];
 
