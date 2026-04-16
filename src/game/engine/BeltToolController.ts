@@ -5,6 +5,7 @@ import type { GameEngine } from './GameEngine';
 import { PortKind, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
 import type { BeltPlacementPreviewModel } from '../renderer/placementPreviewModel';
 import { TILE_SIZE } from '../constants';
+import { PIXI } from '@/design/tokens';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -15,7 +16,7 @@ interface PendingFrom {
   readonly from: PortEndpoint;
 }
 
-const BELT_PREVIEW_TINT = 0x22c55e;
+const BELT_PREVIEW_TINT = PIXI.ok;
 
 export class BeltToolController {
   private readonly engine: GameEngine;

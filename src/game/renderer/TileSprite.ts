@@ -2,7 +2,7 @@ import type { TileType } from '../types';
 import { TileType as TileTypeConst, ResourceType as ResourceTypeConst } from '../types';
 import type { ResourceType } from '../types';
 import { Assets, Texture, ImageSource } from 'pixi.js';
-import { BATTERY_BASIC_BUILDING_TYPE_ID, EXTRACTOR_BUILDING_TYPE_ID, SOLAR_PANEL_BUILDING_TYPE_ID, STORAGE_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import { BUILDING_SPRITE_PATHS } from '../ui/spritePaths';
 
 /* ── Deterministic hash helpers ── */
 
@@ -177,13 +177,7 @@ export function getResourceTexture(type: ResourceType): Texture | null {
 const buildingTextures = new Map<string, Texture>();
 
 export async function loadBuildingTextures(): Promise<void> {
-  const entries: [string, string][] = [
-    [SOLAR_PANEL_BUILDING_TYPE_ID, 'sprites/solar_panel.svg'],
-    [BATTERY_BASIC_BUILDING_TYPE_ID, 'sprites/battery.svg'],
-    [STORAGE_BUILDING_TYPE_ID, 'sprites/warehouse.svg'],
-    [EXTRACTOR_BUILDING_TYPE_ID, 'sprites/extractor.svg'],
-  ];
-  for (const [typeId, path] of entries) {
+  for (const [typeId, path] of BUILDING_SPRITE_PATHS) {
     const texture = await Assets.load<Texture>(path);
     buildingTextures.set(typeId, texture);
   }

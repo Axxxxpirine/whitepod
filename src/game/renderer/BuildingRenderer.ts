@@ -13,28 +13,27 @@ import type { GameEngine } from '../engine/GameEngine';
 import type { Building, PowerState } from '../types';
 import { drawBuildingPortMarkers } from './buildingPortMarkers';
 import { getBuildingTexture } from './TileSprite';
+import { PIXI } from '@/design/tokens';
 
 const BUILDING_INSET = 2;
 const POWER_INDICATOR_RADIUS = 4;
 const POWER_INDICATOR_OFFSET = 7;
-// Palette note: each building family owns a hue slot that's distinct from the
-// map tiles (ground=moss, rock=grey, water=deep blue). Storage moved to cyan so
-// it doesn't blend into nearby water; solar saturated away from the mossy
-// ground. Highlight pulses are brighter siblings of these (see
-// buildingPresentation.ts) so family identity reads at a glance.
+// Building family palette (Architect's Drawing Board).
+// Each family owns a distinct token from the design system, scoped to
+// functional roles rather than decorative hues.
 const BUILDING_TINTS: Record<string, number> = {
-  [EXTRACTOR_BUILDING_TYPE_ID]: 0xf59e0b,
-  [STORAGE_BUILDING_TYPE_ID]: 0x06b6d4,
-  [SOLAR_PANEL_BUILDING_TYPE_ID]: 0x22c55e,
-  [MERGER_BASIC_BUILDING_TYPE_ID]: 0xc084fc, // violet — distinct from belts (pink) and storage (cyan)
-  [WATCHTOWER_BUILDING_TYPE_ID]: 0x8b5cf6,
+  [EXTRACTOR_BUILDING_TYPE_ID]: PIXI.accentWarm,
+  [STORAGE_BUILDING_TYPE_ID]: PIXI.accent,
+  [SOLAR_PANEL_BUILDING_TYPE_ID]: PIXI.ok,
+  [MERGER_BASIC_BUILDING_TYPE_ID]: PIXI.inkMuted,
+  [WATCHTOWER_BUILDING_TYPE_ID]: PIXI.inkMuted,
 };
 const DEFAULT_BUILDING_ALPHA = 0.95;
 const EXTRACTOR_BUILDING_ALPHA = 0.52;
 
 const POWER_INDICATOR_COLORS: Record<Exclude<PowerState, 'neutral'>, number> = {
-  powered: 0x22c55e,
-  unpowered: 0xef4444,
+  powered: PIXI.ok,
+  unpowered: PIXI.error,
 };
 
 export function getPowerIndicatorColor(state: PowerState): number | null {
@@ -70,6 +69,7 @@ export class BuildingRenderer {
   private readonly activePortMarkers: Map<number, Graphics> = new Map();
   private readonly indicatorPool: Graphics[] = [];
   private readonly portMarkerPool: Graphics[] = [];
+  private readonly indicatorColorCache: Map<number, number> = new Map();
   private readonly engine: GameEngine;
 
   constructor(app: Application, engine: GameEngine) {
@@ -118,7 +118,7 @@ export class BuildingRenderer {
       sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
       const buildingTexture = getBuildingTexture(building.typeId);
       sprite.texture = buildingTexture ?? Texture.WHITE;
-      sprite.tint = buildingTexture ? 0xffffff : (BUILDING_TINTS[building.typeId] ?? 0xd5dbdb);
+      sprite.tint = buildingTexture ? 0xffffff : (BUILDING_TINTS[building.typeId] ?? PIXI.ink);
       sprite.alpha =
         building.typeId === EXTRACTOR_BUILDING_TYPE_ID ? EXTRACTOR_BUILDING_ALPHA : DEFAULT_BUILDING_ALPHA;
       sprite.visible = true;
@@ -131,9 +131,8 @@ export class BuildingRenderer {
           portMarker = this.acquirePortMarker();
           this.portMarkerContainer.addChild(portMarker);
           this.activePortMarkers.set(building.id, portMarker);
+          drawBuildingPortMarkers(portMarker, building, type);
         }
-        portMarker.clear();
-        drawBuildingPortMarkers(portMarker, building, type);
         portMarker.visible = true;
       }
 
@@ -143,6 +142,7 @@ export class BuildingRenderer {
         this.releaseIndicator(building.id);
       } else {
         let indicator = this.activeIndicators.get(building.id);
+        const prevColor = this.indicatorColorCache.get(building.id);
         if (!indicator) {
           indicator = this.acquireIndicator();
           this.indicatorContainer.addChild(indicator);
@@ -150,10 +150,13 @@ export class BuildingRenderer {
         }
         indicator.x = building.origin.x * TILE_SIZE + POWER_INDICATOR_OFFSET;
         indicator.y = building.origin.y * TILE_SIZE + POWER_INDICATOR_OFFSET;
-        indicator.clear();
-        indicator.circle(0, 0, POWER_INDICATOR_RADIUS).fill({ color: indicatorColor, alpha: 1 });
-        indicator.stroke({ color: 0x111111, width: 1, alpha: 0.9 });
-        indicator.alpha = 1;
+        if (prevColor !== indicatorColor) {
+          indicator.clear();
+          indicator.circle(0, 0, POWER_INDICATOR_RADIUS).fill({ color: indicatorColor, alpha: 1 });
+          indicator.stroke({ color: PIXI.bg, width: 1, alpha: 0.9 });
+          indicator.alpha = 1;
+          this.indicatorColorCache.set(building.id, indicatorColor);
+        }
         indicator.visible = true;
       }
     }
@@ -195,6 +198,7 @@ export class BuildingRenderer {
     indicator.visible = false;
     this.indicatorPool.push(indicator);
     this.activeIndicators.delete(id);
+    this.indicatorColorCache.delete(id);
   }
 
   private releasePortMarker(id: number): void {
@@ -217,5 +221,6 @@ export class BuildingRenderer {
     this.activeSprites.clear();
     this.activePortMarkers.clear();
     this.activeIndicators.clear();
+    this.indicatorColorCache.clear();
   }
 }

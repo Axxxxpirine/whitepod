@@ -4,14 +4,18 @@ import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
+import { PIXI } from '@/design/tokens';
 
 export const BELT_INSET = 3;
-const BELT_PATH = 0x3a3125;
+const BELT_PATH = PIXI.border;
 
 export class BeltRenderer {
   private readonly beltContainer: Container;
   private readonly graphics: Graphics;
   private readonly engine: GameEngine;
+  private readonly unsubscribeEngine: () => void;
+  private worldDirty = true;
+  private lastVisibleRange = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
@@ -19,6 +23,9 @@ export class BeltRenderer {
     this.graphics = new Graphics();
     this.beltContainer.addChild(this.graphics);
     app.stage.addChild(this.beltContainer);
+    this.unsubscribeEngine = engine.subscribe((kind) => {
+      if (kind === 'world') this.worldDirty = true;
+    });
   }
 
   render(): void {
@@ -28,6 +35,17 @@ export class BeltRenderer {
     this.beltContainer.x = -viewport.centerX * viewport.zoom + viewport.screenWidth / 2;
     this.beltContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.beltContainer.scale.set(viewport.zoom);
+
+    const rangeChanged =
+      visibleRange.x0 !== this.lastVisibleRange.x0 ||
+      visibleRange.y0 !== this.lastVisibleRange.y0 ||
+      visibleRange.x1 !== this.lastVisibleRange.x1 ||
+      visibleRange.y1 !== this.lastVisibleRange.y1;
+
+    if (!this.worldDirty && !rangeChanged) return;
+
+    this.worldDirty = false;
+    this.lastVisibleRange = { ...visibleRange };
 
     this.graphics.clear();
 
@@ -39,6 +57,7 @@ export class BeltRenderer {
   }
 
   destroy(): void {
+    this.unsubscribeEngine();
     this.beltContainer.destroy({ children: true });
   }
 

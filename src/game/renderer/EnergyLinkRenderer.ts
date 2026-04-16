@@ -3,6 +3,7 @@ import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import type { Building } from '../types';
+import { PIXI } from '@/design/tokens';
 
 interface LinkPreviewState {
   readonly mode: EnergyLinkMode;
@@ -30,14 +31,14 @@ const LINK_TRANSITION_MS = 200;
 export function getEnergyLinkStyle(mode: EnergyLinkMode): EnergyLinkStyle {
   if (mode === 'energy_link') {
     return {
-      color: 0xf8e16c,
+      color: PIXI.accent,
       width: 2,
       alpha: 0.95,
     };
   }
 
   return {
-    color: 0x111111,
+    color: PIXI.border,
     width: 1,
     alpha: 0.4,
   };
@@ -147,7 +148,26 @@ export class EnergyLinkRenderer {
     this.syncMode(this.getState().mode, now);
     const style = this.getCurrentStyle(now);
 
+    const visibleRange = this.engine.getVisibleTiles();
+    const wx0 = visibleRange.x0 * TILE_SIZE;
+    const wy0 = visibleRange.y0 * TILE_SIZE;
+    const wx1 = (visibleRange.x1 + 1) * TILE_SIZE;
+    const wy1 = (visibleRange.y1 + 1) * TILE_SIZE;
+
     for (const segment of this.linkSegments) {
+      // Skip segments where both endpoints are off-screen
+      const fv =
+        segment.fromCenter.x >= wx0 &&
+        segment.fromCenter.x <= wx1 &&
+        segment.fromCenter.y >= wy0 &&
+        segment.fromCenter.y <= wy1;
+      const tv =
+        segment.toCenter.x >= wx0 &&
+        segment.toCenter.x <= wx1 &&
+        segment.toCenter.y >= wy0 &&
+        segment.toCenter.y <= wy1;
+      if (!fv && !tv) continue;
+
       this.graphics
         .moveTo(segment.fromCenter.x, segment.fromCenter.y)
         .lineTo(segment.toCenter.x, segment.toCenter.y)
@@ -163,7 +183,7 @@ export class EnergyLinkRenderer {
           this.graphics
             .moveTo(srcCenter.x, srcCenter.y)
             .lineTo(previewState.mouseWorldPos.x, previewState.mouseWorldPos.y)
-            .stroke({ color: 0xf8e16c, width: 2, alpha: 0.55 });
+            .stroke({ color: PIXI.accent, width: 2, alpha: 0.55 });
         }
       }
     }

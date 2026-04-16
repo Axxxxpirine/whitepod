@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Settings, Zap } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
-import { Direction } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
+import { Icon, Chip, Panel, PanelHeading } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -14,16 +14,16 @@ export function GameHUD() {
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
   const musicVolume = useGameStore((s) => s.musicVolume);
-  const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
+  const idleSummary = useGameStore((s) => s.idleSummary);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
-  const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
+  const setIdleSummary = useGameStore((s) => s.setIdleSummary);
 
   const [worldTick, setWorldTick] = useState(0);
   useEffect(() => {
@@ -35,9 +35,19 @@ export function GameHUD() {
 
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!idleSummary || idleSummary.appliedSeconds <= 0) return;
+    const timeoutId = window.setTimeout(() => {
+      setIdleSummary(null);
+    }, 7000);
+    return () => window.clearTimeout(timeoutId);
+  }, [idleSummary, setIdleSummary]);
 
   const energyLinkSelected = selectedTool.kind === 'energy_link';
 
@@ -47,18 +57,16 @@ export function GameHUD() {
     if (!source) return null;
     return getBuildingType(source.typeId)?.name ?? null;
   }, [engine, pendingEnergyLinkSource]);
-  const buildingRotationLabel = directionLabel(currentBuildingRotation);
   const globalEnergy = useMemo(() => {
     void energyVersion;
-    void simulationTime;
+    void worldTick;
     return engine ? engine.getEnergyGlobalStats() : null;
-  }, [engine, energyVersion, simulationTime]);
+  }, [engine, energyVersion, worldTick]);
   const energyStorage = useMemo(() => {
     void energyVersion;
-    void simulationTime;
     void worldTick;
     return engine ? engine.getEnergyStorageTotals() : null;
-  }, [engine, energyVersion, simulationTime, worldTick]);
+  }, [engine, energyVersion, worldTick]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
@@ -75,6 +83,21 @@ export function GameHUD() {
     void energyVersion;
     return engine?.getResourceRates() ?? null;
   }, [engine, worldTick, energyVersion]);
+  const idleSummaryText = useMemo(() => {
+    if (!idleSummary || idleSummary.appliedSeconds <= 0) return null;
+    const totalSeconds = Math.floor(idleSummary.appliedSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const durationLabel = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const delta = idleSummary.resourceDelta;
+    return {
+      durationLabel,
+      coal: delta.coal,
+      ironOre: delta.ironOre,
+      copperOre: delta.copperOre,
+      capped: idleSummary.capped,
+    };
+  }, [idleSummary]);
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -109,9 +132,16 @@ export function GameHUD() {
     }
   };
 
-  const rotatePlacement = () => {
-    rotateBuildingRotation();
-  };
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [settingsOpen]);
 
   const handleResetSession = () => {
     if (!window.confirm('Reset the current session and start a new game?')) {
@@ -131,68 +161,75 @@ export function GameHUD() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
+      {idleSummaryText && (
+        <div className="pointer-events-auto absolute top-3 right-3">
+          <div className="rounded-xl border border-emerald-300/25 bg-black/75 px-3 py-2 text-xs text-white/90 shadow-xl backdrop-blur-md">
+            <div className="font-semibold text-emerald-300">Progression hors ligne: {idleSummaryText.durationLabel}</div>
+            <div className="mt-1 text-white/75">
+              +{idleSummaryText.coal} charbon, +{idleSummaryText.ironOre} fer, +{idleSummaryText.copperOre} cuivre
+            </div>
+            {idleSummaryText.capped && <div className="mt-0.5 text-[11px] text-amber-300/90">Cap offline appliqué (8h).</div>}
+          </div>
+        </div>
+      )}
+
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
-          <div className="min-w-[180px] rounded-xl border border-white/15 bg-black/75 px-3 py-2.5 text-sm text-white/90 shadow-xl backdrop-blur-md">
+          <Panel className="min-w-[180px] px-3 py-2.5 text-sm text-ink">
             {resourceCounts && (
               <>
-                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                  Ressources
-                </div>
+                <div className="label mb-1.5 text-ink-muted">Ressources</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
-                    <span className="font-bold">{resourceCounts.coal}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.coal ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.coal}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.coal ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
-                    <span className="font-bold">{resourceCounts.ironOre}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.ironOre ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.ironOre}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.ironOre ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
-                    <span className="font-bold">{resourceCounts.copperOre}</span>
-                    <span className="text-xs text-white/40">{resourceRates?.copperOre ?? 0} /min</span>
+                    <span className="font-bold tabular-nums">{resourceCounts.copperOre}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.copperOre ?? 0}/min</span>
                   </div>
                 </div>
               </>
             )}
 
-            {resourceCounts && globalEnergy && (
-              <div className="my-2 border-t border-white/10" />
-            )}
+            {resourceCounts && globalEnergy && <div className="my-2 border-t border-border" />}
 
             {globalEnergy && (
               <>
-                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                  Énergie
-                </div>
+                <div className="label mb-1.5 text-ink-muted">Énergie</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1">
-                    <Zap
+                    <Icon
+                      icon={Zap}
                       size={13}
-                      className={globalEnergy.remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}
+                      className={globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
-                      className={`font-bold ${globalEnergy.remaining >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
+                      className={`font-bold tabular-nums ${globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}`}
                     >
                       {globalEnergy.remaining >= 0 ? '+' : ''}
                       {Math.round(globalEnergy.remaining * 10) / 10} kW
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-white/50">
-                    <span className="text-emerald-400/70">↑</span>
+                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-ok">↑</span>
                     {Math.round(globalEnergy.production * 10) / 10} kW
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-white/50">
-                    <span className="text-orange-400/70">↓</span>
+                  <div className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-accent-warm">↓</span>
                     {Math.round(globalEnergy.consumption * 10) / 10} kW
                   </div>
                 </div>
                 {energyStorage && energyStorage.capacity > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1 text-xs text-white/60">
-                    <span className="text-amber-400/70">⬢</span>
+                  <div className="mt-1.5 flex items-center gap-1 text-xs tabular-nums text-ink-muted">
+                    <span className="text-accent-warm">⬢</span>
                     Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
                     {Math.round(energyStorage.capacity * 10) / 10} kWh
                   </div>
@@ -200,35 +237,35 @@ export function GameHUD() {
               </>
             )}
 
-            <div className="mt-2 border-t border-white/10 pt-1.5 text-xs text-white/60">
-              {simulationClockLabel} ({isDaylight ? 'Jour' : 'Nuit'})
+            <div className="mt-2 border-t border-border pt-1.5 text-xs text-ink-muted">
+              <span className="tabular-nums">{simulationClockLabel}</span> ({isDaylight ? 'Jour' : 'Nuit'})
               <button
                 type="button"
                 onClick={() => setDebugOpen((value) => !value)}
                 aria-expanded={debugOpen}
-                className="ml-2 cursor-pointer rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 transition-colors hover:bg-white/20"
+                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
               >
                 {debugOpen ? '▲' : '▼'}
               </button>
             </div>
 
             {debugOpen && (
-              <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
+              <div className="mt-2 space-y-2 border-t border-border pt-2">
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-md bg-black/40 px-2 py-1">
-                    <div className="text-white/60">Phase</div>
-                    <div className="font-medium text-white">{simulationPhase}</div>
+                  <div className="rounded-sm bg-surface-2 px-2 py-1">
+                    <div className="label text-ink-muted">Phase</div>
+                    <div className="font-medium text-ink">{simulationPhase}</div>
                   </div>
-                  <div className="rounded-md bg-black/40 px-2 py-1">
-                    <div className="text-white/60">Consommateurs</div>
-                    <div className="font-medium text-white">
+                  <div className="rounded-sm bg-surface-2 px-2 py-1">
+                    <div className="label text-ink-muted">Consommateurs</div>
+                    <div className="font-medium tabular-nums text-ink">
                       {globalEnergy?.onlineConsumers ?? 0} ON / {globalEnergy?.offlineConsumers ?? 0} OFF
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-white/70">Temps (0h-24h)</div>
+                  <div className="label text-ink-muted">Temps (0h-24h)</div>
                   <input
                     aria-label="Simulation time"
                     type="range"
@@ -237,42 +274,29 @@ export function GameHUD() {
                     step={0.001}
                     value={simulationTime}
                     onChange={(e) => applySimulationTime(Number(e.target.value))}
-                    className="w-full accent-emerald-400"
+                    className="w-full accent-accent"
                   />
                   <div className="flex items-center justify-between gap-1">
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Nuit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.25)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Aube
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.5)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Midi
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applySimulationTime(0.75)}
-                      className="cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20"
-                    >
-                      Crépuscule
-                    </button>
+                    {[
+                      { label: 'Nuit', value: 0 },
+                      { label: 'Aube', value: 0.25 },
+                      { label: 'Midi', value: 0.5 },
+                      { label: 'Crépuscule', value: 0.75 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => applySimulationTime(preset.value)}
+                        className="cursor-pointer rounded-sm bg-surface-2 px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-white/70">Vitesse simulation</div>
+                  <div className="label text-ink-muted">Vitesse simulation</div>
                   <div className="flex flex-wrap items-center gap-1">
                     {[0, 0.25, 1, 4, 20].map((speed) => (
                       <button
@@ -281,8 +305,8 @@ export function GameHUD() {
                         onClick={() => setSimulationSpeed(speed)}
                         className={
                           simulationSpeed === speed
-                            ? 'cursor-pointer rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-black'
-                            : 'cursor-pointer rounded-md bg-white/10 px-2 py-1 text-xs transition-colors hover:bg-white/20'
+                            ? 'cursor-pointer rounded-sm bg-accent px-2 py-1 text-xs font-semibold tabular-nums text-bg'
+                            : 'cursor-pointer rounded-sm bg-surface-2 px-2 py-1 text-xs tabular-nums text-ink-muted transition-colors hover:bg-border hover:text-ink'
                         }
                       >
                         {speed === 0 ? 'Pause' : `${speed}x`}
@@ -311,126 +335,136 @@ export function GameHUD() {
                 </div>
               </div>
             )}
-          </div>
+          </Panel>
         </div>
       )}
 
-      <ToolModeIndicator />
       <SelectedBuildingPanel />
 
       {consoleOpen && (
-        <div className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/20 bg-black/85 font-mono text-xs shadow-2xl backdrop-blur-sm">
+        <Panel elevated className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden tabular-nums text-xs">
           <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
-              <div className="text-white/30">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
+              <div className="text-ink-muted">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
             )}
             {history.map((entry, i) => (
               <div
                 key={i}
                 className={
                   entry.type === 'input'
-                    ? 'text-white/70'
+                    ? 'text-ink'
                     : entry.type === 'error'
-                      ? 'text-red-400'
-                      : 'text-green-400'
+                      ? 'text-error'
+                      : 'text-ok'
                 }
               >
                 {entry.text}
               </div>
             ))}
           </div>
-          <div className="flex border-t border-white/20">
-            <span className="px-2 py-1.5 text-white/50">&gt;</span>
+          <div className="flex border-t border-border">
+            <span className="px-2 py-1.5 text-ink-muted">&gt;</span>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent py-1.5 pr-2 text-white outline-none"
+              className="flex-1 bg-transparent py-1.5 pr-2 text-ink outline-none"
               placeholder="engine.placeResource(10, 10, 1)"
               autoFocus
             />
           </div>
-        </div>
+        </Panel>
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
-        <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-3 py-2 text-white/85 shadow-2xl backdrop-blur-md">
-          <div className="min-w-0 justify-self-start">
-            {hoverTile && (
-              <div className="inline-flex rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/80">
-                {hoverTile.x}, {hoverTile.y}
-              </div>
-            )}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
+          <div className="flex min-w-0 items-end justify-self-start">
+            <div className="pointer-events-auto flex flex-col items-start gap-2">
+              <ToolModeIndicator />
+              {hoverTile && (
+                <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+                  {hoverTile.x}, {hoverTile.y}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-self-center gap-2">
-            <BuildingPicker />
-            {selectedTool.kind === 'building' && (
-              <button
-                type="button"
-                onClick={rotatePlacement}
-                className="cursor-pointer rounded-xl bg-white/10 px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/20"
-                title="Rotation (R)"
-              >
-                Rotation: {buildingRotationLabel}
-              </button>
-            )}
+          <div className="pointer-events-auto justify-self-center">
+            <Panel className="flex flex-col items-center gap-2 px-3 py-2.5 text-ink">
+              <PanelHeading className="text-xs text-ink-muted">Construction</PanelHeading>
+              <BuildingPicker />
+            </Panel>
           </div>
 
-          <div className="flex items-center justify-self-end gap-2">
-            <button
-              type="button"
-              onClick={handleResetSession}
-              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/90 transition-colors hover:bg-white/20"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
-              aria-pressed={linkSolarOnPlacement}
-              className={
-                linkSolarOnPlacement
-                  ? 'cursor-pointer rounded-xl bg-emerald-400/90 px-3 py-2 text-xs font-semibold text-black transition-colors'
-                  : 'cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-xs text-white/80 transition-colors hover:bg-white/20'
-              }
-              title="Après pose d'un panneau solaire, passe en mode lien"
-            >
-              Lier après pose: {linkSolarOnPlacement ? 'ON' : 'OFF'}
-            </button>
-            {energyLinkSelected && (
-              <div className="rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/70">
-                Source: {pendingEnergyLinkSourceName ?? '-'}
+          <div className="flex min-w-0 items-end justify-self-end">
+            <Panel className="pointer-events-auto flex items-center gap-2 px-2 py-2 text-ink">
+              {energyLinkSelected && (
+                <div className="flex items-center gap-2 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-ink-muted">
+                  <span className="label">Source</span>
+                  <span className="tabular-nums text-ink">{pendingEnergyLinkSourceName ?? '-'}</span>
+                </div>
+              )}
+              <div className="relative" ref={settingsRef}>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen((o) => !o)}
+                  aria-expanded={settingsOpen}
+                  aria-label="Paramètres"
+                  title="Paramètres"
+                  className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                >
+                  <Icon icon={Settings} className="h-4 w-4" />
+                </button>
+
+                {settingsOpen && (
+                  <Panel elevated className="absolute bottom-full right-0 mb-2 min-w-48 p-2">
+                    <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
+
+                    <button
+                      type="button"
+                      onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
+                      aria-pressed={linkSolarOnPlacement}
+                      title="Après pose d'un panneau solaire, passe en mode lien"
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Lier après pose</span>
+                      <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
+                        {linkSolarOnPlacement ? 'ON' : 'OFF'}
+                      </Chip>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setConsoleOpen((o) => !o)}
+                      aria-pressed={consoleOpen}
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Console</span>
+                      <span className="ml-3 tabular-nums text-[11px] text-ink-muted">&gt;_</span>
+                    </button>
+
+                    <div className="my-1.5 border-t border-border" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsOpen(false);
+                        handleResetSession();
+                      }}
+                      className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-error transition-colors hover:bg-error/10"
+                    >
+                      Reset session
+                    </button>
+                  </Panel>
+                )}
               </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setConsoleOpen((o) => !o)}
-              aria-expanded={consoleOpen}
-              className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 font-mono text-xs text-white/90 transition-colors hover:bg-white/20"
-              title="Toggle console"
-            >
-              {consoleOpen ? 'Close' : '>_'}
-            </button>
+            </Panel>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function directionLabel(direction: Direction): string {
-  switch (direction) {
-    case Direction.North:
-      return 'N';
-    case Direction.East:
-      return 'E';
-    case Direction.South:
-      return 'S';
-    case Direction.West:
-      return 'W';
-  }
 }
 
 function formatSimulationTime(simulationTime: number): string {

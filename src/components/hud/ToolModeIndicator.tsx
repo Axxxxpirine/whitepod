@@ -1,6 +1,7 @@
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import type { SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
+import { Chip } from '../ui';
 
 function describeTool(tool: SelectedTool): string | null {
   switch (tool.kind) {
@@ -27,15 +28,18 @@ export function ToolModeIndicator() {
   // Stay hidden during pure idle SELECT with nothing pending — avoids chrome.
   if (!toolLabel && !hasPendingContext) return null;
 
+  const tone = selectedTool.kind === 'energy_link' ? 'accent' : selectedTool.kind === 'building' ? 'accent-warm' : 'muted';
+  const chipLabel =
+    toolLabel !== null
+      ? `Mode · ${toolLabel}`
+      : pendingEnergyLinkSource !== null
+        ? 'Mode · Lien en attente'
+        : 'Mode · Tracé en attente';
+
   return (
-    <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/70 px-3 py-1.5 text-xs text-white/85 shadow-xl backdrop-blur-md">
-      {toolLabel && (
-        <span className="font-medium">
-          <span className="text-white/50">Mode&nbsp;·&nbsp;</span>
-          {toolLabel}
-        </span>
-      )}
-      <span className="font-mono text-[10px] text-white/50">Esc pour annuler</span>
+    <div className="flex items-center gap-2 rounded-md border border-border bg-surface/90 px-2 py-1.5 text-xs text-ink backdrop-blur-md">
+      <Chip tone={tone}>{chipLabel}</Chip>
+      <span className="tabular-nums text-[11px] text-ink-muted">Esc pour annuler</span>
     </div>
   );
 }

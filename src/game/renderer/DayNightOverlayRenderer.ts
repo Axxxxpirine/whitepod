@@ -1,11 +1,12 @@
 import { Graphics, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
+import { PIXI } from '@/design/tokens';
 
 const DAY_ALPHA = 0.0;
-const NIGHT_ALPHA = 0.18;
-const NIGHT_COLOR = 0x0a1628;
-const DAYLIGHT_BOOST_MAX_ALPHA = 0.10;
-const DAYLIGHT_BOOST_COLOR = 0xfff7dc;
+const NIGHT_ALPHA = 0.32; // deeper night now that daylight boost is cool/subtle
+const NIGHT_COLOR = PIXI.bg; // full graphite — cool palette coherence
+const DAYLIGHT_BOOST_MAX_ALPHA = 0.06;
+const DAYLIGHT_BOOST_COLOR = PIXI.ink; // cool ivory instead of warm yellow
 
 export function getDaylightFactor(simulationTime: number): number {
   const wrapped = ((simulationTime % 1) + 1) % 1;

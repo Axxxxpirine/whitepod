@@ -5,12 +5,13 @@ import type { GameEngine } from '../engine/GameEngine';
 import type { SelectedTool, TileCoord } from '../types';
 import { getPlacementPreviewModel, type BeltPlacementPreviewModel } from './placementPreviewModel';
 import { drawBuildingPortMarkers } from './buildingPortMarkers';
+import { PIXI } from '@/design/tokens';
 
 const PREVIEW_INSET = 2;
-const VALID_FILL = 0x22c55e;
-const VALID_STROKE = 0x86efac;
-const INVALID_FILL = 0xef4444;
-const INVALID_STROKE = 0xfca5a5;
+const VALID_FILL = PIXI.ok;
+const VALID_STROKE = PIXI.accent;
+const INVALID_FILL = PIXI.error;
+const INVALID_STROKE = PIXI.error;
 
 const FLASH_DURATION_MS = 320;
 const FLASH_PEAK_ALPHA = 0.65;

@@ -28,6 +28,7 @@ export class BuildingHighlightRenderer {
   private readonly graphics: Graphics;
   private readonly engine: GameEngine;
   private readonly getState: () => HighlightState;
+  private hadHighlights = false;
 
   constructor(app: Application, engine: GameEngine, getState: () => HighlightState) {
     this.engine = engine;
@@ -44,11 +45,18 @@ export class BuildingHighlightRenderer {
     this.container.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.container.scale.set(viewport.zoom);
 
-    this.graphics.clear();
-
     const { selectedTool } = this.getState();
     const targets = getHighlightTargets(selectedTool, this.engine);
-    if (!targets || targets.buildingIds.length === 0) return;
+    if (!targets || targets.buildingIds.length === 0) {
+      if (this.hadHighlights) {
+        this.graphics.clear();
+        this.hadHighlights = false;
+      }
+      return;
+    }
+
+    this.graphics.clear();
+    this.hadHighlights = true;
 
     const alpha =
       PULSE_BASE + PULSE_AMPLITUDE * Math.sin((performance.now() * 2 * Math.PI) / PULSE_PERIOD_MS);
