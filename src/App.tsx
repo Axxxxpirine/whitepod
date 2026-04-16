@@ -278,8 +278,36 @@ function App() {
         </div>
       </header>
 
-      <section className="hud-summary panel-surface panel-dark">
-        <div className="hud-summary-group">
+      <section className="hud-top panel-surface panel-dark">
+        <section className="hud-session-panel">
+          <div className="panel-header panel-header--dark">
+            <h2>Session</h2>
+            <span className="hud-badge">Live</span>
+          </div>
+          <div className="hud-stack">
+            <label className="hud-field">
+              <span>Seed</span>
+              <input className="hud-input" value={seedInput} onChange={e => setSeedInput(e.target.value)} />
+            </label>
+            <div className="hud-actions">
+              <button className="hud-button primary" onClick={() => {
+                const nextSeed = Number.parseInt(seedInput, 10)
+                if (!Number.isInteger(nextSeed)) return
+                newGame(nextSeed)
+              }}>
+                New game
+              </button>
+              <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
+            </div>
+            <div className="hud-actions hud-actions--dense">
+              <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch rocket</button>
+              <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
+              <button className="hud-button" onClick={() => tick()}>Tick now</button>
+            </div>
+          </div>
+        </section>
+
+        <section className="hud-summary-group hud-summary-group--top">
           <span className="hud-badge">{selectedCellLabel}</span>
           <span className="hud-badge">Stations {stations.length}</span>
           <span className="hud-badge">Tokens {tokenEntries.length}</span>
@@ -288,113 +316,100 @@ function App() {
             {demonstrationEnabled ? 'Demonstration active' : 'Demonstration idle'}
           </span>
           <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build available'}</span>
+        </section>
+
+        <section className="hud-tokens-panel">
+          <div className="panel-header panel-header--dark">
+            <h2>Tokens</h2>
+            <span className="hud-badge">Non-zero</span>
+          </div>
+          <div className="token-grid token-grid--compact">
+            {resourceTotals.map(resource => (
+              <div key={resource.resourceId} className="hud-resource-pill">
+                <span>{resource.resourceId.replace('lunar_', '')}</span>
+                <strong>{resource.count}</strong>
+              </div>
+            ))}
+            {tokenEntries.length === 0 ? (
+              <p className="hud-muted hud-panel-note">No active tokens.</p>
+            ) : (
+              tokenEntries.map(([key, value]) => (
+                <div key={key} className="token-card">
+                  <span>{key}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </section>
+
+      <section className="panel-surface panel-dark hud-panel hud-library-panel">
+        <div className="panel-header panel-header--dark">
+          <h2>Build Library</h2>
+          <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
         </div>
-        <div className="hud-summary-group hud-summary-group--resources">
-          {resourceTotals.map(resource => (
-            <div key={resource.resourceId} className="hud-resource-pill">
-              <span>{resource.resourceId.replace('lunar_', '')}</span>
-              <strong>{resource.count}</strong>
-            </div>
+        <div className="hud-actions hud-actions--dense">
+          {([
+            ['extractor', 'Extractor'],
+            ['conveyor', 'Conveyor'],
+            ['factory', 'Factory'],
+            ['storage', 'Storage'],
+          ] as const).map(([kind, label]) => (
+            <button
+              key={kind}
+              className={`hud-button ${buildPalette === kind ? 'primary' : ''}`}
+              onClick={() => setBuildPalette(kind)}
+            >
+              {label}
+            </button>
           ))}
         </div>
+        <div className="hud-library-header">
+          <div>
+            <span className="hud-muted">Active category</span>
+            <div className="hud-library-title">{paletteLabel(buildPalette)}</div>
+          </div>
+          <div className="hud-muted">{buildableOptions.length} buildable{lockedBuildCount > 0 ? ` · ${lockedBuildCount} locked` : ''}</div>
+        </div>
+        <div className="hud-panel-scroll hud-panel-scroll--grow">
+          <div className="hud-library-scroll">
+            <div className="hud-chip-list">
+              {buildableOptions.length === 0 ? (
+                <div className="hud-empty-state">
+                  <strong>No buildable stations in this palette.</strong>
+                  <span>Open Help to see which tiered resources you need to stock next.</span>
+                </div>
+              ) : (
+                buildableOptions.map(option => (
+                  <button
+                    key={option.id}
+                    className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
+                    onClick={() => setSelectedBuildTransitionId(option.id)}
+                    title={option.name}
+                  >
+                    <span>{option.name}</span>
+                    <small>{option.id}</small>
+                    <small>{formatBuildCost(option.transition, placeMetaById)}</small>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="hud-muted hud-panel-note">
+          Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name : 'the selected build'}.
+        </p>
+        <p className="hud-muted hud-panel-note">
+          {selectedBuildCell
+            ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
+            : hoveredBuildCell
+              ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
+              : 'Select a grid cell to inspect.'}
+        </p>
       </section>
 
       <main className="hud-main">
-        <aside className="hud-sidebar hud-sidebar--left">
-          <section className="panel-surface panel-dark hud-panel">
-            <div className="panel-header panel-header--dark">
-              <h2>Session</h2>
-              <span className="hud-badge">Live</span>
-            </div>
-            <div className="hud-stack">
-              <label className="hud-field">
-                <span>Seed</span>
-                <input className="hud-input" value={seedInput} onChange={e => setSeedInput(e.target.value)} />
-              </label>
-              <div className="hud-actions">
-                <button className="hud-button primary" onClick={() => {
-                  const nextSeed = Number.parseInt(seedInput, 10)
-                  if (!Number.isInteger(nextSeed)) return
-                  newGame(nextSeed)
-                }}>
-                  New game
-                </button>
-                <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
-              </div>
-              <div className="hud-actions hud-actions--dense">
-                <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch rocket</button>
-                <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
-                <button className="hud-button" onClick={() => tick()}>Tick now</button>
-              </div>
-            </div>
-          </section>
-
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Build Library</h2>
-              <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
-            </div>
-            <div className="hud-actions hud-actions--dense">
-              {([
-                ['extractor', 'Extractor'],
-                ['conveyor', 'Conveyor'],
-                ['factory', 'Factory'],
-                ['storage', 'Storage'],
-              ] as const).map(([kind, label]) => (
-                <button
-                  key={kind}
-                  className={`hud-button ${buildPalette === kind ? 'primary' : ''}`}
-                  onClick={() => setBuildPalette(kind)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="hud-library-header">
-              <div>
-                <span className="hud-muted">Active category</span>
-                <div className="hud-library-title">{paletteLabel(buildPalette)}</div>
-              </div>
-              <div className="hud-muted">{buildableOptions.length} buildable{lockedBuildCount > 0 ? ` · ${lockedBuildCount} locked` : ''}</div>
-            </div>
-            <div className="hud-panel-scroll hud-panel-scroll--grow">
-              <div className="hud-library-scroll">
-                <div className="hud-chip-list">
-                  {buildableOptions.length === 0 ? (
-                    <div className="hud-empty-state">
-                      <strong>No buildable stations in this palette.</strong>
-                      <span>Open Help to see which tiered resources you need to stock next.</span>
-                    </div>
-                  ) : (
-                    buildableOptions.map(option => (
-                      <button
-                        key={option.id}
-                        className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
-                        onClick={() => setSelectedBuildTransitionId(option.id)}
-                        title={option.name}
-                      >
-                        <span>{option.name}</span>
-                        <small>{option.id}</small>
-                        <small>{formatBuildCost(option.transition, placeMetaById)}</small>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-            <p className="hud-muted hud-panel-note">
-              Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name : 'the selected build'}.
-            </p>
-            <p className="hud-muted hud-panel-note">
-              {selectedBuildCell
-                ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
-                : hoveredBuildCell
-                  ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
-                  : 'Select a grid cell to inspect.'}
-            </p>
-          </section>
-        </aside>
-
         <section className="panel-surface panel-dark hud-viewport">
           <div className="panel-header panel-header--dark">
             <h2>Factory Grid</h2>
@@ -433,65 +448,42 @@ function App() {
           </div>
         </section>
 
-        <aside className="hud-sidebar hud-sidebar--right">
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Stations</h2>
-              <span className="hud-badge">Placement</span>
+        <section className="panel-surface panel-dark hud-panel hud-stations-panel">
+          <div className="panel-header panel-header--dark">
+            <h2>Stations</h2>
+            <span className="hud-badge">Placement</span>
+          </div>
+          <div className="hud-stack hud-stack--fill">
+            <div className="hud-row">
+              <select className="hud-select hud-select-wide" value={effectiveSelectedStationId} onChange={e => setSelectedStationId(e.target.value)}>
+                {stationOptions.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.id} — {option.name}
+                  </option>
+                ))}
+              </select>
+              <button className="hud-button primary" disabled={!effectiveSelectedStationId} onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
             </div>
-            <div className="hud-stack hud-stack--fill">
-              <div className="hud-row">
-                <select className="hud-select hud-select-wide" value={effectiveSelectedStationId} onChange={e => setSelectedStationId(e.target.value)}>
-                  {stationOptions.map(option => (
-                    <option key={option.id} value={option.id}>
-                      {option.id} — {option.name}
-                    </option>
-                  ))}
-                </select>
-                <button className="hud-button primary" disabled={!effectiveSelectedStationId} onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
-              </div>
-              {activeStationOption ? (
-                <p className="hud-muted hud-panel-note">Placement cost: {formatBuildCost(activeStationOption.transition, placeMetaById)}</p>
-              ) : (
-                <p className="hud-muted hud-panel-note">Stock more resources to unlock another station.</p>
-              )}
-              <div className="hud-panel-scroll hud-panel-scroll--grow">
-                <div className="hud-chip-list compact">
-                  {stations.length === 0 ? (
-                    <span className="hud-muted">No stations placed.</span>
-                  ) : (
-                    stations.map(s => (
-                      <button key={s.id} className="hud-chip" onClick={() => removeStation(s.id)} title="Remove station">
-                        {s.id} · {s.transitionId} @({s.x},{s.y})
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Tokens</h2>
-              <span className="hud-badge">Non-zero</span>
-            </div>
+            {activeStationOption ? (
+              <p className="hud-muted hud-panel-note">Placement cost: {formatBuildCost(activeStationOption.transition, placeMetaById)}</p>
+            ) : (
+              <p className="hud-muted hud-panel-note">Stock more resources to unlock another station.</p>
+            )}
             <div className="hud-panel-scroll hud-panel-scroll--grow">
-              {tokenEntries.length === 0 ? (
-                <p className="hud-muted">No active tokens.</p>
-              ) : (
-                <div className="token-grid">
-                  {tokenEntries.map(([key, value]) => (
-                    <div key={key} className="token-card">
-                      <span>{key}</span>
-                      <strong>{value}</strong>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="hud-chip-list compact">
+                {stations.length === 0 ? (
+                  <span className="hud-muted">No stations placed.</span>
+                ) : (
+                  stations.map(s => (
+                    <button key={s.id} className="hud-chip" onClick={() => removeStation(s.id)} title="Remove station">
+                      {s.id} · {s.transitionId} @({s.x},{s.y})
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
-          </section>
-        </aside>
+          </div>
+        </section>
       </main>
     </div>
   )
