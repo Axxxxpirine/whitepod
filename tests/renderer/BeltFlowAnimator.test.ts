@@ -256,7 +256,7 @@ describe('BeltFlowAnimator', () => {
 
   it('renders moving sprites for one connected conveyor component', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -281,7 +281,7 @@ describe('BeltFlowAnimator', () => {
 
   it('moves the sprite continuously toward destination on a straight eastbound belt', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -315,7 +315,7 @@ describe('BeltFlowAnimator', () => {
 
   it('respawns at source after wrapping the full component path', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -352,7 +352,7 @@ describe('BeltFlowAnimator', () => {
 
   it('hides sprites when no belt in component has active resource flow', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
 
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
     const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 6, y: 1 })!;
@@ -374,8 +374,8 @@ describe('BeltFlowAnimator', () => {
 
   it('increments texture index on cycle wrap when multiple resources flow', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
@@ -410,8 +410,8 @@ describe('BeltFlowAnimator', () => {
     const component = Array.from(internals(animator).flowComponents.values())
       .find((c) => c.resourceTypes.length > 1);
     if (!component) throw new Error('expected flow component');
-    expect(component.resourceTypes).toContain(ResourceType.Coal);
-    expect(component.resourceTypes).toContain(ResourceType.IronOre);
+    expect(component.resourceTypes).toContain(ResourceType.Regolith);
+    expect(component.resourceTypes).toContain(ResourceType.Hydrogen);
 
     const initialTextureIndex = component.textureIndex;
     component.phase = component.pathLength - 0.1;
@@ -424,8 +424,8 @@ describe('BeltFlowAnimator', () => {
 
   it('keeps deterministic path ordering for merge topology across rebuilds', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
@@ -472,8 +472,8 @@ describe('BeltFlowAnimator', () => {
 
   it('increases visible asset count when throughput increases on the same line', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
