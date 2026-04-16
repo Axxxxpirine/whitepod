@@ -234,7 +234,8 @@ function isPersistedViewStateV3(value: unknown): value is PersistedViewStateV3 {
         value.selectedBotProfileId === 'explorer' ||
         value.selectedBotProfileId === 'balanced' ||
         value.selectedBotProfileId === 'logistics' ||
-        value.selectedBotProfileId === 'speedrun') &&
+        value.selectedBotProfileId === 'speedrun' ||
+        value.selectedBotProfileId === 'circuit') &&
     typeof value.seedInput === 'string'
   );
 }

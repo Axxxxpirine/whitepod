@@ -4,6 +4,7 @@ import { ExplorerBot } from './ExplorerBot';
 import { BalancedBot } from './BalancedBot';
 import { LogisticsBot } from './LogisticsBot';
 import { SpeedrunBot } from './SpeedrunBot';
+import { CircuitBot } from './CircuitBot';
 import type { BotFactoryArgs, BotProfileDefinition, BotProfileId } from './botTypes';
 
 export const DEFAULT_BOT_PROFILE_ID: BotProfileId = 'greedy';
@@ -44,6 +45,12 @@ export const BOT_PROFILES: readonly BotProfileDefinition[] = [
     label: 'Speedrun',
     description: 'Fast early expansion with minimal overhead.',
     create: (args: BotFactoryArgs) => new SpeedrunBot(args.engine, args.onStatusChange),
+  },
+  {
+    id: 'circuit',
+    label: 'Circuit',
+    description: 'Circuit-board style layout with spaced modules and belt routing.',
+    create: (args: BotFactoryArgs) => new CircuitBot(args.engine, args.onStatusChange),
   },
 ] as const;
 
