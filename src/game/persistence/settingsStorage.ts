@@ -1,3 +1,5 @@
+import { getLocalStorage } from './browserStorage';
+
 const SETTINGS_STORAGE_KEY = 'whitepod:settings:v1';
 const SETTINGS_VERSION = 1;
 
@@ -15,17 +17,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
 };
 
 function getStorage(): Storage | null {
-  if (typeof window === 'undefined') return null;
-  const storage = window.localStorage;
-  if (
-    !storage ||
-    typeof storage.getItem !== 'function' ||
-    typeof storage.setItem !== 'function' ||
-    typeof storage.removeItem !== 'function'
-  ) {
-    return null;
-  }
-  return storage;
+  return getLocalStorage();
 }
 
 function clampMusicVolume(value: number): number {

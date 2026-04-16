@@ -1,6 +1,7 @@
 import { GRID_SIZE } from '@/game/constants';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
 import { Direction, type SelectedTool } from '@/game/types';
+import { getLocalStorage } from './browserStorage';
 
 export const WORLD_STORAGE_KEY = 'whitepod:session:world:v3';
 export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
@@ -64,22 +65,6 @@ interface LoadedSession {
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
   readonly idleSidecar: IdleSidecar | null;
-}
-
-function isStorageLike(value: unknown): value is Storage {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Storage).getItem === 'function' &&
-    typeof (value as Storage).setItem === 'function' &&
-    typeof (value as Storage).removeItem === 'function'
-  );
-}
-
-function getLocalStorage(): Storage | null {
-  if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.localStorage)) return window.localStorage;
-  return null;
 }
 
 function getWorldStorage(): Storage | null {
