@@ -1,4 +1,6 @@
 import { useGameStore } from '@/store/game-store'
+import { AssetImage } from './AssetImage'
+import { stationCandidates } from '@/render/whitepod-assets'
 
 function formatCell(cell: { x: number; y: number } | null): string {
   return cell ? `${cell.x}, ${cell.y}` : '-'
@@ -18,6 +20,19 @@ export function RuntimeSelectionPanel() {
         Selection
       </div>
       <div className="space-y-1 text-xs text-white/85">
+        <div className="mb-2 flex items-center gap-2">
+          <AssetImage
+            key={selectedBuildTransitionId ?? 'recipe__preview'}
+            candidates={stationCandidates(selectedBuildTransitionId ?? 'recipe__preview', 'card')}
+            alt=""
+            className="h-12 w-12 rounded-lg border border-white/10 bg-black/30 p-1"
+            imageClassName="h-full w-full object-contain"
+          />
+          <div className="min-w-0">
+            <div className="truncate font-medium text-white/90">{selectedBuildTransitionId ?? 'No blueprint'}</div>
+            <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Selected build</div>
+          </div>
+        </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-white/50">Cell</span>
           <span className="font-mono">{formatCell(selectedBuildCell ?? hoveredBuildCell)}</span>

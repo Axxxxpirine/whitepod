@@ -1,17 +1,13 @@
 #!/bin/sh
 set -eu
 
-mkdir -p public/assets/tiles public/assets/icons public/assets/cards
-mkdir -p public/assets/fallbacks
+mkdir -p public/assets/raw
 
 cat > public/assets/README.md <<'EOF'
 # Whitepod Assets
 
-Generated assets live here as individual files plus a manifest:
-- `tiles/`
-- `icons/`
-- `cards/`
-- `fallbacks/`
+Generated assets live here as copied source images plus a manifest:
+- `raw/`
 - `manifest.json`
 - `build-report.json`
 EOF

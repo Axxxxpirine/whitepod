@@ -1,21 +1,10 @@
 import type { ButtonHTMLAttributes } from 'react'
+import { AssetImage } from './AssetImage'
+import { uiIconCandidates } from '@/render/whitepod-assets'
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: 'gear'
   label: string
-}
-
-function GearIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current" strokeWidth="1.8">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.53 3.18a1.5 1.5 0 0 1 2.94 0l.2.9a1.5 1.5 0 0 0 2.08 1.03l.83-.41a1.5 1.5 0 0 1 2.08 2.08l-.41.83a1.5 1.5 0 0 0 1.03 2.08l.9.2a1.5 1.5 0 0 1 0 2.94l-.9.2a1.5 1.5 0 0 0-1.03 2.08l.41.83a1.5 1.5 0 0 1-2.08 2.08l-.83-.41a1.5 1.5 0 0 0-2.08 1.03l-.2.9a1.5 1.5 0 0 1-2.94 0l-.2-.9a1.5 1.5 0 0 0-2.08-1.03l-.83.41a1.5 1.5 0 0 1-2.08-2.08l.41-.83a1.5 1.5 0 0 0-1.03-2.08l-.9-.2a1.5 1.5 0 0 1 0-2.94l.9-.2a1.5 1.5 0 0 0 1.03-2.08l-.41-.83A1.5 1.5 0 0 1 7.42 4.7l.83.41a1.5 1.5 0 0 0 2.08-1.03z"
-      />
-      <circle cx="12" cy="12" r="3.2" />
-    </svg>
-  )
 }
 
 export function IconButton({ icon, label, className = '', type = 'button', ...props }: IconButtonProps) {
@@ -27,7 +16,9 @@ export function IconButton({ icon, label, className = '', type = 'button', ...pr
       {...props}
     >
       <span className="sr-only">{label}</span>
-      {icon === 'gear' ? <GearIcon /> : null}
+      {icon === 'gear' ? (
+        <AssetImage candidates={uiIconCandidates('settings')} alt="" className="h-5 w-5" imageClassName="h-5 w-5 object-contain" />
+      ) : null}
     </button>
   )
 }

@@ -6,6 +6,8 @@ import {
   getStationBuildCost,
 } from '@/core/build-planning'
 import type { LunarChemistryMetadata, Transition } from '@/core/types'
+import { AssetImage } from '@/components/runtime/AssetImage'
+import { resourceCandidates, stationCandidates } from '@/render/whitepod-assets'
 
 interface TierGuideModalProps {
   open: boolean
@@ -59,6 +61,11 @@ export function TierGuideModal({ open, metadata, transitions, onClose }: TierGui
         <div className="grid min-h-0 gap-4 overflow-auto px-5 py-4 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="space-y-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4">
             <h3 className="text-sm font-semibold text-white">Build loop</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <AssetImage candidates={resourceCandidates('lunar_hydrogen', 'card')} alt="Hydrogen" className="rounded-xl border border-white/10 bg-black/20 p-2" imageClassName="h-full w-full object-contain" />
+              <AssetImage candidates={resourceCandidates('lunar_oxygen', 'card')} alt="Oxygen" className="rounded-xl border border-white/10 bg-black/20 p-2" imageClassName="h-full w-full object-contain" />
+              <AssetImage candidates={stationCandidates('recipe__rocket_fuel', 'card')} alt="Rocket fuel" className="rounded-xl border border-white/10 bg-black/20 p-2" imageClassName="h-full w-full object-contain" />
+            </div>
             <ol className="space-y-3 text-sm text-white/70">
               <li>1. For tier 0, place extractors near deposits.</li>
               <li>2. Add the matching conveyor, then storage, so the resource reaches stock.</li>

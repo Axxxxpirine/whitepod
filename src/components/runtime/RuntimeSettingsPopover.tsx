@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { IconButton } from './IconButton'
+import { AssetImage } from './AssetImage'
+import { uiIconCandidates } from '@/render/whitepod-assets'
 
 interface RuntimeSettingsPopoverProps {
   autoTickEnabled: boolean
@@ -56,7 +58,10 @@ export function RuntimeSettingsPopover({
             onClick={onToggleAutoTick}
             className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
           >
-            <span>Auto tick</span>
+            <span className="flex items-center gap-2">
+              <AssetImage candidates={uiIconCandidates('step')} alt="" className="h-4 w-4" imageClassName="h-4 w-4 object-contain" />
+              Auto tick
+            </span>
             <span className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${autoTickEnabled ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/10 text-white/40'}`}>
               {autoTickEnabled ? 'ON' : 'OFF'}
             </span>
@@ -67,7 +72,10 @@ export function RuntimeSettingsPopover({
             onClick={onToggleDemoMode}
             className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
           >
-            <span>Simulation mode</span>
+            <span className="flex items-center gap-2">
+              <AssetImage candidates={uiIconCandidates('play')} alt="" className="h-4 w-4" imageClassName="h-4 w-4 object-contain" />
+              Simulation mode
+            </span>
             <span className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${demoModeEnabled ? 'bg-sky-400/20 text-sky-400' : 'bg-white/10 text-white/40'}`}>
               {demoModeEnabled ? 'ON' : 'OFF'}
             </span>
@@ -78,7 +86,10 @@ export function RuntimeSettingsPopover({
             onClick={onToggleDemonstration}
             className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
           >
-            <span>{demonstrationEnabled ? 'Stop demonstration' : 'Start demonstration'}</span>
+            <span className="flex items-center gap-2">
+              <AssetImage candidates={uiIconCandidates(demonstrationEnabled ? 'pause' : 'play')} alt="" className="h-4 w-4" imageClassName="h-4 w-4 object-contain" />
+              {demonstrationEnabled ? 'Stop demonstration' : 'Start demonstration'}
+            </span>
             <span className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${demonstrationEnabled ? 'bg-sky-400/20 text-sky-400' : 'bg-white/10 text-white/40'}`}>
               {demonstrationEnabled ? 'ON' : 'OFF'}
             </span>
@@ -116,7 +127,10 @@ export function RuntimeSettingsPopover({
             }}
             className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
           >
-            <span>New game</span>
+            <span className="flex items-center gap-2">
+              <AssetImage candidates={uiIconCandidates('load')} alt="" className="h-4 w-4" imageClassName="h-4 w-4 object-contain" />
+              New game
+            </span>
             <span className="font-mono text-[10px] text-white/40">↻</span>
           </button>
 
@@ -130,6 +144,7 @@ export function RuntimeSettingsPopover({
             }}
             className="flex w-full items-center rounded-lg px-2 py-1.5 text-xs text-red-400/80 transition-colors hover:bg-red-400/10 hover:text-red-400"
           >
+            <AssetImage candidates={uiIconCandidates('delete')} alt="" className="mr-2 h-4 w-4" imageClassName="h-4 w-4 object-contain" />
             Reset save
           </button>
         </div>

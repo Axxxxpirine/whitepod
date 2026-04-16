@@ -1,22 +1,9 @@
-import { Application, Container, Graphics, Sprite, Text } from 'pixi.js'
+import { Application, Assets, Container, Graphics, Sprite, Text, type Texture } from 'pixi.js'
 import type { PixiExport } from '@/core/types'
 import { GRID_CELL_SIZE, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import type { AssetManifest } from './asset-manifest'
 import { TextureRepository } from './texture-repository'
-
-const DEPOSIT_COLORS: Record<string, number> = {
-  lunar_helium3: 0x67e8f9,
-  lunar_hydrogen: 0x60a5fa,
-  lunar_oxygen: 0x34d399,
-  lunar_regolith: 0xf59e0b,
-}
-
-const STATION_COLORS: Record<string, number> = {
-  extract: 0xfb923c,
-  convey: 0xa78bfa,
-  recipe: 0xf472b6,
-  store: 0x22d3ee,
-}
+import { assetSrc } from './whitepod-assets'
 
 export class PixiRuntime {
   private app: Application | null = null
@@ -25,6 +12,7 @@ export class PixiRuntime {
   private overlayLayer: Container | null = null
   private selectionLayer: Container | null = null
   private hoverLayer: Container | null = null
+  private surfaceTextures: Texture[] = []
   private textureRepository = new TextureRepository()
   private mountedNode: HTMLElement | null = null
 
@@ -46,6 +34,12 @@ export class PixiRuntime {
     this.hoverLayer = new Container()
     this.root.addChild(this.worldLayer, this.selectionLayer, this.hoverLayer, this.overlayLayer)
     this.app.stage.addChild(this.root)
+    this.surfaceTextures = await Promise.all([
+      Assets.load(assetSrc('terrain_lunar_surface_01.png')),
+      Assets.load(assetSrc('terrain_lunar_surface_02.png')),
+      Assets.load(assetSrc('terrain_lunar_surface_03.png')),
+      Assets.load(assetSrc('terrain_lunar_surface_04.png')),
+    ])
     if (this.mountedNode) this.mount(this.mountedNode)
   }
 
@@ -74,23 +68,23 @@ export class PixiRuntime {
     if (!this.worldLayer) return
 
     for (const cell of exportData.grid.cells) {
-      const graphic = new Graphics()
-      const fill = cell.kind === 'deposit'
-        ? DEPOSIT_COLORS[cell.resourceId ?? ''] ?? 0x4f46e5
-        : STATION_COLORS[this.stationKind(cell.transitionId)] ?? 0x94a3b8
+      const surfaceTexture = this.surfaceTextures[(cell.x + cell.y) % this.surfaceTextures.length]
+      const backdrop = new Sprite(surfaceTexture)
+      backdrop.x = cell.x * GRID_CELL_SIZE
+      backdrop.y = cell.y * GRID_CELL_SIZE
+      backdrop.width = GRID_CELL_SIZE
+      backdrop.height = GRID_CELL_SIZE
+      this.worldLayer.addChild(backdrop)
 
-      const base = ((cell.x + cell.y) % 2 === 0) ? 0x162033 : 0x111827
-      graphic.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).fill({ color: base, alpha: 1 })
-      graphic.rect(2, 2, GRID_CELL_SIZE - 5, GRID_CELL_SIZE - 5).fill({ color: fill, alpha: cell.kind === 'deposit' ? 0.92 : 0.82 })
-      graphic.stroke({ width: 1, color: 0xffffff, alpha: cell.kind === 'deposit' ? 0.16 : 0.1 })
-      graphic.x = cell.x * GRID_CELL_SIZE
-      graphic.y = cell.y * GRID_CELL_SIZE
-      this.worldLayer.addChild(graphic)
+      const overlay = new Graphics()
+      overlay.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).stroke({ width: 1, color: 0xffffff, alpha: 0.08 })
+      overlay.x = cell.x * GRID_CELL_SIZE
+      overlay.y = cell.y * GRID_CELL_SIZE
+      this.worldLayer.addChild(overlay)
     }
 
     for (const deposit of exportData.grid.deposits) {
-      const sprite = new Sprite(this.textureRepository.getByBaseId(deposit.resourceId, 'icon') ?? undefined)
-      sprite.tint = DEPOSIT_COLORS[deposit.resourceId] ?? 0xffffff
+      const sprite = new Sprite(this.textureRepository.getByBaseId(deposit.resourceId, 'tile') ?? undefined)
       sprite.x = deposit.x * GRID_CELL_SIZE + 2
       sprite.y = deposit.y * GRID_CELL_SIZE + 2
       sprite.width = GRID_CELL_SIZE - 4
@@ -101,7 +95,6 @@ export class PixiRuntime {
     for (const station of exportData.grid.stations) {
       const texture = this.textureRepository.getByBaseId(this.stationBaseId(station.transitionId), 'tile')
       const sprite = new Sprite(texture ?? undefined)
-      sprite.tint = STATION_COLORS[this.stationKind(station.transitionId)] ?? 0xffffff
       sprite.x = station.x * GRID_CELL_SIZE
       sprite.y = station.y * GRID_CELL_SIZE
       sprite.width = GRID_CELL_SIZE
@@ -111,19 +104,7 @@ export class PixiRuntime {
   }
 
   private stationBaseId(transitionId: string): string {
-    if (transitionId.startsWith('extract__')) return 'extractor'
-    if (transitionId.startsWith('convey__')) return 'conveyor'
-    if (transitionId.startsWith('recipe__')) return 'factory'
-    if (transitionId.startsWith('store__')) return 'storage'
-    return 'fallback_station'
-  }
-
-  private stationKind(transitionId?: string): 'extract' | 'convey' | 'recipe' | 'store' {
-    if (!transitionId) return 'recipe'
-    if (transitionId.startsWith('extract__')) return 'extract'
-    if (transitionId.startsWith('convey__')) return 'convey'
-    if (transitionId.startsWith('recipe__')) return 'recipe'
-    return 'store'
+    return transitionId
   }
 
   private renderTokens(layerTokens: PixiExport['layerTokens']): void {

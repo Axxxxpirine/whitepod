@@ -12,12 +12,14 @@ import { LaunchCongratsModal } from '@/components/runtime/LaunchCongratsModal'
 import { RuntimeSelectionPanel } from '@/components/runtime/RuntimeSelectionPanel'
 import { RuntimeSettingsPopover } from '@/components/runtime/RuntimeSettingsPopover'
 import { RuntimeToolIndicator } from '@/components/runtime/RuntimeToolIndicator'
+import { AssetImage } from '@/components/runtime/AssetImage'
 import type { Transition } from '@/core/types'
 import type { ResourceId } from '@/core/grid/manager'
 import { GRID_CELL_SIZE, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import { PixiCanvas } from '@/components/runtime/PixiCanvas'
 import { GameLoop } from '@/engine/runtime/game-loop'
 import { useGameStore } from '@/store/game-store'
+import { resourceCandidates, stationCandidates, uiIconCandidates } from '@/render/whitepod-assets'
 import './App.css'
 
 const PIXI_CANVAS_BASE_WIDTH = GRID_WIDTH * GRID_CELL_SIZE
@@ -255,31 +257,43 @@ function App() {
             <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
           </div>
           <div className="hud-actions">
-            <button className="hud-button" onClick={() => setHelpOpen(true)}>Help</button>
-              <button
-                className={`hud-button ${demonstrationEnabled ? 'primary' : ''}`}
-                onClick={() => {
-                  const nextEnabled = !demonstrationEnabled
-                  setDemonstrationEnabled(nextEnabled)
+            <button className="hud-button" onClick={() => setHelpOpen(true)}>
+              <span className="hud-button-icon"><AssetImage key="help-info" candidates={uiIconCandidates('info')} alt="" imageClassName="hud-button-icon-img" /></span>
+              Help
+            </button>
+            <button
+              className={`hud-button ${demonstrationEnabled ? 'primary' : ''}`}
+              onClick={() => {
+                const nextEnabled = !demonstrationEnabled
+                setDemonstrationEnabled(nextEnabled)
                 if (nextEnabled) setAutoTickEnabled(true)
               }}
             >
+              <span className="hud-button-icon">
+                <AssetImage key={demonstrationEnabled ? 'pause' : 'play'} candidates={uiIconCandidates(demonstrationEnabled ? 'pause' : 'play')} alt="" imageClassName="hud-button-icon-img" />
+              </span>
               {demonstrationEnabled ? 'Stop demonstration' : 'Demonstration'}
-              </button>
-              <button
-                className={`hud-button ${demoModeEnabled ? 'primary' : ''}`}
-                onClick={() => setDemoModeEnabled(!demoModeEnabled)}
-              >
-                {demoModeEnabled ? 'Stop simulation mode' : 'Simulation mode'}
-              </button>
-              <button
-                className="hud-button primary"
-                onClick={() => {
+            </button>
+            <button
+              className={`hud-button ${demoModeEnabled ? 'primary' : ''}`}
+              onClick={() => setDemoModeEnabled(!demoModeEnabled)}
+            >
+              <span className="hud-button-icon">
+                <AssetImage key="simulation-step" candidates={uiIconCandidates('step')} alt="" imageClassName="hud-button-icon-img" />
+              </span>
+              {demoModeEnabled ? 'Stop simulation mode' : 'Simulation mode'}
+            </button>
+            <button
+              className="hud-button primary"
+              onClick={() => {
                 setAutoTickEnabled(true)
                 requestSystemTransition('init')
               }}
               disabled={phase !== 'init'}
             >
+              <span className="hud-button-icon">
+                <AssetImage key="run-simulation" candidates={uiIconCandidates('play')} alt="" imageClassName="hud-button-icon-img" />
+              </span>
               Run simulation
             </button>
           </div>
@@ -303,14 +317,27 @@ function App() {
                 if (!Number.isInteger(nextSeed)) return
                 newGame(nextSeed)
               }}>
+                <span className="hud-button-icon"><AssetImage candidates={uiIconCandidates('load')} alt="" imageClassName="hud-button-icon-img" /></span>
                 New game
               </button>
-              <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
+              <button className="hud-button" onClick={() => resetSave()}>
+                <span className="hud-button-icon"><AssetImage candidates={uiIconCandidates('delete')} alt="" imageClassName="hud-button-icon-img" /></span>
+                Reset save
+              </button>
             </div>
             <div className="hud-actions hud-actions--dense">
-              <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch rocket</button>
-              <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
-              <button className="hud-button" onClick={() => tick()}>Tick now</button>
+              <button className="hud-button" onClick={() => requestSystemTransition('launch')}>
+                <span className="hud-button-icon"><AssetImage candidates={uiIconCandidates('play')} alt="" imageClassName="hud-button-icon-img" /></span>
+                Launch rocket
+              </button>
+              <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>
+                <span className="hud-button-icon"><AssetImage candidates={uiIconCandidates('pause')} alt="" imageClassName="hud-button-icon-img" /></span>
+                Terminate
+              </button>
+              <button className="hud-button" onClick={() => tick()}>
+                <span className="hud-button-icon"><AssetImage candidates={uiIconCandidates('step')} alt="" imageClassName="hud-button-icon-img" /></span>
+                Tick now
+              </button>
             </div>
           </div>
         </section>
@@ -334,6 +361,7 @@ function App() {
           <div className="token-grid token-grid--compact">
             {resourceTotals.map(resource => (
               <div key={resource.resourceId} className="hud-resource-pill">
+                <AssetImage candidates={resourceCandidates(resource.resourceId, 'icon')} alt="" className="hud-resource-art" imageClassName="hud-resource-art-img" />
                 <span>{resource.resourceId.replace('lunar_', '')}</span>
                 <strong>{resource.count}</strong>
               </div>
@@ -396,6 +424,7 @@ function App() {
                     onClick={() => setSelectedBuildTransitionId(option.id)}
                     title={option.name}
                   >
+                    <AssetImage candidates={stationCandidates(option.id, 'card')} alt="" className="hud-chip-art" imageClassName="hud-chip-art-img" />
                     <span>{option.name}</span>
                     <small>{option.id}</small>
                     <small>{formatBuildCost(option.transition, placeMetaById)}</small>
@@ -503,6 +532,7 @@ function App() {
                 ) : (
                   stations.map(s => (
                     <button key={s.id} className="hud-chip" onClick={() => removeStation(s.id)} title="Remove station">
+                      <AssetImage candidates={stationCandidates(s.transitionId, 'card')} alt="" className="hud-chip-art" imageClassName="hud-chip-art-img" />
                       {s.id} · {s.transitionId} @({s.x},{s.y})
                     </button>
                   ))
