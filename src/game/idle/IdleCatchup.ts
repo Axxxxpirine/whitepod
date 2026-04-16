@@ -6,37 +6,24 @@ export interface IdleCatchupResult {
   resourceDelta: ResourceStock;
 }
 
-const DEFAULT_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
+export const DEFAULT_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 const DEFAULT_CATCHUP_STEP_SECONDS = 1;
-
-const idleLastSavedAtByEngine = new WeakMap<GameEngine, number | null>();
 
 function sanitizeFiniteNonNegative(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return value;
 }
 
-export function setIdleLastSavedAtMs(engine: GameEngine, lastSavedAtMs: number | null): void {
-  if (lastSavedAtMs === null) {
-    idleLastSavedAtByEngine.set(engine, null);
-    return;
-  }
-  idleLastSavedAtByEngine.set(engine, Number.isFinite(lastSavedAtMs) ? lastSavedAtMs : null);
-}
-
-export function getIdleLastSavedAtMs(engine: GameEngine): number | null {
-  return idleLastSavedAtByEngine.get(engine) ?? null;
-}
-
-export function computeElapsedMs(nowMs: number, lastSavedAtMs: number | null, capMs: number = DEFAULT_OFFLINE_CAP_MS): {
-  elapsedMs: number;
-  capped: boolean;
-} {
-  if (!Number.isFinite(nowMs) || lastSavedAtMs === null || !Number.isFinite(lastSavedAtMs)) {
+export function computeElapsedMs(
+  nowMs: number,
+  pausedAtMs: number | null,
+  capMs: number = DEFAULT_OFFLINE_CAP_MS,
+): { elapsedMs: number; capped: boolean } {
+  if (!Number.isFinite(nowMs) || pausedAtMs === null || !Number.isFinite(pausedAtMs)) {
     return { elapsedMs: 0, capped: false };
   }
 
-  const rawElapsedMs = Math.max(0, nowMs - lastSavedAtMs);
+  const rawElapsedMs = Math.max(0, nowMs - pausedAtMs);
   const safeCapMs = sanitizeFiniteNonNegative(capMs);
   if (safeCapMs <= 0) {
     return { elapsedMs: rawElapsedMs, capped: false };
@@ -87,15 +74,19 @@ export function buildIdleSummary(
   };
 }
 
-export function applyIdleCatchup(engine: GameEngine, nowMs: number): IdleCatchupResult {
-  const before = engine.getResourceCounts();
-  const { elapsedMs, capped } = computeElapsedMs(nowMs, getIdleLastSavedAtMs(engine));
-  const appliedSeconds = runExactCatchup(engine, elapsedMs / 1000);
-  const after = engine.getResourceCounts();
+export function applyIdleCatchup(
+  engine: GameEngine,
+  elapsedMs: number,
+  capMs: number = DEFAULT_OFFLINE_CAP_MS,
+): IdleCatchupResult {
+  const safeCapMs = sanitizeFiniteNonNegative(capMs);
+  const rawElapsedMs = Number.isFinite(elapsedMs) && elapsedMs > 0 ? elapsedMs : 0;
+  const cappedElapsedMs = safeCapMs > 0 ? Math.min(rawElapsedMs, safeCapMs) : rawElapsedMs;
+  const capped = safeCapMs > 0 && rawElapsedMs > safeCapMs;
 
-  if (Number.isFinite(nowMs)) {
-    setIdleLastSavedAtMs(engine, nowMs);
-  }
+  const before = engine.getResourceCounts();
+  const appliedSeconds = runExactCatchup(engine, cappedElapsedMs / 1000);
+  const after = engine.getResourceCounts();
 
   return buildIdleSummary(before, after, appliedSeconds, capped);
 }

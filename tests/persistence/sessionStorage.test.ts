@@ -1,29 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  IDLE_SIDECAR_KEY,
   LEGACY_WORLD_STORAGE_KEY,
   VIEW_STORAGE_KEY,
   WORLD_STORAGE_KEY,
+  clearIdleSidecar,
   clearPersistedSession,
   loadPersistedSession,
+  readIdleSidecar,
   saveViewSession,
   saveWorldSession,
+  writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
-
-function getWorldStorageForTest(): Storage {
-  const local = window.localStorage as unknown;
-  if (
-    typeof local === 'object' &&
-    local !== null &&
-    typeof (local as Storage).setItem === 'function' &&
-    typeof (local as Storage).getItem === 'function' &&
-    typeof (local as Storage).removeItem === 'function'
-  ) {
-    return local as Storage;
-  }
-  return window.sessionStorage;
-}
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
@@ -39,9 +29,10 @@ describe('sessionStorage persistence', () => {
   beforeEach(() => {
     clearPersistedSession();
     window.sessionStorage.clear();
+    window.localStorage.clear();
   });
 
-  it('saves and reloads the world and view state', () => {
+  it('saves and reloads the world and view state from sessionStorage', () => {
     const engine = makeEngine();
     engine.viewport.pan(120, 40);
     engine.viewport.zoomAt(320, 240, 1.3);
@@ -52,6 +43,9 @@ describe('sessionStorage persistence', () => {
       selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
       sessionId: 'session-a',
     });
+
+    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
 
     const loaded = loadPersistedSession(640, 480);
 
@@ -99,32 +93,88 @@ describe('sessionStorage persistence', () => {
   });
 
   it('purges invalid world payloads and returns null', () => {
-    const worldStorage = getWorldStorageForTest();
-    worldStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
+    window.sessionStorage.setItem(WORLD_STORAGE_KEY, '{"version":1,"oops":true}');
     window.sessionStorage.setItem(VIEW_STORAGE_KEY, '{"version":1,"oops":true}');
 
     const loaded = loadPersistedSession(640, 480);
 
     expect(loaded).toBeNull();
-    expect(worldStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('migrates a legacy world snapshot from sessionStorage v2 to localStorage v3', () => {
-    const worldStorage = getWorldStorageForTest();
+  it('migrates a legacy v2 sessionStorage world to v3', () => {
     const engine = makeEngine();
-    saveWorldSession(engine, 'session-legacy', 12345);
-    const v3Payload = worldStorage.getItem(WORLD_STORAGE_KEY);
+    saveWorldSession(engine, 'session-legacy');
+    const v3Payload = window.sessionStorage.getItem(WORLD_STORAGE_KEY);
     expect(v3Payload).not.toBeNull();
 
+    window.sessionStorage.removeItem(WORLD_STORAGE_KEY);
     window.sessionStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
-    worldStorage.removeItem(WORLD_STORAGE_KEY);
 
     const loaded = loadPersistedSession(640, 480);
     expect(loaded).not.toBeNull();
     expect(loaded?.sessionId).toBe('session-legacy');
-    expect(loaded?.lastSavedAtMs).toBeTypeOf('number');
-    expect(worldStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
     expect(window.sessionStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
+  });
+
+  it('migrates a PR-era localStorage world payload back into sessionStorage', () => {
+    const engine = makeEngine();
+    saveWorldSession(engine, 'session-from-localstorage');
+    const payload = window.sessionStorage.getItem(WORLD_STORAGE_KEY)!;
+    window.sessionStorage.removeItem(WORLD_STORAGE_KEY);
+    window.localStorage.setItem(WORLD_STORAGE_KEY, payload);
+
+    const loaded = loadPersistedSession(640, 480);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded?.sessionId).toBe('session-from-localstorage');
+    expect(window.sessionStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('idle sidecar', () => {
+  beforeEach(() => {
+    clearPersistedSession();
+    window.sessionStorage.clear();
+    window.localStorage.clear();
+  });
+
+  it('writes, reads, and clears the sidecar in localStorage', () => {
+    writeIdleSidecar('session-x', 1_234_567);
+    expect(window.localStorage.getItem(IDLE_SIDECAR_KEY)).not.toBeNull();
+
+    const sidecar = readIdleSidecar();
+    expect(sidecar).not.toBeNull();
+    expect(sidecar?.sessionId).toBe('session-x');
+    expect(sidecar?.pausedAtWallClockMs).toBe(1_234_567);
+
+    clearIdleSidecar();
+    expect(window.localStorage.getItem(IDLE_SIDECAR_KEY)).toBeNull();
+  });
+
+  it('ignores a sidecar with a mismatched sessionId on load', () => {
+    const engine = makeEngine();
+    saveWorldSession(engine, 'session-owner');
+    writeIdleSidecar('session-different', 99_999);
+
+    const loaded = loadPersistedSession(640, 480);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded?.idleSidecar).toBeNull();
+    expect(window.localStorage.getItem(IDLE_SIDECAR_KEY)).toBeNull();
+  });
+
+  it('returns a matching sidecar on load', () => {
+    const engine = makeEngine();
+    saveWorldSession(engine, 'session-owner');
+    writeIdleSidecar('session-owner', 12_345);
+
+    const loaded = loadPersistedSession(640, 480);
+
+    expect(loaded?.idleSidecar).not.toBeNull();
+    expect(loaded?.idleSidecar?.pausedAtWallClockMs).toBe(12_345);
   });
 });

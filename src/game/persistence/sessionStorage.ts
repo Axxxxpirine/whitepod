@@ -6,10 +6,13 @@ export const WORLD_STORAGE_KEY = 'whitepod:session:world:v3';
 export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
 export const LEGACY_WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
 export const LEGACY_VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
+export const IDLE_SIDECAR_KEY = 'whitepod:idle-sidecar:v1';
+export const LEGACY_LOCALSTORAGE_WORLD_KEY = 'whitepod:session:world:v3';
 
 const WORLD_STORAGE_VERSION = 3;
 const WORLD_IDLE_VERSION = 1;
 const VIEW_STORAGE_VERSION = 2;
+const IDLE_SIDECAR_VERSION = 1;
 const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
 interface PersistedWorldStateV3 {
@@ -25,7 +28,6 @@ interface PersistedWorldStateV3 {
   readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
-  readonly lastSavedAtMs: number;
 }
 
 interface PersistedWorldStateV2 {
@@ -52,11 +54,17 @@ interface PersistedViewState {
   readonly selectedTool: SelectedTool;
 }
 
+export interface IdleSidecar {
+  readonly version: number;
+  readonly sessionId: string;
+  readonly pausedAtWallClockMs: number;
+}
+
 interface LoadedSession {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
-  readonly lastSavedAtMs: number | null;
+  readonly idleSidecar: IdleSidecar | null;
 }
 
 function isStorageLike(value: unknown): value is Storage {
@@ -71,7 +79,6 @@ function isStorageLike(value: unknown): value is Storage {
 
 function getWorldStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.localStorage)) return window.localStorage;
   if (isStorageLike(window.sessionStorage)) return window.sessionStorage;
   return null;
 }
@@ -82,9 +89,9 @@ function getViewStorage(): Storage | null {
   return null;
 }
 
-function getLegacyWorldStorage(): Storage | null {
+function getSidecarStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.sessionStorage)) return window.sessionStorage;
+  if (isStorageLike(window.localStorage)) return window.localStorage;
   return null;
 }
 
@@ -182,8 +189,7 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     isSerializedConnectionRegistry(value.connections) &&
     areEnergyLinksValid(value.energyLinks) &&
     areBatteryChargesValid(value.batteryCharges) &&
-    simulationTimeValid &&
-    isFiniteNumber(value.lastSavedAtMs)
+    simulationTimeValid
   );
 }
 
@@ -218,6 +224,16 @@ function isPersistedViewState(value: unknown): value is PersistedViewState {
   );
 }
 
+function isIdleSidecar(value: unknown): value is IdleSidecar {
+  return (
+    isRecord(value) &&
+    value.version === IDLE_SIDECAR_VERSION &&
+    typeof value.sessionId === 'string' &&
+    value.sessionId.length > 0 &&
+    isFiniteNumber(value.pausedAtWallClockMs)
+  );
+}
+
 function removeViewSession(): void {
   const storage = getViewStorage();
   storage?.removeItem(VIEW_STORAGE_KEY);
@@ -238,12 +254,6 @@ function toSnapshotInput(value: PersistedWorldStateV3 | PersistedWorldStateV2): 
     simulationTime: value.simulationTime,
     batteryCharges: value.batteryCharges,
   };
-}
-
-function toValidLastSavedAtMs(value: number | null | undefined): number | null {
-  if (value === null || value === undefined) return null;
-  if (!Number.isFinite(value)) return null;
-  return value;
 }
 
 function readViewState(): PersistedViewState | null {
@@ -269,6 +279,63 @@ function readViewState(): PersistedViewState | null {
   }
 
   return null;
+}
+
+function migrateLocalStorageWorldToSessionStorage(): void {
+  const sidecarStorage = getSidecarStorage();
+  const worldStorage = getWorldStorage();
+  if (!sidecarStorage || !worldStorage) return;
+
+  const raw = sidecarStorage.getItem(LEGACY_LOCALSTORAGE_WORLD_KEY);
+  if (!raw) return;
+
+  try {
+    if (!worldStorage.getItem(WORLD_STORAGE_KEY)) {
+      const parsed: unknown = JSON.parse(raw);
+      if (isPersistedWorldStateV3(parsed) || isPersistedWorldStateV2(parsed)) {
+        worldStorage.setItem(WORLD_STORAGE_KEY, raw);
+      }
+    }
+  } catch {
+    // fall through — remove the legacy key regardless
+  }
+
+  sidecarStorage.removeItem(LEGACY_LOCALSTORAGE_WORLD_KEY);
+}
+
+export function readIdleSidecar(): IdleSidecar | null {
+  const storage = getSidecarStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(IDLE_SIDECAR_KEY);
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isIdleSidecar(parsed)) return parsed;
+    storage.removeItem(IDLE_SIDECAR_KEY);
+  } catch {
+    storage.removeItem(IDLE_SIDECAR_KEY);
+  }
+  return null;
+}
+
+export function writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number): void {
+  const storage = getSidecarStorage();
+  if (!storage) return;
+  if (!Number.isFinite(pausedAtWallClockMs)) return;
+  const payload: IdleSidecar = {
+    version: IDLE_SIDECAR_VERSION,
+    sessionId,
+    pausedAtWallClockMs,
+  };
+  try {
+    storage.setItem(IDLE_SIDECAR_KEY, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — best effort only
+  }
+}
+
+export function clearIdleSidecar(): void {
+  getSidecarStorage()?.removeItem(IDLE_SIDECAR_KEY);
 }
 
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -301,21 +368,21 @@ export function createSessionId(): string {
 
 export function clearPersistedSession(): void {
   getWorldStorage()?.removeItem(WORLD_STORAGE_KEY);
-  const legacyWorldStorage = getLegacyWorldStorage();
-  legacyWorldStorage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
+  getWorldStorage()?.removeItem(LEGACY_WORLD_STORAGE_KEY);
 
   const viewStorage = getViewStorage();
   viewStorage?.removeItem(VIEW_STORAGE_KEY);
   if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
     viewStorage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
   }
+
+  clearIdleSidecar();
 }
 
-export function saveWorldSession(engine: GameEngine, sessionId: string, nowMs: number = Date.now()): number {
+export function saveWorldSession(engine: GameEngine, sessionId: string): void {
   const storage = getWorldStorage();
-  if (!storage) return nowMs;
+  if (!storage) return;
 
-  const safeNowMs = Number.isFinite(nowMs) ? nowMs : Date.now();
   const snapshot = engine.serializeWorld();
   const payload: PersistedWorldStateV3 = {
     version: WORLD_STORAGE_VERSION,
@@ -330,11 +397,13 @@ export function saveWorldSession(engine: GameEngine, sessionId: string, nowMs: n
     playerStock: snapshot.playerStock,
     simulationTime: snapshot.simulationTime,
     batteryCharges: snapshot.batteryCharges,
-    lastSavedAtMs: safeNowMs,
   };
 
-  storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
-  return safeNowMs;
+  try {
+    storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — drop the save, engine state stays in memory
+  }
 }
 
 export function saveViewSession(args: {
@@ -352,32 +421,40 @@ export function saveViewSession(args: {
     selectedTool: args.selectedTool,
   };
 
-  storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
+  try {
+    storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // best effort
+  }
 }
 
 export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {
-  const worldStorage = getWorldStorage();
-  const legacyWorldStorage = getLegacyWorldStorage();
+  migrateLocalStorageWorldToSessionStorage();
 
-  const rawWorldV3 = worldStorage?.getItem(WORLD_STORAGE_KEY) ?? null;
+  const worldStorage = getWorldStorage();
+  if (!worldStorage) return null;
+
+  const rawWorldV3 = worldStorage.getItem(WORLD_STORAGE_KEY);
 
   let worldState: PersistedWorldStateV3 | PersistedWorldStateV2 | null = null;
-  let isLegacyWorld = false;
 
   if (rawWorldV3) {
     try {
       const parsed: unknown = JSON.parse(rawWorldV3);
-      if (!isPersistedWorldStateV3(parsed)) {
+      if (isPersistedWorldStateV3(parsed)) {
+        worldState = parsed;
+      } else if (isPersistedWorldStateV2(parsed)) {
+        worldState = parsed;
+      } else {
         clearPersistedSession();
         return null;
       }
-      worldState = parsed;
     } catch {
       clearPersistedSession();
       return null;
     }
   } else {
-    const rawLegacy = legacyWorldStorage?.getItem(LEGACY_WORLD_STORAGE_KEY) ?? null;
+    const rawLegacy = worldStorage.getItem(LEGACY_WORLD_STORAGE_KEY);
     if (!rawLegacy) return null;
 
     try {
@@ -387,7 +464,6 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
         return null;
       }
       worldState = parsedLegacy;
-      isLegacyWorld = true;
     } catch {
       clearPersistedSession();
       return null;
@@ -409,34 +485,34 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
 
     const viewState = readViewState();
 
-    if (!viewState || viewState.sessionId !== worldState.sessionId) {
-      if (viewState && viewState.sessionId !== worldState.sessionId) {
-        removeViewSession();
-      }
-    } else {
+    if (viewState && viewState.sessionId === worldState.sessionId) {
       engine.viewport.restore(viewState.viewport);
+    } else if (viewState && viewState.sessionId !== worldState.sessionId) {
+      removeViewSession();
     }
 
-    const loadedSession: LoadedSession = {
+    const sidecar = readIdleSidecar();
+    const idleSidecar = sidecar && sidecar.sessionId === worldState.sessionId ? sidecar : null;
+    if (sidecar && !idleSidecar) {
+      clearIdleSidecar();
+    }
+
+    const selectedTool =
+      viewState && viewState.sessionId === worldState.sessionId
+        ? viewState.selectedTool
+        : { kind: 'select' as const };
+
+    if (worldState.version === 2) {
+      saveWorldSession(engine, worldState.sessionId);
+      worldStorage.removeItem(LEGACY_WORLD_STORAGE_KEY);
+    }
+
+    return {
       engine,
-      selectedTool:
-        viewState && viewState.sessionId === worldState.sessionId
-          ? viewState.selectedTool
-          : { kind: 'select' },
+      selectedTool,
       sessionId: worldState.sessionId,
-      lastSavedAtMs:
-        'lastSavedAtMs' in worldState
-          ? toValidLastSavedAtMs(worldState.lastSavedAtMs)
-          : null,
+      idleSidecar,
     };
-
-    if (isLegacyWorld) {
-      const migratedAt = saveWorldSession(engine, worldState.sessionId, Date.now());
-      legacyWorldStorage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
-      return { ...loadedSession, lastSavedAtMs: migratedAt };
-    }
-
-    return loadedSession;
   } catch {
     clearPersistedSession();
     return null;
