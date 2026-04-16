@@ -12,6 +12,7 @@ import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRender
 import { BuildingHighlightRenderer } from '@/game/renderer/BuildingHighlightRenderer';
 import { DayNightOverlayRenderer } from '@/game/renderer/DayNightOverlayRenderer';
 import { FogOfWarRenderer } from '@/game/renderer/FogOfWarRenderer';
+import { AutonomousBot } from '@/game/bot/AutonomousBot';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
@@ -123,6 +124,7 @@ export function GameCanvas() {
     let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let currentEngine: GameEngine | null = null;
+    let autonomousBot: AutonomousBot | null = null;
 
     const init = async () => {
       app = new Application();
@@ -223,6 +225,11 @@ export function GameCanvas() {
         devEngine.scenarios = createDevScenarioApi(engine);
         (window as unknown as { engine: DevEngine }).engine = devEngine;
       }
+
+      autonomousBot = new AutonomousBot(engine, (bot) => {
+        useGameStore.getState().setBot(bot);
+      });
+      autonomousBot.start();
 
       const MIN_IDLE_MS = 1000;
 
@@ -491,6 +498,7 @@ export function GameCanvas() {
           worldSaver?.flush();
           viewSaver?.flush();
         }
+        autonomousBot?.stop();
         worldSaver?.cancel();
         viewSaver?.cancel();
         unsubscribeTool?.();

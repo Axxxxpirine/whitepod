@@ -32,6 +32,11 @@ interface GameState {
   pendingEnergyLinkSource: BuildingId | null;
   linkSolarOnPlacement: boolean;
   idleSummary: IdleCatchupResult | null;
+  bot: {
+    active: boolean;
+    phase: string;
+    target: string | null;
+  };
   setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
   setSimulationTime: (value: number) => void;
@@ -50,6 +55,7 @@ interface GameState {
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
   setIdleSummary: (summary: IdleCatchupResult | null) => void;
+  setBot: (bot: Partial<GameState['bot']>) => void;
   activateScenarioSession: (args: {
     engine: GameEngine;
     selectedTool: SelectedTool;
@@ -77,6 +83,11 @@ export const useGameStore = create<GameState>((set) => ({
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
   idleSummary: null,
+  bot: {
+    active: false,
+    phase: 'idle',
+    target: null,
+  },
   setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
   setSimulationTime: (value) => set({ simulationTime: value }),
@@ -120,6 +131,11 @@ export const useGameStore = create<GameState>((set) => ({
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       idleSummary: null,
+      bot: {
+        active: false,
+        phase: 'idle',
+        target: null,
+      },
       sessionEpoch: state.sessionEpoch + 1,
     }));
   },
@@ -127,6 +143,10 @@ export const useGameStore = create<GameState>((set) => ({
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
   setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
   setIdleSummary: (summary) => set({ idleSummary: summary }),
+  setBot: (bot) =>
+    set((state) => ({
+      bot: { ...state.bot, ...bot },
+    })),
   activateScenarioSession: (args) =>
     set((state) => ({
       engine: args.engine,
@@ -140,5 +160,10 @@ export const useGameStore = create<GameState>((set) => ({
       sessionEpoch: state.sessionEpoch + 1,
       pendingEnergyLinkSource: null,
       idleSummary: null,
+      bot: {
+        active: false,
+        phase: 'idle',
+        target: null,
+      },
     })),
 }));

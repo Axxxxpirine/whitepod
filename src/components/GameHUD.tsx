@@ -21,6 +21,7 @@ export function GameHUD() {
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const idleSummary = useGameStore((s) => s.idleSummary);
+  const bot = useGameStore((s) => s.bot);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
@@ -255,6 +256,17 @@ export function GameHUD() {
                     </span>
                   )}
                 </div>
+              </>
+            )}
+
+            {bot.active && (
+              <>
+                {(resourceCounts || globalEnergy) && <div className="my-2 border-t border-border" />}
+                <div className="flex items-center justify-between gap-2">
+                  <Chip tone="accent">Bot</Chip>
+                  <span className="label text-ink-muted">{bot.phase}</span>
+                </div>
+                {bot.target && <div className="mt-1 text-xs tabular-nums text-ink-muted">{bot.target}</div>}
               </>
             )}
 

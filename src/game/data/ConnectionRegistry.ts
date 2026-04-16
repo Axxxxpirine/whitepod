@@ -76,14 +76,10 @@ export function unitVector(side: Direction): TileCoord {
   }
 }
 
-function endpointKey(buildingId: BuildingId, portId: string): string {
-  return `${buildingId}:${portId}`;
-}
-
 export class ConnectionRegistry {
   private readonly instances: Map<ConnectionId, Connection>;
-  private readonly byBuilding: Map<BuildingId, Set<ConnectionId>>;
-  private readonly byEndpoint: Map<string, ConnectionId>;
+  private readonly byBuilding: Map<BuildingId, ConnectionId[]>;
+  private readonly byEndpoint: Map<BuildingId, Map<string, ConnectionId>>;
   private nextId: ConnectionId;
 
   constructor() {
@@ -98,7 +94,7 @@ export class ConnectionRegistry {
   }
 
   isPortConnected(buildingId: BuildingId, portId: string): boolean {
-    return this.byEndpoint.has(endpointKey(buildingId, portId));
+    return this.byEndpoint.get(buildingId)?.has(portId) ?? false;
   }
 
   register(
@@ -114,8 +110,8 @@ export class ConnectionRegistry {
       to: { building: to.building, port: to.port },
     };
     this.instances.set(id, connection);
-    this.byEndpoint.set(endpointKey(from.building, from.port), id);
-    this.byEndpoint.set(endpointKey(to.building, to.port), id);
+    this.setEndpoint(from.building, from.port, id);
+    this.setEndpoint(to.building, to.port, id);
     this.addToBuilding(from.building, id);
     this.addToBuilding(to.building, id);
     return id;
@@ -124,8 +120,8 @@ export class ConnectionRegistry {
   unregister(id: ConnectionId): boolean {
     const conn = this.instances.get(id);
     if (!conn) return false;
-    this.byEndpoint.delete(endpointKey(conn.from.building, conn.from.port));
-    this.byEndpoint.delete(endpointKey(conn.to.building, conn.to.port));
+    this.removeEndpoint(conn.from.building, conn.from.port);
+    this.removeEndpoint(conn.to.building, conn.to.port);
     this.removeFromBuilding(conn.from.building, id);
     this.removeFromBuilding(conn.to.building, id);
     this.instances.delete(id);
@@ -134,7 +130,7 @@ export class ConnectionRegistry {
 
   unregisterAllFor(buildingId: BuildingId): number {
     const ids = this.byBuilding.get(buildingId);
-    if (!ids || ids.size === 0) return 0;
+    if (!ids || ids.length === 0) return 0;
     // Copy first so we can mutate during iteration.
     const toRemove = Array.from(ids);
     for (const id of toRemove) this.unregister(id);
@@ -177,33 +173,48 @@ export class ConnectionRegistry {
     registry.nextId = data.nextId;
     for (const connection of data.connections) {
       registry.instances.set(connection.id, connection);
-      registry.byEndpoint.set(
-        endpointKey(connection.from.building, connection.from.port),
-        connection.id,
-      );
-      registry.byEndpoint.set(
-        endpointKey(connection.to.building, connection.to.port),
-        connection.id,
-      );
+      registry.setEndpoint(connection.from.building, connection.from.port, connection.id);
+      registry.setEndpoint(connection.to.building, connection.to.port, connection.id);
       registry.addToBuilding(connection.from.building, connection.id);
       registry.addToBuilding(connection.to.building, connection.id);
     }
     return registry;
   }
 
+  private setEndpoint(buildingId: BuildingId, portId: string, id: ConnectionId): void {
+    let ports = this.byEndpoint.get(buildingId);
+    if (!ports) {
+      ports = new Map();
+      this.byEndpoint.set(buildingId, ports);
+    }
+    ports.set(portId, id);
+  }
+
+  private removeEndpoint(buildingId: BuildingId, portId: string): void {
+    const ports = this.byEndpoint.get(buildingId);
+    if (!ports) return;
+    ports.delete(portId);
+    if (ports.size === 0) {
+      this.byEndpoint.delete(buildingId);
+    }
+  }
+
   private addToBuilding(buildingId: BuildingId, id: ConnectionId): void {
     let set = this.byBuilding.get(buildingId);
     if (!set) {
-      set = new Set();
+      set = [];
       this.byBuilding.set(buildingId, set);
     }
-    set.add(id);
+    set.push(id);
   }
 
   private removeFromBuilding(buildingId: BuildingId, id: ConnectionId): void {
     const set = this.byBuilding.get(buildingId);
     if (!set) return;
-    set.delete(id);
-    if (set.size === 0) this.byBuilding.delete(buildingId);
+    const index = set.indexOf(id);
+    if (index >= 0) {
+      set.splice(index, 1);
+    }
+    if (set.length === 0) this.byBuilding.delete(buildingId);
   }
 }
