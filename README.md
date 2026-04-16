@@ -137,6 +137,14 @@ engine.playerStock                     // Direct access to resource stock
 engine.batteryCharges                  // Map<BuildingId, number> of battery charge levels
 ```
 
+### Dev scenarios
+
+```js
+window.engine.scenarios.list()
+window.engine.scenarios.install('bootstrap-energy-grid')
+// Reload the page to boot through the normal persisted-session restore path.
+```
+
 ### Map generation
 
 ```js

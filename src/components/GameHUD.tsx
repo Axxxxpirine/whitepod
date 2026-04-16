@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Settings, Zap } from 'lucide-react';
+import { Settings, Shuffle, Zap } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
+import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
+import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
-import { Icon, Chip, Panel, PanelHeading } from './ui';
+import { Chip, Icon, Panel, PanelHeading } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -42,6 +44,7 @@ export function GameHUD() {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scenarioGenerators = useMemo(() => listScenarioGenerators(), []);
 
   useEffect(() => {
     if (!idleSummary || idleSummary.appliedSeconds <= 0) return;
@@ -161,6 +164,14 @@ export function GameHUD() {
       setSimulationTime(engine.simulationTime);
     },
     [engine, setSimulationTime],
+  );
+
+  const applyScenarioGenerator = useCallback(
+    (scenarioId: string) => {
+      if (!engine) return;
+      applyScenarioGeneratorToLiveSession(engine, scenarioId);
+    },
+    [engine],
   );
 
   return (
@@ -327,6 +338,23 @@ export function GameHUD() {
                         }
                       >
                         {speed === 0 ? 'Pause' : `${speed}x`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="label text-ink-muted">Scenario Generator</div>
+                  <div className="flex items-center gap-1">
+                    {scenarioGenerators.map((scenario) => (
+                      <button
+                        key={scenario.id}
+                        type="button"
+                        onClick={() => applyScenarioGenerator(scenario.id)}
+                        className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-sm bg-surface-2 px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink active:bg-accent active:text-bg"
+                      >
+                        <Shuffle size={9} strokeWidth={1.5} className="shrink-0" />
+                        <span>{scenario.label}</span>
                       </button>
                     ))}
                   </div>

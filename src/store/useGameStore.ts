@@ -50,6 +50,11 @@ interface GameState {
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
   setIdleSummary: (summary: IdleCatchupResult | null) => void;
+  activateScenarioSession: (args: {
+    engine: GameEngine;
+    selectedTool: SelectedTool;
+    simulationTime: number;
+  }) => void;
 }
 
 const loadedSettings = loadPersistedSettings();
@@ -122,4 +127,18 @@ export const useGameStore = create<GameState>((set) => ({
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
   setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
   setIdleSummary: (summary) => set({ idleSummary: summary }),
+  activateScenarioSession: (args) =>
+    set((state) => ({
+      engine: args.engine,
+      simulationTime: args.simulationTime,
+      selectedTool: args.selectedTool,
+      hoverTile: null,
+      selectedBuildingId: null,
+      selectedBuildingAnchor: null,
+      beltPreview: null,
+      currentBuildingRotation: Direction.North,
+      sessionEpoch: state.sessionEpoch + 1,
+      pendingEnergyLinkSource: null,
+      idleSummary: null,
+    })),
 }));

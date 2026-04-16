@@ -1,5 +1,6 @@
 import { GRID_SIZE } from '@/game/constants';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
+import type { ViewportSnapshot } from '@/game/engine/Viewport';
 import { Direction, type SelectedTool } from '@/game/types';
 import { getLocalStorage } from './browserStorage';
 
@@ -15,7 +16,7 @@ const VIEW_STORAGE_VERSION = 2;
 const IDLE_SIDECAR_VERSION = 1;
 const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
-interface PersistedWorldStateV3 {
+export interface PersistedWorldStateV3 {
   readonly version: number;
   readonly storageVersion: number;
   readonly idleVersion: number;
@@ -30,7 +31,7 @@ interface PersistedWorldStateV3 {
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
 }
 
-interface PersistedWorldStateV2 {
+export interface PersistedWorldStateV2 {
   readonly version: number;
   readonly sessionId: string;
   readonly mapSeed: number;
@@ -43,7 +44,7 @@ interface PersistedWorldStateV2 {
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
 }
 
-interface PersistedViewState {
+export interface PersistedViewState {
   readonly version: number;
   readonly sessionId: string;
   readonly viewport: {
@@ -65,6 +66,11 @@ interface LoadedSession {
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
   readonly idleSidecar: IdleSidecar | null;
+}
+
+export interface PersistedSessionPayloads {
+  readonly world: PersistedWorldStateV3;
+  readonly view: PersistedViewState;
 }
 
 function getWorldStorage(): Storage | null {
@@ -265,6 +271,28 @@ function readViewState(): PersistedViewState | null {
   return null;
 }
 
+function writeWorldState(payload: PersistedWorldStateV3): void {
+  const storage = getWorldStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — drop the save, engine state stays in memory
+  }
+}
+
+function writeViewState(payload: PersistedViewState): void {
+  const storage = getViewStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // best effort
+  }
+}
+
 export function readIdleSidecar(): IdleSidecar | null {
   const storage = getSidecarStorage();
   if (!storage) return null;
@@ -340,12 +368,9 @@ export function clearPersistedSession(): void {
   clearIdleSidecar();
 }
 
-export function saveWorldSession(engine: GameEngine, sessionId: string): void {
-  const storage = getWorldStorage();
-  if (!storage) return;
-
+export function buildPersistedWorldState(engine: GameEngine, sessionId: string): PersistedWorldStateV3 {
   const snapshot = engine.serializeWorld();
-  const payload: PersistedWorldStateV3 = {
+  return {
     version: WORLD_STORAGE_VERSION,
     storageVersion: WORLD_STORAGE_VERSION,
     idleVersion: WORLD_IDLE_VERSION,
@@ -359,34 +384,57 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
     simulationTime: snapshot.simulationTime,
     batteryCharges: snapshot.batteryCharges,
   };
+}
 
-  try {
-    storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    // quota / private mode — drop the save, engine state stays in memory
-  }
+export function saveWorldSession(engine: GameEngine, sessionId: string): void {
+  writeWorldState(buildPersistedWorldState(engine, sessionId));
+}
+
+export function buildPersistedViewState(args: {
+  readonly engine: GameEngine;
+  readonly selectedTool: SelectedTool;
+  readonly sessionId: string;
+  readonly viewport?: ViewportSnapshot;
+}): PersistedViewState {
+  return {
+    version: VIEW_STORAGE_VERSION,
+    sessionId: args.sessionId,
+    viewport: args.viewport ?? args.engine.getViewportSnapshot(),
+    selectedTool: args.selectedTool,
+  };
 }
 
 export function saveViewSession(args: {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
+  readonly viewport?: ViewportSnapshot;
 }): void {
-  const storage = getViewStorage();
-  if (!storage) return;
+  writeViewState(buildPersistedViewState(args));
+}
 
-  const payload: PersistedViewState = {
-    version: VIEW_STORAGE_VERSION,
-    sessionId: args.sessionId,
-    viewport: args.engine.getViewportSnapshot(),
-    selectedTool: args.selectedTool,
+export function buildPersistedSessionPayloads(args: {
+  readonly engine: GameEngine;
+  readonly selectedTool: SelectedTool;
+  readonly sessionId: string;
+  readonly viewport?: ViewportSnapshot;
+}): PersistedSessionPayloads {
+  return {
+    world: buildPersistedWorldState(args.engine, args.sessionId),
+    view: buildPersistedViewState(args),
   };
+}
 
-  try {
-    storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    // best effort
-  }
+export function installPersistedSession(args: {
+  readonly engine: GameEngine;
+  readonly selectedTool: SelectedTool;
+  readonly sessionId: string;
+  readonly viewport?: ViewportSnapshot;
+}): void {
+  const payloads = buildPersistedSessionPayloads(args);
+  writeWorldState(payloads.world);
+  writeViewState(payloads.view);
+  clearIdleSidecar();
 }
 
 export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {
