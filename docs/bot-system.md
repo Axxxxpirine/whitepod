@@ -46,11 +46,15 @@ When the user applies a new seed, the session may be reset entirely. The selecte
 
 ## Current System Snapshot
 
-The codebase currently contains a single bot implementation:
+The codebase currently uses a profile-backed bot controller with these files:
 
 - `src/game/bot/AutonomousBot.ts`
+- `src/game/bot/FractalBot.ts`
+- `src/game/bot/BotController.ts`
+- `src/game/bot/botProfiles.ts`
+- `src/game/bot/botTypes.ts`
 
-The current behavior is greedy and automatic. The intended future system keeps that logic as the `greedy` profile and adds a new `fractal` profile.
+The `greedy` profile preserves the legacy behavior. The `fractal` profile is the adaptive spiral strategy. The UI selects the profile explicitly and the bot no longer auto-starts on page load.
 
 ## Runtime Behavior
 
@@ -64,6 +68,9 @@ Required controls:
 - profile selector next to the start/stop button
 - active status indicator
 - current bot phase/target text
+- editable seed input with apply action
+
+Current implementation note: the control cluster lives in the bottom-right HUD panel next to the settings popover.
 
 ### Bot lifecycle
 
@@ -85,6 +92,8 @@ Applying a new seed must:
 - regenerate the map from the new seed
 - preserve the current bot profile selection
 - leave the bot stopped after reset unless the user restarts it manually
+
+Current implementation note: the selected profile id and seed input are persisted with the view/session state, while the world snapshot remains separate.
 
 ## Engine Contract For Bots
 
@@ -207,6 +216,7 @@ The store should track at least:
 - current bot status
 - selected bot profile id
 - current seed input value
+- optional bot control handles owned by the live canvas session
 
 Suggested profile ids:
 
@@ -257,6 +267,8 @@ The class should:
 - report status changes only when the status actually changes
 - perform one cycle of actions on each tick
 
+If the profile needs to be selectable in the UI, register it in `src/game/bot/botProfiles.ts` and expose its label/description there.
+
 ### 4. Decide the action model
 
 The bot should answer:
@@ -287,9 +299,13 @@ Add at least one of:
 
 Add the bot to the profile registry so the UI can select it.
 
+Also wire the profile into the live controller so switching the selector swaps the active implementation without mutating engine internals.
+
 ### 8. Expose it in the UI
 
 Add the profile label and description to the selector.
+
+The selector currently lives next to the bot start/stop button in the bottom-right HUD.
 
 ### 9. Validate the lifecycle
 
@@ -373,6 +389,7 @@ Before considering a bot profile complete, verify:
 - the bot does not auto-start on page load
 - the bot does not rely on hidden engine state
 - the profile works on multiple seeds
+- the selected profile and seed input survive a reset/reload boundary when the session is still valid
 
 ## Recommended Implementation Order
 
