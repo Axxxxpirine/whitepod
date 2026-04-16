@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
-import { Icon, Chip } from './ui';
+import { Icon, Chip, PanelHeading } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -13,12 +13,12 @@ export function GameHUD() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
-const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
+  const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
-const resetSession = useGameStore((s) => s.resetSession);
+  const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
 
   const [worldTick, setWorldTick] = useState(0);
@@ -45,7 +45,7 @@ const resetSession = useGameStore((s) => s.resetSession);
     if (!source) return null;
     return getBuildingType(source.typeId)?.name ?? null;
   }, [engine, pendingEnergyLinkSource]);
-const globalEnergy = useMemo(() => {
+  const globalEnergy = useMemo(() => {
     void energyVersion;
     void worldTick;
     return engine ? engine.getEnergyGlobalStats() : null;
@@ -281,7 +281,6 @@ const globalEnergy = useMemo(() => {
         </div>
       )}
 
-      <ToolModeIndicator />
       <SelectedBuildingPanel />
 
       {consoleOpen && (
@@ -321,81 +320,87 @@ const globalEnergy = useMemo(() => {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
-        <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md border border-border bg-surface/90 px-3 py-2 text-ink backdrop-blur-md">
-          <div className="min-w-0 justify-self-start">
-            {hoverTile && (
-              <div className="inline-flex rounded-sm bg-surface-2 px-2 py-1 tabular-nums text-xs text-ink-muted">
-                {hoverTile.x}, {hoverTile.y}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-self-center gap-2">
-            <BuildingPicker />
-          </div>
-
-          <div className="flex items-center justify-self-end gap-2">
-            {energyLinkSelected && (
-              <div className="rounded-sm bg-surface-2 px-2 py-1 tabular-nums text-xs text-ink-muted">
-                Source: {pendingEnergyLinkSourceName ?? '-'}
-              </div>
-            )}
-            <div className="relative" ref={settingsRef}>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen((o) => !o)}
-                aria-expanded={settingsOpen}
-                aria-label="Paramètres"
-                title="Paramètres"
-                className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
-              >
-                <Icon icon={Settings} className="h-4 w-4" />
-              </button>
-
-              {settingsOpen && (
-                <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-md border border-border bg-surface/95 p-2 backdrop-blur-md">
-                  <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
-
-                  {/* Lier après pose */}
-                  <button
-                    type="button"
-                    onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
-                    aria-pressed={linkSolarOnPlacement}
-                    title="Après pose d'un panneau solaire, passe en mode lien"
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
-                  >
-                    <span>Lier après pose</span>
-                    <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
-                      {linkSolarOnPlacement ? 'ON' : 'OFF'}
-                    </Chip>
-                  </button>
-
-                  {/* Console */}
-                  <button
-                    type="button"
-                    onClick={() => setConsoleOpen((o) => !o)}
-                    aria-pressed={consoleOpen}
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
-                  >
-                    <span>Console</span>
-                    <span className="ml-3 tabular-nums text-[10px] text-ink-muted">&gt;_</span>
-                  </button>
-
-                  <div className="my-1.5 border-t border-border" />
-
-                  {/* Reset */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettingsOpen(false);
-                      handleResetSession();
-                    }}
-                    className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-error transition-colors hover:bg-error/10"
-                  >
-                    Reset session
-                  </button>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
+          <div className="flex min-w-0 items-end justify-self-start">
+            <div className="pointer-events-auto flex flex-col items-start gap-2">
+              <ToolModeIndicator />
+              {hoverTile && (
+                <div className="inline-flex rounded-sm border border-border bg-surface/92 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+                  {hoverTile.x}, {hoverTile.y}
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="pointer-events-auto justify-self-center">
+            <div className="flex flex-col items-center gap-2 rounded-md border border-border bg-surface/94 px-3 py-2.5 text-ink backdrop-blur-md">
+              <PanelHeading className="text-xs text-ink-muted">Construction</PanelHeading>
+              <BuildingPicker />
+            </div>
+          </div>
+
+          <div className="flex min-w-0 items-end justify-self-end">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-surface/92 px-2 py-2 text-ink backdrop-blur-md">
+              {energyLinkSelected && (
+                <div className="flex items-center gap-2 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-ink-muted">
+                  <span className="label">Source</span>
+                  <span className="tabular-nums text-ink">{pendingEnergyLinkSourceName ?? '-'}</span>
+                </div>
+              )}
+              <div className="relative" ref={settingsRef}>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen((o) => !o)}
+                  aria-expanded={settingsOpen}
+                  aria-label="Paramètres"
+                  title="Paramètres"
+                  className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                >
+                  <Icon icon={Settings} className="h-4 w-4" />
+                </button>
+
+                {settingsOpen && (
+                  <div className="absolute bottom-full right-0 mb-2 min-w-48 rounded-md border border-border bg-surface/95 p-2 backdrop-blur-md">
+                    <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
+
+                    <button
+                      type="button"
+                      onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
+                      aria-pressed={linkSolarOnPlacement}
+                      title="Après pose d'un panneau solaire, passe en mode lien"
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Lier après pose</span>
+                      <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
+                        {linkSolarOnPlacement ? 'ON' : 'OFF'}
+                      </Chip>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setConsoleOpen((o) => !o)}
+                      aria-pressed={consoleOpen}
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Console</span>
+                      <span className="ml-3 tabular-nums text-[10px] text-ink-muted">&gt;_</span>
+                    </button>
+
+                    <div className="my-1.5 border-t border-border" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsOpen(false);
+                        handleResetSession();
+                      }}
+                      className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-error transition-colors hover:bg-error/10"
+                    >
+                      Reset session
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
