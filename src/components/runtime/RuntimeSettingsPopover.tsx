@@ -3,14 +3,18 @@ import { IconButton } from './IconButton'
 
 interface RuntimeSettingsPopoverProps {
   autoTickEnabled: boolean
+  demoModeEnabled: boolean
   onToggleAutoTick: () => void
+  onToggleDemoMode: () => void
   onResetSave: () => void
   onNewGame: () => void
 }
 
 export function RuntimeSettingsPopover({
   autoTickEnabled,
+  demoModeEnabled,
   onToggleAutoTick,
+  onToggleDemoMode,
   onResetSave,
   onNewGame,
 }: RuntimeSettingsPopoverProps) {
@@ -47,6 +51,17 @@ export function RuntimeSettingsPopover({
             <span>Auto tick</span>
             <span className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${autoTickEnabled ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/10 text-white/40'}`}>
               {autoTickEnabled ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleDemoMode}
+            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
+          >
+            <span>Simulation mode</span>
+            <span className={`ml-3 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${demoModeEnabled ? 'bg-sky-400/20 text-sky-400' : 'bg-white/10 text-white/40'}`}>
+              {demoModeEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
 

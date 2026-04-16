@@ -80,6 +80,7 @@ function App() {
   const transitions = useGameStore(s => s.transitions)
   const stations = useGameStore(s => s.stations)
   const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
+  const demoModeEnabled = useGameStore(s => s.demoModeEnabled)
   const demonstrationEnabled = useGameStore(s => s.demonstrationEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
@@ -87,6 +88,7 @@ function App() {
   const buildPalette = useGameStore(s => s.buildPalette)
   const setAutoTickEnabled = useGameStore(s => s.setAutoTickEnabled)
   const setDemonstrationEnabled = useGameStore(s => s.setDemonstrationEnabled)
+  const setDemoModeEnabled = useGameStore(s => s.setDemoModeEnabled)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
   const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
@@ -245,19 +247,25 @@ function App() {
           </div>
           <div className="hud-actions">
             <button className="hud-button" onClick={() => setHelpOpen(true)}>Help</button>
-            <button
-              className={`hud-button ${demonstrationEnabled ? 'primary' : ''}`}
-              onClick={() => {
-                const nextEnabled = !demonstrationEnabled
-                setDemonstrationEnabled(nextEnabled)
+              <button
+                className={`hud-button ${demonstrationEnabled ? 'primary' : ''}`}
+                onClick={() => {
+                  const nextEnabled = !demonstrationEnabled
+                  setDemonstrationEnabled(nextEnabled)
                 if (nextEnabled) setAutoTickEnabled(true)
               }}
             >
               {demonstrationEnabled ? 'Stop demonstration' : 'Demonstration'}
-            </button>
-            <button
-              className="hud-button primary"
-              onClick={() => {
+              </button>
+              <button
+                className={`hud-button ${demoModeEnabled ? 'primary' : ''}`}
+                onClick={() => setDemoModeEnabled(!demoModeEnabled)}
+              >
+                {demoModeEnabled ? 'Stop simulation mode' : 'Simulation mode'}
+              </button>
+              <button
+                className="hud-button primary"
+                onClick={() => {
                 setAutoTickEnabled(true)
                 requestSystemTransition('init')
               }}
@@ -409,7 +417,9 @@ function App() {
               <div className="pointer-events-auto absolute right-3 top-3 z-20">
                 <RuntimeSettingsPopover
                   autoTickEnabled={autoTickEnabled}
+                  demoModeEnabled={demoModeEnabled}
                   onToggleAutoTick={() => setAutoTickEnabled(!autoTickEnabled)}
+                  onToggleDemoMode={() => setDemoModeEnabled(!demoModeEnabled)}
                   onResetSave={resetSave}
                   onNewGame={() => {
                     const nextSeed = Number.parseInt(seedInput, 10)
