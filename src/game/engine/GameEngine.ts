@@ -49,6 +49,7 @@ import { planBelt } from './BeltRouter';
 import { EnergyNetwork } from '../systems/EnergyNetwork';
 import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
 import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -61,6 +62,14 @@ interface ResolvedPort {
 }
 
 export type GameEngineChangeKind = 'world' | 'viewport';
+
+interface PlaceBuildingOptions {
+  readonly emitSfx?: boolean;
+}
+
+interface RemoveBuildingOptions {
+  readonly emitSfx?: boolean;
+}
 
 export interface ResourceStock {
   coal: number;
@@ -112,7 +121,9 @@ export class GameEngine {
   readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
   readonly batteryCharges = new Map<BuildingId, number>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
+  private readonly sfxListeners = new Set<GameSfxListener>();
   private extractionAccumulator = 0;
+  private readonly poweredExtractors = new Set<BuildingId>();
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -152,6 +163,9 @@ export class GameEngine {
 
     // Battery charge/discharge
     this.updateBatteries(dt);
+
+    // Detect extractors that became powered this tick
+    this.checkExtractorPowerTransitions();
   }
 
   private processExtraction(): void {
@@ -171,6 +185,22 @@ export class GameEngine {
     }
     if (changed) {
       this.notify('world');
+    }
+  }
+
+  private checkExtractorPowerTransitions(): void {
+    for (const [id, building] of this.buildings.getAll().entries()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      const isPowered = this.getBuildingPowerState(id) === 'powered';
+      const wasPowered = this.poweredExtractors.has(id);
+      if (isPowered && !wasPowered) {
+        this.publishSfx({ type: 'extractor_on' });
+      }
+      if (isPowered) {
+        this.poweredExtractors.add(id);
+      } else {
+        this.poweredExtractors.delete(id);
+      }
     }
   }
 
@@ -316,9 +346,16 @@ export class GameEngine {
     typeId: BuildingTypeId,
     origin: TileCoord,
     rotation: Direction = Direction.North,
+    options: PlaceBuildingOptions = {},
   ): BuildingId | null {
+    const emitSfx = options.emitSfx ?? true;
     const result = this.canPlaceBuilding(typeId, origin, rotation);
-    if (!result.ok) return null;
+    if (!result.ok) {
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_place_fail', buildingType: typeId, reason: result.reason });
+      }
+      return null;
+    }
 
     const type = getBuildingType(typeId)!;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
@@ -333,15 +370,24 @@ export class GameEngine {
         this.grid.revealCircle(cx, cy, WATCHTOWER_REVEAL_RADIUS);
       }
       this.notify('world');
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_place_success', buildingType: typeId });
+      }
+    } else if (emitSfx) {
+      this.publishSfx({
+        type: 'building_place_fail',
+        buildingType: typeId,
+        reason: this.buildings.hasIdCapacity() ? 'tile_occupied' : 'id_overflow',
+      });
     }
     return id;
   }
 
-  removeBuilding(id: BuildingId): boolean {
-    return this.removeBuildingInternal(id, true);
+  removeBuilding(id: BuildingId, options: RemoveBuildingOptions = {}): boolean {
+    return this.removeBuildingInternal(id, true, options.emitSfx ?? true);
   }
 
-  private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean): boolean {
+  private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean, emitSfx = false): boolean {
     const building = this.buildings.get(id);
     if (!building) return false;
     const type = getBuildingType(building.typeId);
@@ -368,6 +414,9 @@ export class GameEngine {
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.notify('world');
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_remove_success', buildingType: building.typeId });
+      }
     }
     return removed;
   }
@@ -375,22 +424,35 @@ export class GameEngine {
   connectBuildings(a: BuildingId, b: BuildingId): boolean {
     const buildingA = this.buildings.get(a);
     const buildingB = this.buildings.get(b);
-    if (!buildingA || !buildingB) return false;
+    if (!buildingA || !buildingB) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
+      return false;
+    }
     if (!this.isEnergyLinkableBuilding(buildingA.typeId) || !this.isEnergyLinkableBuilding(buildingB.typeId)) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
       return false;
     }
     const connected = this.energyNetwork.connect(a, b);
     if (connected) {
       this.notify('world');
+      this.publishSfx({ type: 'energy_link_connect' });
+    } else {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
     }
     return connected;
   }
 
   disconnectBuildings(a: BuildingId, b: BuildingId): boolean {
-    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    if (!this.buildings.get(a) || !this.buildings.get(b)) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'disconnect' });
+      return false;
+    }
     const disconnected = this.energyNetwork.disconnect(a, b);
     if (disconnected) {
       this.notify('world');
+      this.publishSfx({ type: 'energy_link_disconnect' });
+    } else {
+      this.publishSfx({ type: 'energy_link_fail', action: 'disconnect' });
     }
     return disconnected;
   }
@@ -542,7 +604,10 @@ export class GameEngine {
 
   placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
     const planned = this.canPlaceBelt(from, to);
-    if (!planned.ok) return planned;
+    if (!planned.ok) {
+      this.publishSfx({ type: 'belt_place_fail', reason: planned.reason });
+      return planned;
+    }
 
     const placedSegmentIds: BuildingId[] = [];
 
@@ -561,7 +626,7 @@ export class GameEngine {
         };
       }
 
-      const id = this.placeBuilding(segment.typeId, segment.coord, segment.rotation);
+      const id = this.placeBuilding(segment.typeId, segment.coord, segment.rotation, { emitSfx: false });
       if (id === null) {
         this.rollbackPlacedBelts(placedSegmentIds);
         return {
@@ -593,6 +658,7 @@ export class GameEngine {
       }
     }
 
+    this.publishSfx({ type: 'belt_place_success', segmentCount: placedSegmentIds.length });
     return {
       ok: true,
       segmentIds: placedSegmentIds,
@@ -894,9 +960,26 @@ export class GameEngine {
     return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
 
+  subscribeSfx(listener: GameSfxListener): () => void {
+    this.sfxListeners.add(listener);
+    return () => {
+      this.sfxListeners.delete(listener);
+    };
+  }
+
+  emitSfx(event: GameSfxEvent): void {
+    this.publishSfx(event);
+  }
+
   private notify(kind: GameEngineChangeKind): void {
     for (const listener of this.listeners) {
       listener(kind);
+    }
+  }
+
+  private publishSfx(event: GameSfxEvent): void {
+    for (const listener of this.sfxListeners) {
+      listener(event);
     }
   }
 }

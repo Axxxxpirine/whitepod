@@ -7,11 +7,10 @@ type GameStoreState = ReturnType<typeof useGameStore.getState>;
 
 export function selectedToolsEqual(left: SelectedTool, right: SelectedTool): boolean {
   if (left.kind !== right.kind) return false;
-  if (left.kind === 'select' && right.kind === 'select') return true;
   if (left.kind === 'building' && right.kind === 'building') {
     return left.buildingType === right.buildingType;
   }
-  return left.kind === 'energy_link' && right.kind === 'energy_link';
+  return true;
 }
 
 export interface EnergyLinkClickState {

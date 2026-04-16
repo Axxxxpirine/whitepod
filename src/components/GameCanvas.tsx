@@ -255,7 +255,10 @@ export function GameCanvas() {
         handleEnergyLinkClick(engine, state, clickedBuildingId);
       });
       currentInputHandler.setOutOfGridClickCallback(() => {
-        popCancelStack(useGameStore, currentBeltToolController);
+        const cancelled = popCancelStack(useGameStore, currentBeltToolController);
+        if (cancelled) {
+          engine.emitSfx({ type: 'cancel_pop' });
+        }
       });
       currentInputHandler.setInvalidPlacementCallback((origin, buildingType) => {
         const type = getBuildingType(buildingType);
@@ -302,10 +305,14 @@ export function GameCanvas() {
         }
         if ((e.key === 'r' || e.key === 'R') && useGameStore.getState().selectedTool.kind === 'building') {
           useGameStore.getState().rotateBuildingRotation();
+          engine.emitSfx({ type: 'rotate_click' });
           return;
         }
         if (e.key === 'Escape') {
-          popCancelStack(useGameStore, currentBeltToolController);
+          const cancelled = popCancelStack(useGameStore, currentBeltToolController);
+          if (cancelled) {
+            engine.emitSfx({ type: 'cancel_pop' });
+          }
         }
       };
 

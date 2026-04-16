@@ -14,6 +14,7 @@ export function GameHUD() {
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
   const musicVolume = useGameStore((s) => s.musicVolume);
+  const sfxVolume = useGameStore((s) => s.sfxVolume);
   const currentBuildingRotation = useGameStore((s) => s.currentBuildingRotation);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
@@ -21,6 +22,7 @@ export function GameHUD() {
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
+  const setSfxVolume = useGameStore((s) => s.setSfxVolume);
   const rotateBuildingRotation = useGameStore((s) => s.rotateBuildingRotation);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
@@ -111,12 +113,15 @@ export function GameHUD() {
 
   const rotatePlacement = () => {
     rotateBuildingRotation();
+    engine?.emitSfx({ type: 'rotate_click' });
   };
 
   const handleResetSession = () => {
     if (!window.confirm('Reset the current session and start a new game?')) {
+      engine?.emitSfx({ type: 'ui_back', context: 'reset_session' });
       return;
     }
+    engine?.emitSfx({ type: 'ui_confirm', context: 'reset_session' });
     resetSession();
   };
 
@@ -204,7 +209,11 @@ export function GameHUD() {
               {simulationClockLabel} ({isDaylight ? 'Jour' : 'Nuit'})
               <button
                 type="button"
-                onClick={() => setDebugOpen((value) => !value)}
+                onClick={() => {
+                  const next = !debugOpen;
+                  if (!next) engine?.emitSfx({ type: 'ui_back', context: 'debug_close' });
+                  setDebugOpen(next);
+                }}
                 aria-expanded={debugOpen}
                 className="ml-2 cursor-pointer rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 transition-colors hover:bg-white/20"
               >
@@ -309,6 +318,25 @@ export function GameHUD() {
                     <span>100%</span>
                   </div>
                 </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs text-white/70">Volume effets sonores</div>
+                  <input
+                    aria-label="SFX volume"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={sfxVolume}
+                    onChange={(e) => setSfxVolume(Number(e.target.value))}
+                    className="w-full accent-emerald-400"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-white/60">
+                    <span>0%</span>
+                    <span>{Math.round(sfxVolume * 100)}%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -406,7 +434,11 @@ export function GameHUD() {
             )}
             <button
               type="button"
-              onClick={() => setConsoleOpen((o) => !o)}
+              onClick={() => {
+                const next = !consoleOpen;
+                if (!next) engine?.emitSfx({ type: 'ui_back', context: 'console_close' });
+                setConsoleOpen(next);
+              }}
               aria-expanded={consoleOpen}
               className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 font-mono text-xs text-white/90 transition-colors hover:bg-white/20"
               title="Toggle console"

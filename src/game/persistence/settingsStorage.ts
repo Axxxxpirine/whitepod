@@ -1,17 +1,25 @@
 const SETTINGS_STORAGE_KEY = 'whitepod:settings:v1';
-const SETTINGS_VERSION = 1;
+const SETTINGS_VERSION = 2;
 
 export interface PersistedSettings {
   readonly musicVolume: number;
+  readonly sfxVolume: number;
 }
 
-interface PersistedSettingsPayload {
+interface PersistedSettingsPayloadV2 {
   readonly version: number;
+  readonly musicVolume: number;
+  readonly sfxVolume: number;
+}
+
+interface PersistedSettingsPayloadV1 {
+  readonly version: 1;
   readonly musicVolume: number;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
   musicVolume: 0.5,
+  sfxVolume: 1.0,
 };
 
 function getStorage(): Storage | null {
@@ -32,14 +40,29 @@ function clampMusicVolume(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+function clampSfxVolume(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isPersistedSettingsPayload(value: unknown): value is PersistedSettingsPayload {
+function isPersistedSettingsPayloadV2(value: unknown): value is PersistedSettingsPayloadV2 {
   return (
     isRecord(value) &&
     value.version === SETTINGS_VERSION &&
+    typeof value.musicVolume === 'number' &&
+    Number.isFinite(value.musicVolume) &&
+    typeof value.sfxVolume === 'number' &&
+    Number.isFinite(value.sfxVolume)
+  );
+}
+
+function isPersistedSettingsPayloadV1(value: unknown): value is PersistedSettingsPayloadV1 {
+  return (
+    isRecord(value) &&
+    value.version === 1 &&
     typeof value.musicVolume === 'number' &&
     Number.isFinite(value.musicVolume)
   );
@@ -54,14 +77,24 @@ export function loadPersistedSettings(): PersistedSettings {
 
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!isPersistedSettingsPayload(parsed)) {
-      storage.removeItem(SETTINGS_STORAGE_KEY);
-      return DEFAULT_SETTINGS;
+    if (isPersistedSettingsPayloadV2(parsed)) {
+      return {
+        musicVolume: clampMusicVolume(parsed.musicVolume),
+        sfxVolume: clampSfxVolume(parsed.sfxVolume),
+      };
     }
 
-    return {
-      musicVolume: clampMusicVolume(parsed.musicVolume),
-    };
+    if (isPersistedSettingsPayloadV1(parsed)) {
+      const migrated = {
+        musicVolume: clampMusicVolume(parsed.musicVolume),
+        sfxVolume: DEFAULT_SETTINGS.sfxVolume,
+      };
+      savePersistedSettings(migrated);
+      return migrated;
+    }
+
+    storage.removeItem(SETTINGS_STORAGE_KEY);
+    return DEFAULT_SETTINGS;
   } catch {
     storage.removeItem(SETTINGS_STORAGE_KEY);
     return DEFAULT_SETTINGS;
@@ -72,9 +105,10 @@ export function savePersistedSettings(settings: PersistedSettings): void {
   const storage = getStorage();
   if (!storage) return;
 
-  const payload: PersistedSettingsPayload = {
+  const payload: PersistedSettingsPayloadV2 = {
     version: SETTINGS_VERSION,
     musicVolume: clampMusicVolume(settings.musicVolume),
+    sfxVolume: clampSfxVolume(settings.sfxVolume),
   };
 
   storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));

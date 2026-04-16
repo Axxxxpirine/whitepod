@@ -40,7 +40,9 @@ export function BuildingPicker() {
       setSelectedBuildingAnchor(null);
       setPendingEnergyLinkSource(null);
       const active = isEntryActive(entry, useGameStore.getState().selectedTool);
-      setSelectedTool(toolForEntry(entry, active));
+      const nextTool = toolForEntry(entry, active);
+      setSelectedTool(nextTool);
+      useGameStore.getState().engine?.emitSfx({ type: 'tool_select', tool: nextTool.kind });
     },
     [setSelectedTool, setSelectedBuilding, setSelectedBuildingAnchor, setPendingEnergyLinkSource],
   );
