@@ -8,7 +8,7 @@ import {
   savePersistedSettings,
 } from '@/game/persistence/settingsStorage';
 import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
-import { Direction, type BuildingId, type SelectedTool } from '@/game/types';
+import { Direction, type BuildingId, type SelectedTool, type TileCoord } from '@/game/types';
 import { DEFAULT_MAP_SEED } from '@/game/constants';
 import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
 import type { BotProfileId } from '@/game/bot/botTypes';
@@ -28,6 +28,8 @@ interface GameState {
   hoverTile: { x: number; y: number } | null;
   selectedBuildingId: BuildingId | null;
   selectedBuildingAnchor: ScreenPoint | null;
+  selectedResourceTile: TileCoord | null;
+  selectedResourceAnchor: ScreenPoint | null;
   beltPreview: BeltPlacementPreviewModel | null;
   currentBuildingRotation: Direction;
   sessionEpoch: number;
@@ -53,6 +55,8 @@ interface GameState {
   setHoverTile: (tile: { x: number; y: number } | null) => void;
   setSelectedBuilding: (id: BuildingId | null) => void;
   setSelectedBuildingAnchor: (anchor: ScreenPoint | null) => void;
+  setSelectedResourceTile: (tile: TileCoord | null) => void;
+  setSelectedResourceAnchor: (anchor: ScreenPoint | null) => void;
   setBeltPreview: (preview: BeltPlacementPreviewModel | null) => void;
   setCurrentBuildingRotation: (rotation: Direction) => void;
   rotateBuildingRotation: () => void;
@@ -85,6 +89,8 @@ export const useGameStore = create<GameState>((set) => ({
   hoverTile: null,
   selectedBuildingId: null,
   selectedBuildingAnchor: null,
+  selectedResourceTile: null,
+  selectedResourceAnchor: null,
   beltPreview: null,
   currentBuildingRotation: Direction.North,
   sessionEpoch: 0,
@@ -120,10 +126,14 @@ export const useGameStore = create<GameState>((set) => ({
     set((state) => ({
       selectedTool: tool,
       beltPreview: tool.kind === 'belt' ? state.beltPreview : null,
+      selectedResourceTile: tool.kind === 'select' ? state.selectedResourceTile : null,
+      selectedResourceAnchor: tool.kind === 'select' ? state.selectedResourceAnchor : null,
     })),
   setHoverTile: (tile) => set({ hoverTile: tile }),
   setSelectedBuilding: (id) => set({ selectedBuildingId: id }),
   setSelectedBuildingAnchor: (anchor) => set({ selectedBuildingAnchor: anchor }),
+  setSelectedResourceTile: (tile) => set({ selectedResourceTile: tile }),
+  setSelectedResourceAnchor: (anchor) => set({ selectedResourceAnchor: anchor }),
   setBeltPreview: (preview) => set({ beltPreview: preview }),
   setCurrentBuildingRotation: (rotation) => set({ currentBuildingRotation: rotation }),
   rotateBuildingRotation: () =>
@@ -140,6 +150,8 @@ export const useGameStore = create<GameState>((set) => ({
       hoverTile: null,
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      selectedResourceTile: null,
+      selectedResourceAnchor: null,
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       idleSummary: null,
@@ -171,6 +183,8 @@ export const useGameStore = create<GameState>((set) => ({
       hoverTile: null,
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      selectedResourceTile: null,
+      selectedResourceAnchor: null,
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       sessionEpoch: state.sessionEpoch + 1,

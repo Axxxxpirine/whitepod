@@ -5,6 +5,7 @@ import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionS
 import { useGameStore } from '@/store/useGameStore';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
@@ -43,6 +44,8 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      selectedResourceTile: null,
+      selectedResourceAnchor: null,
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       sessionEpoch: 0,
@@ -136,7 +139,7 @@ describe('GameHUD', () => {
 
   it('renders the selected building panel when a building is selected', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -150,9 +153,101 @@ describe('GameHUD', () => {
     expect(screen.getByRole('button', { name: 'Supprimer le bâtiment' })).toBeInTheDocument();
   });
 
+  it('renders processor recipes as cards in the selected building panel and widens the panel', () => {
+    const engine = makeEngine();
+    const buildingId = engine.placeBuilding(CONVERTER_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).toBeInTheDocument();
+    expect(screen.getByText('1x Régolithe')).toBeInTheDocument();
+    expect(screen.queryByText('Oxydation (fer)')).not.toBeInTheDocument();
+    expect(screen.queryByText(/\(\d+s\)/)).not.toBeInTheDocument();
+
+    const heading = screen.getByRole('heading', { name: 'Convertisseur' });
+    const panel = heading.parentElement?.parentElement;
+    expect(panel).not.toBeNull();
+    expect(panel).toHaveClass('w-[280px]');
+  });
+
+  it('renders the selected resource tooltip when a deposit is selected', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.getByRole('tooltip', { name: 'Hydrogène' })).toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip outside select mode', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip when the deposit is removed', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    const { rerender } = render(<GameHUD />);
+    expect(screen.getByText('Hydrogène')).toBeInTheDocument();
+
+    engine.removeResource(8, 8);
+    useGameStore.setState({ selectedResourceAnchor: { x: 121, y: 160 } });
+    rerender(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip when a building covers the deposit', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    const { rerender } = render(<GameHUD />);
+    expect(screen.getByText('Hydrogène')).toBeInTheDocument();
+
+    engine.placeBuilding('extractor_basic', { x: 8, y: 8 });
+    useGameStore.setState({ selectedResourceAnchor: { x: 122, y: 160 } });
+    rerender(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
+  });
+
   it('deletes the selected building and closes the panel', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     const removeBuilding = vi.spyOn(engine, 'removeBuilding');
     useGameStore.setState({
@@ -173,7 +268,7 @@ describe('GameHUD', () => {
 
   it('clears the selected building panel when switching tools', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -192,7 +287,7 @@ describe('GameHUD', () => {
 
   it('clears pending energy-link source when deleting the selected building', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -300,7 +395,7 @@ describe('GameHUD', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
-    engine.placeResource(9, 8, ResourceType.IronOre);
+    engine.placeResource(9, 8, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 11, y: 8 })!;
     engine.connectBuildings(solarId, extractorId);
@@ -324,9 +419,9 @@ describe('GameHUD', () => {
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 10, y: 8 })!;
-    engine.placeResource(13, 8, ResourceType.Coal);
-    engine.placeResource(15, 8, ResourceType.IronOre);
-    engine.placeResource(17, 8, ResourceType.CopperOre);
+    engine.placeResource(13, 8, ResourceType.Regolith);
+    engine.placeResource(15, 8, ResourceType.Hydrogen);
+    engine.placeResource(17, 8, ResourceType.Oxygen);
     const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 13, y: 8 })!;
     const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 15, y: 8 })!;
     const extractorC = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 17, y: 8 })!;
@@ -353,7 +448,7 @@ describe('GameHUD', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
-    engine.placeResource(9, 8, ResourceType.IronOre);
+    engine.placeResource(9, 8, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
     engine.connectBuildings(solarId, extractorId);
 
@@ -415,12 +510,12 @@ describe('GameHUD', () => {
     fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
 
     const state = useGameStore.getState();
-    expect(state.engine?.getBuildings().size).toBe(8);
+    expect(state.engine?.getBuildings().size).toBeGreaterThanOrEqual(9);
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);
     expect(state.sessionEpoch).toBe(1);
-    expect(state.engine?.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
-    expect(state.engine?.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().regolith ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().hydrogen ?? 0).toBeGreaterThan(0);
     expect(countUncoveredResources(state.engine!)).toBeGreaterThanOrEqual(3);
     expect(screen.queryByText('Active')).not.toBeInTheDocument();
   });

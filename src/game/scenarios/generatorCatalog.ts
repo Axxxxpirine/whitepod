@@ -1,13 +1,14 @@
 import { generateSimpleScenario } from './generators/generateSimpleScenario';
 import { generateMediumScenario } from './generators/generateMediumScenario';
 import { generateComplexScenario } from './generators/generateComplexScenario';
+import { generateBuildAllScenario } from './generators/generateBuildAllScenario';
 import type { ScenarioGeneratorDefinition, ScenarioGeneratorListEntry } from './types';
 
 const generators = [
   {
     id: 'tier-simple',
     label: 'Simple',
-    description: 'Starter layout: 3 solar + 1 battery + 2 extractors. Single energy subnet, no belts.',
+    description: 'Starter layout: 4 solar + 1 battery + 3 extractors + 3 storages. Single energy subnet with belts.',
     generate: generateSimpleScenario,
   },
   {
@@ -21,6 +22,12 @@ const generators = [
     label: 'Complex',
     description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
     generate: generateComplexScenario,
+  },
+  {
+    id: 'tier-build-all',
+    label: 'Build All',
+    description: 'Complete pipeline: all 4 converters + all 5 synthesizers. All 12 resource types produced.',
+    generate: generateBuildAllScenario,
   },
 ] as const satisfies readonly ScenarioGeneratorDefinition[];
 

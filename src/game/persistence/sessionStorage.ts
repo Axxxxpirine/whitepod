@@ -28,22 +28,12 @@ export interface PersistedWorldStateV3 {
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
-  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
-}
-
-export interface PersistedWorldStateV2 {
-  readonly version: number;
-  readonly sessionId: string;
-  readonly mapSeed: number;
-  readonly gridBase64: string;
-  readonly buildings: SerializedGameWorld['buildings'];
-  readonly connections: SerializedGameWorld['connections'];
-  readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
-  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
-  readonly simulationTime?: number;
-  readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
+  readonly processorStates?: SerializedGameWorld['processorStates'];
+  readonly storageInventories?: SerializedGameWorld['storageInventories'];
+  readonly producerOutputBuffers?: SerializedGameWorld['producerOutputBuffers'];
+  readonly processorReservations?: SerializedGameWorld['processorReservations'];
 }
 
 export interface PersistedViewStateV3 {
@@ -200,25 +190,6 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
   );
 }
 
-function isPersistedWorldStateV2(value: unknown): value is PersistedWorldStateV2 {
-  if (!isRecord(value)) return false;
-  const simulationTimeValid = value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
-
-  return (
-    value.version === 2 &&
-    typeof value.sessionId === 'string' &&
-    value.sessionId.length > 0 &&
-    isFiniteNumber(value.mapSeed) &&
-    typeof value.gridBase64 === 'string' &&
-    value.gridBase64.length > 0 &&
-    isSerializedBuildingRegistry(value.buildings) &&
-    isSerializedConnectionRegistry(value.connections) &&
-    areEnergyLinksValid(value.energyLinks) &&
-    areBatteryChargesValid(value.batteryCharges) &&
-    simulationTimeValid
-  );
-}
-
 function isPersistedViewStateV3(value: unknown): value is PersistedViewStateV3 {
   if (!isRecord(value) || value.version !== VIEW_STORAGE_VERSION) return false;
   if (typeof value.sessionId !== 'string' || value.sessionId.length === 0) return false;
@@ -268,17 +239,20 @@ function removeViewSession(): void {
   storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
 }
 
-function toSnapshotInput(value: PersistedWorldStateV3 | PersistedWorldStateV2): SerializedGameWorld {
+function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
   return {
-    version: 2,
+    version: 3,
     mapSeed: value.mapSeed,
     grid: base64ToArrayBuffer(value.gridBase64),
     buildings: value.buildings,
     connections: value.connections,
     energyLinks: value.energyLinks,
-    playerStock: value.playerStock,
     simulationTime: value.simulationTime,
     batteryCharges: value.batteryCharges,
+    processorStates: value.processorStates,
+    storageInventories: value.storageInventories,
+    producerOutputBuffers: value.producerOutputBuffers,
+    processorReservations: value.processorReservations,
   };
 }
 
@@ -412,9 +386,12 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     buildings: snapshot.buildings,
     connections: snapshot.connections,
     energyLinks: snapshot.energyLinks,
-    playerStock: snapshot.playerStock,
     simulationTime: snapshot.simulationTime,
     batteryCharges: snapshot.batteryCharges,
+    processorStates: snapshot.processorStates,
+    storageInventories: snapshot.storageInventories,
+    producerOutputBuffers: snapshot.producerOutputBuffers,
+    processorReservations: snapshot.processorReservations,
   };
 }
 
@@ -485,14 +462,12 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
 
   const rawWorldV3 = worldStorage.getItem(WORLD_STORAGE_KEY);
 
-  let worldState: PersistedWorldStateV3 | PersistedWorldStateV2 | null = null;
+  let worldState: PersistedWorldStateV3 | null = null;
 
   if (rawWorldV3) {
     try {
       const parsed: unknown = JSON.parse(rawWorldV3);
       if (isPersistedWorldStateV3(parsed)) {
-        worldState = parsed;
-      } else if (isPersistedWorldStateV2(parsed)) {
         worldState = parsed;
       } else {
         clearPersistedSession();
@@ -504,19 +479,10 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
     }
   } else {
     const rawLegacy = worldStorage.getItem(LEGACY_WORLD_STORAGE_KEY);
-    if (!rawLegacy) return null;
-
-    try {
-      const parsedLegacy: unknown = JSON.parse(rawLegacy);
-      if (!isPersistedWorldStateV2(parsedLegacy)) {
-        clearPersistedSession();
-        return null;
-      }
-      worldState = parsedLegacy;
-    } catch {
+    if (rawLegacy) {
       clearPersistedSession();
-      return null;
     }
+    return null;
   }
 
   try {

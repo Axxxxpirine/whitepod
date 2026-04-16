@@ -18,9 +18,22 @@ export type Direction = (typeof Direction)[keyof typeof Direction];
 
 export const ResourceType = {
   None: 0,
-  Coal: 1,
-  IronOre: 2,
-  CopperOre: 3,
+  // --- Tier 0 : Raw (Extractors) ---
+  Regolith: 1,
+  Hydrogen: 2,
+  Oxygen: 3,
+  // --- Tier 1 : Converter (1→1) ---
+  IronOxide: 10,
+  AluminumOxide: 11,
+  SiliconDioxide: 12,
+  NitrogenGas: 13,
+  // --- Tier 1 : Synthesizer (2→1, from tier 0) ---
+  Water: 14,
+  Methane: 15,
+  CarbonDioxide: 16,
+  Ammonia: 17,
+  // --- Tier 2 : Synthesizer (from tier 1) ---
+  CeramicPlates: 20,
 } as const;
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
 

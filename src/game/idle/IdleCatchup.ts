@@ -67,9 +67,18 @@ export function buildIdleSummary(
     appliedSeconds,
     capped,
     resourceDelta: {
-      coal: after.coal - before.coal,
-      ironOre: after.ironOre - before.ironOre,
-      copperOre: after.copperOre - before.copperOre,
+      regolith: after.regolith - before.regolith,
+      hydrogen: after.hydrogen - before.hydrogen,
+      oxygen: after.oxygen - before.oxygen,
+      ironOxide: after.ironOxide - before.ironOxide,
+      aluminumOxide: after.aluminumOxide - before.aluminumOxide,
+      siliconDioxide: after.siliconDioxide - before.siliconDioxide,
+      nitrogenGas: after.nitrogenGas - before.nitrogenGas,
+      water: after.water - before.water,
+      methane: after.methane - before.methane,
+      carbonDioxide: after.carbonDioxide - before.carbonDioxide,
+      ammonia: after.ammonia - before.ammonia,
+      ceramicPlates: after.ceramicPlates - before.ceramicPlates,
     },
   };
 }

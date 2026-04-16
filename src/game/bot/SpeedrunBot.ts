@@ -12,11 +12,11 @@ import type { BotLifecycle, BotStatus } from './botTypes';
 
 const MAX_ACTIONS_PER_TICK = 18;
 
-const RESOURCE_PRIORITY: Record<ResourceTypeT, number> = {
+const RESOURCE_PRIORITY: Partial<Record<ResourceTypeT, number>> = {
   [ResourceType.None]: 0,
-  [ResourceType.Coal]: 1,
-  [ResourceType.IronOre]: 2,
-  [ResourceType.CopperOre]: 3,
+  [ResourceType.Regolith]: 1,
+  [ResourceType.Hydrogen]: 2,
+  [ResourceType.Oxygen]: 3,
 };
 
 export class SpeedrunBot implements BotLifecycle {
@@ -162,7 +162,7 @@ export class SpeedrunBot implements BotLifecycle {
           x,
           y,
           resource,
-          score: RESOURCE_PRIORITY[resource] * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
+          score: (RESOURCE_PRIORITY[resource] ?? 0) * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
         });
       }
     }
@@ -219,6 +219,6 @@ export class SpeedrunBot implements BotLifecycle {
   private describeSpeedTarget(): string {
     const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
     const stock = this.engine.getResourceCounts();
-    return `x${extractors.length} c${stock.coal} i${stock.ironOre} cu${stock.copperOre}`;
+    return `x${extractors.length} r${stock.regolith} h${stock.hydrogen} o${stock.oxygen}`;
   }
 }

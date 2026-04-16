@@ -53,7 +53,7 @@ function internals(animator: BeltFlowAnimator): AnimatorInternals {
 describe('BeltFlowAnimator', () => {
   it('stops belt sprite animation when the upstream extractor is unpowered', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
 
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
     const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
@@ -73,14 +73,14 @@ describe('BeltFlowAnimator', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
 
-    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.IronOre]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Hydrogen]);
 
     animator.destroy();
   });
 
   it('keeps belt sprite animation running when a save restores a zero resource amount', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -98,18 +98,18 @@ describe('BeltFlowAnimator', () => {
     const firstSegmentId = belt.segmentIds[0]!;
     const animator = createAnimator(engine);
 
-    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Coal]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Regolith]);
 
     engine.grid.resourceAmount.fill(0);
 
-    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Coal]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Regolith]);
 
     animator.destroy();
   });
 
   it('resolves a single resource type for a belt downstream of a merger with one input', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
+    engine.placeResource(0, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 2 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!;
@@ -137,37 +137,37 @@ describe('BeltFlowAnimator', () => {
 
     // Belt downstream of the merger should see the same resource type as the input.
     expect(resolveResources(engine, outBeltFirstSegmentId))
-      .toEqual([ResourceType.Coal]);
+      .toEqual([ResourceType.Regolith]);
 
     animator.destroy();
   });
 
   it('resolves both resource types for a belt downstream of a merger with two different inputs', () => {
     // Layout:
-    //   (0,0)=E2(iron)  (1,0)=belt  (2,0)=belt  (3,0)=corner→south
-    //   (0,1)=E1(coal)  (1,1)=belt  (2,1)=belt            (3,1)=Merger  (4,1)=belt  (5,1)=T
+    //   (0,0)=E2(hydrogen)  (1,0)=belt  (2,0)=belt  (3,0)=corner→south
+    //   (0,1)=E1(regolith)  (1,1)=belt  (2,1)=belt            (3,1)=Merger  (4,1)=belt  (5,1)=T
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
-    const extractor1Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!; // coal
-    const extractor2Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 0 })!; // iron
+    const extractor1Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 1 })!; // regolith
+    const extractor2Id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 0, y: 0 })!; // hydrogen
     expect(engine.connectBuildings(solar1Id, extractor1Id)).toBe(true);
     expect(engine.connectBuildings(solar2Id, extractor2Id)).toBe(true);
 
     const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
     const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 1 })!;
 
-    // E1(coal) → merger west input.
+    // E1(regolith) → merger west input.
     const belt1 = engine.placeBelt(
       { building: extractor1Id, port: 'out_east' },
       { building: mergerId, port: 'in_west' },
     );
     if (!belt1.ok) throw new Error(`belt1 failed: ${belt1.reason}`);
 
-    // E2(iron) → merger north input (router places a corner at (3,0)).
+    // E2(hydrogen) → merger north input (router places a corner at (3,0)).
     const belt2 = engine.placeBelt(
       { building: extractor2Id, port: 'out_east' },
       { building: mergerId, port: 'in_north' },
@@ -187,16 +187,16 @@ describe('BeltFlowAnimator', () => {
 
     // Both resource types must appear; order is insertion-deterministic.
     expect(resolved).toHaveLength(2);
-    expect(resolved).toContain(ResourceType.Coal);
-    expect(resolved).toContain(ResourceType.IronOre);
+    expect(resolved).toContain(ResourceType.Regolith);
+    expect(resolved).toContain(ResourceType.Hydrogen);
 
     animator.destroy();
   });
 
   it('deduplicates resource types when two inputs carry the same resource', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.Coal); // same type on both inputs
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Regolith); // same type on both inputs
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
@@ -227,8 +227,8 @@ describe('BeltFlowAnimator', () => {
     const animator = createAnimator(engine);
     const resolved = resolveResources(engine, outBelt.segmentIds[0]!);
 
-    // Deduplicated: two coal inputs → still just [Coal].
-    expect(resolved).toEqual([ResourceType.Coal]);
+    // Deduplicated: two regolith inputs → still just [Regolith].
+    expect(resolved).toEqual([ResourceType.Regolith]);
 
     animator.destroy();
   });
@@ -256,7 +256,7 @@ describe('BeltFlowAnimator', () => {
 
   it('renders moving sprites for one connected conveyor component', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -281,7 +281,7 @@ describe('BeltFlowAnimator', () => {
 
   it('moves the sprite continuously toward destination on a straight eastbound belt', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -315,7 +315,7 @@ describe('BeltFlowAnimator', () => {
 
   it('respawns at source after wrapping the full component path', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
 
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
@@ -352,7 +352,7 @@ describe('BeltFlowAnimator', () => {
 
   it('hides sprites when no belt in component has active resource flow', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
 
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
     const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 6, y: 1 })!;
@@ -374,8 +374,8 @@ describe('BeltFlowAnimator', () => {
 
   it('increments texture index on cycle wrap when multiple resources flow', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
@@ -410,8 +410,8 @@ describe('BeltFlowAnimator', () => {
     const component = Array.from(internals(animator).flowComponents.values())
       .find((c) => c.resourceTypes.length > 1);
     if (!component) throw new Error('expected flow component');
-    expect(component.resourceTypes).toContain(ResourceType.Coal);
-    expect(component.resourceTypes).toContain(ResourceType.IronOre);
+    expect(component.resourceTypes).toContain(ResourceType.Regolith);
+    expect(component.resourceTypes).toContain(ResourceType.Hydrogen);
 
     const initialTextureIndex = component.textureIndex;
     component.phase = component.pathLength - 0.1;
@@ -424,8 +424,8 @@ describe('BeltFlowAnimator', () => {
 
   it('keeps deterministic path ordering for merge topology across rebuilds', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;
@@ -472,8 +472,8 @@ describe('BeltFlowAnimator', () => {
 
   it('increases visible asset count when throughput increases on the same line', () => {
     const engine = makeEngine();
-    engine.placeResource(0, 1, ResourceType.Coal);
-    engine.placeResource(0, 0, ResourceType.IronOre);
+    engine.placeResource(0, 1, ResourceType.Regolith);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
 
     const solar1Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 4 })!;
     const solar2Id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 4 })!;

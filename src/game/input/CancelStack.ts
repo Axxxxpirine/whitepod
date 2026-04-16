@@ -11,7 +11,8 @@ type GameStore = typeof useGameStore;
  *   2. pending energy link source is set        → clear it
  *   3. current tool is not SELECT               → return to SELECT
  *   4. a building is selected                   → deselect it
- *   5. nothing active                           → no-op
+ *   5. a resource deposit is selected           → deselect it
+ *   6. nothing active                           → no-op
  */
 export function popCancelStack(
   store: GameStore,
@@ -37,6 +38,12 @@ export function popCancelStack(
   if (state.selectedBuildingId !== null) {
     state.setSelectedBuilding(null);
     state.setSelectedBuildingAnchor(null);
+    return true;
+  }
+
+  if (state.selectedResourceTile !== null) {
+    state.setSelectedResourceTile(null);
+    state.setSelectedResourceAnchor(null);
     return true;
   }
 

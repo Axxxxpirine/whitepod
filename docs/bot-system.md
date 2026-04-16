@@ -2,7 +2,7 @@
 
 This document defines the bot system for Whitepod: how bot profiles work, how bot logic should be structured, how the UI controls them, and how to add new bot classes with agent help.
 
-The goal is to keep the system extensible. The current greedy bot remains available as a legacy profile, while the new fractal profile becomes the adaptive strategy for exploration-driven play.
+The goal is to keep the system extensible. The current codebase exposes several profile-backed bots, with `greedy` as the legacy baseline and `fractal` as the adaptive spiral strategy.
 
 ## Goals
 
@@ -29,6 +29,11 @@ Examples:
 
 - `greedy`: legacy behavior, fast and simple, based on the current `AutonomousBot` logic.
 - `fractal`: adaptive exploration strategy using a spiral, fractal-style layout.
+- `explorer`: aggressive map reveal with frontier watchtowers.
+- `balanced`: steady growth with power-first discipline.
+- `logistics`: compact, connected infrastructure modules.
+- `speedrun`: fast early expansion with minimal overhead.
+- `circuit`: circuit-board style layout with spaced modules and belt routing.
 
 Profiles are selected in the UI and determine which bot class is instantiated.
 
@@ -50,11 +55,22 @@ The codebase currently uses a profile-backed bot controller with these files:
 
 - `src/game/bot/AutonomousBot.ts`
 - `src/game/bot/FractalBot.ts`
+- `src/game/bot/ExplorerBot.ts`
+- `src/game/bot/BalancedBot.ts`
+- `src/game/bot/LogisticsBot.ts`
+- `src/game/bot/SpeedrunBot.ts`
+- `src/game/bot/CircuitBot.ts`
 - `src/game/bot/BotController.ts`
+- `src/game/bot/botSession.ts`
 - `src/game/bot/botProfiles.ts`
 - `src/game/bot/botTypes.ts`
+- `src/game/bot/seedInput.ts`
+- `src/components/hud/bot/BotControlsPanel.tsx`
+- `src/components/hud/bot/BotProfileSelect.tsx`
+- `src/components/hud/bot/BotSeedControls.tsx`
+- `src/components/hud/bot/BotStatusIndicator.tsx`
 
-The `greedy` profile preserves the legacy behavior. The `fractal` profile is the adaptive spiral strategy. The UI selects the profile explicitly and the bot no longer auto-starts on page load.
+The UI selects the profile explicitly, the bot no longer auto-starts on page load, and seed handling is routed through a dedicated session helper.
 
 ## Runtime Behavior
 
@@ -71,6 +87,7 @@ Required controls:
 - editable seed input with apply action
 
 Current implementation note: the control cluster lives in the bottom-right HUD panel next to the settings popover.
+In code, the cluster is split into `BotControlsPanel`, `BotProfileSelect`, `BotSeedControls`, and `BotStatusIndicator`.
 
 ### Bot lifecycle
 
@@ -94,6 +111,7 @@ Applying a new seed must:
 - leave the bot stopped after reset unless the user restarts it manually
 
 Current implementation note: the selected profile id and seed input are persisted with the view/session state, while the world snapshot remains separate.
+The shared seed apply path lives in `src/game/session/seedSession.ts`.
 
 ## Engine Contract For Bots
 
@@ -139,6 +157,52 @@ It is expected to:
 - expand vision with watchtowers
 
 This profile exists as the legacy baseline and should remain available for comparison and regression testing.
+
+### Explorer profile
+
+The explorer profile prioritizes reveal and frontier pressure.
+
+It is expected to:
+
+- aggressively reveal the map frontier
+- prefer watchtower placement near unexplored edges
+- expand from already-revealed territory
+
+### Balanced profile
+
+The balanced profile prioritizes steady growth and power stability.
+
+It is expected to:
+
+- keep energy stability ahead of raw expansion
+- place production with a steadier growth curve
+
+### Logistics profile
+
+The logistics profile prioritizes compact infrastructure and transport links.
+
+It is expected to:
+
+- keep repeated modules tightly organized
+- favor connected layouts over scattered placement
+
+### Speedrun profile
+
+The speedrun profile prioritizes fast early expansion.
+
+It is expected to:
+
+- expand quickly with minimal overhead
+- prefer immediate gains over long-term structure
+
+### Circuit profile
+
+The circuit profile prioritizes regular, board-like layouts.
+
+It is expected to:
+
+- build a spaced, circuit-board style layout
+- keep module rows and routing visually regular
 
 ### Fractal profile
 
@@ -222,6 +286,11 @@ Suggested profile ids:
 
 - `greedy`
 - `fractal`
+- `explorer`
+- `balanced`
+- `logistics`
+- `speedrun`
+- `circuit`
 
 Suggested bot status fields:
 

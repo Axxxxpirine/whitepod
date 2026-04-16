@@ -3,7 +3,9 @@ import {
   EXTRACTOR_RATE_PER_MIN,
   MERGER_BASIC_BUILDING_TYPE_ID,
   isBeltTypeId,
+  isProcessorTypeId,
 } from '../data/buildingCatalog';
+import { getRecipe } from '../data/recipeCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import { ResourceType, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
 
@@ -47,6 +49,29 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         if (!entry.sources.has(upstream.id)) {
           entry.sources.add(upstream.id);
           entry.rate += EXTRACTOR_RATE_PER_MIN;
+        }
+        continue;
+      }
+
+      // Processors (converter/synthesizer) act as sources — do NOT traverse upstream through them
+      if (isProcessorTypeId(upstream.typeId)) {
+        if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
+        const state = engine.getProcessorState(upstream.id);
+        if (!state?.recipeId) continue;
+        const logistics = engine.getProcessorLogisticsStatus(upstream.id);
+        if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
+        const recipe = getRecipe(state.recipeId);
+        if (!recipe) continue;
+        const resource = recipe.output.resourceType;
+        const rate = (recipe.output.amount / recipe.cycleSeconds) * 60;
+        let entry = byResource.get(resource);
+        if (!entry) {
+          entry = { rate: 0, sources: new Set() };
+          byResource.set(resource, entry);
+        }
+        if (!entry.sources.has(upstream.id)) {
+          entry.sources.add(upstream.id);
+          entry.rate += rate;
         }
         continue;
       }

@@ -23,7 +23,7 @@ describe('GameEngine building placement', () => {
   });
 
   it('places extractor_basic on a resource deposit', () => {
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 });
     expect(id).not.toBeNull();
     expect(engine.getBuildingAt(8, 8)?.id).toBe(id);
@@ -76,7 +76,7 @@ describe('GameEngine building placement', () => {
 
   it('refuses extractor placement on an occupied tile without mutating state', () => {
     const existingId = engine.placeBuilding('placeholder_1x1', { x: 14, y: 14 })!;
-    engine.grid.setResource(14, 14, ResourceType.Coal);
+    engine.grid.setResource(14, 14, ResourceType.Regolith);
     const result = engine.canPlaceBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 14, y: 14 });
     expect(result).toEqual({ ok: false, reason: 'tile_occupied' });
     expect(engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 14, y: 14 })).toBeNull();
@@ -123,7 +123,7 @@ describe('GameEngine building placement', () => {
     });
 
     it('refuses placement when origin tile has a resource deposit', () => {
-      engine.grid.setResource(5, 5, ResourceType.IronOre);
+      engine.grid.setResource(5, 5, ResourceType.Hydrogen);
       const result = engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 });
       expect(result).toEqual({ ok: false, reason: 'resource_forbidden' });
       expect(engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 })).toBeNull();
@@ -131,14 +131,14 @@ describe('GameEngine building placement', () => {
     });
 
     it('refuses placement when any tile in the 3x3 footprint has a resource deposit', () => {
-      engine.grid.setResource(7, 7, ResourceType.Coal);
+      engine.grid.setResource(7, 7, ResourceType.Regolith);
       const result = engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 });
       expect(result).toEqual({ ok: false, reason: 'resource_forbidden' });
       expect(engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 5, y: 5 })).toBeNull();
     });
 
     it('extractor on a resource deposit is unaffected by forbidsResourceDeposit (regression)', () => {
-      engine.grid.setResource(8, 8, ResourceType.IronOre);
+      engine.grid.setResource(8, 8, ResourceType.Hydrogen);
       const id = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 });
       expect(id).not.toBeNull();
     });

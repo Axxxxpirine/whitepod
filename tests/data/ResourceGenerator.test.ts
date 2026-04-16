@@ -12,9 +12,9 @@ function createGrid(): TileGrid {
 function countResources(grid: TileGrid): Record<number, number> {
   const counts: Record<number, number> = {
     [ResourceType.None]: 0,
-    [ResourceType.Coal]: 0,
-    [ResourceType.IronOre]: 0,
-    [ResourceType.CopperOre]: 0,
+    [ResourceType.Regolith]: 0,
+    [ResourceType.Hydrogen]: 0,
+    [ResourceType.Oxygen]: 0,
   };
 
   for (const resource of grid.resourceType) {
@@ -121,12 +121,12 @@ describe('ResourceGenerator', () => {
     generateResources(grid, 42);
     const counts = countResources(grid);
 
-    expect(counts[ResourceType.Coal]).toBeGreaterThanOrEqual(730);
-    expect(counts[ResourceType.Coal]).toBeLessThanOrEqual(738);
-    expect(counts[ResourceType.IronOre]).toBeGreaterThanOrEqual(274);
-    expect(counts[ResourceType.IronOre]).toBeLessThanOrEqual(276);
-    expect(counts[ResourceType.CopperOre]).toBeGreaterThanOrEqual(118);
-    expect(counts[ResourceType.CopperOre]).toBeLessThanOrEqual(120);
+    expect(counts[ResourceType.Regolith]).toBeGreaterThanOrEqual(730);
+    expect(counts[ResourceType.Regolith]).toBeLessThanOrEqual(738);
+    expect(counts[ResourceType.Hydrogen]).toBeGreaterThanOrEqual(274);
+    expect(counts[ResourceType.Hydrogen]).toBeLessThanOrEqual(276);
+    expect(counts[ResourceType.Oxygen]).toBeGreaterThanOrEqual(118);
+    expect(counts[ResourceType.Oxygen]).toBeLessThanOrEqual(120);
   });
 
   it('prevents large clusters and 2x2 resource blocks', () => {

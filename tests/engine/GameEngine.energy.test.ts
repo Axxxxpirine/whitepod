@@ -7,6 +7,7 @@ import {
   EXTRACTOR_RATE_PER_MIN,
   getBuildingType,
   SOLAR_PANEL_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 
@@ -26,6 +27,16 @@ function simulate(engine: GameEngine, totalSeconds: number, stepSeconds = 0.1) {
     engine.update(dt);
     elapsed += dt;
   }
+}
+
+function connectExtractorToStorage(engine: GameEngine, extractorId: number, storageX: number, storageY: number, port = 'in_west') {
+  const storageId = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: storageX, y: storageY })!;
+  const belt = engine.placeBelt(
+    { building: extractorId, port: 'out_east' },
+    { building: storageId, port },
+  );
+  expect(belt.ok).toBe(true);
+  return storageId;
 }
 
 function simulateUntil(
@@ -89,7 +100,7 @@ describe('GameEngine energy networks', () => {
 
   it('computes production, consumption and remaining for a linked network', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
 
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
@@ -105,7 +116,7 @@ describe('GameEngine energy networks', () => {
 
   it('merges networks when linking through an existing connected building', () => {
     const solarA = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
     const extractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
     const solarB = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
 
@@ -121,7 +132,7 @@ describe('GameEngine energy networks', () => {
 
   it('tracks isolated buildings as separate one-node networks', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 5, y: 5 })!;
-    engine.placeResource(7, 5, ResourceType.IronOre);
+    engine.placeResource(7, 5, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 7, y: 5 })!;
 
     const networks = engine.getEnergyNetworkBalances();
@@ -136,7 +147,7 @@ describe('GameEngine energy networks', () => {
 
   it('drops links and recalculates balance when a building is removed', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
-    engine.placeResource(11, 10, ResourceType.IronOre);
+    engine.placeResource(11, 10, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 11, y: 10 })!;
     engine.connectBuildings(solarId, extractorId);
 
@@ -148,7 +159,7 @@ describe('GameEngine energy networks', () => {
 
   it('computes power states (neutral, powered, unpowered)', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
 
     expect(engine.getBuildingPowerState(solarId)).toBe('neutral');
@@ -163,11 +174,11 @@ describe('GameEngine energy networks', () => {
 
   it('aggregates global energy stats with online/offline consumers', () => {
     const solarA = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 10, y: 10 })!;
-    engine.placeResource(11, 10, ResourceType.IronOre);
+    engine.placeResource(11, 10, ResourceType.Hydrogen);
     const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 11, y: 10 })!;
     engine.connectBuildings(solarA, extractorA);
 
-    engine.placeResource(20, 20, ResourceType.IronOre);
+    engine.placeResource(20, 20, ResourceType.Hydrogen);
     const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 20, y: 20 })!;
 
     const stats = engine.getEnergyGlobalStats();
@@ -187,9 +198,9 @@ describe('GameEngine energy networks', () => {
 
   it('reports explicit network stats for powered and unpowered components', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
     const poweredExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
-    engine.placeResource(8, 8, ResourceType.Coal);
+    engine.placeResource(8, 8, ResourceType.Regolith);
     const offlineExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
 
     engine.connectBuildings(solarId, poweredExtractor);
@@ -220,9 +231,9 @@ describe('GameEngine energy networks', () => {
   it('keeps served load online when a battery can cover a deficit', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
-    engine.placeResource(6, 1, ResourceType.Coal);
-    engine.placeResource(8, 1, ResourceType.IronOre);
-    engine.placeResource(10, 1, ResourceType.CopperOre);
+    engine.placeResource(6, 1, ResourceType.Regolith);
+    engine.placeResource(8, 1, ResourceType.Hydrogen);
+    engine.placeResource(10, 1, ResourceType.Oxygen);
     const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 6, y: 1 })!;
     const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 1 })!;
     const extractorC = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 10, y: 1 })!;
@@ -277,7 +288,7 @@ describe('GameEngine energy networks', () => {
 
   it('can disconnect an existing energy link', () => {
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(2, 1, ResourceType.IronOre);
+    engine.placeResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
 
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
@@ -297,8 +308,9 @@ describe('GameEngine energy networks', () => {
     groundEverywhere(steadyEngine);
 
     const solarId = steadyEngine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    steadyEngine.placeResource(2, 1, ResourceType.Coal);
+    steadyEngine.placeResource(2, 1, ResourceType.Regolith);
     const extractorId = steadyEngine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    connectExtractorToStorage(steadyEngine, extractorId, 6, 0);
 
     expect(steadyEngine.connectBuildings(solarId, extractorId)).toBe(true);
 
@@ -309,17 +321,20 @@ describe('GameEngine energy networks', () => {
       steadyEngine.update(extractionIntervalSeconds);
     }
 
-    expect(steadyEngine.getResourceCounts().coal).toBe(250);
+    expect(steadyEngine.getResourceCounts().regolith).toBe(250);
     expect(steadyEngine.grid.getResourceAmount(2, 1)).toBe(initialAmount);
-    expect(steadyEngine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
+    expect(steadyEngine.getResourceRates().regolith).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(steadyEngine.getResourceRates().hydrogen).toBe(0);
+    expect(steadyEngine.getResourceRates().oxygen).toBe(0);
   });
 
   it('keeps a battery-backed extractor producing after many extraction intervals', () => {
     const solarAId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const solarBId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
-    engine.placeResource(7, 1, ResourceType.Coal);
+    engine.placeResource(7, 1, ResourceType.Regolith);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 7, y: 1 })!;
+    connectExtractorToStorage(engine, extractorId, 11, 0);
 
     expect(engine.connectBuildings(solarAId, extractorId)).toBe(true);
     expect(engine.connectBuildings(solarBId, extractorId)).toBe(true);
@@ -333,9 +348,11 @@ describe('GameEngine energy networks', () => {
       engine.update(EXTRACTION_INTERVAL_SECONDS);
     }
 
-    expect(engine.getResourceCounts().coal).toBe(250);
+    expect(engine.getResourceCounts().regolith).toBe(250);
     expect(engine.grid.getResourceAmount(7, 1)).toBe(initialAmount);
-    expect(engine.getResourceRates()).toEqual({ coal: EXTRACTOR_RATE_PER_MIN, ironOre: 0, copperOre: 0 });
+    expect(engine.getResourceRates().regolith).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(engine.getResourceRates().hydrogen).toBe(0);
+    expect(engine.getResourceRates().oxygen).toBe(0);
   });
 
   it('charges an empty battery to full with two solar panels over a daylight-aware simulation', () => {
@@ -368,7 +385,7 @@ describe('GameEngine energy networks', () => {
 
   it('discharges a battery at the kW rate when demand exceeds production', () => {
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(4, 1, ResourceType.IronOre);
+    engine.placeResource(4, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
     engine.connectBuildings(batteryId, extractorId);
 
@@ -383,8 +400,9 @@ describe('GameEngine energy networks', () => {
 
   it('stores enough energy in one full battery to power one extractor for a full night', () => {
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    engine.placeResource(4, 1, ResourceType.IronOre);
+    engine.placeResource(4, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
+    connectExtractorToStorage(engine, extractorId, 8, 0);
     expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
 
     const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
@@ -395,7 +413,7 @@ describe('GameEngine energy networks', () => {
     simulate(engine, HALF_NIGHT_SECONDS, EXTRACTION_INTERVAL_SECONDS);
 
     expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
-    expect(engine.getResourceCounts().ironOre).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(engine.getResourceCounts().hydrogen).toBe(EXTRACTOR_RATE_PER_MIN);
     expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(
       battery.capacity - extractorConsumption * (HALF_NIGHT_SECONDS / FULL_DAY_NIGHT_CYCLE_SECONDS),
       5,
@@ -408,7 +426,7 @@ describe('GameEngine energy networks', () => {
 
     for (let i = 0; i < 6; i++) {
       const x = 4 + i * 2;
-      engine.placeResource(x, 1, ResourceType.IronOre);
+      engine.placeResource(x, 1, ResourceType.Hydrogen);
       const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x, y: 1 })!;
       extractorIds.push(extractorId);
       expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
@@ -420,7 +438,7 @@ describe('GameEngine energy networks', () => {
     engine.update(120);
 
     expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(battery.capacity, 5);
-    expect(engine.getResourceCounts().ironOre).toBe(0);
+    expect(engine.getResourceCounts().hydrogen).toBe(0);
     for (const extractorId of extractorIds) {
       expect(engine.getBuildingPowerState(extractorId)).toBe('unpowered');
     }

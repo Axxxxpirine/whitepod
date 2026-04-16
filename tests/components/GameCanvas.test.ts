@@ -24,7 +24,7 @@ describe('GameCanvas helpers', () => {
   it('reuses the next click as a new source when the pending source was deleted', () => {
     const engine = makeEngine();
     const deletedSource = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
-    engine.grid.setResource(3, 1, ResourceType.IronOre);
+    engine.grid.setResource(3, 1, ResourceType.Hydrogen);
     const clickedBuildingId = engine.placeBuilding('extractor_basic', { x: 3, y: 1 })!;
     expect(engine.removeBuilding(deletedSource)).toBe(true);
 
@@ -52,7 +52,7 @@ describe('GameCanvas helpers', () => {
   it('keeps energy-link mode active after a successful second click', () => {
     const engine = makeEngine();
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
-    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    engine.grid.setResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
 
     const setPendingEnergyLinkSource = vi.fn();
@@ -79,7 +79,7 @@ describe('GameCanvas helpers', () => {
   it('clears the pending source when an energy link change fails', () => {
     const engine = makeEngine();
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
-    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    engine.grid.setResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
     vi.spyOn(engine, 'connectBuildings').mockReturnValue(false);
 

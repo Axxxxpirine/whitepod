@@ -18,6 +18,12 @@ export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 export const BATTERY_BASIC_BUILDING_TYPE_ID = 'battery_basic' as const;
 export const MERGER_BASIC_BUILDING_TYPE_ID = 'merger_basic' as const;
 export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
+export const CONVERTER_BUILDING_TYPE_ID = 'converter_basic' as const;
+export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
+
+export function isProcessorTypeId(typeId: BuildingTypeId): boolean {
+  return typeId === CONVERTER_BUILDING_TYPE_ID || typeId === SYNTHESIZER_BUILDING_TYPE_ID;
+}
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
@@ -106,6 +112,31 @@ const entries: readonly BuildingType[] = [
     ports: [],
   },
   {
+    id: CONVERTER_BUILDING_TYPE_ID,
+    name: 'Convertisseur',
+    footprint: { w: 3, h: 3 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [
+      { id: 'in', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
+      { id: 'out', kind: PortKind.Output, offset: { x: 2, y: 1 }, side: Direction.East },
+    ],
+    energy: { consumption: 6 },
+  },
+  {
+    id: SYNTHESIZER_BUILDING_TYPE_ID,
+    name: 'Synthétiseur',
+    footprint: { w: 4, h: 4 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [
+      { id: 'in_1', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
+      { id: 'in_2', kind: PortKind.Input, offset: { x: 0, y: 2 }, side: Direction.West },
+      { id: 'out', kind: PortKind.Output, offset: { x: 3, y: 2 }, side: Direction.East },
+    ],
+    energy: { consumption: 10 },
+  },
+  {
     id: 'placeholder_1x1',
     name: 'Placeholder 1x1',
     footprint: { w: 1, h: 1 },
@@ -184,12 +215,30 @@ export function getBuildingType(id: BuildingTypeId): BuildingType | undefined {
 
 export function resourceTypeLabel(type: ResourceTypeT): string {
   switch (type) {
-    case ResourceType.Coal:
-      return 'Charbon';
-    case ResourceType.IronOre:
-      return 'Minerai de fer';
-    case ResourceType.CopperOre:
-      return 'Minerai de cuivre';
+    case ResourceType.Regolith:
+      return 'Régolithe';
+    case ResourceType.Hydrogen:
+      return 'Hydrogène';
+    case ResourceType.Oxygen:
+      return 'Oxygène';
+    case ResourceType.IronOxide:
+      return 'Oxyde de fer';
+    case ResourceType.AluminumOxide:
+      return "Oxyde d'aluminium";
+    case ResourceType.SiliconDioxide:
+      return 'Dioxyde de silicium';
+    case ResourceType.NitrogenGas:
+      return 'Azote';
+    case ResourceType.Water:
+      return 'Eau';
+    case ResourceType.Methane:
+      return 'Méthane';
+    case ResourceType.CarbonDioxide:
+      return 'Dioxyde de carbone';
+    case ResourceType.Ammonia:
+      return 'Ammoniac';
+    case ResourceType.CeramicPlates:
+      return 'Plaques céramiques';
     default:
       return 'Aucune';
   }

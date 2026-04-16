@@ -21,9 +21,9 @@ export const BUILDING_SPRITE_PATHS: ReadonlyMap<BuildingTypeId, string> = new Ma
 ]);
 
 export const RESOURCE_SPRITE_PATHS: ReadonlyMap<ResourceType, string> = new Map([
-  [ResourceType.Coal, 'sprites/coal.png'],
-  [ResourceType.IronOre, 'sprites/iron-ore.png'],
-  [ResourceType.CopperOre, 'sprites/copper-ore.png'],
+  [ResourceType.Regolith, 'sprites/regolith.png'],
+  [ResourceType.Hydrogen, 'sprites/hydrogen.png'],
+  [ResourceType.Oxygen, 'sprites/oxygen.png'],
 ]);
 
 export function assetUrl(path: string): string {

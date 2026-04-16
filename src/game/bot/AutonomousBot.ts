@@ -14,11 +14,11 @@ import type { BotLifecycle, BotStatus } from './botTypes';
 
 const MAX_ACTIONS_PER_TICK = 16;
 
-const RESOURCE_PRIORITY: Record<ResourceTypeT, number> = {
+const RESOURCE_PRIORITY: Partial<Record<ResourceTypeT, number>> = {
   [ResourceType.None]: 0,
-  [ResourceType.Coal]: 1,
-  [ResourceType.IronOre]: 2,
-  [ResourceType.CopperOre]: 3,
+  [ResourceType.Regolith]: 1,
+  [ResourceType.Hydrogen]: 2,
+  [ResourceType.Oxygen]: 3,
 };
 
 function buildingPriority(typeId: BuildingTypeId): number {
@@ -223,7 +223,7 @@ export class AutonomousBot implements BotLifecycle {
           x,
           y,
           resource,
-          score: RESOURCE_PRIORITY[resource] * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
+          score: (RESOURCE_PRIORITY[resource] ?? 0) * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
         });
       }
     }
@@ -283,7 +283,7 @@ export class AutonomousBot implements BotLifecycle {
 
   private describeStockTarget(): string {
     const stock = this.engine.getResourceCounts();
-    return `stock c${stock.coal} i${stock.ironOre} cu${stock.copperOre}`;
+    return `stock r${stock.regolith} h${stock.hydrogen} o${stock.oxygen}`;
   }
 
   private setStatus(status: BotStatus): void {

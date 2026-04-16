@@ -43,13 +43,15 @@ npm run dev   # → http://localhost:5173
 
 In development, the game engine is exposed as `window.engine`. Open the browser devtools console to interact with it directly.
 
-For a fuller reference of executable game primitives and failure modes, see [PRIMITIVES.md](/Users/elliotbartholme/Documents/whitepod/PRIMITIVES.md).
+For a fuller reference of executable game primitives and failure modes, see [PRIMITIVES.md](./PRIMITIVES.md).
 
 ### Resources
 
 ```js
 engine.placeResource(x, y, resourceType)
-// ResourceType: 0=None  1=Coal  2=IronOre  3=CopperOre
+// ResourceType — base (extractable):   0=None  1=Regolith  2=Hydrogen  3=Oxygen
+// ResourceType — tier-1 refined:       10=IronOxide  11=AluminumOxide  12=SiliconDioxide  13=NitrogenGas
+// ResourceType — tier-1/2 synthesized: 14=Water  15=Methane  16=CarbonDioxide  17=Ammonia  20=CeramicPlates
 
 engine.removeResource(x, y)
 engine.getResourceAt(x, y)
@@ -75,6 +77,8 @@ engine.placeBuilding('storage_basic', { x, y })             // 3x3 footprint
 engine.placeBuilding('battery_basic', { x, y })             // 2x2 footprint
 engine.placeBuilding('merger_basic', { x, y })
 engine.placeBuilding('watchtower', { x, y })                // 2x2, reveals fog in radius
+engine.placeBuilding('converter_basic', { x, y })           // 3x3, transforms resources via recipe
+engine.placeBuilding('synthesizer_basic', { x, y })         // 4x4, combines 2 inputs via recipe
 engine.placeBuilding('placeholder_1x1', { x, y })
 engine.placeBuilding('placeholder_3x3', { x, y })
 engine.placeBuilding('placeholder_node_1x1', { x, y })
@@ -124,8 +128,9 @@ engine.getEnergyStorageTotals()                // { stored, capacity } across al
 ### Resources & economy
 
 ```js
-engine.getResourceCounts()             // Current player stock { coal, ironOre, copperOre }
-engine.getResourceRates()              // Active extraction rates (items/min)
+engine.getResourceCounts()             // Aggregated storage inventories across the world
+engine.getResourceRates()              // Net connected-line rates (items/min)
+engine.getStorageInventory(buildingId) // Per-storage inventory or null
 ```
 
 ### Simulation
@@ -133,7 +138,6 @@ engine.getResourceRates()              // Active extraction rates (items/min)
 ```js
 engine.simulationTime                  // Day/night cycle position (0–1)
 engine.mapSeed                         // Current map seed
-engine.playerStock                     // Direct access to resource stock
 engine.batteryCharges                  // Map<BuildingId, number> of battery charge levels
 ```
 
@@ -142,6 +146,11 @@ engine.batteryCharges                  // Map<BuildingId, number> of battery cha
 ```js
 window.engine.scenarios.list()
 window.engine.scenarios.install('bootstrap-energy-grid')
+window.engine.scenarios.listGenerators()
+window.engine.scenarios.generate('tier-simple')    // starter: 4 solar + 3 extractors + 3 storages
+window.engine.scenarios.generate('tier-medium')    // mid: 2 resource types, branched energy
+window.engine.scenarios.generate('tier-complex')   // full: mergers, watchtower, 3 resource types
+window.engine.scenarios.generate('tier-build-all') // all 4 converters + 5 synthesizers, 12 resources
 // Reload the page to boot through the normal persisted-session restore path.
 ```
 

@@ -26,7 +26,7 @@ import {
 import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
-import type { SelectedTool } from '@/game/types';
+import { ResourceType, type SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { finalizePendingScenarioInstall } from '@/game/scenarios/applyScenario';
 import { createDevScenarioApi, hasPendingScenarioInstall } from '@/game/scenarios/devScenarios';
@@ -316,7 +316,21 @@ export function GameCanvas() {
         if (buildingId === null) {
           state.setSelectedBuildingAnchor(null);
           state.setPendingEnergyLinkSource(null);
+          return;
         }
+        state.setSelectedResourceTile(null);
+        state.setSelectedResourceAnchor(null);
+      });
+      currentInputHandler.setResourceSelectedCallback((tile) => {
+        const state = useGameStore.getState();
+        state.setSelectedResourceTile(tile);
+        if (tile === null) {
+          state.setSelectedResourceAnchor(null);
+          return;
+        }
+        state.setSelectedBuilding(null);
+        state.setSelectedBuildingAnchor(null);
+        state.setPendingEnergyLinkSource(null);
       });
       currentInputHandler.setBuildingPlacedCallback((buildingId) => {
         const state = useGameStore.getState();
@@ -457,7 +471,12 @@ export function GameCanvas() {
         if (state.simulationTime !== quantized) {
           state.setSimulationTime(quantized);
         }
-        const { selectedBuildingAnchor, selectedBuildingId } = state;
+        const {
+          selectedBuildingAnchor,
+          selectedBuildingId,
+          selectedResourceAnchor,
+          selectedResourceTile,
+        } = state;
 
         if (selectedBuildingId === null) {
           if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
@@ -484,6 +503,30 @@ export function GameCanvas() {
               ) {
                 state.setSelectedBuildingAnchor({ x: ax, y: ay });
               }
+            }
+          }
+        }
+
+        if (selectedResourceTile === null) {
+          if (selectedResourceAnchor !== null) state.setSelectedResourceAnchor(null);
+        } else {
+          const resource = engine.getResourceAt(selectedResourceTile.x, selectedResourceTile.y);
+          const building = engine.getBuildingAt(selectedResourceTile.x, selectedResourceTile.y);
+          if (resource === ResourceType.None || building !== null) {
+            state.setSelectedResourceTile(null);
+            if (selectedResourceAnchor !== null) state.setSelectedResourceAnchor(null);
+          } else {
+            const worldX = selectedResourceTile.x * TILE_SIZE + TILE_SIZE / 2;
+            const worldY = selectedResourceTile.y * TILE_SIZE;
+            const anchor = worldToScreen(engine.viewport, worldX, worldY);
+            const ax = Math.round(anchor.sx);
+            const ay = Math.round(anchor.sy);
+            if (
+              selectedResourceAnchor === null ||
+              selectedResourceAnchor.x !== ax ||
+              selectedResourceAnchor.y !== ay
+            ) {
+              state.setSelectedResourceAnchor({ x: ax, y: ay });
             }
           }
         }

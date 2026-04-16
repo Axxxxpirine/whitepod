@@ -3,7 +3,7 @@
  *
  * Produces a mid-complexity layout:
  *   – 6 solar panels + 2 batteries + 4 extractors + 1 storage (3×3)
- *   – 2 resource types (Coal + IronOre), ~7 visible deposits
+ *   – 2 resource types (Regolith + Hydrogen), ~7 visible deposits
  *   – Single branched energy subnet (solars → batteries → extractors)
  *   – Extractors routed to storage via auto-planned belts
  *
@@ -46,21 +46,21 @@ export function generateMediumScenario(screenWidth: number, screenHeight: number
   // 4 extractors stacked vertically, all west of storage. Belts route East.
   const jitter = () => randomInt(rng, -1, 1);
   const extractorDepositTargets: { coord: TileCoord; type: ResourceType }[] = [
-    { coord: toWorld(-7 + jitter(), -3), type: ResourceType.Coal },
-    { coord: toWorld(-7 + jitter(), 0), type: ResourceType.IronOre },
-    { coord: toWorld(-7 + jitter(), 3), type: ResourceType.Coal },
-    { coord: toWorld(-7 + jitter(), 6), type: ResourceType.IronOre },
+    { coord: toWorld(-7 + jitter(), -3), type: ResourceType.Regolith },
+    { coord: toWorld(-7 + jitter(), 0), type: ResourceType.Hydrogen },
+    { coord: toWorld(-7 + jitter(), 3), type: ResourceType.Regolith },
+    { coord: toWorld(-7 + jitter(), 6), type: ResourceType.Hydrogen },
   ];
 
   // --- Visible (decorative) deposits ---
   const visibleDepositOffsets: [number, number, ResourceType][] = [
-    [8, -4, ResourceType.Coal],
-    [9, 2, ResourceType.IronOre],
-    [-3, 8, ResourceType.Coal],
-    [4, 8, ResourceType.IronOre],
-    [8, 7, ResourceType.Coal],
-    [-9, 8, ResourceType.IronOre],
-    [-9, -7, ResourceType.Coal],
+    [8, -4, ResourceType.Regolith],
+    [9, 2, ResourceType.Hydrogen],
+    [-3, 8, ResourceType.Regolith],
+    [4, 8, ResourceType.Hydrogen],
+    [8, 7, ResourceType.Regolith],
+    [-9, 8, ResourceType.Hydrogen],
+    [-9, -7, ResourceType.Regolith],
   ];
 
   for (const { coord, type } of extractorDepositTargets) {

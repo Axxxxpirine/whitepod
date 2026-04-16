@@ -36,9 +36,9 @@ describe('generateComplexScenario', () => {
         }
       }
     }
-    expect(types.has(ResourceType.Coal)).toBe(true);
-    expect(types.has(ResourceType.IronOre)).toBe(true);
-    expect(types.has(ResourceType.CopperOre)).toBe(true);
+    expect(types.has(ResourceType.Regolith)).toBe(true);
+    expect(types.has(ResourceType.Hydrogen)).toBe(true);
+    expect(types.has(ResourceType.Oxygen)).toBe(true);
   });
 
   it('returns select tool and valid viewport', () => {
