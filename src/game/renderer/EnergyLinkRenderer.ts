@@ -478,7 +478,7 @@ export class EnergyLinkRenderer {
 
         // If there are no non-consumer battery edges (e.g. simple producer-battery
         // network), fallback to direct battery-oriented pass.
-        if (batteryDots === 0 && component.directedToConsumers.length === 0) {
+        if (component.directedToBatteriesNonConsumerEdges.length === 0 && component.directedToConsumers.length === 0) {
           const fallbackBatteryDots = this.drawFlowDotsOnDirectedSegments(
             component.directedToBatteries,
             style,
