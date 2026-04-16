@@ -216,7 +216,7 @@ export function GameHUD() {
                       className={globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
-                      className={`font-bold tabular-nums ${globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}`}
+                      className={`text-xs tabular-nums ${globalEnergy.remaining >= 0 ? 'text-ok' : 'text-error'}`}
                     >
                       {globalEnergy.remaining >= 0 ? '+' : ''}
                       {Math.round(globalEnergy.remaining * 10) / 10} kW
@@ -326,25 +326,6 @@ export function GameHUD() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="text-xs text-white/70">Volume musique</div>
-                  <input
-                    aria-label="Music volume"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={musicVolume}
-                    onChange={(e) => setMusicVolume(Number(e.target.value))}
-                    className="w-full accent-emerald-400"
-                  />
-                  <div className="flex items-center justify-between text-[11px] text-white/60">
-                    <span>0%</span>
-                    <span>{Math.round(musicVolume * 100)}%</span>
-                    <span>100%</span>
-                  </div>
-                </div>
-
               </div>
             )}
           </Panel>
@@ -445,6 +426,25 @@ export function GameHUD() {
                         {linkSolarOnPlacement ? 'ON' : 'OFF'}
                       </Chip>
                     </button>
+
+                    <div className="space-y-1 px-2 py-1.5">
+                      <div className="label text-ink-muted">Volume musique</div>
+                      <input
+                        aria-label="Music volume"
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={musicVolume}
+                        onChange={(e) => setMusicVolume(Number(e.target.value))}
+                        className="w-full accent-accent"
+                      />
+                      <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                        <span>0%</span>
+                        <span>{Math.round(musicVolume * 100)}%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
 
                     <div className="space-y-1 px-2 py-1.5">
                       <div className="label text-ink-muted">Volume effets</div>
