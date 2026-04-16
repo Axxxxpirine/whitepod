@@ -366,4 +366,170 @@ describe('useGameStore persistence hydrate', () => {
     expect(exportData.layerTokens.bus).toEqual({})
     expect(exportData.layerTokens.stock).toEqual({})
   })
+
+  it('spends stocked inputs when placing a payable recipe station', async () => {
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      { id: 'launch', consumes: [{ place: 'run', qty: 1 }], produces: [{ place: 'done', qty: 1 }] },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+      {
+        id: 'recipe__ammonia_synthesis',
+        consumes: [
+          { place: 'lunar_hydrogen_stock', qty: 3 },
+          { place: 'lunar_oxygen_stock', qty: 2 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'ammonia_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [
+          { id: 'lunar_hydrogen', tier: 0, name_fr: 'Hydrogene lunaire' },
+          { id: 'lunar_oxygen', tier: 0, name_fr: 'Oxygene lunaire' },
+          { id: 'ammonia', tier: 1, name_fr: 'Ammoniac' },
+        ],
+        transitions: [
+          { id: 'recipe__ammonia_synthesis', kind: 'station', activation: 'placed', stationKind: 'recipe', name_fr: 'Synthese ammoniaque' },
+        ],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 1, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 3 },
+            lunar_oxygen: { depositCount: 1, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 1, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+
+    useGameStore.getState().engine?.loadSnapshot({
+      tokens: {
+        run: 1,
+        lunar_hydrogen_stock: 3,
+        lunar_oxygen_stock: 2,
+      },
+      terminated: false,
+    })
+
+    const grid = useGameStore.getState().grid
+    let x = 0
+    let y = 0
+    while (!grid.canPlaceStationAt(x, y)) {
+      x += 1
+      if (x >= grid.width) {
+        x = 0
+        y += 1
+      }
+    }
+
+    const result = useGameStore.getState().placeStationAtCell(x, y, 'recipe__ammonia_synthesis')
+    expect(result).toEqual({ ok: true })
+    expect(useGameStore.getState().engine?.getTokensSnapshot()).toEqual({ run: 1 })
+    expect(useGameStore.getState().tokens).toEqual({ run: 1 })
+  })
+
+  it('rejects a recipe station build when stocked inputs are missing', async () => {
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      { id: 'launch', consumes: [{ place: 'run', qty: 1 }], produces: [{ place: 'done', qty: 1 }] },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+      {
+        id: 'recipe__ammonia_synthesis',
+        consumes: [
+          { place: 'lunar_hydrogen_stock', qty: 3 },
+          { place: 'lunar_oxygen_stock', qty: 2 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'ammonia_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [],
+        transitions: [
+          { id: 'recipe__ammonia_synthesis', kind: 'station', activation: 'placed', stationKind: 'recipe', name_fr: 'Synthese ammoniaque' },
+        ],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 1, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 3 },
+            lunar_oxygen: { depositCount: 1, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 1, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+
+    useGameStore.getState().engine?.loadSnapshot({
+      tokens: {
+        run: 1,
+        lunar_hydrogen_stock: 2,
+        lunar_oxygen_stock: 1,
+      },
+      terminated: false,
+    })
+
+    const beforeStations = useGameStore.getState().stations.length
+    const grid = useGameStore.getState().grid
+    let x = 0
+    let y = 0
+    while (!grid.canPlaceStationAt(x, y)) {
+      x += 1
+      if (x >= grid.width) {
+        x = 0
+        y += 1
+      }
+    }
+
+    const result = useGameStore.getState().placeStationAtCell(x, y, 'recipe__ammonia_synthesis')
+    expect(result.ok).toBe(false)
+    expect(result.reason).toContain('Ressources insuffisantes')
+    expect(useGameStore.getState().stations.length).toBe(beforeStations)
+    expect(useGameStore.getState().engine?.getTokensSnapshot()).toEqual({
+      run: 1,
+      lunar_hydrogen_stock: 2,
+      lunar_oxygen_stock: 1,
+    })
+  })
 })

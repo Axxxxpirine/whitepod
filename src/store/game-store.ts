@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { applyBuildCost, getMissingBuildCost, getStationBuildCost } from '@/core/build-planning'
 import type { GamePhase, LunarChemistryMetadata, PixiExport, Transition } from '@/core/types'
 import { GRID_CELL_SIZE } from '@/core/grid/config'
 import {
@@ -169,6 +170,14 @@ function getBuildReason(grid: GridManager, transitionId: string, x: number, y: n
   }
 
   return 'Aucune place consommée adjacente'
+}
+
+function getBuildPaymentReason(tokens: Record<string, number>, transition: Transition): string | null {
+  const missing = getMissingBuildCost(tokens, getStationBuildCost(transition))
+  if (missing.length === 0) return null
+
+  const missingLabel = missing.map(token => `${token.qty} ${token.place}`).join(', ')
+  return `Ressources insuffisantes: ${missingLabel}`
 }
 
 function extractResourceId(transitionId: string): ResourceId | null {
@@ -462,7 +471,13 @@ export const useGameStore = create<GameState>()(
       placeStation: transitionId => {
         if (SYSTEM_TRANSITIONS.has(transitionId)) return
 
-        const { grid, engine, tickIndex } = get()
+        const { grid, engine, tickIndex, transitions } = get()
+        const transition = transitions.find(entry => entry.id === transitionId)
+        if (!transition) return
+
+        const nextTokens = engine ? applyBuildCost(engine.getTokensSnapshot(), getStationBuildCost(transition)) : {}
+        if (engine && nextTokens === null) return
+
         const resourceId = extractResourceId(transitionId)
 
         const station = resourceId
@@ -471,33 +486,59 @@ export const useGameStore = create<GameState>()(
 
         if (!station) return
 
+        if (engine && nextTokens) {
+          engine.loadSnapshot({
+            ...engine.getSnapshot(),
+            tokens: nextTokens,
+          })
+        }
+
         set({
           autosaveTickIndex: tickIndex,
           saveRevision: get().saveRevision + 1,
           stations: grid.listStations(),
+          phase: engine ? engine.getPhase() : get().phase,
+          tokens: engine ? engine.getTokensSnapshot() : get().tokens,
           engineSnapshot: engine ? engine.getSnapshot() : null,
           gridSnapshot: grid.getSnapshot(),
         })
       },
 
       placeStationAtCell: (x, y, transitionId) => {
-        const { grid, metadata, engine, tickIndex } = get()
+        const { grid, metadata, engine, tickIndex, transitions } = get()
         if (!metadata) return { ok: false, reason: 'Métadonnées non chargées' }
 
         const transitionMeta = metadata.gameSystem.transitions.find(t => t.id === transitionId)
         if (!transitionMeta) return { ok: false, reason: 'Transition inconnue' }
 
+        const transition = transitions.find(entry => entry.id === transitionId)
+        if (!transition) return { ok: false, reason: 'Transition runtime inconnue' }
+
         const placeOk = getBuildReason(grid, transitionId, x, y)
         if (placeOk) return { ok: false, reason: placeOk }
 
+        const paymentReason = getBuildPaymentReason(engine?.getTokensSnapshot() ?? {}, transition)
+        if (paymentReason) return { ok: false, reason: paymentReason }
+
         const station = grid.placeStationAt(x, y, transitionId)
         if (!station) return { ok: false, reason: 'Impossible de poser la station' }
+
+        if (engine) {
+          const nextTokens = applyBuildCost(engine.getTokensSnapshot(), getStationBuildCost(transition))
+          if (!nextTokens) return { ok: false, reason: 'Ressources insuffisantes' }
+          engine.loadSnapshot({
+            ...engine.getSnapshot(),
+            tokens: nextTokens,
+          })
+        }
 
         set({
           selectedBuildCell: null,
           autosaveTickIndex: tickIndex,
           saveRevision: get().saveRevision + 1,
           stations: grid.listStations(),
+          phase: engine ? engine.getPhase() : get().phase,
+          tokens: engine ? engine.getTokensSnapshot() : get().tokens,
           engineSnapshot: engine ? engine.getSnapshot() : null,
           gridSnapshot: grid.getSnapshot(),
         })
@@ -529,22 +570,32 @@ export const useGameStore = create<GameState>()(
       },
 
       getBuildOptionsAtSelectedCell: () => {
-        const { metadata, grid, selectedBuildCell, buildPalette } = get()
-        if (!metadata || !selectedBuildCell) return []
+        const { grid, selectedBuildCell, buildPalette, transitions, metadata, engine } = get()
+        if (!selectedBuildCell) return []
         const prefix = getPalettePrefix(buildPalette)
-        const transitions = metadata.gameSystem.transitions.filter(t => t.kind === 'station' && t.activation === 'placed' && t.id.startsWith(prefix))
-        return transitions.map(t => {
-          const reason = getBuildReason(grid, t.id, selectedBuildCell.x, selectedBuildCell.y)
-          return { transitionId: t.id, name: t.name_fr ?? t.id, enabled: reason === null, reason: reason ?? undefined }
+        const candidates = transitions.filter(t => t.id.startsWith(prefix))
+        return candidates.map(transition => {
+          const placementReason = getBuildReason(grid, transition.id, selectedBuildCell.x, selectedBuildCell.y)
+          const paymentReason = getBuildPaymentReason(engine?.getTokensSnapshot() ?? {}, transition)
+          const reason = placementReason ?? paymentReason
+          const name = metadata?.gameSystem.transitions.find(t => t.id === transition.id)?.name_fr ?? transition.id
+          return { transitionId: transition.id, name, enabled: reason === null, reason: reason ?? undefined }
         })
       },
 
       getPreferredTransitionIdForPalette: () => {
-        const { selectedBuildTransitionId, buildPalette, transitions } = get()
+        const { selectedBuildTransitionId, buildPalette, transitions, engine } = get()
         const prefix = getPalettePrefix(buildPalette)
-        if (selectedBuildTransitionId && selectedBuildTransitionId.startsWith(prefix)) return selectedBuildTransitionId
+        const affordableTransitions = transitions.filter(transition => {
+          if (!transition.id.startsWith(prefix)) return false
+          return getMissingBuildCost(engine?.getTokensSnapshot() ?? {}, getStationBuildCost(transition)).length === 0
+        })
 
-        return transitions.find(t => t.id.startsWith(prefix))?.id ?? null
+        if (selectedBuildTransitionId && affordableTransitions.some(transition => transition.id === selectedBuildTransitionId)) {
+          return selectedBuildTransitionId
+        }
+
+        return affordableTransitions[0]?.id ?? null
       },
 
       placeStationAtSelectedCell: transitionId => {

@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  buildPlaceMetaMap,
+  buildTransitionMetaMap,
+  getMissingBuildCost,
+  getPlaceLabel,
+  getStationBuildCost,
+  getTransitionLabel,
+} from '@/core/build-planning'
+import { TierGuideModal } from '@/components/help/TierGuideModal'
 import { RuntimeSelectionPanel } from '@/components/runtime/RuntimeSelectionPanel'
 import { RuntimeSettingsPopover } from '@/components/runtime/RuntimeSettingsPopover'
 import { RuntimeToolIndicator } from '@/components/runtime/RuntimeToolIndicator'
+import type { Transition } from '@/core/types'
 import type { ResourceId } from '@/core/grid/manager'
 import { GRID_CELL_SIZE, GRID_WIDTH } from '@/core/grid/config'
 import { PixiCanvas } from '@/components/PixiCanvas'
@@ -10,6 +20,12 @@ import { useGameStore } from '@/store/game-store'
 import './App.css'
 
 const PIXI_CANVAS_BASE_SIZE = GRID_WIDTH * GRID_CELL_SIZE
+
+function formatBuildCost(transition: Transition, placeMetaById: ReturnType<typeof buildPlaceMetaMap>): string {
+  const cost = getStationBuildCost(transition)
+  if (cost.length === 0) return 'Free'
+  return cost.map(token => `${token.qty} x ${getPlaceLabel(token.place, placeMetaById)}`).join(' + ')
+}
 
 function statusLabel(phase: string): string {
   switch (phase) {
@@ -60,6 +76,7 @@ function App() {
   const phase = useGameStore(s => s.phase)
   const tokens = useGameStore(s => s.tokens)
   const metadata = useGameStore(s => s.metadata)
+  const transitions = useGameStore(s => s.transitions)
   const stations = useGameStore(s => s.stations)
   const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
@@ -81,7 +98,8 @@ function App() {
   const loopRef = useRef<GameLoop | null>(null)
   const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
-  const [canvasZoom, setCanvasZoom] = useState<number>(0.625)
+  const [canvasZoom, setCanvasZoom] = useState<number>(0.5)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     setSeedInput(String(seed))
@@ -108,34 +126,61 @@ function App() {
     }
   }, [loadSystem])
 
-  const stationOptions = useMemo(() => {
-    const transitions = metadata?.gameSystem.transitions ?? []
+  const placeMetaById = useMemo(() => buildPlaceMetaMap(metadata), [metadata])
+  const transitionMetaById = useMemo(() => buildTransitionMetaMap(metadata), [metadata])
+
+  const stationCatalog = useMemo(() => {
     return transitions
-      .filter(t => t.kind === 'station' && t.activation === 'placed')
-      .slice()
+      .filter(transition => transitionMetaById.get(transition.id)?.kind === 'station')
+      .map(transition => {
+        const cost = getStationBuildCost(transition)
+        const missing = getMissingBuildCost(tokens, cost)
+        return {
+          id: transition.id,
+          name: getTransitionLabel(transition.id, transitionMetaById),
+          transition,
+          cost,
+          affordable: missing.length === 0,
+          missing,
+        }
+      })
       .sort((a, b) => a.id.localeCompare(b.id))
-  }, [metadata])
+  }, [tokens, transitionMetaById, transitions])
+
+  const stationOptions = useMemo(
+    () => stationCatalog.filter(option => option.affordable),
+    [stationCatalog],
+  )
 
   const effectiveSelectedStationId = selectedStationId || stationOptions[0]?.id || ''
   const buildPrefix = palettePrefix(buildPalette)
-  const buildOptions = useMemo(
-    () => (metadata?.gameSystem.transitions ?? []).filter(t => t.id.startsWith(buildPrefix)).sort((a, b) => a.id.localeCompare(b.id)),
-    [buildPrefix, metadata],
-  )
+  const buildOptions = useMemo(() => stationCatalog.filter(option => option.id.startsWith(buildPrefix)), [buildPrefix, stationCatalog])
+  const buildableOptions = useMemo(() => buildOptions.filter(option => option.affordable), [buildOptions])
+  const lockedBuildCount = buildOptions.length - buildableOptions.length
   const activeBuildTransitionId =
-    selectedBuildTransitionId && selectedBuildTransitionId.startsWith(buildPrefix)
+    selectedBuildTransitionId && buildableOptions.some(option => option.id === selectedBuildTransitionId)
       ? selectedBuildTransitionId
-      : buildOptions[0]?.id ?? null
+      : buildableOptions[0]?.id ?? null
 
   useEffect(() => {
     if (activeBuildTransitionId && activeBuildTransitionId !== selectedBuildTransitionId) {
       setSelectedBuildTransitionId(activeBuildTransitionId)
+      return
+    }
+
+    if (!activeBuildTransitionId && selectedBuildTransitionId !== null) {
+      setSelectedBuildTransitionId(null)
     }
   }, [activeBuildTransitionId, selectedBuildTransitionId, setSelectedBuildTransitionId])
 
   const activeBuildTransition = useMemo(
-    () => buildOptions.find(t => t.id === activeBuildTransitionId) ?? null,
-    [activeBuildTransitionId, buildOptions],
+    () => buildableOptions.find(option => option.id === activeBuildTransitionId) ?? null,
+    [activeBuildTransitionId, buildableOptions],
+  )
+
+  const activeStationOption = useMemo(
+    () => stationOptions.find(option => option.id === effectiveSelectedStationId) ?? null,
+    [effectiveSelectedStationId, stationOptions],
   )
 
   const tokenEntries = Object.entries(tokens)
@@ -157,15 +202,32 @@ function App() {
 
   return (
     <div className="app-shell min-h-screen">
+      <TierGuideModal open={helpOpen} metadata={metadata} transitions={transitions} onClose={() => setHelpOpen(false)} />
+
       <header className="hud-header panel-surface panel-dark">
         <div>
           <p className="hud-eyebrow">Whitepod control room</p>
           <h1 className="hud-title">Lunar factory control</h1>
         </div>
-        <div className="hud-topbar-meta">
-          <div className="hud-metric"><span>Mode</span><strong>{mode}</strong></div>
-          <div className="hud-metric"><span>Phase</span><strong>{statusLabel(phase)}</strong></div>
-          <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
+        <div className="hud-header-actions">
+          <div className="hud-topbar-meta">
+            <div className="hud-metric"><span>Mode</span><strong>{mode}</strong></div>
+            <div className="hud-metric"><span>Phase</span><strong>{statusLabel(phase)}</strong></div>
+            <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
+          </div>
+          <div className="hud-actions">
+            <button className="hud-button" onClick={() => setHelpOpen(true)}>Help</button>
+            <button
+              className="hud-button primary"
+              onClick={() => {
+                setAutoTickEnabled(true)
+                requestSystemTransition('init')
+              }}
+              disabled={phase !== 'init'}
+            >
+              Run simulation
+            </button>
+          </div>
         </div>
       </header>
 
@@ -174,8 +236,8 @@ function App() {
           <span className="hud-badge">{selectedCellLabel}</span>
           <span className="hud-badge">Stations {stations.length}</span>
           <span className="hud-badge">Tokens {tokenEntries.length}</span>
-          <span className="hud-badge">Build {buildOptions.length}</span>
-          <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build selected'}</span>
+          <span className="hud-badge">Buildable {buildableOptions.length}</span>
+          <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build available'}</span>
         </div>
         <div className="hud-summary-group hud-summary-group--resources">
           {resourceTotals.map(resource => (
@@ -210,8 +272,7 @@ function App() {
                 <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
               </div>
               <div className="hud-actions hud-actions--dense">
-                <button className="hud-button" onClick={() => requestSystemTransition('init')}>Init</button>
-                <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch</button>
+                <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch rocket</button>
                 <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
                 <button className="hud-button" onClick={() => tick()}>Tick now</button>
               </div>
@@ -244,27 +305,35 @@ function App() {
                 <span className="hud-muted">Active category</span>
                 <div className="hud-library-title">{paletteLabel(buildPalette)}</div>
               </div>
-              <div className="hud-muted">{buildOptions.length} available</div>
+              <div className="hud-muted">{buildableOptions.length} buildable{lockedBuildCount > 0 ? ` · ${lockedBuildCount} locked` : ''}</div>
             </div>
             <div className="hud-panel-scroll hud-panel-scroll--grow">
               <div className="hud-library-scroll">
                 <div className="hud-chip-list">
-                  {buildOptions.map(option => (
-                    <button
-                      key={option.id}
-                      className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
-                      onClick={() => setSelectedBuildTransitionId(option.id)}
-                      title={option.name_fr ?? option.id}
-                    >
-                      <span>{option.name_fr ?? option.id}</span>
-                      <small>{option.id}</small>
-                    </button>
-                  ))}
+                  {buildableOptions.length === 0 ? (
+                    <div className="hud-empty-state">
+                      <strong>No buildable stations in this palette.</strong>
+                      <span>Open Help to see which tiered resources you need to stock next.</span>
+                    </div>
+                  ) : (
+                    buildableOptions.map(option => (
+                      <button
+                        key={option.id}
+                        className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
+                        onClick={() => setSelectedBuildTransitionId(option.id)}
+                        title={option.name}
+                      >
+                        <span>{option.name}</span>
+                        <small>{option.id}</small>
+                        <small>{formatBuildCost(option.transition, placeMetaById)}</small>
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
             <p className="hud-muted hud-panel-note">
-              Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name_fr ?? activeBuildTransition.id : 'the selected build'}.
+              Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name : 'the selected build'}.
             </p>
             <p className="hud-muted hud-panel-note">
               {selectedBuildCell
@@ -281,7 +350,13 @@ function App() {
             <h2>Factory Grid</h2>
             <div className="hud-viewport-meta">
               <span className="hud-badge">{selectedCellLabel}</span>
-              <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name_fr ?? activeBuildTransition.id : 'Select a build'}</span>
+              <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name : 'Select a build'}</span>
+              <div className="hud-zoom-group">
+                <button className="hud-button" onClick={() => setCanvasZoom(z => Math.max(0.25, Math.round((z - 0.125) * 1000) / 1000))}>-</button>
+                <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
+                <button className="hud-button" onClick={() => setCanvasZoom(z => Math.min(1.25, Math.round((z + 0.125) * 1000) / 1000))}>+</button>
+                <button className="hud-button" onClick={() => setCanvasZoom(0.5)}>Reset</button>
+              </div>
             </div>
           </div>
           <div className="hud-viewport-body">
@@ -320,14 +395,19 @@ function App() {
             <div className="hud-stack hud-stack--fill">
               <div className="hud-row">
                 <select className="hud-select hud-select-wide" value={effectiveSelectedStationId} onChange={e => setSelectedStationId(e.target.value)}>
-                  {stationOptions.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.id}{t.name_fr ? ` — ${t.name_fr}` : ''}
+                  {stationOptions.map(option => (
+                    <option key={option.id} value={option.id}>
+                      {option.id} — {option.name}
                     </option>
                   ))}
                 </select>
-                <button className="hud-button primary" onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
+                <button className="hud-button primary" disabled={!effectiveSelectedStationId} onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
               </div>
+              {activeStationOption ? (
+                <p className="hud-muted hud-panel-note">Placement cost: {formatBuildCost(activeStationOption.transition, placeMetaById)}</p>
+              ) : (
+                <p className="hud-muted hud-panel-note">Stock more resources to unlock another station.</p>
+              )}
               <div className="hud-panel-scroll hud-panel-scroll--grow">
                 <div className="hud-chip-list compact">
                   {stations.length === 0 ? (
@@ -366,22 +446,6 @@ function App() {
           </section>
         </aside>
       </main>
-
-      <footer className="hud-footer panel-surface panel-dark">
-        <div className="hud-footer-left">
-          <span className="hud-badge">{statusLabel(phase)}</span>
-          <span className="hud-badge">Seed {seed}</span>
-          <span className="hud-badge">Player HUD</span>
-        </div>
-        <div className="hud-footer-right">
-          <div className="hud-zoom-group">
-            <button className="hud-button" onClick={() => setCanvasZoom(z => Math.max(0.25, Math.round((z - 0.125) * 1000) / 1000))}>-</button>
-            <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
-            <button className="hud-button" onClick={() => setCanvasZoom(z => Math.min(1.5, Math.round((z + 0.125) * 1000) / 1000))}>+</button>
-            <button className="hud-button" onClick={() => setCanvasZoom(0.625)}>Reset</button>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

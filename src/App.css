@@ -15,10 +15,10 @@
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 16px;
-  padding: 16px;
-  max-width: 1720px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  max-width: 1600px;
   margin: 0 auto;
   overflow: hidden;
   background:
@@ -43,14 +43,21 @@
 .hud-summary,
 .hud-footer {
   border-radius: 20px;
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
 .hud-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+}
+
+.hud-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .hud-summary {
@@ -151,14 +158,14 @@
 .hud-main {
   min-height: 0;
   display: grid;
-  grid-template-columns: clamp(240px, 17vw, 280px) minmax(0, 1fr) clamp(240px, 17vw, 280px);
-  gap: 16px;
+  grid-template-columns: clamp(220px, 16vw, 260px) minmax(0, 1fr) clamp(220px, 16vw, 280px);
+  gap: 12px;
 }
 
 .hud-sidebar {
   min-height: 0;
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .hud-sidebar--left {
@@ -173,13 +180,13 @@
 .hud-viewport {
   min-height: 0;
   border-radius: 20px;
-  padding: 12px;
+  padding: 10px;
 }
 
 .hud-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .hud-panel--fill,
@@ -190,7 +197,7 @@
 
 .hud-stack {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .hud-panel-scroll {
@@ -307,6 +314,16 @@
   font-size: 11px;
 }
 
+.hud-empty-state {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--hud-muted);
+}
+
 .hud-chip.is-active {
   border-color: rgba(52, 211, 153, 0.35);
   background: rgba(52, 211, 153, 0.1);
@@ -323,7 +340,7 @@
 .hud-viewport {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
   overflow: hidden;
 }
 
@@ -333,7 +350,7 @@
   align-items: flex-start;
   justify-content: center;
   overflow: auto;
-  padding: 8px;
+  padding: 6px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.03);
@@ -352,7 +369,7 @@
 
 .token-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
 }
 
@@ -396,7 +413,7 @@
   }
 
   .hud-viewport-body {
-    min-height: 520px;
+    min-height: 420px;
   }
 }
 
@@ -410,6 +427,10 @@
   .hud-footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hud-header-actions {
+    justify-content: flex-start;
   }
 
   .hud-summary {
@@ -429,8 +450,8 @@
   }
 
   .hud-viewport-body {
-    min-height: 360px;
-    padding: 8px;
+    min-height: 320px;
+    padding: 6px;
   }
 
   .panel-header {
