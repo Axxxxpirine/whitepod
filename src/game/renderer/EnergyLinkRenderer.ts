@@ -304,7 +304,11 @@ function buildFlowComponents(engine: GameEngine, segments: readonly EnergyLinkSe
     const batteryTargets = new Set(componentNodeIds.filter((id) => isBattery(engine, id)));
 
     const directedToConsumers = orientEnergyLinkSegmentsTowardsTargets(componentSegments, consumerTargets);
-    const directedDischargingToConsumers = directedToConsumers.filter((segment) => !batteryTargets.has(segment.toId));
+    // During discharge: keep segments toward consumers AND battery→battery relay hops,
+    // but exclude producer→battery segments (solar panels don't produce at night).
+    const directedDischargingToConsumers = directedToConsumers.filter(
+      (segment) => !batteryTargets.has(segment.toId) || batteryTargets.has(segment.fromId),
+    );
 
     components.push({
       id: componentNodeIds[0]!,
@@ -403,9 +407,7 @@ export class EnergyLinkRenderer {
       }
     }
 
-    if (this.currentMode === 'energy_link') {
-      this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
-    }
+    this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
 
     const previewState = this.getState();
     if (previewState.pendingSourceId !== null && previewState.mouseWorldPos !== null) {
