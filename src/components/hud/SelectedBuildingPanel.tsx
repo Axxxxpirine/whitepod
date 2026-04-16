@@ -13,6 +13,7 @@ export function SelectedBuildingPanel() {
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
+  const selectedTool = useGameStore((s) => s.selectedTool);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
 
   const [worldTick, setWorldTick] = useState(0);
@@ -22,7 +23,7 @@ export function SelectedBuildingPanel() {
       if (kind === 'world') setWorldTick((t) => t + 1);
     });
   }, [engine]);
-  if (!engine || selectedBuildingId === null || !selectedBuildingAnchor) return null;
+  if (!engine || selectedBuildingId === null || !selectedBuildingAnchor || selectedTool.kind === 'energy_link') return null;
   const building = engine.getBuildings().get(selectedBuildingId);
   if (!building) return null;
   const type = getBuildingType(building.typeId);
