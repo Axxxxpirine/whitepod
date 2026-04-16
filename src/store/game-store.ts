@@ -44,7 +44,8 @@ export interface GameState {
   autoTickEnabled: boolean
   demonstrationEnabled: boolean
   demoModeEnabled: boolean
-   demoLoopEnabled: boolean
+  demoLoopEnabled: boolean
+  simulationSpeed: 1 | 10 | 1000
   lastFiredTransitionIds: string[]
   pixiActivities: PixiActivity[]
   fireEventSeq: number
@@ -59,7 +60,8 @@ export interface GameState {
   setAutoTickEnabled: (enabled: boolean) => void
   setDemonstrationEnabled: (enabled: boolean) => void
   setDemoModeEnabled: (enabled: boolean) => void
-   setDemoLoopEnabled: (enabled: boolean) => void
+  setDemoLoopEnabled: (enabled: boolean) => void
+  setSimulationSpeed: (speed: 1 | 10 | 1000) => void
   resetSave: () => void
   newGame: (seed: number) => void
 
@@ -566,6 +568,7 @@ export const useGameStore = create<GameState>()(
       demonstrationEnabled: false,
       demoModeEnabled: false,
       demoLoopEnabled: true,
+      simulationSpeed: 1,
       lastFiredTransitionIds: [],
       pixiActivities: [],
       fireEventSeq: 0,
@@ -667,6 +670,10 @@ export const useGameStore = create<GameState>()(
 
       setDemoLoopEnabled: enabled => {
         set({ demoLoopEnabled: enabled })
+      },
+
+      setSimulationSpeed: speed => {
+        set({ simulationSpeed: speed })
       },
 
       resetSave: () => {

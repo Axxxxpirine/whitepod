@@ -81,6 +81,7 @@ function App() {
   const stations = useGameStore(s => s.stations)
   const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
   const demoModeEnabled = useGameStore(s => s.demoModeEnabled)
+  const simulationSpeed = useGameStore(s => s.simulationSpeed)
   const demonstrationEnabled = useGameStore(s => s.demonstrationEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
@@ -89,6 +90,7 @@ function App() {
   const setAutoTickEnabled = useGameStore(s => s.setAutoTickEnabled)
   const setDemonstrationEnabled = useGameStore(s => s.setDemonstrationEnabled)
   const setDemoModeEnabled = useGameStore(s => s.setDemoModeEnabled)
+  const setSimulationSpeed = useGameStore(s => s.setSimulationSpeed)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
   const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
@@ -106,6 +108,7 @@ function App() {
   const [seedInput, setSeedInput] = useState<string>(String(seed))
   const [viewportScale, setViewportScale] = useState<number>(0.32)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [canvasOnlyMode, setCanvasOnlyMode] = useState(false)
 
   useEffect(() => {
     setSeedInput(String(seed))
@@ -231,10 +234,10 @@ function App() {
       : 'No cell selected'
 
   return (
-    <div className="app-shell min-h-screen">
+    <div className={`app-shell min-h-screen ${canvasOnlyMode ? 'app-shell--canvas-only' : ''}`}>
       <TierGuideModal open={helpOpen} metadata={metadata} transitions={transitions} onClose={() => setHelpOpen(false)} />
 
-      <header className="hud-header panel-surface panel-dark">
+      {!canvasOnlyMode && <header className="hud-header panel-surface panel-dark">
         <div>
           <p className="hud-eyebrow">Whitepod control room</p>
           <h1 className="hud-title">Lunar factory control</h1>
@@ -276,9 +279,9 @@ function App() {
             </button>
           </div>
         </div>
-      </header>
+      </header>}
 
-      <section className="hud-top panel-surface panel-dark">
+      {!canvasOnlyMode && <section className="hud-top panel-surface panel-dark">
         <section className="hud-session-panel">
           <div className="panel-header panel-header--dark">
             <h2>Session</h2>
@@ -342,9 +345,9 @@ function App() {
             )}
           </div>
         </section>
-      </section>
+      </section>}
 
-      <section className="panel-surface panel-dark hud-panel hud-library-panel">
+      {!canvasOnlyMode && <section className="panel-surface panel-dark hud-panel hud-library-panel">
         <div className="panel-header panel-header--dark">
           <h2>Build Library</h2>
           <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
@@ -407,35 +410,45 @@ function App() {
               ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
               : 'Select a grid cell to inspect.'}
         </p>
-      </section>
+      </section>}
 
-      <main className="hud-main">
-        <section className="panel-surface panel-dark hud-viewport">
-          <div className="panel-header panel-header--dark">
-            <h2>Factory Grid</h2>
-            <div className="hud-viewport-meta">
-              <span className="hud-badge">{selectedCellLabel}</span>
-              <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name : 'Select a build'}</span>
-              <span className="hud-badge">Grid scale {Math.round(viewportScale * 100)}%</span>
+      <main className={`hud-main ${canvasOnlyMode ? 'hud-main--canvas-only' : ''}`}>
+        <section className={`panel-surface panel-dark hud-viewport ${canvasOnlyMode ? 'hud-viewport--canvas-only' : ''}`}>
+          {!canvasOnlyMode && (
+            <div className="panel-header panel-header--dark">
+              <h2>Factory Grid</h2>
+              <div className="hud-viewport-meta">
+                <span className="hud-badge">{selectedCellLabel}</span>
+                <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name : 'Select a build'}</span>
+                <span className="hud-badge">Grid scale {Math.round(viewportScale * 100)}%</span>
+              </div>
             </div>
-          </div>
-          <div ref={viewportBodyRef} className="hud-viewport-body">
+          )}
+          <div ref={viewportBodyRef} className={`hud-viewport-body ${canvasOnlyMode ? 'hud-viewport-body--canvas-only' : ''}`}>
             <div
               className="relative flex-none hud-canvas-frame"
               style={{
-                width: `${PIXI_CANVAS_BASE_WIDTH * viewportScale}px`,
-                height: `${PIXI_CANVAS_BASE_HEIGHT * viewportScale}px`,
+                width: canvasOnlyMode ? '100%' : `${PIXI_CANVAS_BASE_WIDTH * viewportScale}px`,
+                height: canvasOnlyMode ? '100%' : `${PIXI_CANVAS_BASE_HEIGHT * viewportScale}px`,
               }}
             >
               <PixiCanvas className="canvas-stage" />
               <RuntimeToolIndicator />
               <RuntimeSelectionPanel />
-              <div className="pointer-events-auto absolute right-3 top-3 z-20">
+              <div className="pointer-events-auto absolute right-3 top-3 z-20 flex items-start gap-2">
+                <button
+                  className="hud-button primary"
+                  onClick={() => setCanvasOnlyMode(value => !value)}
+                >
+                  {canvasOnlyMode ? 'Exit canvas' : 'Canvas only'}
+                </button>
                 <RuntimeSettingsPopover
                   autoTickEnabled={autoTickEnabled}
                   demoModeEnabled={demoModeEnabled}
+                  simulationSpeed={simulationSpeed}
                   onToggleAutoTick={() => setAutoTickEnabled(!autoTickEnabled)}
                   onToggleDemoMode={() => setDemoModeEnabled(!demoModeEnabled)}
+                  onChangeSimulationSpeed={setSimulationSpeed}
                   onResetSave={resetSave}
                   onNewGame={() => {
                     const nextSeed = Number.parseInt(seedInput, 10)
@@ -448,7 +461,7 @@ function App() {
           </div>
         </section>
 
-        <section className="panel-surface panel-dark hud-panel hud-stations-panel">
+        {!canvasOnlyMode && <section className="panel-surface panel-dark hud-panel hud-stations-panel">
           <div className="panel-header panel-header--dark">
             <h2>Stations</h2>
             <span className="hud-badge">Placement</span>
@@ -483,7 +496,7 @@ function App() {
               </div>
             </div>
           </div>
-        </section>
+        </section>}
       </main>
     </div>
   )

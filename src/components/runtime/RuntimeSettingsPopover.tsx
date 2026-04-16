@@ -4,8 +4,10 @@ import { IconButton } from './IconButton'
 interface RuntimeSettingsPopoverProps {
   autoTickEnabled: boolean
   demoModeEnabled: boolean
+  simulationSpeed: 1 | 10 | 1000
   onToggleAutoTick: () => void
   onToggleDemoMode: () => void
+  onChangeSimulationSpeed: (speed: 1 | 10 | 1000) => void
   onResetSave: () => void
   onNewGame: () => void
 }
@@ -13,8 +15,10 @@ interface RuntimeSettingsPopoverProps {
 export function RuntimeSettingsPopover({
   autoTickEnabled,
   demoModeEnabled,
+  simulationSpeed,
   onToggleAutoTick,
   onToggleDemoMode,
+  onChangeSimulationSpeed,
   onResetSave,
   onNewGame,
 }: RuntimeSettingsPopoverProps) {
@@ -64,6 +68,22 @@ export function RuntimeSettingsPopover({
               {demoModeEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
+
+          <div className="mt-1 px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-white/40">
+            Simulation speed
+          </div>
+          <div className="flex gap-1 px-1 pb-1">
+            {([1, 10, 1000] as const).map(speed => (
+              <button
+                key={speed}
+                type="button"
+                onClick={() => onChangeSimulationSpeed(speed)}
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-mono transition-colors hover:bg-white/10 ${simulationSpeed === speed ? 'bg-emerald-400/20 text-emerald-300' : 'text-white/60'}`}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"
