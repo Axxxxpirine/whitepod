@@ -10,12 +10,7 @@ import {
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
-
-export interface BotStatus {
-  readonly active: boolean;
-  readonly phase: 'booting' | 'mining' | 'powering' | 'expanding' | 'online';
-  readonly target: string | null;
-}
+import type { BotLifecycle, BotStatus } from './botTypes';
 
 const MAX_ACTIONS_PER_TICK = 16;
 
@@ -41,7 +36,7 @@ function buildingPriority(typeId: BuildingTypeId): number {
   }
 }
 
-export class AutonomousBot {
+export class AutonomousBot implements BotLifecycle {
   private readonly engine: GameEngine;
   private readonly onStatusChange: (status: BotStatus) => void;
   private timerId: number | null = null;

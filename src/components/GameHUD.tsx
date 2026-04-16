@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Settings, Shuffle, Zap } from 'lucide-react';
+import { Play, Settings, Shuffle, Square, Zap } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
@@ -10,6 +10,8 @@ import { ToolModeIndicator } from './hud/ToolModeIndicator';
 import { Chip, Icon, Panel, PanelHeading } from './ui';
 import { assetUrl, RESOURCE_SPRITE_PATHS } from '@/game/ui/spritePaths';
 import { ResourceType } from '@/game/types';
+import { BOT_PROFILES } from '@/game/bot/botProfiles';
+import { parseSeedInput, formatSeedInput } from '@/game/bot/seedInput';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -24,6 +26,9 @@ export function GameHUD() {
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const idleSummary = useGameStore((s) => s.idleSummary);
   const bot = useGameStore((s) => s.bot);
+  const botControls = useGameStore((s) => s.botControls);
+  const selectedBotProfileId = useGameStore((s) => s.selectedBotProfileId);
+  const seedInput = useGameStore((s) => s.seedInput);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
@@ -31,6 +36,8 @@ export function GameHUD() {
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
   const setIdleSummary = useGameStore((s) => s.setIdleSummary);
+  const setSelectedBotProfileId = useGameStore((s) => s.setSelectedBotProfileId);
+  const setSeedInput = useGameStore((s) => s.setSeedInput);
 
   const [worldTick, setWorldTick] = useState(0);
   useEffect(() => {
@@ -176,6 +183,13 @@ export function GameHUD() {
     },
     [engine],
   );
+
+  const applySeed = useCallback(() => {
+    const parsed = parseSeedInput(seedInput);
+    if (parsed === null) return;
+    setSeedInput(formatSeedInput(parsed));
+    resetSession();
+  }, [resetSession, seedInput, setSeedInput]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
@@ -438,7 +452,70 @@ export function GameHUD() {
             </Panel>
           </div>
 
-          <div className="flex min-w-0 items-end justify-self-end">
+          <div className="flex min-w-0 flex-col items-end gap-2 justify-self-end">
+            <Panel className="pointer-events-auto flex max-w-[320px] flex-col gap-2 px-3 py-2.5 text-ink">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!botControls) return;
+                    if (bot.active) botControls.stop();
+                    else botControls.start();
+                  }}
+                  disabled={!botControls}
+                  className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs transition-colors ${botControls ? 'bg-accent text-bg hover:bg-accent/90' : 'bg-surface-2 text-ink-muted'}`}
+                >
+                  <Icon icon={bot.active ? Square : Play} className="h-3.5 w-3.5" />
+                  <span>{bot.active ? 'Stop' : 'Start'}</span>
+                </button>
+
+                <select
+                  aria-label="Bot profile"
+                  value={selectedBotProfileId}
+                  onChange={(e) => setSelectedBotProfileId(e.target.value as typeof selectedBotProfileId)}
+                  className="min-w-0 flex-1 rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-xs text-ink outline-none"
+                >
+                  {BOT_PROFILES.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.label}
+                    </option>
+                  ))}
+                </select>
+
+                <span className={`h-2 w-2 shrink-0 rounded-full ${bot.active ? 'bg-ok' : 'bg-border'}`} aria-hidden />
+              </div>
+
+              <div className="flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="label text-ink-muted">Bot</div>
+                  <div className="truncate text-xs text-ink">{bot.phase}</div>
+                  {bot.target && <div className="truncate text-[11px] text-ink-muted">{bot.target}</div>}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="label text-ink-muted">Seed</span>
+                  <input
+                    aria-label="Seed input"
+                    type="text"
+                    inputMode="numeric"
+                    value={seedInput}
+                    onChange={(e) => setSeedInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applySeed();
+                    }}
+                    className="w-20 rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-xs tabular-nums text-ink outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={applySeed}
+                    className="rounded-sm border border-border bg-surface px-2 py-1.5 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </Panel>
+
             <Panel className="pointer-events-auto flex items-center gap-2 px-2 py-2 text-ink">
               {energyLinkSelected && (
                 <div className="flex items-center gap-2 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-ink-muted">
@@ -453,7 +530,7 @@ export function GameHUD() {
                   aria-expanded={settingsOpen}
                   aria-label="Paramètres"
                   title="Paramètres"
-                  className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                  className={`cursor-pointer rounded-sm px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
                 >
                   <Icon icon={Settings} className="h-4 w-4" />
                 </button>

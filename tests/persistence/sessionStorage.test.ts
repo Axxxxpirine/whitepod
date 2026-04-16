@@ -42,6 +42,8 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
+      selectedBotProfileId: 'fractal',
+      seedInput: '99',
       sessionId: 'session-a',
     });
 
@@ -52,6 +54,8 @@ describe('persistent storage', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.sessionId).toBe('session-a');
     expect(loaded?.selectedTool).toEqual({ kind: 'building', buildingType: 'extractor_basic' });
+    expect(loaded?.selectedBotProfileId).toBe('fractal');
+    expect(loaded?.seedInput).toBe('99');
     expect(loaded?.engine.getResourceAt(8, 8)).toBe(ResourceType.Coal);
     expect(loaded?.engine.getBuildingAt(8, 8)?.typeId).toBe('extractor_basic');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
@@ -64,6 +68,8 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'greedy',
+      seedInput: '42',
       sessionId: 'session-a',
     });
 
@@ -78,10 +84,12 @@ describe('persistent storage', () => {
     window.localStorage.setItem(
       VIEW_STORAGE_KEY,
       JSON.stringify({
-        version: 2,
+        version: 3,
         sessionId: 'session-b',
         viewport: { centerX: 10, centerY: 20, zoom: 2 },
         selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
+        selectedBotProfileId: 'greedy',
+        seedInput: '42',
       }),
     );
 
@@ -126,6 +134,8 @@ describe('persistent storage', () => {
     const payloads = buildPersistedSessionPayloads({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'fractal',
+      seedInput: '77',
       sessionId: 'session-shared',
     });
 
@@ -136,12 +146,16 @@ describe('persistent storage', () => {
     installPersistedSession({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'fractal',
+      seedInput: '77',
       sessionId: 'session-shared',
     });
 
     const loaded = loadPersistedSession(640, 480);
     expect(loaded?.sessionId).toBe('session-shared');
     expect(loaded?.selectedTool).toEqual({ kind: 'belt' });
+    expect(loaded?.selectedBotProfileId).toBe('fractal');
+    expect(loaded?.seedInput).toBe('77');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
 
