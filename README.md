@@ -1,12 +1,42 @@
 # Whitepod
 
-Jeu de gestion et d’optimisation industrielle sur grille.
+Jeu de gestion et d'optimisation industrielle sur grille lunaire. Le joueur incarne l'architecte d'un système automatisé vivant : il observe un territoire, organise l'implantation de son infrastructure, anticipe les contraintes de circulation et d'énergie, puis affine en continu la structure de son réseau pour transformer un espace brut en machine cohérente, stable et évolutive.
+
+## Objectif
+
+Booster l'extraction de ressources brutes (hélium-3, hydrogène, oxygène, régolithe) en une chaîne de production multi-tiers, puis assembler et lancer une fusée.
+
+## Boucle de jeu
+
+1. **Démarrer la simulation** avec `Run simulation`.
+2. **Placer des extracteurs** à côté des dépôts pour miner les ressources brutes.
+3. **Placer des convoyeurs** pour transférer les produits de `surface` vers `bus`.
+4. **Placer des stockages** pour transférer de `bus` vers `stock`.
+5. **Dépenser les ressources stockées** pour placer des stations de recette et fabriquer des objets de tier supérieur.
+6. **Répéter** tier après tier jusqu'à produire `rocket_ready`.
+7. **Stocker `rocket_ready`** et déclencher le lancement avec `Launch rocket`.
+
+La boucle fondamentale est :
+
+`dépôt → extracteur → surface → convoyeur → bus → stockage → stock → recette → nouvelle ressource tier`
+
+## Progression par tiers
+
+Le jeu guide la progression via un guide intégré accessible depuis le bouton `Help`. Pour atteindre le tier suivant :
+- Maintenez les ressources du tier actuel en stock.
+- Construisez la station de recette correspondante.
+- Ajoutez convoyeur et stockage pour la nouvelle ressource produite.
+- Répétez jusqu'au composant final de la fusée.
 
 ## État actuel
 
 - Phase 4: assets intégrés depuis `output/whitepod-assets` via manifest
 - Phase 5: renderer Pixi et HUD en stabilisation visuelle
 - Simulation mode: disponible pour démo autonome
+- Persistance locale via localStorage
+- Sauvegarde automatique toutes les 30 ticks
+- Guide de progression par tiers intégré
+- Coûts de build réels (placement de stations débite les tokens)
 
 ## Stack
 
@@ -32,73 +62,3 @@ Jeu de gestion et d’optimisation industrielle sur grille.
 - Assets servis par l'app: `public/assets/raw/`
 - Manifest runtime: `public/assets/manifest.json`
 - Build: `bash scripts/build-assets.sh`
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
