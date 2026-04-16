@@ -16,6 +16,8 @@ import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
+import { assetUrl, RESOURCE_SPRITE_PATHS } from '@/game/ui/spritePaths';
+import { ResourceType } from '@/game/types';
 
 interface BuildingStatsPanelProps {
   building: Building;
@@ -56,9 +58,9 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
     rows = (
       <div className="flex justify-around py-0.5">
-        <ResourceStockRow sprite="sprites/coal.png" alt="Charbon" count={stock.coal} />
-        <ResourceStockRow sprite="sprites/iron-ore.png" alt="Fer" count={stock.ironOre} />
-        <ResourceStockRow sprite="sprites/copper-ore.png" alt="Cuivre" count={stock.copperOre} />
+        <ResourceStockRow sprite={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.Coal)!)} alt="Charbon" count={stock.coal} />
+        <ResourceStockRow sprite={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.IronOre)!)} alt="Fer" count={stock.ironOre} />
+        <ResourceStockRow sprite={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.CopperOre)!)} alt="Cuivre" count={stock.copperOre} />
       </div>
     );
   } else if (building.typeId === BATTERY_BASIC_BUILDING_TYPE_ID) {

@@ -1,8 +1,8 @@
 import type { TileType } from '../types';
-import { TileType as TileTypeConst, ResourceType as ResourceTypeConst } from '../types';
+import { TileType as TileTypeConst } from '../types';
 import type { ResourceType } from '../types';
 import { Assets, Texture, ImageSource } from 'pixi.js';
-import { BUILDING_SPRITE_PATHS } from '../ui/spritePaths';
+import { BUILDING_SPRITE_PATHS, assetUrl, RESOURCE_SPRITE_PATHS } from '../ui/spritePaths';
 
 /* ── Deterministic hash helpers ── */
 
@@ -159,13 +159,8 @@ export function getTileTexture(): Texture {
 const resourceTextures = new Map<ResourceType, Texture>();
 
 export async function loadResourceTextures(): Promise<void> {
-  const entries: [ResourceType, string][] = [
-    [ResourceTypeConst.Coal, 'sprites/coal.png'],
-    [ResourceTypeConst.IronOre, 'sprites/iron-ore.png'],
-    [ResourceTypeConst.CopperOre, 'sprites/copper-ore.png'],
-  ];
-  for (const [type, path] of entries) {
-    const texture = await Assets.load<Texture>(path);
+  for (const [type, path] of RESOURCE_SPRITE_PATHS) {
+    const texture = await Assets.load<Texture>(assetUrl(path));
     resourceTextures.set(type, texture);
   }
 }
@@ -178,7 +173,7 @@ const buildingTextures = new Map<string, Texture>();
 
 export async function loadBuildingTextures(): Promise<void> {
   for (const [typeId, path] of BUILDING_SPRITE_PATHS) {
-    const texture = await Assets.load<Texture>(path);
+    const texture = await Assets.load<Texture>(assetUrl(path));
     buildingTextures.set(typeId, texture);
   }
 }

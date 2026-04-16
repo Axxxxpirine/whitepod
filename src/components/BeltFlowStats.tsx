@@ -2,19 +2,14 @@ import { Activity } from 'lucide-react';
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
-import { ResourceType, type Building, type ResourceType as ResourceTypeT } from '@/game/types';
+import type { Building, ResourceType as ResourceTypeT } from '@/game/types';
+import { assetUrl, RESOURCE_SPRITE_PATHS } from '@/game/ui/spritePaths';
 import { Icon } from './ui';
 
 interface BeltFlowStatsProps {
   building: Building;
   engine: GameEngine;
 }
-
-const SPRITE_BY_RESOURCE: Record<number, string> = {
-  [ResourceType.Coal]: 'sprites/coal.png',
-  [ResourceType.IronOre]: 'sprites/iron-ore.png',
-  [ResourceType.CopperOre]: 'sprites/copper-ore.png',
-};
 
 export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
   const entries = resolveBeltFlow(engine, building.id);
@@ -42,14 +37,14 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
 }
 
 function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT; ratePerMinute: number }) {
-  const sprite = SPRITE_BY_RESOURCE[resourceType];
+  const sprite = RESOURCE_SPRITE_PATHS.get(resourceType);
   const label = resourceTypeLabel(resourceType);
   const rateText = `${ratePerMinute}/min`;
 
   return (
     <div className="flex items-center gap-1.5">
       {sprite ? (
-        <img src={sprite} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
+        <img src={assetUrl(sprite)} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
       ) : (
         <Icon icon={Activity} size={11} className="text-ink-muted" />
       )}

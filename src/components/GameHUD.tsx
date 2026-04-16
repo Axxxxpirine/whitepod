@@ -8,6 +8,8 @@ import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
 import { Chip, Icon, Panel, PanelHeading } from './ui';
+import { assetUrl, RESOURCE_SPRITE_PATHS } from '@/game/ui/spritePaths';
+import { ResourceType } from '@/game/types';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -197,17 +199,17 @@ export function GameHUD() {
                 <div className="label mb-1.5 text-ink-muted">Ressources</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
+                    <img src={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.Coal)!)} className="h-4 w-4 object-contain" alt="Charbon" />
                     <span className="font-bold tabular-nums">{resourceCounts.coal}</span>
                     <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.coal ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
+                    <img src={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.IronOre)!)} className="h-4 w-4 object-contain" alt="Minerai de fer" />
                     <span className="font-bold tabular-nums">{resourceCounts.ironOre}</span>
                     <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.ironOre ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
+                    <img src={assetUrl(RESOURCE_SPRITE_PATHS.get(ResourceType.CopperOre)!)} className="h-4 w-4 object-contain" alt="Cuivre" />
                     <span className="font-bold tabular-nums">{resourceCounts.copperOre}</span>
                     <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.copperOre ?? 0}/min</span>
                   </div>
