@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GameEngine } from '@/game/engine/GameEngine';
+import type { IdleCatchupResult } from '@/game/idle/IdleCatchup';
 import { clearPersistedSession } from '@/game/persistence/sessionStorage';
 import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
 import { Direction, type BuildingId, type SelectedTool } from '@/game/types';
@@ -23,6 +24,7 @@ interface GameState {
   worldVersion: number;
   pendingEnergyLinkSource: BuildingId | null;
   linkSolarOnPlacement: boolean;
+  idleSummary: IdleCatchupResult | null;
   setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
   setSimulationTime: (value: number) => void;
@@ -38,6 +40,7 @@ interface GameState {
   bumpWorldVersion: () => void;
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
+  setIdleSummary: (summary: IdleCatchupResult | null) => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -54,6 +57,7 @@ export const useGameStore = create<GameState>((set) => ({
   worldVersion: 0,
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
+  idleSummary: null,
   setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
   setSimulationTime: (value) => set({ simulationTime: value }),
@@ -84,10 +88,12 @@ export const useGameStore = create<GameState>((set) => ({
       selectedBuildingAnchor: null,
       beltPreview: null,
       currentBuildingRotation: Direction.North,
+      idleSummary: null,
       sessionEpoch: state.sessionEpoch + 1,
     }));
   },
   bumpWorldVersion: () => set((state) => ({ worldVersion: state.worldVersion + 1 })),
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
   setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
+  setIdleSummary: (summary) => set({ idleSummary: summary }),
 }));

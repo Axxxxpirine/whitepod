@@ -112,6 +112,9 @@ export class GameEngine {
   readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
   readonly batteryCharges = new Map<BuildingId, number>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
+  private notificationSuspendDepth = 0;
+  private hasPendingWorldNotification = false;
+  private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
@@ -759,6 +762,25 @@ export class GameEngine {
     };
   }
 
+  runWithoutNotifications<T>(work: () => T): T {
+    this.notificationSuspendDepth += 1;
+    try {
+      return work();
+    } finally {
+      this.notificationSuspendDepth -= 1;
+      if (this.notificationSuspendDepth === 0) {
+        if (this.hasPendingWorldNotification) {
+          this.hasPendingWorldNotification = false;
+          this.hasPendingViewportNotification = false;
+          this.notifyListeners('world');
+        } else if (this.hasPendingViewportNotification) {
+          this.hasPendingViewportNotification = false;
+          this.notifyListeners('viewport');
+        }
+      }
+    }
+  }
+
   serializeWorld(): SerializedGameWorld {
     const energyLinks: Array<{ a: BuildingId; b: BuildingId }> = [];
     const seen = new Set<string>();
@@ -895,6 +917,15 @@ export class GameEngine {
   }
 
   private notify(kind: GameEngineChangeKind): void {
+    if (this.notificationSuspendDepth > 0) {
+      if (kind === 'world') this.hasPendingWorldNotification = true;
+      else this.hasPendingViewportNotification = true;
+      return;
+    }
+    this.notifyListeners(kind);
+  }
+
+  private notifyListeners(kind: GameEngineChangeKind): void {
     for (const listener of this.listeners) {
       listener(kind);
     }

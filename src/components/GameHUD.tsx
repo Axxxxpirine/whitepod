@@ -16,10 +16,12 @@ export function GameHUD() {
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
+  const idleSummary = useGameStore((s) => s.idleSummary);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
+  const setIdleSummary = useGameStore((s) => s.setIdleSummary);
 
   const [worldTick, setWorldTick] = useState(0);
   useEffect(() => {
@@ -36,6 +38,14 @@ export function GameHUD() {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{ text: string; type: 'input' | 'output' | 'error' }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!idleSummary || idleSummary.appliedSeconds <= 0) return;
+    const timeoutId = window.setTimeout(() => {
+      setIdleSummary(null);
+    }, 7000);
+    return () => window.clearTimeout(timeoutId);
+  }, [idleSummary, setIdleSummary]);
 
   const energyLinkSelected = selectedTool.kind === 'energy_link';
 
@@ -71,6 +81,21 @@ export function GameHUD() {
     void energyVersion;
     return engine?.getResourceRates() ?? null;
   }, [engine, worldTick, energyVersion]);
+  const idleSummaryText = useMemo(() => {
+    if (!idleSummary || idleSummary.appliedSeconds <= 0) return null;
+    const totalSeconds = Math.floor(idleSummary.appliedSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const durationLabel = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const delta = idleSummary.resourceDelta;
+    return {
+      durationLabel,
+      coal: delta.coal,
+      ironOre: delta.ironOre,
+      copperOre: delta.copperOre,
+      capped: idleSummary.capped,
+    };
+  }, [idleSummary]);
 
   const executeCommand = useCallback(
     (cmd: string) => {
@@ -134,6 +159,18 @@ export function GameHUD() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
+      {idleSummaryText && (
+        <div className="pointer-events-auto absolute top-3 right-3">
+          <div className="rounded-xl border border-emerald-300/25 bg-black/75 px-3 py-2 text-xs text-white/90 shadow-xl backdrop-blur-md">
+            <div className="font-semibold text-emerald-300">Progression hors ligne: {idleSummaryText.durationLabel}</div>
+            <div className="mt-1 text-white/75">
+              +{idleSummaryText.coal} charbon, +{idleSummaryText.ironOre} fer, +{idleSummaryText.copperOre} cuivre
+            </div>
+            {idleSummaryText.capped && <div className="mt-0.5 text-[11px] text-amber-300/90">Cap offline appliqué (8h).</div>}
+          </div>
+        </div>
+      )}
+
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
           <Panel className="min-w-[180px] px-3 py-2.5 text-sm text-ink">

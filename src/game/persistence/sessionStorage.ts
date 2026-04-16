@@ -1,16 +1,35 @@
 import { GRID_SIZE } from '@/game/constants';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
-import {
-  Direction,
-  type SelectedTool,
-} from '@/game/types';
+import { Direction, type SelectedTool } from '@/game/types';
 
-export const WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
+export const WORLD_STORAGE_KEY = 'whitepod:session:world:v3';
 export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
-const STORAGE_VERSION = 2;
+export const LEGACY_WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
+export const LEGACY_VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
+export const IDLE_SIDECAR_KEY = 'whitepod:idle-sidecar:v1';
+
+const WORLD_STORAGE_VERSION = 3;
+const WORLD_IDLE_VERSION = 1;
+const VIEW_STORAGE_VERSION = 2;
+const IDLE_SIDECAR_VERSION = 1;
 const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
-interface PersistedWorldState {
+interface PersistedWorldStateV3 {
+  readonly version: number;
+  readonly storageVersion: number;
+  readonly idleVersion: number;
+  readonly sessionId: string;
+  readonly mapSeed: number;
+  readonly gridBase64: string;
+  readonly buildings: SerializedGameWorld['buildings'];
+  readonly connections: SerializedGameWorld['connections'];
+  readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
+  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
+  readonly simulationTime?: number;
+  readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
+}
+
+interface PersistedWorldStateV2 {
   readonly version: number;
   readonly sessionId: string;
   readonly mapSeed: number;
@@ -34,15 +53,45 @@ interface PersistedViewState {
   readonly selectedTool: SelectedTool;
 }
 
+export interface IdleSidecar {
+  readonly version: number;
+  readonly sessionId: string;
+  readonly pausedAtWallClockMs: number;
+}
+
 interface LoadedSession {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
+  readonly idleSidecar: IdleSidecar | null;
 }
 
-function getStorage(): Storage | null {
+function isStorageLike(value: unknown): value is Storage {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Storage).getItem === 'function' &&
+    typeof (value as Storage).setItem === 'function' &&
+    typeof (value as Storage).removeItem === 'function'
+  );
+}
+
+function getLocalStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
-  return window.sessionStorage;
+  if (isStorageLike(window.localStorage)) return window.localStorage;
+  return null;
+}
+
+function getWorldStorage(): Storage | null {
+  return getLocalStorage();
+}
+
+function getViewStorage(): Storage | null {
+  return getLocalStorage();
+}
+
+function getSidecarStorage(): Storage | null {
+  return getLocalStorage();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,18 +108,10 @@ function isValidDirection(value: unknown): value is number {
 
 function isSelectedTool(value: unknown): value is SelectedTool {
   if (!isRecord(value) || typeof value.kind !== 'string') return false;
-  if (value.kind === 'select') {
-    return true;
-  }
-  if (value.kind === 'belt') {
-    return true;
-  }
-  if (value.kind === 'building') {
-    return typeof value.buildingType === 'string';
-  }
-  if (value.kind === 'energy_link') {
-    return true;
-  }
+  if (value.kind === 'select') return true;
+  if (value.kind === 'belt') return true;
+  if (value.kind === 'building') return typeof value.buildingType === 'string';
+  if (value.kind === 'energy_link') return true;
   return false;
 }
 
@@ -108,26 +149,36 @@ function isSerializedConnectionRegistry(value: unknown): value is SerializedGame
   });
 }
 
-function isPersistedWorldState(value: unknown): value is PersistedWorldState {
-  if (!isRecord(value)) return false;
-  const energyLinksValid =
-    value.energyLinks === undefined ||
-    (Array.isArray(value.energyLinks) &&
-      value.energyLinks.every(
+function areEnergyLinksValid(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every(
         (link) =>
           isRecord(link) && isFiniteNumber(link.a) && isFiniteNumber(link.b),
-      ));
-  const batteryChargesValid =
-    value.batteryCharges === undefined ||
-    (Array.isArray(value.batteryCharges) &&
-      value.batteryCharges.every(
+      ))
+  );
+}
+
+function areBatteryChargesValid(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every(
         (entry) =>
           isRecord(entry) && isFiniteNumber(entry.id) && isFiniteNumber(entry.charge),
-      ));
-  const simulationTimeValid =
-    value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
+      ))
+  );
+}
+
+function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3 {
+  if (!isRecord(value)) return false;
+  const simulationTimeValid = value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
+
   return (
-    value.version === STORAGE_VERSION &&
+    value.version === WORLD_STORAGE_VERSION &&
+    value.storageVersion === WORLD_STORAGE_VERSION &&
+    value.idleVersion === WORLD_IDLE_VERSION &&
     typeof value.sessionId === 'string' &&
     value.sessionId.length > 0 &&
     isFiniteNumber(value.mapSeed) &&
@@ -135,14 +186,33 @@ function isPersistedWorldState(value: unknown): value is PersistedWorldState {
     value.gridBase64.length > 0 &&
     isSerializedBuildingRegistry(value.buildings) &&
     isSerializedConnectionRegistry(value.connections) &&
-    energyLinksValid &&
-    batteryChargesValid &&
+    areEnergyLinksValid(value.energyLinks) &&
+    areBatteryChargesValid(value.batteryCharges) &&
+    simulationTimeValid
+  );
+}
+
+function isPersistedWorldStateV2(value: unknown): value is PersistedWorldStateV2 {
+  if (!isRecord(value)) return false;
+  const simulationTimeValid = value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
+
+  return (
+    value.version === 2 &&
+    typeof value.sessionId === 'string' &&
+    value.sessionId.length > 0 &&
+    isFiniteNumber(value.mapSeed) &&
+    typeof value.gridBase64 === 'string' &&
+    value.gridBase64.length > 0 &&
+    isSerializedBuildingRegistry(value.buildings) &&
+    isSerializedConnectionRegistry(value.connections) &&
+    areEnergyLinksValid(value.energyLinks) &&
+    areBatteryChargesValid(value.batteryCharges) &&
     simulationTimeValid
   );
 }
 
 function isPersistedViewState(value: unknown): value is PersistedViewState {
-  if (!isRecord(value) || value.version !== STORAGE_VERSION) return false;
+  if (!isRecord(value) || value.version !== VIEW_STORAGE_VERSION) return false;
   if (typeof value.sessionId !== 'string' || value.sessionId.length === 0) return false;
   if (!isRecord(value.viewport)) return false;
   return (
@@ -153,8 +223,96 @@ function isPersistedViewState(value: unknown): value is PersistedViewState {
   );
 }
 
+function isIdleSidecar(value: unknown): value is IdleSidecar {
+  return (
+    isRecord(value) &&
+    value.version === IDLE_SIDECAR_VERSION &&
+    typeof value.sessionId === 'string' &&
+    value.sessionId.length > 0 &&
+    isFiniteNumber(value.pausedAtWallClockMs)
+  );
+}
+
 function removeViewSession(): void {
-  getStorage()?.removeItem(VIEW_STORAGE_KEY);
+  const storage = getViewStorage();
+  storage?.removeItem(VIEW_STORAGE_KEY);
+  if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
+    storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
+  }
+}
+
+function toSnapshotInput(value: PersistedWorldStateV3 | PersistedWorldStateV2): SerializedGameWorld {
+  return {
+    version: 2,
+    mapSeed: value.mapSeed,
+    grid: base64ToArrayBuffer(value.gridBase64),
+    buildings: value.buildings,
+    connections: value.connections,
+    energyLinks: value.energyLinks,
+    playerStock: value.playerStock,
+    simulationTime: value.simulationTime,
+    batteryCharges: value.batteryCharges,
+  };
+}
+
+function readViewState(): PersistedViewState | null {
+  const storage = getViewStorage();
+  if (!storage) return null;
+
+  const keys = VIEW_STORAGE_KEY === LEGACY_VIEW_STORAGE_KEY
+    ? [VIEW_STORAGE_KEY]
+    : [VIEW_STORAGE_KEY, LEGACY_VIEW_STORAGE_KEY];
+
+  for (const key of keys) {
+    const raw = storage.getItem(key);
+    if (!raw) continue;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (isPersistedViewState(parsed)) {
+        return parsed;
+      }
+      storage.removeItem(key);
+    } catch {
+      storage.removeItem(key);
+    }
+  }
+
+  return null;
+}
+
+export function readIdleSidecar(): IdleSidecar | null {
+  const storage = getSidecarStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(IDLE_SIDECAR_KEY);
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isIdleSidecar(parsed)) return parsed;
+    storage.removeItem(IDLE_SIDECAR_KEY);
+  } catch {
+    storage.removeItem(IDLE_SIDECAR_KEY);
+  }
+  return null;
+}
+
+export function writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number): void {
+  const storage = getSidecarStorage();
+  if (!storage) return;
+  if (!Number.isFinite(pausedAtWallClockMs)) return;
+  const payload: IdleSidecar = {
+    version: IDLE_SIDECAR_VERSION,
+    sessionId,
+    pausedAtWallClockMs,
+  };
+  try {
+    storage.setItem(IDLE_SIDECAR_KEY, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — best effort only
+  }
+}
+
+export function clearIdleSidecar(): void {
+  getSidecarStorage()?.removeItem(IDLE_SIDECAR_KEY);
 }
 
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -186,18 +344,26 @@ export function createSessionId(): string {
 }
 
 export function clearPersistedSession(): void {
-  const storage = getStorage();
+  const storage = getLocalStorage();
   storage?.removeItem(WORLD_STORAGE_KEY);
+  storage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
   storage?.removeItem(VIEW_STORAGE_KEY);
+  if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
+    storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
+  }
+
+  clearIdleSidecar();
 }
 
 export function saveWorldSession(engine: GameEngine, sessionId: string): void {
-  const storage = getStorage();
+  const storage = getWorldStorage();
   if (!storage) return;
 
   const snapshot = engine.serializeWorld();
-  const payload: PersistedWorldState = {
-    version: STORAGE_VERSION,
+  const payload: PersistedWorldStateV3 = {
+    version: WORLD_STORAGE_VERSION,
+    storageVersion: WORLD_STORAGE_VERSION,
+    idleVersion: WORLD_IDLE_VERSION,
     sessionId,
     mapSeed: snapshot.mapSeed,
     gridBase64: arrayBufferToBase64(snapshot.grid),
@@ -209,7 +375,11 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
     batteryCharges: snapshot.batteryCharges,
   };
 
-  storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
+  try {
+    storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — drop the save, engine state stays in memory
+  }
 }
 
 export function saveViewSession(args: {
@@ -217,89 +387,105 @@ export function saveViewSession(args: {
   readonly selectedTool: SelectedTool;
   readonly sessionId: string;
 }): void {
-  const storage = getStorage();
+  const storage = getViewStorage();
   if (!storage) return;
 
   const payload: PersistedViewState = {
-    version: STORAGE_VERSION,
+    version: VIEW_STORAGE_VERSION,
     sessionId: args.sessionId,
     viewport: args.engine.getViewportSnapshot(),
     selectedTool: args.selectedTool,
   };
 
-  storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
+  try {
+    storage.setItem(VIEW_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // best effort
+  }
 }
 
 export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {
-  const storage = getStorage();
-  if (!storage) return null;
+  const worldStorage = getWorldStorage();
+  if (!worldStorage) return null;
 
-  const rawWorld = storage.getItem(WORLD_STORAGE_KEY);
-  if (!rawWorld) return null;
+  const rawWorldV3 = worldStorage.getItem(WORLD_STORAGE_KEY);
 
-  try {
-    const parsedWorld: unknown = JSON.parse(rawWorld);
-    if (!isPersistedWorldState(parsedWorld)) {
+  let worldState: PersistedWorldStateV3 | PersistedWorldStateV2 | null = null;
+
+  if (rawWorldV3) {
+    try {
+      const parsed: unknown = JSON.parse(rawWorldV3);
+      if (isPersistedWorldStateV3(parsed)) {
+        worldState = parsed;
+      } else if (isPersistedWorldStateV2(parsed)) {
+        worldState = parsed;
+      } else {
+        clearPersistedSession();
+        return null;
+      }
+    } catch {
       clearPersistedSession();
       return null;
     }
+  } else {
+    const rawLegacy = worldStorage.getItem(LEGACY_WORLD_STORAGE_KEY);
+    if (!rawLegacy) return null;
 
-    const grid = base64ToArrayBuffer(parsedWorld.gridBase64);
+    try {
+      const parsedLegacy: unknown = JSON.parse(rawLegacy);
+      if (!isPersistedWorldStateV2(parsedLegacy)) {
+        clearPersistedSession();
+        return null;
+      }
+      worldState = parsedLegacy;
+    } catch {
+      clearPersistedSession();
+      return null;
+    }
+  }
+
+  try {
+    const grid = base64ToArrayBuffer(worldState.gridBase64);
     if (grid.byteLength < GRID_MIN_BYTE_LENGTH) {
       clearPersistedSession();
       return null;
     }
 
     const engine = GameEngine.fromSnapshot(
-      {
-        version: STORAGE_VERSION,
-        mapSeed: parsedWorld.mapSeed,
-        grid,
-        buildings: parsedWorld.buildings,
-        connections: parsedWorld.connections,
-        energyLinks: parsedWorld.energyLinks,
-        playerStock: parsedWorld.playerStock,
-        simulationTime: parsedWorld.simulationTime,
-        batteryCharges: parsedWorld.batteryCharges,
-      },
+      toSnapshotInput(worldState),
       screenWidth,
       screenHeight,
     );
 
-    const rawView = storage.getItem(VIEW_STORAGE_KEY);
-    if (!rawView) {
-      return {
-        engine,
-        selectedTool: { kind: 'select' },
-        sessionId: parsedWorld.sessionId,
-      };
-    }
+    const viewState = readViewState();
 
-    const parsedView: unknown = JSON.parse(rawView);
-    if (!isPersistedViewState(parsedView)) {
+    if (viewState && viewState.sessionId === worldState.sessionId) {
+      engine.viewport.restore(viewState.viewport);
+    } else if (viewState && viewState.sessionId !== worldState.sessionId) {
       removeViewSession();
-      return {
-        engine,
-        selectedTool: { kind: 'select' },
-        sessionId: parsedWorld.sessionId,
-      };
     }
 
-    if (parsedView.sessionId !== parsedWorld.sessionId) {
-      removeViewSession();
-      return {
-        engine,
-        selectedTool: { kind: 'select' },
-        sessionId: parsedWorld.sessionId,
-      };
+    const sidecar = readIdleSidecar();
+    const idleSidecar = sidecar && sidecar.sessionId === worldState.sessionId ? sidecar : null;
+    if (sidecar && !idleSidecar) {
+      clearIdleSidecar();
     }
 
-    engine.viewport.restore(parsedView.viewport);
+    const selectedTool =
+      viewState && viewState.sessionId === worldState.sessionId
+        ? viewState.selectedTool
+        : { kind: 'select' as const };
+
+    if (worldState.version === 2) {
+      saveWorldSession(engine, worldState.sessionId);
+      worldStorage.removeItem(LEGACY_WORLD_STORAGE_KEY);
+    }
 
     return {
       engine,
-      selectedTool: parsedView.selectedTool,
-      sessionId: parsedWorld.sessionId,
+      selectedTool,
+      sessionId: worldState.sessionId,
+      idleSidecar,
     };
   } catch {
     clearPersistedSession();
