@@ -1061,12 +1061,9 @@ export const useGameStore = create<GameState>()(
         if (demoModeEnabled) {
           const currentStep = get().demoStepIndex
           const nextStep = currentStep + 1
-          if (nextStep < DEMO_SCRIPT_DELAY_TICKS) {
-            set({ demoStepIndex: nextStep })
-            return get().getPixiExport()
-          }
+          const demoPhase = Math.floor(currentStep / DEMO_SCRIPT_DELAY_TICKS) % DEMO_SCRIPT.length
+          const demoStep = DEMO_SCRIPT[demoPhase]
 
-          const demoStep = DEMO_SCRIPT[Math.min(Math.floor(currentStep / DEMO_SCRIPT_DELAY_TICKS), DEMO_SCRIPT.length - 1)]
           if (demoStep === 'init') {
             set(state => ({
               demoStepIndex: nextStep,
@@ -1086,7 +1083,7 @@ export const useGameStore = create<GameState>()(
             }
           }
 
-          if (demoLoopEnabled && currentStep > DEMO_SCRIPT.length * DEMO_SCRIPT_DELAY_TICKS * 2) {
+          if (demoLoopEnabled && nextStep >= DEMO_SCRIPT.length * DEMO_SCRIPT_DELAY_TICKS) {
             set({ demoStepIndex: 0 })
           }
         }

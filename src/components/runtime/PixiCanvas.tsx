@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { loadAssetManifest } from '@/render/asset-manifest-loader'
 import { PixiRenderer } from '@/render/pixi-runtime'
 import { useGameStore } from '@/store/game-store'
+import type { PixiExport } from '@/core/types'
 
 interface PixiCanvasProps {
   className?: string
@@ -11,6 +12,7 @@ interface PixiCanvasProps {
 export function PixiCanvas({ className, style }: PixiCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<PixiRenderer | null>(null)
+  const lastExportRef = useRef<PixiExport | null>(null)
   const exportData = useGameStore(s => s.getPixiExport())
   const selectBuildCell = useGameStore(s => s.selectBuildCell)
   const placeStationAtCell = useGameStore(s => s.placeStationAtCell)
@@ -29,6 +31,8 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       await renderer.init(manifest)
       if (cancelled || !containerRef.current) return
       renderer.mount(containerRef.current)
+      const exportData = useGameStore.getState().getPixiExport()
+      lastExportRef.current = exportData
       renderer.update(exportData)
     }
 
@@ -42,11 +46,14 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
   }, [])
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      rendererRef.current?.update(useGameStore.getState().getPixiExport())
-    }, 250)
+    const unsubscribe = useGameStore.subscribe(() => {
+      const nextExport = useGameStore.getState().getPixiExport()
+      if (lastExportRef.current?.timestamp === nextExport.timestamp) return
+      lastExportRef.current = nextExport
+      rendererRef.current?.update(nextExport)
+    })
 
-    return () => window.clearInterval(interval)
+    return unsubscribe
   }, [])
 
   useEffect(() => {
