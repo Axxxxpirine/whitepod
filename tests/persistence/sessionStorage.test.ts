@@ -22,7 +22,7 @@ function makeEngine() {
   engine.generateMap(99);
   engine.grid.fill(TileType.Ground);
   engine.grid.revealAll();
-  engine.grid.setResource(8, 8, ResourceType.Coal);
+  engine.grid.setResource(8, 8, ResourceType.Regolith);
   engine.placeBuilding('extractor_basic', { x: 8, y: 8 });
   return engine;
 }
@@ -52,7 +52,7 @@ describe('persistent storage', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.sessionId).toBe('session-a');
     expect(loaded?.selectedTool).toEqual({ kind: 'building', buildingType: 'extractor_basic' });
-    expect(loaded?.engine.getResourceAt(8, 8)).toBe(ResourceType.Coal);
+    expect(loaded?.engine.getResourceAt(8, 8)).toBe(ResourceType.Regolith);
     expect(loaded?.engine.getBuildingAt(8, 8)?.typeId).toBe('extractor_basic');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
@@ -103,7 +103,7 @@ describe('persistent storage', () => {
     expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('migrates a legacy v2 world payload to the durable store', () => {
+  it('rejects a legacy v2 world payload and clears persisted state', () => {
     const engine = makeEngine();
     saveWorldSession(engine, 'session-legacy');
     const v3Payload = window.localStorage.getItem(WORLD_STORAGE_KEY);
@@ -113,9 +113,8 @@ describe('persistent storage', () => {
     window.localStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
 
     const loaded = loadPersistedSession(640, 480);
-    expect(loaded).not.toBeNull();
-    expect(loaded?.sessionId).toBe('session-legacy');
-    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(loaded).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
   });
 

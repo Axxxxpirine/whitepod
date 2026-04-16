@@ -38,11 +38,25 @@ TileType:
 2 = Rock
 3 = Water
 
-ResourceType:
-0 = None
-1 = Coal
-2 = IronOre
-3 = CopperOre
+ResourceType — base resources (extractable):
+1 = Regolith
+2 = Hydrogen
+3 = Oxygen
+
+ResourceType — tier-1 refined (converter outputs):
+10 = IronOxide
+11 = AluminumOxide
+12 = SiliconDioxide
+13 = NitrogenGas
+
+ResourceType — tier-1 synthesized (synthesizer outputs):
+14 = Water
+15 = Methane
+16 = CarbonDioxide
+17 = Ammonia
+
+ResourceType — tier-2 synthesized:
+20 = CeramicPlates
 
 Direction:
 0 = North
@@ -232,6 +246,8 @@ The currently supported building type ids are:
 - `solar_panel`
 - `battery_basic`
 - `merger_basic`
+- `converter_basic`
+- `synthesizer_basic`
 - `watchtower`
 - `placeholder_1x1`
 - `placeholder_3x3`
@@ -285,13 +301,41 @@ The currently supported building type ids are:
 - inputs `in_west`, `in_north`, `in_south`
 - output `out_east`
 
+#### `converter_basic`
+
+- footprint: `3x3`
+- allowed tiles: `Ground`
+- forbids resource deposit: yes
+- ports: `in` (West, offset 0,1), `out` (East, offset 2,1)
+- energy: consumes `6`
+- recipes (1 input → 1 output, see recipe catalog):
+  - `iron_oxide`: 1 Regolith → 1 IronOxide, 2 s/cycle
+  - `aluminum_oxide`: 2 Regolith → 1 AluminumOxide, 3 s/cycle
+  - `silicon_dioxide`: 4 Regolith → 1 SiliconDioxide, 5 s/cycle
+  - `nitrogen_gas`: 3 Oxygen → 1 NitrogenGas, 4 s/cycle
+
+#### `synthesizer_basic`
+
+- footprint: `4x4`
+- allowed tiles: `Ground`
+- forbids resource deposit: yes
+- ports: `in_1` (West, offset 0,1), `in_2` (West, offset 0,2), `out` (East, offset 3,2)
+- energy: consumes `10`
+- recipes (2 inputs → 1 output, see recipe catalog):
+  - `water`: 2 H₂ + 1 O₂ → 1 Water, 4 s/cycle
+  - `methane`: 4 H₂ + 1 O₂ → 1 Methane, 5 s/cycle
+  - `carbon_dioxide`: 1 H₂ + 1 O₂ → 1 CO₂, 4 s/cycle
+  - `ammonia`: 3 H₂ + 2 O₂ → 1 Ammonia, 6 s/cycle
+  - `ceramic_plates`: 1 AluminumOxide + 1 IronOxide → 1 CeramicPlates, 6 s/cycle
+
 #### `watchtower`
 
 - footprint: `2x2`
 - allowed tiles: `Ground`
 - forbids resource deposit: yes
-- no ports
-- reveals fog around the placement point
+- no ports, no energy requirement
+- **reveals fog** in a circle of radius `WATCHTOWER_REVEAL_RADIUS` (= 15 tiles) around the footprint center on placement
+- reveal is **permanent** — removing the watchtower does not re-fog the area
 
 #### Placeholder buildings
 
@@ -461,14 +505,45 @@ Useful for scenario evaluation at fixed times of day.
 ### Resource economy inspection
 
 ```ts
-engine.getResourceCounts() => { coal, ironOre, copperOre }
-engine.getResourceRates() => { coal, ironOre, copperOre }
+engine.getResourceCounts() => ResourceStock
+engine.getResourceRates() => ResourceStock
 ```
+
+`ResourceStock` is a flat object with one key per resource type:
+
+```ts
+{
+  regolith, hydrogen, oxygen,
+  ironOxide, aluminumOxide, siliconDioxide, nitrogenGas,
+  water, methane, carbonDioxide, ammonia,
+  ceramicPlates,
+}
+```
+
+`getResourceRates()` returns net rates in items/min for each resource:
+- positive: net production (extractor output + processor output)
+- negative: net consumption (processor input faster than production)
+
+### Processor state inspection
+
+```ts
+engine.getProcessorState(buildingId) => { recipeId: RecipeId | null, cycleProgress: number } | undefined
+engine.setProcessorRecipe(buildingId, recipeId) => boolean
+engine.getProcessorLogisticsStatus(buildingId) => {
+  badInput: boolean
+  missingInput: boolean
+  blockedOutput: boolean
+  assignments: readonly { portId: PortId; requiredResourceType: ResourceType }[]
+} | null
+```
+
+`cycleProgress` stores elapsed seconds within the current cycle.
+
+Processors tick only when powered, when connected upstream providers have buffered the required inputs, and when the processor can flush its output into a valid downstream chain.
 
 ### Direct state access
 
 ```ts
-engine.playerStock
 engine.batteryCharges
 engine.mapSeed
 ```
@@ -488,6 +563,45 @@ Effects:
 - stores the seed in `engine.mapSeed`
 
 For reproducible automated testing, always record the seed.
+
+## Fog of War
+
+The map starts fully fogged. Tiles must be revealed before buildings can be placed on them.
+
+### Reveal model
+
+```ts
+engine.grid.isRevealed(x, y) => boolean
+engine.grid.revealCircle(cx, cy, radius) => void   // reveals a filled circle
+engine.grid.revealAll() => void                     // reveals the entire map (testing / debug)
+engine.grid.fogVersion                              // increments every time new tiles are revealed
+```
+
+Reveal is **monotone** — tiles can only go from fogged to revealed, never back. Removing a watchtower does not re-fog its area.
+
+### Initial reveal
+
+When `engine.generateMap(seed)` is called, the area within `INITIAL_FOG_REVEAL_RADIUS` (= 20 tiles) of the map center is revealed automatically.
+
+### Expanding visibility — the watchtower
+
+Placing a `watchtower` building immediately reveals a circle of `WATCHTOWER_REVEAL_RADIUS` (= 15 tiles) around the footprint center:
+
+```ts
+// 2×2 footprint at origin (ox, oy) → center = (ox+1, oy+1)
+engine.placeBuilding('watchtower', { x: ox, y: oy });
+// All tiles within sqrt((x-(ox+1))² + (y-(oy+1))²) ≤ 15 are now revealed.
+```
+
+Watchtowers have no energy requirement and no ports — their only function is map expansion.
+
+### Fog and building placement
+
+`engine.canPlaceBuilding` returns `{ ok: false, reason: 'tile_fogged' }` when any tile of the building footprint is still fogged. The watchtower is therefore the primary tool for exploring new map area before placing infrastructure.
+
+### Automation pattern
+
+For reproducible tests, skip fog constraints entirely with `engine.grid.revealAll()` before placing buildings. Use targeted `revealCircle` calls when testing the fog mechanic itself.
 
 ## Camera / Viewport Primitives
 

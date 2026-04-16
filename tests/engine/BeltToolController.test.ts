@@ -28,7 +28,7 @@ function screenPointForTileOffset(engine: GameEngine, x: number, y: number, offs
 }
 
 function placeExtractor(engine: GameEngine, x: number, y: number) {
-  engine.placeResource(x, y, ResourceType.Coal);
+  engine.placeResource(x, y, ResourceType.Regolith);
   return engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x, y })!;
 }
 

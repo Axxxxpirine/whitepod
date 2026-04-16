@@ -151,7 +151,7 @@ describe('GameEngine SFX events', () => {
     engine.subscribeSfx(onSfx);
 
     engine.setSimulationTime(0.5);
-    engine.grid.setResource(3, 3, ResourceType.Coal);
+    engine.grid.setResource(3, 3, ResourceType.Regolith);
     const extractor = engine.placeBuilding('extractor_basic', { x: 3, y: 3 })!;
     const solar = engine.placeBuilding('solar_panel', { x: 6, y: 3 })!;
     onSfx.mockClear();
@@ -167,7 +167,7 @@ describe('GameEngine SFX events', () => {
     engine.subscribeSfx(onSfx);
 
     engine.setSimulationTime(0.5);
-    engine.grid.setResource(3, 3, ResourceType.Coal);
+    engine.grid.setResource(3, 3, ResourceType.Regolith);
     const extractor = engine.placeBuilding('extractor_basic', { x: 3, y: 3 })!;
     const solar = engine.placeBuilding('solar_panel', { x: 6, y: 3 })!;
     expect(engine.connectBuildings(extractor, solar)).toBe(true);
@@ -184,7 +184,7 @@ describe('GameEngine SFX events', () => {
     engine.subscribeSfx(onSfx);
 
     engine.setSimulationTime(0.5);
-    engine.grid.setResource(3, 3, ResourceType.Coal);
+    engine.grid.setResource(3, 3, ResourceType.Regolith);
     const extractor = engine.placeBuilding('extractor_basic', { x: 3, y: 3 })!;
     const solar = engine.placeBuilding('solar_panel', { x: 6, y: 3 })!;
     expect(engine.connectBuildings(extractor, solar)).toBe(true);

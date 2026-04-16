@@ -4,6 +4,7 @@ import { toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentatio
 import { getToolbarIcon } from '@/game/ui/toolbarIcons';
 import type { SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
+import { HoverTooltip } from '@/components/ui';
 
 function isEntryActive(entry: ToolbarEntry, tool: SelectedTool): boolean {
   if (entry.kind === 'building') {
@@ -88,7 +89,7 @@ export function BuildingPicker() {
         const IconComponent = icon.kind === 'lucide' ? icon.Icon : null;
 
         return (
-          <div key={key} className="group relative">
+          <HoverTooltip key={key} content={tooltip} id={tooltipId}>
             <button
               type="button"
               onClick={() => selectEntry(entry)}
@@ -132,20 +133,7 @@ export function BuildingPicker() {
                 className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : 'opacity-35'}`}
               />
             </button>
-
-            <div
-              id={tooltipId}
-              role="tooltip"
-              className={[
-                'pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2',
-                'rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-ink',
-                'whitespace-nowrap opacity-0 transition-opacity duration-150',
-                'group-hover:opacity-100 group-focus-within:opacity-100',
-              ].join(' ')}
-            >
-              {tooltip}
-            </div>
-          </div>
+          </HoverTooltip>
         );
       })}
     </div>

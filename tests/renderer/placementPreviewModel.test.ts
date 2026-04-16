@@ -39,7 +39,7 @@ describe('getPlacementPreviewModel', () => {
   it('returns valid model for extractor on resource deposit', () => {
     const engine = makeEngine();
     const selectedTool: SelectedTool = { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID };
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
 
     const preview = getPlacementPreviewModel(
       engine,
@@ -81,7 +81,7 @@ describe('getPlacementPreviewModel', () => {
   it('returns invalid model when target tile is occupied', () => {
     const engine = makeEngine();
     const selectedTool: SelectedTool = { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID };
-    engine.grid.setResource(14, 14, ResourceType.Coal);
+    engine.grid.setResource(14, 14, ResourceType.Regolith);
     engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 14, y: 14 });
 
     const preview = getPlacementPreviewModel(

@@ -143,7 +143,7 @@ describe('EnergyLinkRenderer', () => {
   it('renders no animated dots when network is inactive at night', () => {
     const engine = makeEngine();
     engine.setSimulationTime(0); // night
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
@@ -162,7 +162,7 @@ describe('EnergyLinkRenderer', () => {
   it('renders animated dots toward consumers when network is serving', () => {
     const engine = makeEngine();
     engine.setSimulationTime(0.5); // day
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
@@ -180,7 +180,7 @@ describe('EnergyLinkRenderer', () => {
 
   it('renders discharging flow dots at night when battery powers consumers', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     const batteryId = engine.placeBuilding('battery_basic', { x: 3, y: 1 })!;
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
@@ -205,8 +205,8 @@ describe('EnergyLinkRenderer', () => {
 
   it('never orients discharging consumer flow into batteries', () => {
     const engine = makeEngine();
-    engine.placeResource(3, 1, ResourceType.Coal);
-    engine.placeResource(5, 2, ResourceType.Coal);
+    engine.placeResource(3, 1, ResourceType.Regolith);
+    engine.placeResource(5, 2, ResourceType.Regolith);
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     const batteryId = engine.placeBuilding('battery_basic', { x: 3, y: 2 })!;
     const extractorA = engine.placeBuilding('extractor_basic', { x: 3, y: 1 })!;
@@ -238,7 +238,7 @@ describe('EnergyLinkRenderer', () => {
 
   it('renders surplus dots toward both consumers and batteries without reversing consumer branches', () => {
     const engine = makeEngine();
-    engine.placeResource(2, 1, ResourceType.Coal);
+    engine.placeResource(2, 1, ResourceType.Regolith);
     const solarA = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
     const solarB = engine.placeBuilding('solar_panel', { x: 1, y: 3 })!;
     const batteryId = engine.placeBuilding('battery_basic', { x: 4, y: 2 })!;

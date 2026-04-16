@@ -1,5 +1,5 @@
 import type { GameEngine } from './GameEngine';
-import type { BuildingId, Direction, SelectedTool } from '../types';
+import { ResourceType, type BuildingId, type Direction, type SelectedTool, type TileCoord } from '../types';
 import { screenToGrid } from './CoordinateTransform';
 import { isInBounds } from '../data/coords';
 
@@ -13,6 +13,7 @@ export class InputHandler {
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
   private onBuildingPlaced: ((buildingId: BuildingId) => void) | null = null;
   private onBuildingSelected: ((buildingId: BuildingId | null) => void) | null = null;
+  private onResourceSelected: ((tile: TileCoord | null) => void) | null = null;
   private onEnergyLinkClick: ((buildingId: BuildingId) => void) | null = null;
   private onOutOfGridClick: (() => void) | null = null;
   private onInvalidPlacement:
@@ -39,6 +40,10 @@ export class InputHandler {
 
   setBuildingSelectedCallback(cb: ((buildingId: BuildingId | null) => void) | null): void {
     this.onBuildingSelected = cb;
+  }
+
+  setResourceSelectedCallback(cb: ((tile: TileCoord | null) => void) | null): void {
+    this.onResourceSelected = cb;
   }
 
   setEnergyLinkClickCallback(cb: ((buildingId: BuildingId) => void) | null): void {
@@ -74,7 +79,21 @@ export class InputHandler {
     const selectedTool = this.getSelectedTool();
     if (selectedTool.kind === 'select') {
       const building = this.engine.getBuildingAt(coord.x, coord.y);
-      this.onBuildingSelected?.(building?.id ?? null);
+      if (building) {
+        this.onBuildingSelected?.(building.id);
+        this.onResourceSelected?.(null);
+        return;
+      }
+
+      const resource = this.engine.getResourceAt(coord.x, coord.y);
+      if (resource !== ResourceType.None) {
+        this.onBuildingSelected?.(null);
+        this.onResourceSelected?.(coord);
+        return;
+      }
+
+      this.onBuildingSelected?.(null);
+      this.onResourceSelected?.(null);
       return;
     }
 

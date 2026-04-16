@@ -25,7 +25,7 @@ describe('ResourceRenderer', () => {
     const engine = makeEngine();
     const x = 128;
     const y = 128;
-    engine.placeResource(x, y, ResourceType.Coal);
+    engine.placeResource(x, y, ResourceType.Regolith);
     engine.grid.resourceAmount[y * GRID_WIDTH + x] = 0;
     engine.grid.markDirty(x, y);
 

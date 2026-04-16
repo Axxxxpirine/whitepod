@@ -1,7 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
-import { Eye, Merge, MoveRight, Zap } from 'lucide-react';
+import { Eye, Factory, Hammer, Merge, MoveRight, Zap } from 'lucide-react';
 import {
+  CONVERTER_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
+  SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import type { ToolbarEntry } from './buildingPresentation';
@@ -19,6 +21,8 @@ const LUCIDE_FALLBACKS: ReadonlyMap<string, LucideIcon> = new Map([
   // Buildings without a sprite
   [MERGER_BASIC_BUILDING_TYPE_ID, Merge],
   [WATCHTOWER_BUILDING_TYPE_ID, Eye],
+  [CONVERTER_BUILDING_TYPE_ID, Hammer],
+  [SYNTHESIZER_BUILDING_TYPE_ID, Factory],
 ]);
 
 /**

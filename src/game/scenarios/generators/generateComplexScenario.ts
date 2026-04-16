@@ -3,11 +3,11 @@
  *
  * Produces a high-complexity layout with two operational wings:
  *
- *   Wing A (west): Coal + IronOre extraction
+ *   Wing A (west): Regolith + Hydrogen extraction
  *     – 6 solar panels + 2 batteries + 4 extractors + 1 merger + 1 storage
  *     – Belt topology: 2 extractors → merger inputs → storage; 2 extractors → storage direct
  *
- *   Wing B (east): Copper extraction
+ *   Wing B (east): Oxygen extraction
  *     – 3 solar panels + 1 battery + 2 extractors + 1 storage
  *     – Belt topology: extractors → storage
  *
@@ -54,7 +54,7 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
     clampTile({ x: baseAnchor.x + dx * mirrorX, y: baseAnchor.y + dy * mirrorY });
 
   // ============================================================
-  //  WING A — west, coal + iron, with merger
+  //  WING A — west, regolith + hydrogen, with merger
   // ============================================================
   // Layout (relative to baseAnchor):
   //
@@ -69,30 +69,30 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
   //   merger(-5,-2).out_east → storageA.in_west or in_north
 
   const wingAExtractorDeposits = [
-    { coord: toWorld(-13, -3), type: ResourceType.Coal },
-    { coord: toWorld(-13, 0), type: ResourceType.Coal },
-    { coord: toWorld(-13, 4), type: ResourceType.IronOre },
-    { coord: toWorld(-13, 7), type: ResourceType.IronOre },
+    { coord: toWorld(-13, -3), type: ResourceType.Regolith },
+    { coord: toWorld(-13, 0), type: ResourceType.Regolith },
+    { coord: toWorld(-13, 4), type: ResourceType.Hydrogen },
+    { coord: toWorld(-13, 7), type: ResourceType.Hydrogen },
   ];
 
   // Wing B: east, copper only, no merger
   const wingBExtractorDeposits = [
-    { coord: toWorld(13, -1), type: ResourceType.CopperOre },
-    { coord: toWorld(13, 3), type: ResourceType.CopperOre },
+    { coord: toWorld(13, -1), type: ResourceType.Oxygen },
+    { coord: toWorld(13, 3), type: ResourceType.Oxygen },
   ];
 
   // Decorative deposits scattered around the map
   const decorativeDeposits: [number, number, ResourceType][] = [
-    [-15, 9, ResourceType.Coal],
-    [-15, -7, ResourceType.IronOre],
-    [10, 7, ResourceType.CopperOre],
-    [15, 7, ResourceType.Coal],
-    [-5, -8, ResourceType.IronOre],
-    [5, -8, ResourceType.CopperOre],
-    [-9, 9, ResourceType.Coal],
-    [9, -9, ResourceType.IronOre],
-    [-2, 9, ResourceType.CopperOre],
-    [2, -9, ResourceType.Coal],
+    [-15, 9, ResourceType.Regolith],
+    [-15, -7, ResourceType.Hydrogen],
+    [10, 7, ResourceType.Oxygen],
+    [15, 7, ResourceType.Regolith],
+    [-5, -8, ResourceType.Hydrogen],
+    [5, -8, ResourceType.Oxygen],
+    [-9, 9, ResourceType.Regolith],
+    [9, -9, ResourceType.Hydrogen],
+    [-2, 9, ResourceType.Oxygen],
+    [2, -9, ResourceType.Regolith],
   ];
 
   for (const { coord, type } of [...wingAExtractorDeposits, ...wingBExtractorDeposits]) {

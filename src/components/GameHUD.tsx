@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Settings, Shuffle, Zap } from 'lucide-react';
-import { getBuildingType } from '@/game/data/buildingCatalog';
+import { getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
+import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
+import { SelectedResourceTooltip } from './hud/SelectedResourceTooltip';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
-import { Chip, Icon, Panel, PanelHeading } from './ui';
+import { Chip, HoverTooltip, Icon, Panel, PanelHeading } from './ui';
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -95,11 +97,12 @@ export function GameHUD() {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const durationLabel = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     const delta = idleSummary.resourceDelta;
+    const deltaEntries = RESOURCE_ENTRIES
+      .filter((r) => delta[r.key] !== 0)
+      .map((r) => `+${delta[r.key]} ${resourceTypeLabel(r.type).toLowerCase()}`);
     return {
       durationLabel,
-      coal: delta.coal,
-      ironOre: delta.ironOre,
-      copperOre: delta.copperOre,
+      deltaLabel: deltaEntries.length > 0 ? deltaEntries.join(', ') : 'aucune production',
       capped: idleSummary.capped,
     };
   }, [idleSummary]);
@@ -180,9 +183,7 @@ export function GameHUD() {
         <div className="pointer-events-auto absolute top-3 right-3">
           <div className="rounded-xl border border-emerald-300/25 bg-black/75 px-3 py-2 text-xs text-white/90 shadow-xl backdrop-blur-md">
             <div className="font-semibold text-emerald-300">Progression hors ligne: {idleSummaryText.durationLabel}</div>
-            <div className="mt-1 text-white/75">
-              +{idleSummaryText.coal} charbon, +{idleSummaryText.ironOre} fer, +{idleSummaryText.copperOre} cuivre
-            </div>
+            <div className="mt-1 text-white/75">{idleSummaryText.deltaLabel}</div>
             {idleSummaryText.capped && <div className="mt-0.5 text-[11px] text-amber-300/90">Cap offline appliqué (8h).</div>}
           </div>
         </div>
@@ -195,21 +196,23 @@ export function GameHUD() {
               <>
                 <div className="label mb-1.5 text-ink-muted">Ressources</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
-                    <span className="font-bold tabular-nums">{resourceCounts.coal}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.coal ?? 0}/min</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
-                    <span className="font-bold tabular-nums">{resourceCounts.ironOre}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.ironOre ?? 0}/min</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
-                    <span className="font-bold tabular-nums">{resourceCounts.copperOre}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.copperOre ?? 0}/min</span>
-                  </div>
+                  {RESOURCE_ENTRIES.filter(
+                    (r) => resourceCounts[r.key] > 0 || (resourceRates?.[r.key] ?? 0) !== 0,
+                  ).map((r) => {
+                    const rate = resourceRates?.[r.key] ?? 0;
+                    const rateSign = rate > 0 ? '+' : '';
+                    return (
+                      <HoverTooltip key={r.key} content={resourceTypeLabel(r.type)}>
+                        <div className="flex items-center gap-1.5">
+                          <img src={r.sprite} className="h-4 w-4 object-contain" alt={resourceTypeLabel(r.type)} />
+                          <span className="font-bold tabular-nums">{resourceCounts[r.key]}</span>
+                          <span className={`text-xs tabular-nums ${rate < 0 ? 'text-accent-warm' : 'text-ink-muted'}`}>
+                            {rateSign}{Math.round(rate)}/min
+                          </span>
+                        </div>
+                      </HoverTooltip>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -367,6 +370,7 @@ export function GameHUD() {
       )}
 
       <SelectedBuildingPanel />
+      <SelectedResourceTooltip />
 
       {consoleOpen && (
         <Panel elevated className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden tabular-nums text-xs">

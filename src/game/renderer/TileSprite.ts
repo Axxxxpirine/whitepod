@@ -160,9 +160,9 @@ const resourceTextures = new Map<ResourceType, Texture>();
 
 export async function loadResourceTextures(): Promise<void> {
   const entries: [ResourceType, string][] = [
-    [ResourceTypeConst.Coal, 'sprites/coal.png'],
-    [ResourceTypeConst.IronOre, 'sprites/iron-ore.png'],
-    [ResourceTypeConst.CopperOre, 'sprites/copper-ore.png'],
+    [ResourceTypeConst.Regolith, 'sprites/regolith.png'],
+    [ResourceTypeConst.Hydrogen, 'sprites/hydrogen.png'],
+    [ResourceTypeConst.Oxygen, 'sprites/oxygen.png'],
   ];
   for (const [type, path] of entries) {
     const texture = await Assets.load<Texture>(path);

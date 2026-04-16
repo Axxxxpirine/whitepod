@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { getBuildingType, isBeltTypeId } from '@/game/data/buildingCatalog';
+import { STORAGE_BUILDING_TYPE_ID, getBuildingType, isBeltTypeId, isProcessorTypeId } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
 import { Panel, PanelHeading, Icon } from '../ui';
@@ -28,6 +28,11 @@ export function SelectedBuildingPanel() {
   if (!building) return null;
   const type = getBuildingType(building.typeId);
   if (!type) return null;
+  const panelWidthClass = isProcessorTypeId(building.typeId)
+    ? 'w-[280px]'
+    : building.typeId === STORAGE_BUILDING_TYPE_ID
+      ? 'w-[240px]'
+      : 'w-[200px]';
 
   const { x: anchorX, y: anchorY } = selectedBuildingAnchor;
   const onScreen =
@@ -54,7 +59,7 @@ export function SelectedBuildingPanel() {
       className="pointer-events-auto absolute"
       style={{ left: anchorX, top: anchorY + 12, transform: 'translateX(-50%)' }}
     >
-      <Panel className="flex w-[200px] flex-col gap-1.5 px-3 py-2 text-ink">
+      <Panel className={`flex ${panelWidthClass} flex-col gap-1.5 px-3 py-2 text-ink`}>
         <div className="flex items-center gap-2">
           <PanelHeading className="whitespace-nowrap">{type.name}</PanelHeading>
           <button

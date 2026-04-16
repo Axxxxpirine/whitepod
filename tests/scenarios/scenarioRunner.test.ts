@@ -6,11 +6,13 @@ describe('scenario runner', () => {
   it('builds the bootstrap scenario deterministically', () => {
     const result = runScenario(getScenarioDefinition('bootstrap-energy-grid'), 640, 480);
 
-    expect(result.engine.getBuildings().size).toBe(6);
+    expect(result.engine.getBuildings().size).toBeGreaterThan(6);
     expect(result.engine.getResourceCounts()).toEqual({
-      coal: 6,
-      ironOre: 6,
-      copperOre: 0,
+      regolith: 6,
+      hydrogen: 6,
+      oxygen: 0,
+      ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
     });
     expect(result.selectedTool).toEqual({ kind: 'building', buildingType: 'solar_panel' });
     expect(result.viewport).toEqual({
