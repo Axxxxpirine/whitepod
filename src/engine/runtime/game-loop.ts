@@ -18,6 +18,9 @@ export class GameLoop {
       if (timestamp - this.lastTick >= interval) {
         if (state.mode === 'player' || state.autoTickEnabled || state.demoModeEnabled) state.tick()
         this.lastTick = timestamp
+
+        // keep the renderer in sync without React subscriptions
+        state.getPixiExport()
       }
 
       this.rafId = requestAnimationFrame(loop)

@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { loadAssetManifest } from '@/render/asset-manifest-loader'
 import { PixiRenderer } from '@/render/pixi-runtime'
 import { useGameStore } from '@/store/game-store'
-import type { PixiExport } from '@/core/types'
 
 interface PixiCanvasProps {
   className?: string
@@ -12,8 +11,6 @@ interface PixiCanvasProps {
 export function PixiCanvas({ className, style }: PixiCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<PixiRenderer | null>(null)
-  const lastExportRef = useRef<PixiExport | null>(null)
-  const exportData = useGameStore(s => s.getPixiExport())
   const selectBuildCell = useGameStore(s => s.selectBuildCell)
   const placeStationAtCell = useGameStore(s => s.placeStationAtCell)
   const getPreferredTransitionIdForPalette = useGameStore(s => s.getPreferredTransitionIdForPalette)
@@ -31,9 +28,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       await renderer.init(manifest)
       if (cancelled || !containerRef.current) return
       renderer.mount(containerRef.current)
-      const exportData = useGameStore.getState().getPixiExport()
-      lastExportRef.current = exportData
-      renderer.update(exportData)
+      renderer.update(useGameStore.getState().getPixiExport())
     }
 
     boot()
@@ -46,26 +41,16 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
   }, [])
 
   useEffect(() => {
-    const unsubscribe = useGameStore.subscribe(() => {
-      const nextExport = useGameStore.getState().getPixiExport()
-      if (lastExportRef.current?.timestamp === nextExport.timestamp) return
-      lastExportRef.current = nextExport
-      rendererRef.current?.update(nextExport)
-    })
-
-    return unsubscribe
-  }, [])
-
-  useEffect(() => {
     const node = containerRef.current
     if (!node) return
 
     const onClick = (event: MouseEvent) => {
       const rect = node.getBoundingClientRect()
       if (rect.width <= 0 || rect.height <= 0) return
-      const x = Math.floor((event.clientX - rect.left) / (rect.width / exportData.grid.width))
-      const y = Math.floor((event.clientY - rect.top) / (rect.height / exportData.grid.height))
-      if (x < 0 || y < 0 || x >= exportData.grid.width || y >= exportData.grid.height) return
+      const grid = useGameStore.getState().getPixiExport().grid
+      const x = Math.floor((event.clientX - rect.left) / (rect.width / grid.width))
+      const y = Math.floor((event.clientY - rect.top) / (rect.height / grid.height))
+      if (x < 0 || y < 0 || x >= grid.width || y >= grid.height) return
       selectBuildCell(x, y)
       const transitionId = getPreferredTransitionIdForPalette()
       if (transitionId) placeStationAtCell(x, y, transitionId)
@@ -74,9 +59,10 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
     const onMove = (event: MouseEvent) => {
       const rect = node.getBoundingClientRect()
       if (rect.width <= 0 || rect.height <= 0) return
-      const x = Math.floor((event.clientX - rect.left) / (rect.width / exportData.grid.width))
-      const y = Math.floor((event.clientY - rect.top) / (rect.height / exportData.grid.height))
-      if (x < 0 || y < 0 || x >= exportData.grid.width || y >= exportData.grid.height) {
+      const grid = useGameStore.getState().getPixiExport().grid
+      const x = Math.floor((event.clientX - rect.left) / (rect.width / grid.width))
+      const y = Math.floor((event.clientY - rect.top) / (rect.height / grid.height))
+      if (x < 0 || y < 0 || x >= grid.width || y >= grid.height) {
         hoverBuildCell(0, null)
         return
       }
@@ -94,7 +80,7 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       node.removeEventListener('mousemove', onMove)
       node.removeEventListener('mouseleave', onLeave)
     }
-  }, [exportData, getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtCell, selectBuildCell])
+  }, [getPreferredTransitionIdForPalette, hoverBuildCell, placeStationAtCell, selectBuildCell])
 
   useEffect(() => {
     const node = containerRef.current
