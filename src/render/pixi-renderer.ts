@@ -130,9 +130,29 @@ export class PixiRenderer {
     this.lastExportData = exportData
     this.lastCellsHash = this.computeCellsHash(exportData.grid.cells)
 
+    const clearChildren = (container: Container) => {
+      const maybeRemoveChildren = container as Container & {
+        removeChildren?: () => unknown[]
+        children?: unknown[]
+      }
+
+      if (typeof maybeRemoveChildren.removeChildren === 'function') {
+        const removed = maybeRemoveChildren.removeChildren()
+        for (const child of removed ?? []) {
+          const maybeDestroy = child as { destroy?: () => void }
+          maybeDestroy.destroy?.()
+        }
+        return
+      }
+
+      if (Array.isArray(maybeRemoveChildren.children)) {
+        maybeRemoveChildren.children.length = 0
+      }
+    }
+
     this.gridLayer.clear()
-    this.cellLayer.removeChildren().forEach(child => child.destroy())
-    this.tokenLayer.removeChildren().forEach(child => child.destroy())
+    clearChildren(this.cellLayer)
+    clearChildren(this.tokenLayer)
 
     this.updatePhase()
     this.renderGrid(exportData.grid.width, exportData.grid.height)
@@ -229,14 +249,28 @@ export class PixiRenderer {
     if (!this.gridLayer) return
 
     const { cellSize } = this.config
-    this.gridLayer.rect(0, 0, width * cellSize, height * cellSize).fill({ color: 0x071018, alpha: 0.2 })
+    const graphics = this.gridLayer as Graphics & {
+      rect?: (x: number, y: number, width: number, height: number) => Graphics
+      fill?: (style: { color: number; alpha?: number }) => Graphics
+      moveTo?: (x: number, y: number) => Graphics
+      lineTo?: (x: number, y: number) => Graphics
+      stroke?: (style: { width: number; color: number; alpha?: number }) => Graphics
+    }
+
+    if (typeof graphics.rect === 'function' && typeof graphics.fill === 'function') {
+      graphics.rect(0, 0, width * cellSize, height * cellSize).fill({ color: 0x071018, alpha: 0.2 })
+    }
+
+    if (typeof graphics.moveTo !== 'function' || typeof graphics.lineTo !== 'function' || typeof graphics.stroke !== 'function') {
+      return
+    }
 
     for (let x = 0; x <= width; x += 16) {
-      this.gridLayer.moveTo(x * cellSize, 0).lineTo(x * cellSize, height * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
+      graphics.moveTo(x * cellSize, 0).lineTo(x * cellSize, height * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
     }
 
     for (let y = 0; y <= height; y += 16) {
-      this.gridLayer.moveTo(0, y * cellSize).lineTo(width * cellSize, y * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
+      graphics.moveTo(0, y * cellSize).lineTo(width * cellSize, y * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
     }
   }
 

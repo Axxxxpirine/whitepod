@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ResourceId } from '@/core/grid/manager'
 import { PixiCanvas } from '@/components/PixiCanvas'
-import { PetriNetDebugger } from '@/components/debug/PetriNetDebugger'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 import './App.css'
 
 const PIXI_CANVAS_BASE_SIZE = 128 * 12
 const PALETTE_ORDER = ['extractor', 'conveyor', 'factory', 'storage'] as const
+const RESOURCE_ORDER = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith'] as const
 const TOKEN_GROUP_ORDER = ['Control', 'Surface', 'Bus', 'Stock', 'Other'] as const
 
 type HudCategory = (typeof PALETTE_ORDER)[number]
 
 function statusLabel(phase: string): string {
   switch (phase) {
-    case 'initializing':
-      return 'Initializing'
+    case 'init':
+      return 'Booting'
     case 'running':
       return 'Running'
     case 'done':
@@ -26,8 +25,6 @@ function statusLabel(phase: string): string {
       return phase
   }
 }
-
-const RESOURCE_ORDER: ResourceId[] = ['lunar_helium3', 'lunar_hydrogen', 'lunar_oxygen', 'lunar_regolith']
 
 function paletteLabel(kind: HudCategory): string {
   switch (kind) {
@@ -70,34 +67,65 @@ function tokenGroupLabel(place: string): (typeof TOKEN_GROUP_ORDER)[number] {
   return 'Other'
 }
 
+function humanizeId(id: string): string {
+  return id
+    .replace(/^lunar_/, '')
+    .replace(/__/g, ' ')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function formatTransitionLabel(id: string): string {
+  if (id.startsWith('extract__')) return `Extract ${humanizeId(id.slice('extract__'.length))}`
+  if (id.startsWith('convey__')) return `Convey ${humanizeId(id.slice('convey__'.length))}`
+  if (id.startsWith('recipe__')) return `Recipe ${humanizeId(id.slice('recipe__'.length))}`
+  if (id.startsWith('store__')) return `Store ${humanizeId(id.slice('store__'.length))}`
+  if (id.startsWith('drain__')) return `Drain ${humanizeId(id.slice('drain__'.length))}`
+  return humanizeId(id)
+}
+
+function formatResourceLabel(resourceId: string): string {
+  return humanizeId(resourceId)
+}
+
+function formatCellLabel(cell: { x: number; y: number } | null, hover: { x: number; y: number } | null): string {
+  if (cell) return `Cell ${cell.x}, ${cell.y}`
+  if (hover) return `Hover ${hover.x}, ${hover.y}`
+  return 'No cell selected'
+}
+
 function App() {
-  const loadSystem = useGameStore(s => s.loadSystem)
-  const mode = useGameStore(s => s.mode)
-  const setMode = useGameStore(s => s.setMode)
-  const phase = useGameStore(s => s.phase)
-  const tokens = useGameStore(s => s.tokens)
-  const metadata = useGameStore(s => s.metadata)
-  const stations = useGameStore(s => s.stations)
-  const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
-  const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
-  const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
-  const buildPalette = useGameStore(s => s.buildPalette)
-  const setBuildPalette = useGameStore(s => s.setBuildPalette)
-  const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
-  const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
-  const placeStation = useGameStore(s => s.placeStation)
-  const removeStation = useGameStore(s => s.removeStation)
-  const requestSystemTransition = useGameStore(s => s.requestSystemTransition)
-  const tick = useGameStore(s => s.tick)
-  const resetSave = useGameStore(s => s.resetSave)
-  const newGame = useGameStore(s => s.newGame)
-  const seed = useGameStore(s => s.seed)
+  const loadSystem = useGameStore((s) => s.loadSystem)
+  const mode = useGameStore((s) => s.mode)
+  const autoTickEnabled = useGameStore((s) => s.autoTickEnabled)
+  const setAutoTickEnabled = useGameStore((s) => s.setAutoTickEnabled)
+  const phase = useGameStore((s) => s.phase)
+  const tokens = useGameStore((s) => s.tokens)
+  const stations = useGameStore((s) => s.stations)
+  const selectedBuildCell = useGameStore((s) => s.selectedBuildCell)
+  const hoveredBuildCell = useGameStore((s) => s.hoveredBuildCell)
+  const clearBuildSelection = useGameStore((s) => s.clearBuildSelection)
+  const buildPalette = useGameStore((s) => s.buildPalette)
+  const setBuildPalette = useGameStore((s) => s.setBuildPalette)
+  const selectedBuildTransitionId = useGameStore((s) => s.selectedBuildTransitionId)
+  const setSelectedBuildTransitionId = useGameStore((s) => s.setSelectedBuildTransitionId)
+  const removeStation = useGameStore((s) => s.removeStation)
+  const requestSystemTransition = useGameStore((s) => s.requestSystemTransition)
+  const tick = useGameStore((s) => s.tick)
+  const resetSave = useGameStore((s) => s.resetSave)
+  const newGame = useGameStore((s) => s.newGame)
+  const seed = useGameStore((s) => s.seed)
+  const transitions = useGameStore((s) => s.transitions)
+  const engine = useGameStore((s) => s.engine)
+  const requestedSystemTransitionIds = useGameStore((s) => s.requestedSystemTransitionIds)
+  const lastFiredTransitionIds = useGameStore((s) => s.lastFiredTransitionIds)
+  const tickIndex = useGameStore((s) => s.tickIndex)
+  const saveRevision = useGameStore((s) => s.saveRevision)
 
   const loopRef = useRef<GameLoop | null>(null)
-  const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
   const [canvasZoom, setCanvasZoom] = useState<number>(0.625)
-  const [debugOpen, setDebugOpen] = useState<boolean>(false)
+  const [bootError, setBootError] = useState<string | null>(null)
 
   useEffect(() => {
     setSeedInput(String(seed))
@@ -107,15 +135,20 @@ function App() {
     let cancelled = false
 
     async function boot() {
-      await loadSystem()
-      if (cancelled) return
+      try {
+        await loadSystem()
+        if (cancelled) return
 
-      const loop = new GameLoop()
-      loop.start()
-      loopRef.current = loop
+        const loop = new GameLoop()
+        loop.start()
+        loopRef.current = loop
+      } catch (error) {
+        if (cancelled) return
+        setBootError(error instanceof Error ? error.message : String(error))
+      }
     }
 
-    boot()
+    void boot()
 
     return () => {
       cancelled = true
@@ -124,28 +157,47 @@ function App() {
     }
   }, [loadSystem])
 
-  useEffect(() => {
-    if (mode !== 'debug' && debugOpen) {
-      setDebugOpen(false)
+  const activeTokenEntries = useMemo(
+    () => Object.entries(tokens).filter(([, value]) => value > 0).sort(([a], [b]) => a.localeCompare(b)),
+    [tokens],
+  )
+
+  const tokenGroups = useMemo(() => {
+    const grouped = new Map<(typeof TOKEN_GROUP_ORDER)[number], Array<[string, number]>>()
+    for (const group of TOKEN_GROUP_ORDER) grouped.set(group, [])
+
+    for (const entry of activeTokenEntries) {
+      grouped.get(tokenGroupLabel(entry[0]))?.push(entry)
     }
-  }, [debugOpen, mode])
 
-  const stationOptions = useMemo(() => {
-    const transitions = metadata?.gameSystem.transitions ?? []
-    return transitions
-      .filter(t => t.kind === 'station' && t.activation === 'placed')
-      .slice()
-      .sort((a, b) => a.id.localeCompare(b.id))
-  }, [metadata])
+    return TOKEN_GROUP_ORDER.map((group) => ({
+      label: group,
+      entries: grouped.get(group) ?? [],
+    })).filter((group) => group.entries.length > 0)
+  }, [activeTokenEntries])
 
-  const effectiveSelectedStationId = selectedStationId || stationOptions[0]?.id || ''
+  const resourceTotals = useMemo(
+    () =>
+      RESOURCE_ORDER.map((resourceId) => ({
+        resourceId,
+        count: Object.entries(tokens)
+          .filter(([place]) => place.startsWith(resourceId))
+          .reduce((sum, [, qty]) => sum + qty, 0),
+      })),
+    [tokens],
+  )
+
   const buildPrefix = palettePrefix(buildPalette)
   const buildOptions = useMemo(
-    () => (metadata?.gameSystem.transitions ?? []).filter(t => t.id.startsWith(buildPrefix)).sort((a, b) => a.id.localeCompare(b.id)),
-    [buildPrefix, metadata],
+    () =>
+      transitions
+        .filter((transition) => transition.id.startsWith(buildPrefix))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+    [buildPrefix, transitions],
   )
+
   const activeBuildTransitionId =
-    selectedBuildTransitionId && selectedBuildTransitionId.startsWith(buildPrefix)
+    selectedBuildTransitionId && buildOptions.some((transition) => transition.id === selectedBuildTransitionId)
       ? selectedBuildTransitionId
       : buildOptions[0]?.id ?? null
 
@@ -156,28 +208,9 @@ function App() {
   }, [activeBuildTransitionId, selectedBuildTransitionId, setSelectedBuildTransitionId])
 
   const activeBuildTransition = useMemo(
-    () => buildOptions.find(t => t.id === activeBuildTransitionId) ?? null,
+    () => buildOptions.find((transition) => transition.id === activeBuildTransitionId) ?? null,
     [activeBuildTransitionId, buildOptions],
   )
-
-  const tokenEntries = useMemo(
-    () => Object.entries(tokens).filter(([, value]) => value > 0).sort(([a], [b]) => a.localeCompare(b)),
-    [tokens],
-  )
-
-  const tokenGroups = useMemo(() => {
-    const grouped = new Map<(typeof TOKEN_GROUP_ORDER)[number], Array<[string, number]>>()
-    for (const group of TOKEN_GROUP_ORDER) grouped.set(group, [])
-
-    for (const entry of tokenEntries) {
-      grouped.get(tokenGroupLabel(entry[0]))?.push(entry)
-    }
-
-    return TOKEN_GROUP_ORDER.map(group => ({
-      label: group,
-      entries: grouped.get(group) ?? [],
-    })).filter(group => group.entries.length > 0)
-  }, [tokenEntries])
 
   const stationGroups = useMemo(() => {
     const grouped = new Map<HudCategory, typeof stations>()
@@ -188,53 +221,49 @@ function App() {
       grouped.get(category)?.push(station)
     }
 
-    return PALETTE_ORDER.map(kind => ({
+    return PALETTE_ORDER.map((kind) => ({
       kind,
       label: paletteLabel(kind),
       stations: grouped.get(kind) ?? [],
-    })).filter(group => group.stations.length > 0)
+    })).filter((group) => group.stations.length > 0)
   }, [stations])
 
-  const resourceTotals = RESOURCE_ORDER.map(resourceId => ({
-    resourceId,
-    count: Object.entries(tokens)
-      .filter(([place]) => place.startsWith(resourceId))
-      .reduce((sum, [, qty]) => sum + qty, 0),
-  }))
+  const selectedCellLabel = formatCellLabel(selectedBuildCell, hoveredBuildCell)
+  const status = statusLabel(phase)
+  const isReady = engine !== null && transitions.length > 0
+  const selectedBuildLabel = activeBuildTransition ? formatTransitionLabel(activeBuildTransition.id) : 'No build selected'
+  const selectedBuildHint =
+    buildPalette === 'conveyor'
+      ? 'Drag on the grid to paint conveyor transitions.'
+      : 'Click a cell to place the selected transition.'
 
-  const selectedCellLabel = selectedBuildCell
-    ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
-    : hoveredBuildCell
-      ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
-      : 'No cell selected'
-
-  const toggleDebug = () => {
-    if (mode === 'debug' && debugOpen) {
-      setDebugOpen(false)
-      setMode('player')
-      return
-    }
-
-    if (mode === 'debug') {
-      setDebugOpen(true)
-      return
-    }
-
-    setMode('debug')
-    setDebugOpen(true)
+  const handleNewGame = () => {
+    const nextSeed = Number.parseInt(seedInput, 10)
+    if (!Number.isInteger(nextSeed)) return
+    newGame(nextSeed)
   }
+
+  const handleResetSave = () => {
+    if (!window.confirm('Reset the current session and start a new game?')) return
+    resetSave()
+  }
+
+  const zoomOut = () => setCanvasZoom((zoom) => Math.max(0.25, Math.round((zoom - 0.125) * 1000) / 1000))
+  const zoomIn = () => setCanvasZoom((zoom) => Math.min(1.5, Math.round((zoom + 0.125) * 1000) / 1000))
+  const resetZoom = () => setCanvasZoom(0.625)
 
   return (
     <div className="app-shell min-h-screen">
       <header className="hud-header panel-surface panel-dark">
         <div>
-          <p className="hud-eyebrow">Whitepod control room</p>
-          <h1 className="hud-title">Lunar factory control</h1>
+          <p className="hud-eyebrow">Whitepod runtime</p>
+          <h1 className="hud-title">Lunar system UI</h1>
         </div>
         <div className="hud-topbar-meta">
-          <div className="hud-metric"><span>Mode</span><strong>{mode}</strong></div>
-          <div className="hud-metric"><span>Phase</span><strong>{statusLabel(phase)}</strong></div>
+          <div className="hud-metric"><span>Phase</span><strong>{status}</strong></div>
           <div className="hud-metric"><span>Seed</span><strong>{seed}</strong></div>
+          <div className="hud-metric"><span>Stations</span><strong>{stations.length}</strong></div>
+          <div className="hud-metric"><span>Tokens</span><strong>{activeTokenEntries.length}</strong></div>
         </div>
       </header>
 
@@ -243,23 +272,26 @@ function App() {
           <div className="hud-menu-group-title">Selection</div>
           <div className="hud-summary-group">
             <span className="hud-badge">{selectedCellLabel}</span>
-            <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build selected'}</span>
+            <span className="hud-badge">{selectedBuildLabel}</span>
           </div>
         </div>
+
         <div className="hud-summary-block">
-          <div className="hud-menu-group-title">Factory</div>
+          <div className="hud-menu-group-title">Runtime</div>
           <div className="hud-summary-group">
-            <span className="hud-badge">Stations {stations.length}</span>
-            <span className="hud-badge">Tokens {tokenEntries.length}</span>
-            <span className="hud-badge">Build {buildOptions.length}</span>
+            <span className="hud-badge">Tick {tickIndex}</span>
+            <span className="hud-badge">Save {saveRevision}</span>
+            <span className="hud-badge">{mode}</span>
+            <span className="hud-badge">{autoTickEnabled ? 'Auto tick' : 'Paused'}</span>
           </div>
         </div>
+
         <div className="hud-summary-block hud-summary-block--wide">
           <div className="hud-menu-group-title">Resources</div>
           <div className="hud-summary-group hud-summary-group--resources">
-            {resourceTotals.map(resource => (
+            {resourceTotals.map((resource) => (
               <div key={resource.resourceId} className="hud-resource-pill">
-                <span>{resource.resourceId.replace('lunar_', '')}</span>
+                <span>{formatResourceLabel(resource.resourceId)}</span>
                 <strong>{resource.count}</strong>
               </div>
             ))}
@@ -274,36 +306,52 @@ function App() {
               <h2>Session</h2>
               <span className="hud-badge">Live</span>
             </div>
+
             <div className="hud-stack">
               <div className="hud-menu-group">
                 <div className="hud-menu-group-title">Seed</div>
                 <label className="hud-field">
                   <span>Seed</span>
-                  <input className="hud-input" value={seedInput} onChange={e => setSeedInput(e.target.value)} />
+                  <input className="hud-input" value={seedInput} onChange={(event) => setSeedInput(event.target.value)} onKeyDown={(event) => {
+                    if (event.key === 'Enter') handleNewGame()
+                  }} />
                 </label>
               </div>
 
               <div className="hud-menu-group">
                 <div className="hud-menu-group-title">Session actions</div>
-                <div className="hud-actions">
-                  <button className="hud-button primary" onClick={() => {
-                    const nextSeed = Number.parseInt(seedInput, 10)
-                    if (!Number.isInteger(nextSeed)) return
-                    newGame(nextSeed)
-                  }}>
-                    New game
-                  </button>
-                  <button className="hud-button" onClick={() => resetSave()}>Reset save</button>
+                <div className="hud-actions hud-actions--dense">
+                  <button className="hud-button primary" onClick={handleNewGame} disabled={!isReady}>New game</button>
+                  <button className="hud-button" onClick={handleResetSave} disabled={!isReady}>Reset save</button>
                 </div>
               </div>
 
               <div className="hud-menu-group">
                 <div className="hud-menu-group-title">Simulation</div>
                 <div className="hud-actions hud-actions--dense">
-                  <button className="hud-button" onClick={() => requestSystemTransition('init')}>Init</button>
-                  <button className="hud-button" onClick={() => requestSystemTransition('launch')}>Launch</button>
-                  <button className="hud-button" onClick={() => requestSystemTransition('terminate')}>Terminate</button>
-                  <button className="hud-button" onClick={() => tick()}>Tick now</button>
+                  <button className="hud-button" onClick={() => requestSystemTransition('init')} disabled={!isReady}>Init</button>
+                  <button className="hud-button" onClick={() => requestSystemTransition('launch')} disabled={!isReady}>Launch</button>
+                  <button className="hud-button" onClick={() => requestSystemTransition('terminate')} disabled={!isReady}>Terminate</button>
+                  <button className="hud-button primary" onClick={() => tick()} disabled={!isReady}>Tick now</button>
+                </div>
+              </div>
+
+              <div className="hud-menu-group">
+                <div className="hud-menu-group-title">Playback</div>
+                <div className="hud-actions hud-actions--dense">
+                  <button className={`hud-button ${autoTickEnabled ? 'primary' : ''}`} onClick={() => setAutoTickEnabled(!autoTickEnabled)} disabled={!isReady}>
+                    {autoTickEnabled ? 'Auto tick ON' : 'Auto tick OFF'}
+                  </button>
+                  <span className="hud-badge">Mode: {mode}</span>
+                </div>
+              </div>
+
+              <div className="hud-menu-group">
+                <div className="hud-menu-group-title">Runtime state</div>
+                <div className="hud-actions hud-actions--dense">
+                  <span className="hud-badge">{status}</span>
+                  <span className="hud-badge">Queued {requestedSystemTransitionIds.length}</span>
+                  <span className="hud-badge">Fired {lastFiredTransitionIds.length}</span>
                 </div>
               </div>
             </div>
@@ -312,17 +360,18 @@ function App() {
           <section className="panel-surface panel-dark hud-panel hud-panel--fill">
             <div className="panel-header panel-header--dark">
               <h2>Build Library</h2>
-              <button className="hud-link" onClick={() => clearBuildSelection()}>Clear</button>
+              <button className="hud-link" onClick={() => clearBuildSelection()} disabled={!isReady}>Clear</button>
             </div>
 
             <div className="hud-menu-group">
               <div className="hud-menu-group-title">Categories</div>
               <div className="hud-actions hud-actions--dense">
-                {PALETTE_ORDER.map(kind => (
+                {PALETTE_ORDER.map((kind) => (
                   <button
                     key={kind}
                     className={`hud-button ${buildPalette === kind ? 'primary' : ''}`}
                     onClick={() => setBuildPalette(kind)}
+                    disabled={!isReady}
                   >
                     {paletteLabel(kind)}
                   </button>
@@ -338,18 +387,20 @@ function App() {
                 </div>
                 <div className="hud-muted">{buildOptions.length} available</div>
               </div>
+
               <div className="hud-panel-scroll hud-panel-scroll--grow">
                 <div className="hud-library-scroll">
                   <div className="hud-chip-list">
-                    {buildOptions.map(option => (
+                    {buildOptions.map((transition) => (
                       <button
-                        key={option.id}
-                        className={`hud-chip ${activeBuildTransitionId === option.id ? 'is-active' : ''}`}
-                        onClick={() => setSelectedBuildTransitionId(option.id)}
-                        title={option.name_fr ?? option.id}
+                        key={transition.id}
+                        className={`hud-chip ${activeBuildTransitionId === transition.id ? 'is-active' : ''}`}
+                        onClick={() => setSelectedBuildTransitionId(transition.id)}
+                        title={formatTransitionLabel(transition.id)}
+                        disabled={!isReady}
                       >
-                        <span>{option.name_fr ?? option.id}</span>
-                        <small>{option.id}</small>
+                        <span>{formatTransitionLabel(transition.id)}</span>
+                        <small>{transition.id}</small>
                       </button>
                     ))}
                   </div>
@@ -359,16 +410,8 @@ function App() {
 
             <div className="hud-menu-group">
               <div className="hud-menu-group-title">Placement</div>
-              <p className="hud-muted hud-panel-note">
-                Click a grid cell to place {activeBuildTransition ? activeBuildTransition.name_fr ?? activeBuildTransition.id : 'the selected build'}.
-              </p>
-              <p className="hud-muted hud-panel-note">
-                {selectedBuildCell
-                  ? `Cell ${selectedBuildCell.x}, ${selectedBuildCell.y}`
-                  : hoveredBuildCell
-                    ? `Hover ${hoveredBuildCell.x}, ${hoveredBuildCell.y}`
-                    : 'Select a grid cell to inspect.'}
-              </p>
+              <p className="hud-muted hud-panel-note">{selectedBuildHint}</p>
+              <p className="hud-muted hud-panel-note">{selectedCellLabel}</p>
             </div>
           </section>
         </aside>
@@ -378,17 +421,25 @@ function App() {
             <h2>Factory Grid</h2>
             <div className="hud-viewport-meta">
               <span className="hud-badge">{selectedCellLabel}</span>
-              <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name_fr ?? activeBuildTransition.id : 'Select a build'}</span>
+              <span className="hud-badge">{selectedBuildLabel}</span>
             </div>
           </div>
+
           <div className="hud-viewport-body">
-            <PixiCanvas
-              className="canvas-stage"
-              style={{
-                width: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
-                height: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
-              }}
-            />
+            {bootError ? (
+              <div className="hud-menu-group" style={{ minWidth: 'min(640px, 100%)' }}>
+                <div className="hud-menu-group-title">Runtime error</div>
+                <p className="hud-muted hud-panel-note">{bootError}</p>
+              </div>
+            ) : (
+              <PixiCanvas
+                className="canvas-stage"
+                style={{
+                  width: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
+                  height: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
+                }}
+              />
+            )}
           </div>
         </section>
 
@@ -398,39 +449,31 @@ function App() {
               <h2>Stations</h2>
               <span className="hud-badge">Placement</span>
             </div>
-            <div className="hud-stack hud-stack--fill">
-              <div className="hud-menu-group">
-                <div className="hud-menu-group-title">Placement</div>
-                <div className="hud-row">
-                  <select className="hud-select hud-select-wide" value={effectiveSelectedStationId} onChange={e => setSelectedStationId(e.target.value)}>
-                    {stationOptions.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.id}{t.name_fr ? ` — ${t.name_fr}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <button className="hud-button primary" onClick={() => effectiveSelectedStationId && placeStation(effectiveSelectedStationId)}>Place</button>
-                </div>
-              </div>
 
-              <div className="hud-panel-scroll hud-panel-scroll--grow">
-                {stationGroups.length === 0 ? (
-                  <p className="hud-muted">No stations placed.</p>
-                ) : (
-                  stationGroups.map(group => (
-                    <div key={group.kind} className="hud-menu-group">
-                      <div className="hud-menu-group-title">{group.label}</div>
-                      <div className="hud-chip-list compact">
-                        {group.stations.map(station => (
-                          <button key={station.id} className="hud-chip" onClick={() => removeStation(station.id)} title="Remove station">
-                            {station.id} · {station.transitionId} @({station.x},{station.y})
-                          </button>
-                        ))}
-                      </div>
+            <div className="hud-panel-scroll hud-panel-scroll--grow">
+              {stationGroups.length === 0 ? (
+                <p className="hud-muted">No stations placed.</p>
+              ) : (
+                stationGroups.map((group) => (
+                  <div key={group.kind} className="hud-menu-group">
+                    <div className="hud-menu-group-title">{group.label}</div>
+                    <div className="hud-chip-list compact">
+                      {group.stations.map((station) => (
+                        <button
+                          key={station.id}
+                          className="hud-chip"
+                          onClick={() => removeStation(station.id)}
+                          title="Remove station"
+                          disabled={!isReady}
+                        >
+                          <span>{station.id}</span>
+                          <small>{station.transitionId} @({station.x},{station.y})</small>
+                        </button>
+                      ))}
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
@@ -439,11 +482,12 @@ function App() {
               <h2>Tokens</h2>
               <span className="hud-badge">Non-zero</span>
             </div>
+
             <div className="hud-panel-scroll hud-panel-scroll--grow">
               {tokenGroups.length === 0 ? (
                 <p className="hud-muted">No active tokens.</p>
               ) : (
-                tokenGroups.map(group => (
+                tokenGroups.map((group) => (
                   <div key={group.label} className="hud-menu-group">
                     <div className="hud-menu-group-title">{group.label}</div>
                     <div className="token-grid">
@@ -462,47 +506,36 @@ function App() {
         </aside>
       </main>
 
-      {debugOpen ? (
-        <section className="hud-debug panel-surface panel-dark">
-          <div className="panel-header panel-header--dark">
-            <h2>Debug Console</h2>
-            <div className="hud-actions hud-actions--dense">
-              <span className="hud-badge">Petri net</span>
-              <button className="hud-button" onClick={toggleDebug}>Close debug</button>
-            </div>
-          </div>
-          <PetriNetDebugger />
-        </section>
-      ) : null}
-
       <footer className="hud-footer panel-surface panel-dark">
         <div className="hud-footer-left">
           <div className="hud-menu-group hud-menu-group--inline">
             <div className="hud-menu-group-title">Status</div>
             <div className="hud-actions hud-actions--dense">
-              <span className="hud-badge">{statusLabel(phase)}</span>
-              <span className="hud-badge">Seed {seed}</span>
-              <span className="hud-badge">{mode === 'debug' ? 'Debug HUD' : 'Player HUD'}</span>
+              <span className="hud-badge">{status}</span>
+              <span className="hud-badge">{selectedBuildLabel}</span>
+              <span className="hud-badge">{selectedBuildHint}</span>
             </div>
           </div>
         </div>
+
         <div className="hud-footer-right">
           <div className="hud-menu-group hud-menu-group--inline">
             <div className="hud-menu-group-title">View</div>
             <div className="hud-zoom-group">
-              <button className="hud-button" onClick={() => setCanvasZoom(z => Math.max(0.25, Math.round((z - 0.125) * 1000) / 1000))}>-</button>
+              <button className="hud-button" onClick={zoomOut}>-</button>
               <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
-              <button className="hud-button" onClick={() => setCanvasZoom(z => Math.min(1.5, Math.round((z + 0.125) * 1000) / 1000))}>+</button>
-              <button className="hud-button" onClick={() => setCanvasZoom(0.625)}>Reset</button>
+              <button className="hud-button" onClick={zoomIn}>+</button>
+              <button className="hud-button" onClick={resetZoom}>Reset</button>
             </div>
           </div>
 
           <div className="hud-menu-group hud-menu-group--inline">
-            <div className="hud-menu-group-title">Tools</div>
+            <div className="hud-menu-group-title">Build</div>
             <div className="hud-actions hud-actions--dense">
-              <button className={`hud-button ${mode === 'debug' ? 'primary' : ''}`} onClick={toggleDebug}>
-                {mode === 'debug' && debugOpen ? 'Return to player' : mode === 'debug' ? 'Show debug' : 'Open debug'}
-              </button>
+              <button className="hud-button" onClick={() => setBuildPalette('extractor')} disabled={!isReady}>Extractors</button>
+              <button className="hud-button" onClick={() => setBuildPalette('conveyor')} disabled={!isReady}>Conveyors</button>
+              <button className="hud-button" onClick={() => setBuildPalette('factory')} disabled={!isReady}>Factories</button>
+              <button className="hud-button" onClick={() => setBuildPalette('storage')} disabled={!isReady}>Storage</button>
             </div>
           </div>
         </div>

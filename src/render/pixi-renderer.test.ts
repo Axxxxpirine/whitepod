@@ -26,6 +26,17 @@ vi.mock('pixi.js', () => {
     }
   }
 
+  class MockSprite {
+    anchor = { set() { return undefined } }
+    x = 0
+    y = 0
+    width = 0
+    height = 0
+    alpha = 1
+  }
+
+  const MockTexture = { WHITE: {} }
+
   class MockApplication {
     stage = new MockContainer()
     canvas = document.createElement('canvas')
@@ -37,6 +48,8 @@ vi.mock('pixi.js', () => {
     Application: MockApplication,
     Container: MockContainer,
     Graphics: MockGraphics,
+    Sprite: MockSprite,
+    Texture: MockTexture,
     Text: MockText,
   }
 })
