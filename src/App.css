@@ -30,7 +30,11 @@
 
 .panel-surface {
   border: 1px solid var(--hud-border);
-  background: var(--hud-surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--hud-surface),
+    url('/assets/ui/panel.svg');
+  background-size: cover;
   box-shadow: var(--hud-shadow);
   backdrop-filter: blur(18px);
 }
@@ -93,7 +97,8 @@
   min-width: 92px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: url('/assets/ui/resource-pill.svg');
+  background-size: 100% 100%;
 }
 
 .hud-resource-pill strong,
@@ -133,7 +138,8 @@
   padding: 9px 11px;
   border-radius: 14px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.04);
+  background: url('/assets/ui/metric.svg');
+  background-size: 100% 100%;
 }
 
 .hud-badge,
@@ -154,7 +160,8 @@
   max-width: 100%;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: url('/assets/ui/badge.svg');
+  background-size: 100% 100%;
   overflow-wrap: anywhere;
 }
 
@@ -199,7 +206,8 @@
   padding: 10px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.03);
+  background: url('/assets/ui/panel-strong.svg');
+  background-size: cover;
 }
 
 .hud-menu-group--inline {
@@ -286,7 +294,8 @@
   width: 100%;
   border: 1px solid var(--hud-border-strong);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: url('/assets/ui/input.svg');
+  background-size: 100% 100%;
   padding: 9px 11px;
   font: inherit;
   color: var(--hud-text);
@@ -302,7 +311,8 @@
 .hud-chip {
   border: 1px solid var(--hud-border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: url('/assets/ui/button.svg');
+  background-size: 100% 100%;
   color: var(--hud-text);
   transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
 }
@@ -321,14 +331,15 @@
 }
 
 .hud-button.primary {
-  background: rgba(52, 211, 153, 0.12);
+  background-image: url('/assets/ui/button-primary.svg');
   border-color: rgba(52, 211, 153, 0.2);
 }
 
 .hud-link {
   padding-inline: 0;
   border: 0;
-  background: transparent;
+  background: url('/assets/ui/button.svg');
+  background-size: 100% 100%;
   color: rgba(168, 85, 247, 0.9);
 }
 
@@ -342,11 +353,12 @@
   padding: 8px 10px;
   text-align: left;
   font-size: 11px;
+  background-image: url('/assets/ui/chip.svg');
 }
 
 .hud-chip.is-active {
   border-color: rgba(52, 211, 153, 0.35);
-  background: rgba(52, 211, 153, 0.1);
+  background-image: url('/assets/ui/chip.svg');
 }
 
 .hud-chip small {
@@ -373,7 +385,8 @@
   padding: 8px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.03);
+  background: url('/assets/ui/viewport-frame.svg');
+  background-size: cover;
 }
 
 .canvas-stage {
@@ -399,7 +412,8 @@
   padding: 11px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.04);
+  background: url('/assets/ui/token-card.svg');
+  background-size: 100% 100%;
 }
 
 .token-card strong {

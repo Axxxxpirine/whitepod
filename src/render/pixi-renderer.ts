@@ -1,6 +1,7 @@
-import { Application, Container, Graphics, Text } from 'pixi.js'
+import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import type { PixiExport, GamePhase } from '@/core/types'
 import type { ResourceId } from '@/core/grid/manager'
+import { loadWhitepodAssetCatalog, type WhitepodAssetCatalog } from '@/assets/whitepod-assets'
 
 interface PixiRendererConfig {
   cellSize: number
@@ -33,16 +34,21 @@ export class PixiRenderer {
   private config: PixiRendererConfig
   private container: Container | null = null
   private mountNode: HTMLElement | null = null
-  
-  private cellLayer: Graphics | null = null
-  private tokenLayer: Graphics | null = null
-  
+
+  private gridLayer: Graphics | null = null
+  private cellLayer: Container | null = null
+  private tokenLayer: Container | null = null
+
+  private assets: WhitepodAssetCatalog | null = null
+  private assetsReady: Promise<void>
+  private pendingExport: PixiExport | null = null
+
   private lastExportData: PixiExport | null = null
   private lastCellsHash: string | null = null
 
   constructor(config?: Partial<PixiRendererConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config }
-
+    this.assetsReady = this.initAssets()
     void this.initApplication()
   }
 
@@ -73,6 +79,21 @@ export class PixiRenderer {
     }
 
     this.createLayers()
+
+    await this.assetsReady
+
+    if (this.pendingExport) {
+      this.renderExport(this.pendingExport)
+      this.pendingExport = null
+    }
+  }
+
+  private async initAssets(): Promise<void> {
+    try {
+      this.assets = await loadWhitepodAssetCatalog()
+    } catch {
+      this.assets = null
+    }
   }
 
   private createLayers(): void {
@@ -81,9 +102,11 @@ export class PixiRenderer {
     this.container = new Container()
     this.app.stage.addChild(this.container)
 
-    this.cellLayer = new Graphics()
-    this.tokenLayer = new Graphics()
+    this.gridLayer = new Graphics()
+    this.cellLayer = new Container()
+    this.tokenLayer = new Container()
 
+    this.container.addChild(this.gridLayer)
     this.container.addChild(this.cellLayer)
     this.container.addChild(this.tokenLayer)
   }
@@ -93,16 +116,26 @@ export class PixiRenderer {
       return
     }
 
+    if (!this.cellLayer || !this.tokenLayer || !this.gridLayer) {
+      this.pendingExport = exportData
+      return
+    }
+
+    this.renderExport(exportData)
+  }
+
+  private renderExport(exportData: PixiExport): void {
+    if (!this.cellLayer || !this.tokenLayer || !this.gridLayer) return
+
     this.lastExportData = exportData
     this.lastCellsHash = this.computeCellsHash(exportData.grid.cells)
 
-    if (!this.cellLayer || !this.tokenLayer) return
-
-    this.cellLayer.clear()
-    this.tokenLayer.clear()
+    this.gridLayer.clear()
+    this.cellLayer.removeChildren().forEach(child => child.destroy())
+    this.tokenLayer.removeChildren().forEach(child => child.destroy())
 
     this.updatePhase()
-
+    this.renderGrid(exportData.grid.width, exportData.grid.height)
     this.renderCells(exportData.grid.cells)
 
     if (exportData.layerTokens) {
@@ -134,6 +167,15 @@ export class PixiRenderer {
     // Background color update handled by container
   }
 
+  private getResourceTextures(resourceId: ResourceId): { tile?: Texture; icon?: Texture; card?: Texture } {
+    if (!this.assets) return {}
+    return {
+      tile: this.assets.resourceTiles.get(resourceId),
+      icon: this.assets.resourceIcons.get(resourceId),
+      card: this.assets.resourceCards.get(resourceId),
+    }
+  }
+
   private getStationCategory(transitionId: string): StationCategory {
     if (transitionId.startsWith('extract__')) return 'extractor'
     if (transitionId.startsWith('convey__')) return 'conveyor'
@@ -150,39 +192,51 @@ export class PixiRenderer {
       const y = cell.y * cellSize
 
       if (cell.kind === 'deposit' && cell.resourceId) {
-        const color = this.config.depositColors[cell.resourceId]
-        this.cellLayer.circle(x + cellSize / 2, y + cellSize / 2, cellSize * 0.35).fill(color)
+        const textures = this.getResourceTextures(cell.resourceId)
+        const sprite = new Sprite(textures.tile ?? textures.icon ?? Texture.WHITE)
+        sprite.anchor.set(0.5)
+        sprite.x = x + cellSize / 2
+        sprite.y = y + cellSize / 2
+        sprite.width = cellSize * 2.1
+        sprite.height = cellSize * 2.1
+        sprite.alpha = 0.96
+        this.cellLayer.addChild(sprite)
         continue
       }
 
       if (cell.kind === 'station') {
         const category = this.getStationCategory(cell.transitionId ?? cell.id)
-        switch (category) {
-          case 'extractor':
-            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x7c2d12).stroke({ width: 1, color: 0xfbbf24 })
-            this.cellLayer.circle(x + cellSize / 2, y + cellSize / 2, cellSize * 0.18).fill(0xfde68a)
-            this.cellLayer.rect(x + cellSize * 0.18, y + cellSize * 0.38, cellSize * 0.64, cellSize * 0.24).fill(0xf59e0b)
-            break
-          case 'conveyor':
-            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x262626).stroke({ width: 1, color: 0xf97316 })
-            this.cellLayer.rect(x + 2, y + cellSize * 0.42, cellSize - 4, cellSize * 0.16).fill(0xf97316)
-            this.cellLayer.rect(x + cellSize * 0.38, y + 2, cellSize * 0.16, cellSize - 4).fill(0xfee08b)
-            break
-          case 'storage':
-            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x0f766e).stroke({ width: 1, color: 0x5eead4 })
-            this.cellLayer.rect(x + 2, y + 2, cellSize - 4, cellSize * 0.28).fill(0x99f6e4)
-            this.cellLayer.rect(x + 2, y + cellSize * 0.42, cellSize - 4, cellSize * 0.18).fill(0x14b8a6)
-            this.cellLayer.rect(x + 2, y + cellSize * 0.68, cellSize - 4, cellSize * 0.18).fill(0x0f766e)
-            break
-          case 'factory':
-          default:
-            this.cellLayer.rect(x + 1, y + 1, cellSize - 2, cellSize - 2).fill(0x4338ca).stroke({ width: 1, color: 0xc4b5fd })
-            this.cellLayer.rect(x + 2, y + 2, cellSize - 4, cellSize * 0.22).fill(0x818cf8)
-            this.cellLayer.rect(x + 2, y + cellSize * 0.4, cellSize - 4, cellSize * 0.18).fill(0xa78bfa)
-            this.cellLayer.rect(x + 2, y + cellSize * 0.66, cellSize - 4, cellSize * 0.18).fill(0x8b5cf6)
-            break
-        }
+        const transitionId = cell.transitionId ?? cell.id
+        const resourceId = transitionId.startsWith('extract__')
+          ? (transitionId.slice('extract__'.length) as ResourceId)
+          : cell.resourceId
+
+        const textures = resourceId ? this.getResourceTextures(resourceId) : {}
+        const uiTexture = this.assets?.ui.get(category === 'conveyor' ? 'icon-gear' : category === 'storage' ? 'icon-pause' : category === 'factory' ? 'icon-reset' : 'icon-play')
+        const sprite = new Sprite(textures.icon ?? uiTexture ?? Texture.WHITE)
+        sprite.anchor.set(0.5)
+        sprite.x = x + cellSize / 2
+        sprite.y = y + cellSize / 2
+        sprite.width = cellSize * 2.2
+        sprite.height = cellSize * 2.2
+        sprite.alpha = category === 'factory' ? 0.92 : 0.98
+        this.cellLayer.addChild(sprite)
       }
+    }
+  }
+
+  private renderGrid(width: number, height: number): void {
+    if (!this.gridLayer) return
+
+    const { cellSize } = this.config
+    this.gridLayer.rect(0, 0, width * cellSize, height * cellSize).fill({ color: 0x071018, alpha: 0.2 })
+
+    for (let x = 0; x <= width; x += 16) {
+      this.gridLayer.moveTo(x * cellSize, 0).lineTo(x * cellSize, height * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
+    }
+
+    for (let y = 0; y <= height; y += 16) {
+      this.gridLayer.moveTo(0, y * cellSize).lineTo(width * cellSize, y * cellSize).stroke({ width: 1, color: 0x1f2a38, alpha: 0.35 })
     }
   }
 
