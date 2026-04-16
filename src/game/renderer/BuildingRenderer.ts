@@ -1,10 +1,12 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
 import {
+  CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
@@ -27,6 +29,8 @@ const BUILDING_TINTS: Record<string, number> = {
   [SOLAR_PANEL_BUILDING_TYPE_ID]: PIXI.ok,
   [MERGER_BASIC_BUILDING_TYPE_ID]: PIXI.inkMuted,
   [WATCHTOWER_BUILDING_TYPE_ID]: PIXI.inkMuted,
+  [CONVERTER_BUILDING_TYPE_ID]: PIXI.accentWarm,
+  [SYNTHESIZER_BUILDING_TYPE_ID]: PIXI.accentWarm,
 };
 const DEFAULT_BUILDING_ALPHA = 0.95;
 const EXTRACTOR_BUILDING_ALPHA = 0.52;

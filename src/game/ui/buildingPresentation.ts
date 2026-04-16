@@ -3,10 +3,12 @@ import {
   BELT_CORNER_CCW_BUILDING_TYPE_ID,
   BELT_CORNER_CW_BUILDING_TYPE_ID,
   BELT_STRAIGHT_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
   getBuildingType,
 } from '../data/buildingCatalog';
@@ -132,6 +134,22 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     activeClass: 'bg-ink-muted',
     highlightFamily: [WATCHTOWER_BUILDING_TYPE_ID],
     highlightColor: PIXI.inkMuted,
+  },
+  {
+    kind: 'building',
+    typeId: CONVERTER_BUILDING_TYPE_ID,
+    shortcut: '9',
+    activeClass: 'bg-accent-warm',
+    highlightFamily: [CONVERTER_BUILDING_TYPE_ID],
+    highlightColor: PIXI.accentWarm,
+  },
+  {
+    kind: 'building',
+    typeId: SYNTHESIZER_BUILDING_TYPE_ID,
+    shortcut: '0',
+    activeClass: 'bg-accent-warm',
+    highlightFamily: [SYNTHESIZER_BUILDING_TYPE_ID],
+    highlightColor: PIXI.accentWarm,
   },
 ];
 

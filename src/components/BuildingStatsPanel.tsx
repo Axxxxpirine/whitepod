@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   MERGER_BASIC_BUILDING_TYPE_ID,
@@ -10,8 +11,10 @@ import {
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
+  isProcessorTypeId,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
+import { getRecipesForBuilding, type Recipe } from '@/game/data/recipeCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { BeltFlowStats } from './BeltFlowStats';
@@ -56,9 +59,9 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
     rows = (
       <div className="flex justify-around py-0.5">
-        <ResourceStockRow sprite="sprites/coal.png" alt="Charbon" count={stock.coal} />
-        <ResourceStockRow sprite="sprites/iron-ore.png" alt="Fer" count={stock.ironOre} />
-        <ResourceStockRow sprite="sprites/copper-ore.png" alt="Cuivre" count={stock.copperOre} />
+        <ResourceStockRow sprite="sprites/regolith.png" alt="Régolithe" count={stock.regolith} />
+        <ResourceStockRow sprite="sprites/hydrogen.png" alt="Hydrogène" count={stock.hydrogen} />
+        <ResourceStockRow sprite="sprites/oxygen.png" alt="Oxygène" count={stock.oxygen} />
       </div>
     );
   } else if (building.typeId === BATTERY_BASIC_BUILDING_TYPE_ID) {
@@ -152,6 +155,41 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     );
   }
 
+  if (isProcessorTypeId(building.typeId)) {
+    const buildingKind = building.typeId === CONVERTER_BUILDING_TYPE_ID ? 'converter' : 'synthesizer';
+    const recipes = getRecipesForBuilding(buildingKind as 'converter' | 'synthesizer');
+    const state = engine.getProcessorState(building.id);
+    const activeRecipeId = state?.recipeId ?? null;
+    const powerState = engine.getBuildingPowerState(building.id);
+    const isPowered = powerState === 'powered';
+    const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
+    const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
+
+    rows = (
+      <>
+        <StatRow icon={Zap} label="Energie" value={powerLabel} valueClass={powerClass} />
+        <div className="mt-1">
+          <span className="label text-ink-muted">Recette</span>
+          <div className="mt-0.5 flex flex-col gap-0.5">
+            {recipes.map((recipe) => (
+              <RecipeRow
+                key={recipe.id}
+                recipe={recipe}
+                active={recipe.id === activeRecipeId}
+                onClick={() => {
+                  engine.setProcessorRecipe(
+                    building.id,
+                    recipe.id === activeRecipeId ? null : recipe.id,
+                  );
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   if (!rows) return null;
 
   return (
@@ -188,5 +226,24 @@ function ResourceStockRow({ sprite, alt, count }: { sprite: string; alt: string;
       <img src={sprite} className="h-3.5 w-3.5 object-contain" alt={alt} />
       <span className="text-xs font-medium tabular-nums text-ink">{count}</span>
     </div>
+  );
+}
+
+function RecipeRow({ recipe, active, onClick }: { recipe: Recipe; active: boolean; onClick: () => void }) {
+  const inputLabel = recipe.inputs.map((i) => `${i.amount}x ${resourceTypeLabel(i.resourceType)}`).join(' + ');
+  const outputLabel = `${recipe.output.amount}x ${resourceTypeLabel(recipe.output.resourceType)}`;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-1.5 py-0.5 text-left text-xs transition-colors ${
+        active ? 'bg-accent-warm/20 text-ink font-medium' : 'text-ink-muted hover:bg-surface-2'
+      }`}
+    >
+      <div>{recipe.name}</div>
+      <div className="text-[10px] text-ink-muted">
+        {inputLabel} → {outputLabel} ({recipe.cycleSeconds}s)
+      </div>
+    </button>
   );
 }
