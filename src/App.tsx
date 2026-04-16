@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PixiCanvas } from '@/components/PixiCanvas'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
+import { GridViewport } from '@/components/runtime/GridViewport'
+import { HudSection } from '@/components/runtime/HudSection'
+import { IconButton } from '@/components/runtime/IconButton'
+import { TileCard } from '@/components/runtime/TileCard'
 import './App.css'
 
 const PIXI_CANVAS_BASE_SIZE = 128 * 12
@@ -357,12 +361,16 @@ function App() {
             </div>
           </section>
 
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Build Library</h2>
-              <button className="hud-link" onClick={() => clearBuildSelection()} disabled={!isReady}>Clear</button>
-            </div>
-
+          <HudSection
+            title="Build Library"
+            badge={`${buildOptions.length} available`}
+            action={
+              <button className="hud-link" onClick={() => clearBuildSelection()} disabled={!isReady}>
+                Clear
+              </button>
+            }
+            className="hud-panel hud-panel--fill"
+          >
             <div className="hud-menu-group">
               <div className="hud-menu-group-title">Categories</div>
               <div className="hud-actions hud-actions--dense">
@@ -379,33 +387,17 @@ function App() {
               </div>
             </div>
 
-            <div className="hud-menu-group">
-              <div className="hud-library-header">
-                <div>
-                  <div className="hud-menu-group-title">Blueprints</div>
-                  <div className="hud-library-title">{paletteLabel(buildPalette)}</div>
-                </div>
-                <div className="hud-muted">{buildOptions.length} available</div>
-              </div>
-
-              <div className="hud-panel-scroll hud-panel-scroll--grow">
-                <div className="hud-library-scroll">
-                  <div className="hud-chip-list">
-                    {buildOptions.map((transition) => (
-                      <button
-                        key={transition.id}
-                        className={`hud-chip ${activeBuildTransitionId === transition.id ? 'is-active' : ''}`}
-                        onClick={() => setSelectedBuildTransitionId(transition.id)}
-                        title={formatTransitionLabel(transition.id)}
-                        disabled={!isReady}
-                      >
-                        <span>{formatTransitionLabel(transition.id)}</span>
-                        <small>{transition.id}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div className="runtime-tile-grid runtime-tile-grid--library">
+              {buildOptions.map((transition) => (
+                <TileCard
+                  key={transition.id}
+                  selected={activeBuildTransitionId === transition.id}
+                  onClick={() => setSelectedBuildTransitionId(transition.id)}
+                  title={formatTransitionLabel(transition.id)}
+                  subtitle={transition.id}
+                  disabled={!isReady}
+                />
+              ))}
             </div>
 
             <div className="hud-menu-group">
@@ -413,18 +405,18 @@ function App() {
               <p className="hud-muted hud-panel-note">{selectedBuildHint}</p>
               <p className="hud-muted hud-panel-note">{selectedCellLabel}</p>
             </div>
-          </section>
+          </HudSection>
         </aside>
 
-        <section className="panel-surface panel-dark hud-viewport">
-          <div className="panel-header panel-header--dark">
-            <h2>Factory Grid</h2>
-            <div className="hud-viewport-meta">
+        <GridViewport
+          title="Factory Grid"
+          meta={
+            <>
               <span className="hud-badge">{selectedCellLabel}</span>
               <span className="hud-badge">{selectedBuildLabel}</span>
-            </div>
-          </div>
-
+            </>
+          }
+        >
           <div className="hud-viewport-body">
             {bootError ? (
               <div className="hud-menu-group" style={{ minWidth: 'min(640px, 100%)' }}>
@@ -441,68 +433,52 @@ function App() {
               />
             )}
           </div>
-        </section>
+        </GridViewport>
 
         <aside className="hud-sidebar hud-sidebar--right">
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Stations</h2>
-              <span className="hud-badge">Placement</span>
-            </div>
-
-            <div className="hud-panel-scroll hud-panel-scroll--grow">
+          <HudSection title="Stations" badge="Placement" className="hud-panel hud-panel--fill">
+            <div className="hud-panel-scroll hud-panel-scroll--grow runtime-scroll">
               {stationGroups.length === 0 ? (
                 <p className="hud-muted">No stations placed.</p>
               ) : (
                 stationGroups.map((group) => (
                   <div key={group.kind} className="hud-menu-group">
                     <div className="hud-menu-group-title">{group.label}</div>
-                    <div className="hud-chip-list compact">
+                    <div className="runtime-tile-grid">
                       {group.stations.map((station) => (
-                        <button
+                        <TileCard
                           key={station.id}
-                          className="hud-chip"
+                          title={station.id}
+                          subtitle={`${station.transitionId} @ (${station.x}, ${station.y})`}
                           onClick={() => removeStation(station.id)}
-                          title="Remove station"
                           disabled={!isReady}
-                        >
-                          <span>{station.id}</span>
-                          <small>{station.transitionId} @({station.x},{station.y})</small>
-                        </button>
+                        />
                       ))}
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </section>
+          </HudSection>
 
-          <section className="panel-surface panel-dark hud-panel hud-panel--fill">
-            <div className="panel-header panel-header--dark">
-              <h2>Tokens</h2>
-              <span className="hud-badge">Non-zero</span>
-            </div>
-
-            <div className="hud-panel-scroll hud-panel-scroll--grow">
+          <HudSection title="Tokens" badge="Non-zero" className="hud-panel hud-panel--fill">
+            <div className="hud-panel-scroll hud-panel-scroll--grow runtime-scroll">
               {tokenGroups.length === 0 ? (
                 <p className="hud-muted">No active tokens.</p>
               ) : (
                 tokenGroups.map((group) => (
                   <div key={group.label} className="hud-menu-group">
                     <div className="hud-menu-group-title">{group.label}</div>
-                    <div className="token-grid">
+                    <div className="runtime-tile-grid runtime-tile-grid--tokens">
                       {group.entries.map(([key, value]) => (
-                        <div key={key} className="token-card">
-                          <span>{key}</span>
-                          <strong>{value}</strong>
-                        </div>
+                        <TileCard key={key} title={key} subtitle={`Count ${value}`} disabled />
                       ))}
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </section>
+          </HudSection>
         </aside>
       </main>
 
@@ -522,10 +498,10 @@ function App() {
           <div className="hud-menu-group hud-menu-group--inline">
             <div className="hud-menu-group-title">View</div>
             <div className="hud-zoom-group">
-              <button className="hud-button" onClick={zoomOut}>-</button>
+              <IconButton icon="zoom-out" label="-" onClick={zoomOut} aria-label="Zoom out" />
               <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
-              <button className="hud-button" onClick={zoomIn}>+</button>
-              <button className="hud-button" onClick={resetZoom}>Reset</button>
+              <IconButton icon="zoom-in" label="+" onClick={zoomIn} aria-label="Zoom in" />
+              <IconButton icon="reset" label="Reset" onClick={resetZoom} aria-label="Reset zoom" />
             </div>
           </div>
 
