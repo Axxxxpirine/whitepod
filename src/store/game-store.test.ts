@@ -532,4 +532,152 @@ describe('useGameStore persistence hydrate', () => {
       lunar_oxygen_stock: 1,
     })
   })
+
+  it('drives a demonstration run to rocket launch on the current state', async () => {
+    const transitions = [
+      { id: 'init', consumes: [{ place: 'start', qty: 1 }], produces: [{ place: 'run', qty: 1 }] },
+      {
+        id: 'launch',
+        consumes: [
+          { place: 'rocket_ready_stock', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [{ place: 'done', qty: 1 }],
+      },
+      { id: 'terminate', consumes: [{ place: 'done', qty: 1 }], produces: [] },
+      {
+        id: 'extract__lunar_hydrogen',
+        consumes: [{ place: 'run', qty: 1 }],
+        produces: [
+          { place: 'lunar_hydrogen_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+      {
+        id: 'convey__lunar_hydrogen',
+        consumes: [
+          { place: 'lunar_hydrogen_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'lunar_hydrogen_bus', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+      {
+        id: 'store__lunar_hydrogen',
+        consumes: [
+          { place: 'lunar_hydrogen_bus', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'lunar_hydrogen_stock', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+      {
+        id: 'recipe__assemble_rocket',
+        consumes: [
+          { place: 'lunar_hydrogen_stock', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'rocket_ready_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+      {
+        id: 'convey__rocket_ready',
+        consumes: [
+          { place: 'rocket_ready_surface', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'rocket_ready_bus', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+      {
+        id: 'store__rocket_ready',
+        consumes: [
+          { place: 'rocket_ready_bus', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+        produces: [
+          { place: 'rocket_ready_stock', qty: 1 },
+          { place: 'run', qty: 1 },
+        ],
+      },
+    ]
+
+    const metadata = {
+      version: 1,
+      canonical: { places: [], transitions: [] },
+      gameSystem: {
+        places: [
+          { id: 'lunar_hydrogen', tier: 0, name_fr: 'Hydrogene lunaire' },
+          { id: 'rocket_ready', tier: 1, name_fr: 'Fusee prete' },
+        ],
+        transitions: [
+          { id: 'init', kind: 'system', activation: 'manual', name_fr: 'Initialisation' },
+          { id: 'launch', kind: 'system', activation: 'manual', name_fr: 'Decollage' },
+          { id: 'terminate', kind: 'system', activation: 'manual', name_fr: 'Arret' },
+          { id: 'extract__lunar_hydrogen', kind: 'station', activation: 'placed', stationKind: 'extract', name_fr: 'Extraction hydrogene' },
+          { id: 'convey__lunar_hydrogen', kind: 'station', activation: 'placed', stationKind: 'convey', name_fr: 'Convoyeur hydrogene' },
+          { id: 'store__lunar_hydrogen', kind: 'station', activation: 'placed', stationKind: 'store', name_fr: 'Stockage hydrogene' },
+          { id: 'recipe__assemble_rocket', kind: 'station', activation: 'placed', stationKind: 'recipe', name_fr: 'Assemblage fusee' },
+          { id: 'convey__rocket_ready', kind: 'station', activation: 'placed', stationKind: 'convey', name_fr: 'Convoyeur fusee' },
+          { id: 'store__rocket_ready', kind: 'station', activation: 'placed', stationKind: 'store', name_fr: 'Stockage fusee' },
+        ],
+        resources: [],
+        grid: {
+          depositConfig: {
+            lunar_helium3: { depositCount: 0, depositCapacity: 1 },
+            lunar_hydrogen: { depositCount: 1, depositCapacity: 12 },
+            lunar_oxygen: { depositCount: 0, depositCapacity: 1 },
+            lunar_regolith: { depositCount: 0, depositCapacity: 1 },
+          },
+        },
+      },
+    }
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('game-system.transitions.json')) {
+        return { ok: true, json: async () => transitions }
+      }
+      if (url.includes('metadata.json')) {
+        return { ok: true, json: async () => metadata }
+      }
+      return { ok: false, status: 404, statusText: 'Not Found' }
+    }))
+
+    const { useGameStore } = await import('./game-store')
+    await useGameStore.getState().loadSystem()
+    useGameStore.getState().setDemonstrationEnabled(true)
+
+    let sawSpawn = false
+    let sawBuild = false
+    let sawLaunch = false
+
+    for (let i = 0; i < 10; i++) {
+      const exportData = useGameStore.getState().tick()
+      sawSpawn = sawSpawn || exportData.activities.some(activity => activity.kind === 'spawn')
+      sawBuild = sawBuild || exportData.activities.some(activity => activity.kind === 'build')
+      sawLaunch = sawLaunch || exportData.activities.some(activity => activity.kind === 'launch')
+      if (useGameStore.getState().phase === 'done') break
+    }
+
+    expect(useGameStore.getState().phase).toBe('done')
+    expect(sawSpawn).toBe(true)
+    expect(sawBuild).toBe(true)
+    expect(sawLaunch).toBe(true)
+    expect(useGameStore.getState().stations.map(station => station.transitionId)).toEqual([
+      'extract__lunar_hydrogen',
+      'convey__lunar_hydrogen',
+      'store__lunar_hydrogen',
+      'recipe__assemble_rocket',
+      'convey__rocket_ready',
+      'store__rocket_ready',
+    ])
+  })
 })

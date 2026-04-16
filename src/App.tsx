@@ -13,13 +13,14 @@ import { RuntimeSettingsPopover } from '@/components/runtime/RuntimeSettingsPopo
 import { RuntimeToolIndicator } from '@/components/runtime/RuntimeToolIndicator'
 import type { Transition } from '@/core/types'
 import type { ResourceId } from '@/core/grid/manager'
-import { GRID_CELL_SIZE, GRID_WIDTH } from '@/core/grid/config'
+import { GRID_CELL_SIZE, GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import { PixiCanvas } from '@/components/PixiCanvas'
 import { GameLoop } from '@/engine/game-loop'
 import { useGameStore } from '@/store/game-store'
 import './App.css'
 
-const PIXI_CANVAS_BASE_SIZE = GRID_WIDTH * GRID_CELL_SIZE
+const PIXI_CANVAS_BASE_WIDTH = GRID_WIDTH * GRID_CELL_SIZE
+const PIXI_CANVAS_BASE_HEIGHT = GRID_HEIGHT * GRID_CELL_SIZE
 
 function formatBuildCost(transition: Transition, placeMetaById: ReturnType<typeof buildPlaceMetaMap>): string {
   const cost = getStationBuildCost(transition)
@@ -79,11 +80,13 @@ function App() {
   const transitions = useGameStore(s => s.transitions)
   const stations = useGameStore(s => s.stations)
   const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
+  const demonstrationEnabled = useGameStore(s => s.demonstrationEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
   const clearBuildSelection = useGameStore(s => s.clearBuildSelection)
   const buildPalette = useGameStore(s => s.buildPalette)
   const setAutoTickEnabled = useGameStore(s => s.setAutoTickEnabled)
+  const setDemonstrationEnabled = useGameStore(s => s.setDemonstrationEnabled)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
   const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
@@ -96,9 +99,10 @@ function App() {
   const seed = useGameStore(s => s.seed)
 
   const loopRef = useRef<GameLoop | null>(null)
+  const viewportBodyRef = useRef<HTMLDivElement | null>(null)
   const [selectedStationId, setSelectedStationId] = useState<string>('')
   const [seedInput, setSeedInput] = useState<string>(String(seed))
-  const [canvasZoom, setCanvasZoom] = useState<number>(0.5)
+  const [viewportScale, setViewportScale] = useState<number>(0.32)
   const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
@@ -125,6 +129,30 @@ function App() {
       loopRef.current = null
     }
   }, [loadSystem])
+
+  useEffect(() => {
+    const node = viewportBodyRef.current
+    if (!node) return
+
+    const updateScale = () => {
+      const rect = node.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return
+
+      const fittedScale = Math.min(
+        (rect.width - 24) / PIXI_CANVAS_BASE_WIDTH,
+        (rect.height - 24) / PIXI_CANVAS_BASE_HEIGHT,
+        0.36,
+      )
+
+      setViewportScale(Math.max(0.18, fittedScale))
+    }
+
+    updateScale()
+
+    const observer = new ResizeObserver(updateScale)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
 
   const placeMetaById = useMemo(() => buildPlaceMetaMap(metadata), [metadata])
   const transitionMetaById = useMemo(() => buildTransitionMetaMap(metadata), [metadata])
@@ -218,6 +246,16 @@ function App() {
           <div className="hud-actions">
             <button className="hud-button" onClick={() => setHelpOpen(true)}>Help</button>
             <button
+              className={`hud-button ${demonstrationEnabled ? 'primary' : ''}`}
+              onClick={() => {
+                const nextEnabled = !demonstrationEnabled
+                setDemonstrationEnabled(nextEnabled)
+                if (nextEnabled) setAutoTickEnabled(true)
+              }}
+            >
+              {demonstrationEnabled ? 'Stop demonstration' : 'Demonstration'}
+            </button>
+            <button
               className="hud-button primary"
               onClick={() => {
                 setAutoTickEnabled(true)
@@ -237,6 +275,9 @@ function App() {
           <span className="hud-badge">Stations {stations.length}</span>
           <span className="hud-badge">Tokens {tokenEntries.length}</span>
           <span className="hud-badge">Buildable {buildableOptions.length}</span>
+          <span className={`hud-badge ${demonstrationEnabled ? 'hud-badge--accent' : ''}`}>
+            {demonstrationEnabled ? 'Demonstration active' : 'Demonstration idle'}
+          </span>
           <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.id : 'No build available'}</span>
         </div>
         <div className="hud-summary-group hud-summary-group--resources">
@@ -351,20 +392,15 @@ function App() {
             <div className="hud-viewport-meta">
               <span className="hud-badge">{selectedCellLabel}</span>
               <span className="hud-badge">{activeBuildTransition ? activeBuildTransition.name : 'Select a build'}</span>
-              <div className="hud-zoom-group">
-                <button className="hud-button" onClick={() => setCanvasZoom(z => Math.max(0.25, Math.round((z - 0.125) * 1000) / 1000))}>-</button>
-                <span className="hud-badge">Zoom {Math.round(canvasZoom * 100)}%</span>
-                <button className="hud-button" onClick={() => setCanvasZoom(z => Math.min(1.25, Math.round((z + 0.125) * 1000) / 1000))}>+</button>
-                <button className="hud-button" onClick={() => setCanvasZoom(0.5)}>Reset</button>
-              </div>
+              <span className="hud-badge">Grid scale {Math.round(viewportScale * 100)}%</span>
             </div>
           </div>
-          <div className="hud-viewport-body">
+          <div ref={viewportBodyRef} className="hud-viewport-body">
             <div
-              className="relative flex-none"
+              className="relative flex-none hud-canvas-frame"
               style={{
-                width: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
-                height: `${PIXI_CANVAS_BASE_SIZE * canvasZoom}px`,
+                width: `${PIXI_CANVAS_BASE_WIDTH * viewportScale}px`,
+                height: `${PIXI_CANVAS_BASE_HEIGHT * viewportScale}px`,
               }}
             >
               <PixiCanvas className="canvas-stage" />

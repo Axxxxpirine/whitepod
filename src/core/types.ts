@@ -82,6 +82,14 @@ export interface PixiGridCell {
   transitionId?: string
 }
 
+export interface PixiActivity {
+  kind: 'spawn' | 'build' | 'extract' | 'convey' | 'store' | 'recipe' | 'launch'
+  x?: number
+  y?: number
+  resourceId?: string
+  transitionId?: string
+}
+
 export interface PixiExport {
   timestamp: number
   phase: GamePhase
@@ -98,6 +106,7 @@ export interface PixiExport {
     bus: Record<string, number>
     stock: Record<string, number>
   }
+  activities: PixiActivity[]
   viewport?: {
     cellSize: number
     zoom: number

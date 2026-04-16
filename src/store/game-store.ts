@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { applyBuildCost, getMissingBuildCost, getStationBuildCost } from '@/core/build-planning'
-import type { GamePhase, LunarChemistryMetadata, PixiExport, Transition } from '@/core/types'
+import { applyBuildCost, getMissingBuildCost, getStationBuildCost, splitPlaceId } from '@/core/build-planning'
+import type { GamePhase, LunarChemistryMetadata, PixiActivity, PixiExport, Transition } from '@/core/types'
 import { GRID_CELL_SIZE } from '@/core/grid/config'
 import {
   GridManager,
@@ -41,7 +41,9 @@ export interface GameState {
 
   // runtime-only (not persisted)
   autoTickEnabled: boolean
+  demonstrationEnabled: boolean
   lastFiredTransitionIds: string[]
+  pixiActivities: PixiActivity[]
   fireEventSeq: number
 
   debugStatsStartTick: number | null
@@ -52,6 +54,7 @@ export interface GameState {
   loadSystem: () => Promise<void>
   setMode: (mode: GameMode) => void
   setAutoTickEnabled: (enabled: boolean) => void
+  setDemonstrationEnabled: (enabled: boolean) => void
   resetSave: () => void
   newGame: (seed: number) => void
 
@@ -291,6 +294,228 @@ function ensureStarterExtractor(grid: GridManager): void {
   }
 }
 
+function appendMapValue<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const current = map.get(key)
+  if (current) current.push(value)
+  else map.set(key, [value])
+}
+
+function buildPlaceTierMap(metadata: LunarChemistryMetadata): Map<string, number> {
+  const tiers = new Map<string, number>()
+  for (const place of metadata.gameSystem.places) {
+    if (place.tier === undefined || place.kind === 'control' || place.layer) continue
+    tiers.set(place.id, place.tier)
+  }
+  return tiers
+}
+
+function getPrimaryOutputBaseId(transition: Transition): string | null {
+  for (const output of transition.produces) {
+    if (output.place === 'run' || output.place === 'done' || output.place === 'start') continue
+    return splitPlaceId(output.place).baseId
+  }
+  return null
+}
+
+function buildRelevantDemoResources(
+  transitions: readonly Transition[],
+  targetResourceId: string,
+): Set<string> {
+  const recipeByOutputBaseId = new Map<string, Transition>()
+  for (const transition of transitions) {
+    if (!transition.id.startsWith('recipe__')) continue
+    const outputBaseId = getPrimaryOutputBaseId(transition)
+    if (!outputBaseId) continue
+    recipeByOutputBaseId.set(outputBaseId, transition)
+  }
+
+  const relevant = new Set<string>()
+
+  const visit = (resourceId: string) => {
+    if (relevant.has(resourceId)) return
+    relevant.add(resourceId)
+
+    const recipe = recipeByOutputBaseId.get(resourceId)
+    if (!recipe) return
+
+    for (const input of getStationBuildCost(recipe)) {
+      const baseId = splitPlaceId(input.place).baseId
+      if (!baseId) continue
+      visit(baseId)
+    }
+  }
+
+  visit(targetResourceId)
+  return relevant
+}
+
+function sortDemoResources(resourceIds: Iterable<string>, placeTiers: ReadonlyMap<string, number>): string[] {
+  return [...resourceIds].sort((left, right) => {
+    const tierDiff = (placeTiers.get(left) ?? Number.MAX_SAFE_INTEGER) - (placeTiers.get(right) ?? Number.MAX_SAFE_INTEGER)
+    if (tierDiff !== 0) return tierDiff
+    return left.localeCompare(right)
+  })
+}
+
+function placeDemoStation(
+  transitionId: string,
+  transitionsById: ReadonlyMap<string, Transition>,
+  grid: GridManager,
+  engine: PetriNetEngine,
+): PixiActivity | null {
+  const transition = transitionsById.get(transitionId)
+  if (!transition) return null
+
+  const nextTokens = applyBuildCost(engine.getTokensSnapshot(), getStationBuildCost(transition))
+  if (!nextTokens) return null
+
+  const resourceId = extractResourceId(transitionId)
+  const station = resourceId
+    ? grid.placeStationNearDeposit(resourceId, transitionId)
+    : grid.placeStationRandom(transitionId)
+
+  if (!station) return null
+
+  engine.loadSnapshot({
+    ...engine.getSnapshot(),
+    tokens: nextTokens,
+  })
+
+  return {
+    kind: 'build',
+    x: station.x,
+    y: station.y,
+    transitionId,
+    resourceId: getPrimaryOutputBaseId(transition) ?? resourceId ?? undefined,
+  }
+}
+
+function runDemonstrationBuildStep(
+  metadata: LunarChemistryMetadata,
+  transitions: readonly Transition[],
+  grid: GridManager,
+  engine: PetriNetEngine,
+): PixiActivity[] {
+  const transitionsById = new Map(transitions.map(transition => [transition.id, transition]))
+  const placeTiers = buildPlaceTierMap(metadata)
+  const relevantResources = buildRelevantDemoResources(transitions, 'rocket_ready')
+  const sortedResources = sortDemoResources(relevantResources, placeTiers)
+  const stationTransitionIds = new Set(grid.listStations().map(station => station.transitionId))
+  const tokens = engine.getTokensSnapshot()
+
+  for (const resourceId of RESOURCE_ORDER) {
+    if (!relevantResources.has(resourceId)) continue
+    const transitionId = `extract__${resourceId}`
+    if (stationTransitionIds.has(transitionId)) continue
+    const activity = placeDemoStation(transitionId, transitionsById, grid, engine)
+    if (activity) return [activity]
+  }
+
+  for (const resourceId of sortedResources) {
+    const transitionId = `convey__${resourceId}`
+    if (stationTransitionIds.has(transitionId)) continue
+    if ((tokens[`${resourceId}_surface`] ?? 0) <= 0) continue
+    const activity = placeDemoStation(transitionId, transitionsById, grid, engine)
+    if (activity) return [activity]
+  }
+
+  for (const resourceId of sortedResources) {
+    const transitionId = `store__${resourceId}`
+    if (stationTransitionIds.has(transitionId)) continue
+    if ((tokens[`${resourceId}_bus`] ?? 0) <= 0) continue
+    const activity = placeDemoStation(transitionId, transitionsById, grid, engine)
+    if (activity) return [activity]
+  }
+
+  const recipeTransitions = transitions
+    .filter(transition => transition.id.startsWith('recipe__'))
+    .filter(transition => {
+      const outputBaseId = getPrimaryOutputBaseId(transition)
+      return outputBaseId !== null && relevantResources.has(outputBaseId)
+    })
+    .sort((left, right) => {
+      const leftTier = placeTiers.get(getPrimaryOutputBaseId(left) ?? '') ?? Number.MAX_SAFE_INTEGER
+      const rightTier = placeTiers.get(getPrimaryOutputBaseId(right) ?? '') ?? Number.MAX_SAFE_INTEGER
+      if (leftTier !== rightTier) return leftTier - rightTier
+      return left.id.localeCompare(right.id)
+    })
+
+  for (const transition of recipeTransitions) {
+    if (stationTransitionIds.has(transition.id)) continue
+    const activity = placeDemoStation(transition.id, transitionsById, grid, engine)
+    if (activity) return [activity]
+  }
+
+  return []
+}
+
+function buildTickActivities(
+  transitions: readonly Transition[],
+  stations: readonly StationPlacement[],
+  grid: GridManager,
+  fired: readonly string[],
+  consumedDepositIdsByTransitionId: ReadonlyMap<string, string[]>,
+): PixiActivity[] {
+  const activities: PixiActivity[] = []
+  const stationsByTransitionId = new Map<string, StationPlacement[]>()
+  const depositsById = new Map(grid.listDeposits({ includeDepleted: true }).map(deposit => [deposit.id, deposit]))
+  const transitionsById = new Map(transitions.map(transition => [transition.id, transition]))
+
+  for (const station of stations) appendMapValue(stationsByTransitionId, station.transitionId, station)
+
+  for (const transitionId of fired) {
+    if (transitionId === 'launch') {
+      activities.push({ kind: 'launch', transitionId })
+      continue
+    }
+
+    const station = stationsByTransitionId.get(transitionId)?.shift()
+    const transition = transitionsById.get(transitionId)
+    const outputBaseId = transition ? getPrimaryOutputBaseId(transition) : null
+    const extractResourceIdValue = extractResourceId(transitionId)
+
+    if (extractResourceIdValue) {
+      const depositId = consumedDepositIdsByTransitionId.get(transitionId)?.shift()
+      const deposit = depositId ? depositsById.get(depositId) : null
+      if (deposit) {
+        activities.push({
+          kind: 'spawn',
+          x: deposit.x,
+          y: deposit.y,
+          resourceId: extractResourceIdValue,
+          transitionId,
+        })
+      }
+      if (station) {
+        activities.push({
+          kind: 'extract',
+          x: station.x,
+          y: station.y,
+          resourceId: extractResourceIdValue,
+          transitionId,
+        })
+      }
+      continue
+    }
+
+    if (!station) continue
+
+    activities.push({
+      kind: transitionId.startsWith('convey__')
+        ? 'convey'
+        : transitionId.startsWith('store__')
+          ? 'store'
+          : 'recipe',
+      x: station.x,
+      y: station.y,
+      resourceId: outputBaseId ?? undefined,
+      transitionId,
+    })
+  }
+
+  return activities
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -319,7 +544,9 @@ export const useGameStore = create<GameState>()(
       tokens: {},
 
       autoTickEnabled: true,
+      demonstrationEnabled: false,
       lastFiredTransitionIds: [],
+      pixiActivities: [],
       fireEventSeq: 0,
 
       debugStatsStartTick: null,
@@ -361,6 +588,7 @@ export const useGameStore = create<GameState>()(
           engine,
           tickIndex: autosaveTickIndex,
           autoTickEnabled: mode === 'player',
+          demonstrationEnabled: false,
           engineSnapshot: engine.getSnapshot(),
 
           gridSnapshot: grid.getSnapshot(),
@@ -368,6 +596,7 @@ export const useGameStore = create<GameState>()(
           phase: engine.getPhase(),
           tokens: engine.getTokensSnapshot(),
           lastFiredTransitionIds: [],
+          pixiActivities: [],
           fireEventSeq: state.fireEventSeq + 1,
           saveRevision: state.saveRevision + 1,
           debugStatsStartTick: null,
@@ -382,11 +611,21 @@ export const useGameStore = create<GameState>()(
         set({
           mode,
           autoTickEnabled: mode === 'player',
+          demonstrationEnabled: false,
+          pixiActivities: [],
         })
       },
 
       setAutoTickEnabled: enabled => {
         set({ autoTickEnabled: enabled })
+      },
+
+      setDemonstrationEnabled: enabled => {
+        set(state => ({
+          demonstrationEnabled: enabled,
+          autoTickEnabled: enabled ? true : state.autoTickEnabled,
+          pixiActivities: enabled ? state.pixiActivities : [],
+        }))
       },
 
       resetSave: () => {
@@ -416,6 +655,7 @@ export const useGameStore = create<GameState>()(
           autosaveTickIndex: 0,
           saveRevision: state.saveRevision + 1,
           tickIndex: 0,
+          demonstrationEnabled: false,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -423,6 +663,7 @@ export const useGameStore = create<GameState>()(
           phase: engine ? engine.getPhase() : 'init',
           tokens: engine ? engine.getTokensSnapshot() : {},
           lastFiredTransitionIds: [],
+          pixiActivities: [],
           fireEventSeq: state.fireEventSeq + 1,
           debugStatsStartTick: null,
           debugFiringHistory: [],
@@ -452,6 +693,7 @@ export const useGameStore = create<GameState>()(
           autosaveTickIndex: 0,
           saveRevision: state.saveRevision + 1,
           tickIndex: 0,
+          demonstrationEnabled: false,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -459,6 +701,7 @@ export const useGameStore = create<GameState>()(
           phase: engine ? engine.getPhase() : 'init',
           tokens: engine ? engine.getTokensSnapshot() : {},
           lastFiredTransitionIds: [],
+          pixiActivities: [],
           fireEventSeq: state.fireEventSeq + 1,
           debugStatsStartTick: null,
           debugFiringHistory: [],
@@ -630,7 +873,7 @@ export const useGameStore = create<GameState>()(
       },
 
       getPixiExport: () => {
-        const { engine, grid } = get()
+        const { engine, grid, pixiActivities } = get()
         const deposits = grid.listDeposits({ includeDepleted: false })
         const stations = grid.listStations()
         const tokens = engine?.getTokensSnapshot() ?? {}
@@ -669,6 +912,7 @@ export const useGameStore = create<GameState>()(
             stations: stations.map(s => ({ ...s, active: true })),
           },
           layerTokens: buildLayerTokens(tokens),
+          activities: pixiActivities,
           viewport: { cellSize: GRID_CELL_SIZE, zoom: 1 },
         }
       },
@@ -750,16 +994,41 @@ export const useGameStore = create<GameState>()(
       },
 
       tick: () => {
-        const { engine, transitions, mode, stations, requestedSystemTransitionIds, grid, tickIndex } = get()
+        const {
+          engine,
+          transitions,
+          mode,
+          requestedSystemTransitionIds,
+          grid,
+          tickIndex,
+          metadata,
+          demonstrationEnabled,
+        } = get()
         if (!engine) throw new Error('Engine not loaded')
 
+        const demonstrationActivities = demonstrationEnabled && metadata
+          ? runDemonstrationBuildStep(metadata, transitions, grid, engine)
+          : []
+
+        const stations = grid.listStations()
+
         const phase = engine.getPhase()
+        let effectiveRequestedTransitionIds = requestedSystemTransitionIds
+
+        if (demonstrationEnabled && phase === 'init') {
+          effectiveRequestedTransitionIds = uniqueAppend(effectiveRequestedTransitionIds, 'init')
+        }
+
+        if (demonstrationEnabled && (engine.getTokensSnapshot().rocket_ready_stock ?? 0) > 0) {
+          effectiveRequestedTransitionIds = uniqueAppend(effectiveRequestedTransitionIds, 'launch')
+        }
 
         const drainIds =
           phase === 'done' ? transitions.filter(t => t.id.startsWith('drain__')).map(t => t.id) : []
 
         const activeTransitionIds: string[] = []
         const reservedDepositIdsByTransitionId = new Map<string, string[]>()
+        const consumedDepositIdsByTransitionId = new Map<string, string[]>()
 
         const reserveExtract = (transitionId: string, depositId: string) => {
           activeTransitionIds.push(transitionId)
@@ -805,7 +1074,7 @@ export const useGameStore = create<GameState>()(
 
         const { fired } = engine.tick({
           activeTransitionIds,
-          requestedTransitionIds: requestedSystemTransitionIds,
+          requestedTransitionIds: effectiveRequestedTransitionIds,
         })
 
         for (const transitionId of fired) {
@@ -817,14 +1086,19 @@ export const useGameStore = create<GameState>()(
           if (!depositId) continue
 
           grid.consumeReservedDeposit(depositId)
+          appendMapValue(consumedDepositIdsByTransitionId, transitionId, depositId)
         }
 
         const nextTickIndex = tickIndex + 1
         const firedSystemTransition = fired.some(id => SYSTEM_TRANSITIONS.has(id))
-        const shouldAutosave = nextTickIndex % AUTOSAVE_TICK_INTERVAL === 0 || firedSystemTransition
+        const shouldAutosave = nextTickIndex % AUTOSAVE_TICK_INTERVAL === 0 || firedSystemTransition || demonstrationActivities.length > 0
         const timestamp = Date.now()
         const tokensSnapshot = engine.getTokensSnapshot()
         const gridStations = grid.listStations()
+        const tickActivities = [
+          ...demonstrationActivities,
+          ...buildTickActivities(transitions, gridStations, grid, fired, consumedDepositIdsByTransitionId),
+        ]
 
         set(state => {
           const base = {
@@ -834,6 +1108,7 @@ export const useGameStore = create<GameState>()(
             tokens: tokensSnapshot,
             stations: gridStations,
             lastFiredTransitionIds: fired,
+            pixiActivities: tickActivities,
             fireEventSeq: state.fireEventSeq + 1,
           }
 

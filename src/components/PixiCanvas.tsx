@@ -33,9 +33,10 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
 
-      const cellSize = rect.width / exportData.grid.width
-      const x = Math.floor((event.clientX - rect.left) / cellSize)
-      const y = Math.floor((event.clientY - rect.top) / cellSize)
+      const cellWidth = rect.width / exportData.grid.width
+      const cellHeight = rect.height / exportData.grid.height
+      const x = Math.floor((event.clientX - rect.left) / cellWidth)
+      const y = Math.floor((event.clientY - rect.top) / cellHeight)
       if (x < 0 || y < 0 || x >= exportData.grid.width || y >= exportData.grid.height) return
 
       selectBuildCell(x, y)
@@ -51,9 +52,10 @@ export function PixiCanvas({ className, style }: PixiCanvasProps) {
       const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
 
-      const cellSize = rect.width / exportData.grid.width
-      const x = Math.floor((event.clientX - rect.left) / cellSize)
-      const y = Math.floor((event.clientY - rect.top) / cellSize)
+      const cellWidth = rect.width / exportData.grid.width
+      const cellHeight = rect.height / exportData.grid.height
+      const x = Math.floor((event.clientX - rect.left) / cellWidth)
+      const y = Math.floor((event.clientY - rect.top) / cellHeight)
       if (x < 0 || y < 0 || x >= exportData.grid.width || y >= exportData.grid.height) {
         hoverBuildCell(0, null)
         return

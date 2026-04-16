@@ -15,6 +15,7 @@ vi.mock('pixi.js', () => {
 
   class MockContainer {
     addChild() { return this }
+    removeChildren() { return [] }
     destroy() { return undefined }
   }
 
@@ -30,6 +31,7 @@ vi.mock('pixi.js', () => {
   class MockApplication {
     stage = new MockContainer()
     canvas = document.createElement('canvas')
+    renderer = { background: { color: 0 } }
     async init() { return undefined }
     destroy() { return undefined }
   }
@@ -66,6 +68,7 @@ describe('PixiRenderer', () => {
         ],
       },
       layerTokens: { surface: {}, bus: {}, stock: {} },
+      activities: [],
     }
 
     expect(() => renderer.update(exportData)).not.toThrow()
