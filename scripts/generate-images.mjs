@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 const REPO_ROOT = process.cwd()
 const input = process.argv[2] || path.join(REPO_ROOT, 'prompts', 'generated-asset-prompts.jsonl')
@@ -41,10 +41,34 @@ function getKind(id) {
   return 'unknown'
 }
 
-function renderPlaceholderPng(filePath, label) {
-  const digest = createHash('sha256').update(label).digest('hex')
-  const body = `placeholder:${label}:${digest}`
-  writeFileSync(filePath, body)
+function renderPlaceholderPng(filePath, label, width, height, background, accent) {
+  const script = `
+from PIL import Image, ImageDraw, ImageFont
+import os, sys
+file_path, label, width, height, background, accent = sys.argv[1:7]
+width = int(width)
+height = int(height)
+img = Image.new('RGBA', (width, height), background)
+draw = ImageDraw.Draw(img)
+draw.rectangle((2, 2, width - 3, height - 3), outline=accent, width=3)
+draw.line((0, 0, width, height), fill=accent, width=2)
+draw.line((0, height, width, 0), fill=accent, width=2)
+try:
+  font = ImageFont.load_default()
+  text = label[:12]
+  bbox = draw.textbbox((0, 0), text, font=font)
+  tw = bbox[2] - bbox[0]
+  th = bbox[3] - bbox[1]
+  draw.rectangle((6, height - th - 10, 10 + tw, height - 6), fill=(0, 0, 0, 160))
+  draw.text((8, height - th - 8), text, font=font, fill=(255, 255, 255, 255))
+except Exception:
+  pass
+img.save(file_path)
+`
+  const result = spawnSync('python3', ['-c', script, filePath, label, String(width), String(height), background, accent], { stdio: 'inherit' })
+  if (result.status !== 0) {
+    throw new Error(`Failed to render placeholder PNG for ${label}`)
+  }
 }
 
 function ensureFallback(filePath, label) {
@@ -61,7 +85,11 @@ async function main() {
     mkdirSync(dir, { recursive: true })
     const filePath = path.join(dir, `${entry.id}.png`)
     if (!existsSync(filePath)) {
-      renderPlaceholderPng(filePath, `${provider}:${entry.id}`)
+      const width = entry.parameters?.width ?? 256
+      const height = entry.parameters?.height ?? 256
+      const background = kind === 'icon' ? '(24, 26, 40, 255)' : kind === 'card' ? '(34, 34, 60, 255)' : '(20, 20, 20, 255)'
+      const accent = family === 'station' ? '(0, 220, 255, 255)' : '(120, 220, 120, 255)'
+      renderPlaceholderPng(filePath, `${provider}:${entry.id}`, width, height, background, accent)
     }
     manifest.push({
       id: entry.id,
