@@ -18,6 +18,19 @@ function makeEngine() {
   return engine;
 }
 
+function countUncoveredResources(engine: GameEngine): number {
+  let total = 0;
+  const visible = engine.getVisibleTiles();
+  for (let y = visible.y0; y <= visible.y1; y++) {
+    for (let x = visible.x0; x <= visible.x1; x++) {
+      if (engine.getResourceAt(x, y) === ResourceType.None) continue;
+      if (engine.getBuildingAt(x, y) !== null) continue;
+      total += 1;
+    }
+  }
+  return total;
+}
+
 describe('GameHUD', () => {
   beforeEach(() => {
     useGameStore.setState({
@@ -337,5 +350,36 @@ describe('GameHUD', () => {
     fireEvent.click(screen.getByRole('button', { name: '4x' }));
 
     expect(useGameStore.getState().simulationSpeed).toBe(4);
+  });
+
+  it('shows scenario generator actions in the debug panel', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, simulationTime: 0 });
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+
+    expect(screen.getByText('Scenario Generator')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Generate Starter Scenario/i })).toBeInTheDocument();
+    expect(screen.getByText('One-shot generation. Replaces the current session with a playable starter.')).toBeInTheDocument();
+  });
+
+  it('generates a playable starter scenario from the debug panel', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, simulationTime: 0 });
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: /Generate Starter Scenario/i }));
+
+    const state = useGameStore.getState();
+    expect(state.engine?.getBuildings().size).toBe(6);
+    expect(state.selectedTool).toEqual({ kind: 'select' });
+    expect(state.simulationTime).toBeGreaterThan(0);
+    expect(state.sessionEpoch).toBe(1);
+    expect(state.engine?.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
+    expect(countUncoveredResources(state.engine!)).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText('Active')).not.toBeInTheDocument();
   });
 });

@@ -28,6 +28,8 @@ import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
 import type { SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
+import { finalizePendingScenarioInstall } from '@/game/scenarios/applyScenario';
+import { createDevScenarioApi, hasPendingScenarioInstall } from '@/game/scenarios/devScenarios';
 import { worldToScreen, screenToWorld } from '@/game/engine/CoordinateTransform';
 import {
   handleBuildingPlaced,
@@ -72,6 +74,10 @@ const CURSOR_CLASS: Record<SelectedTool['kind'], string> = {
   building: 'cursor-crosshair',
   belt: 'cursor-crosshair',
   energy_link: 'cursor-cell',
+};
+
+type DevEngine = GameEngine & {
+  scenarios?: ReturnType<typeof createDevScenarioApi>;
 };
 
 export function GameCanvas() {
@@ -172,10 +178,12 @@ export function GameCanvas() {
       state.setSelectedBuilding(null);
       state.setSelectedBuildingAnchor(null);
       state.setBeltPreview(null);
+      state.setPendingEnergyLinkSource(null);
       state.setIdleSummary(initialIdleSummary.appliedSeconds > 0 ? initialIdleSummary : null);
       setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
       setEngine(engine);
+      finalizePendingScenarioInstall();
 
       worldSaver = createDebouncedTask(() => {
         saveWorldSession(engine, sessionId);
@@ -211,7 +219,9 @@ export function GameCanvas() {
       });
 
       if (import.meta.env.DEV) {
-        (window as unknown as { engine: GameEngine }).engine = engine;
+        const devEngine = engine as DevEngine;
+        devEngine.scenarios = createDevScenarioApi(engine);
+        (window as unknown as { engine: DevEngine }).engine = devEngine;
       }
 
       const MIN_IDLE_MS = 1000;
@@ -374,6 +384,9 @@ export function GameCanvas() {
         }
       };
       handleBeforeUnload = () => {
+        if (hasPendingScenarioInstall()) {
+          return;
+        }
         worldSaver?.flush();
         viewSaver?.flush();
         if (simState !== 'PAUSED') {
@@ -381,6 +394,9 @@ export function GameCanvas() {
         }
       };
       handlePageHide = () => {
+        if (hasPendingScenarioInstall()) {
+          return;
+        }
         worldSaver?.flush();
         viewSaver?.flush();
         if (simState !== 'PAUSED') {
@@ -471,7 +487,7 @@ export function GameCanvas() {
       destroyed = true;
       if (initCompleted) {
         const shouldPersistOnCleanup = useGameStore.getState().engine === currentEngine;
-        if (shouldPersistOnCleanup) {
+        if (shouldPersistOnCleanup && !hasPendingScenarioInstall()) {
           worldSaver?.flush();
           viewSaver?.flush();
         }

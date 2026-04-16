@@ -4,8 +4,10 @@ import {
   LEGACY_WORLD_STORAGE_KEY,
   VIEW_STORAGE_KEY,
   WORLD_STORAGE_KEY,
+  buildPersistedSessionPayloads,
   clearIdleSidecar,
   clearPersistedSession,
+  installPersistedSession,
   loadPersistedSession,
   readIdleSidecar,
   saveViewSession,
@@ -115,6 +117,32 @@ describe('persistent storage', () => {
     expect(loaded?.sessionId).toBe('session-legacy');
     expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
     expect(window.localStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
+  });
+
+  it('builds and installs aligned world/view payloads from shared helpers', () => {
+    const engine = makeEngine();
+    engine.viewport.pan(120, 40);
+
+    const payloads = buildPersistedSessionPayloads({
+      engine,
+      selectedTool: { kind: 'belt' },
+      sessionId: 'session-shared',
+    });
+
+    expect(payloads.world.sessionId).toBe('session-shared');
+    expect(payloads.view.sessionId).toBe('session-shared');
+    expect(payloads.view.selectedTool).toEqual({ kind: 'belt' });
+
+    installPersistedSession({
+      engine,
+      selectedTool: { kind: 'belt' },
+      sessionId: 'session-shared',
+    });
+
+    const loaded = loadPersistedSession(640, 480);
+    expect(loaded?.sessionId).toBe('session-shared');
+    expect(loaded?.selectedTool).toEqual({ kind: 'belt' });
+    expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
 
 });
