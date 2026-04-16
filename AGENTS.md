@@ -13,7 +13,7 @@ Jeu de gestion et d'optimisation industrielle sur grille. Le joueur incarne l'ar
 - shadcn (composants UI)
 - Vitest (tests)
 - ESLint (qualite code)
-- sessionStorage (persistance locale par onglet)
+- localStorage (persistance locale durable, restauree apres fermeture du navigateur)
 
 ## Priorites fondamentales
 

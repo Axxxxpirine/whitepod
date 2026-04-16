@@ -13,12 +13,14 @@ export function GameHUD() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
+  const musicVolume = useGameStore((s) => s.musicVolume);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
   const idleSummary = useGameStore((s) => s.idleSummary);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
+  const setMusicVolume = useGameStore((s) => s.setMusicVolume);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
   const setIdleSummary = useGameStore((s) => s.setIdleSummary);
@@ -310,6 +312,25 @@ export function GameHUD() {
                         {speed === 0 ? 'Pause' : `${speed}x`}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs text-white/70">Volume musique</div>
+                  <input
+                    aria-label="Music volume"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={musicVolume}
+                    onChange={(e) => setMusicVolume(Number(e.target.value))}
+                    className="w-full accent-emerald-400"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-white/60">
+                    <span>0%</span>
+                    <span>{Math.round(musicVolume * 100)}%</span>
+                    <span>100%</span>
                   </div>
                 </div>
               </div>

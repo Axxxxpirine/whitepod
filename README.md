@@ -175,7 +175,7 @@ src/
 │   ├── systems/      # EnergyNetwork
 │   ├── flow/         # Belt flow resolution
 │   ├── input/        # CancelStack
-│   ├── persistence/  # sessionStorage layer
+│   ├── persistence/  # localStorage-backed persistence layer
 │   ├── ui/           # Building presentation, sprite paths, toolbar icons
 │   ├── constants.ts
 │   └── types.ts
