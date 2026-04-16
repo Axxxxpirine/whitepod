@@ -3,6 +3,7 @@ import { Container, type Application } from 'pixi.js';
 import { GameEngine } from '@/game/engine/GameEngine';
 import {
   EnergyLinkRenderer,
+  classifyEnergyFlowPhase,
   collectEnergyLinkSegments,
   getEnergyLinkStyle,
   interpolateEnergyLinkStyle,
@@ -10,11 +11,18 @@ import {
   type EnergyLinkSegment,
   type EnergyLinkStyle,
 } from '@/game/renderer/EnergyLinkRenderer';
-import { TileType } from '@/game/types';
+import { ResourceType, TileType } from '@/game/types';
 import { PIXI } from '@/design/tokens';
+import { TILE_SIZE } from '@/game/constants';
 
 type RendererTestApi = {
   linkSegments: EnergyLinkSegment[];
+  flowComponents: Array<{
+    directedDischargingToConsumers: Array<{ fromId: number; toId: number }>;
+  }>;
+  flowDotCountLastFrame: number;
+  flowDotCountToConsumersLastFrame: number;
+  flowDotCountToBatteriesLastFrame: number;
   worldDirty: boolean;
   currentMode: EnergyLinkMode;
   fromStyle: EnergyLinkStyle;
@@ -36,6 +44,11 @@ function createRenderer(engine: GameEngine, getMode: () => EnergyLinkMode) {
     pendingSourceId: null,
     mouseWorldPos: null,
   }));
+}
+
+function focusViewportOnEnergyLinks(engine: GameEngine): void {
+  engine.viewport.centerX = 4 * TILE_SIZE;
+  engine.viewport.centerY = 3 * TILE_SIZE;
 }
 
 function sortedPairs(segments: readonly EnergyLinkSegment[]): string[] {
@@ -80,6 +93,15 @@ describe('EnergyLinkRenderer helpers', () => {
     expect(mid.color).not.toBe(from.color);
     expect(mid.color).not.toBe(to.color);
   });
+
+  it('classifies network flow phases using energy stats', () => {
+    expect(classifyEnergyFlowPhase(null)).toBe('inactive');
+    expect(classifyEnergyFlowPhase({ isPowered: false, production: 10, demandedConsumption: 4 })).toBe('inactive');
+    expect(classifyEnergyFlowPhase({ isPowered: true, production: 0, demandedConsumption: 0 })).toBe('inactive');
+    expect(classifyEnergyFlowPhase({ isPowered: true, production: 4, demandedConsumption: 4 })).toBe('serving');
+    expect(classifyEnergyFlowPhase({ isPowered: true, production: 2, demandedConsumption: 4 })).toBe('discharging');
+    expect(classifyEnergyFlowPhase({ isPowered: true, production: 8, demandedConsumption: 4 })).toBe('surplus');
+  });
 });
 
 describe('collectEnergyLinkSegments', () => {
@@ -101,6 +123,153 @@ describe('collectEnergyLinkSegments', () => {
 });
 
 describe('EnergyLinkRenderer', () => {
+  it('renders no animated dots in normal mode', () => {
+    const engine = makeEngine();
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const batteryId = engine.placeBuilding('battery_basic', { x: 4, y: 1 })!;
+    expect(engine.connectBuildings(solarId, batteryId)).toBe(true);
+
+    const renderer = createRenderer(engine, () => 'normal');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    vi.spyOn(performance, 'now').mockReturnValue(100);
+
+    renderer.render();
+    expect(api.flowDotCountLastFrame).toBe(0);
+
+    renderer.destroy();
+  });
+
+  it('renders no animated dots when network is inactive at night', () => {
+    const engine = makeEngine();
+    engine.setSimulationTime(0); // night
+    engine.placeResource(2, 1, ResourceType.Coal);
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const renderer = createRenderer(engine, () => 'energy_link');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    vi.spyOn(performance, 'now').mockReturnValue(100);
+
+    renderer.render();
+    expect(api.flowDotCountLastFrame).toBe(0);
+
+    renderer.destroy();
+  });
+
+  it('renders animated dots toward consumers when network is serving', () => {
+    const engine = makeEngine();
+    engine.setSimulationTime(0.5); // day
+    engine.placeResource(2, 1, ResourceType.Coal);
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+
+    const renderer = createRenderer(engine, () => 'energy_link');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    vi.spyOn(performance, 'now').mockReturnValue(100);
+
+    renderer.render();
+    expect(api.flowDotCountLastFrame).toBeGreaterThan(0);
+
+    renderer.destroy();
+  });
+
+  it('renders discharging flow dots at night when battery powers consumers', () => {
+    const engine = makeEngine();
+    engine.placeResource(2, 1, ResourceType.Coal);
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const batteryId = engine.placeBuilding('battery_basic', { x: 3, y: 1 })!;
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarId, batteryId)).toBe(true);
+    expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
+
+    engine.setSimulationTime(0.5); // day charge window
+    engine.update(20);
+    engine.setSimulationTime(0); // night
+    engine.update(0.5);
+
+    const renderer = createRenderer(engine, () => 'energy_link');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    vi.spyOn(performance, 'now').mockReturnValue(100);
+
+    renderer.render();
+    expect(api.flowDotCountLastFrame).toBeGreaterThan(0);
+
+    renderer.destroy();
+  });
+
+  it('never orients discharging consumer flow into batteries', () => {
+    const engine = makeEngine();
+    engine.placeResource(3, 1, ResourceType.Coal);
+    engine.placeResource(5, 2, ResourceType.Coal);
+    const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const batteryId = engine.placeBuilding('battery_basic', { x: 3, y: 2 })!;
+    const extractorA = engine.placeBuilding('extractor_basic', { x: 3, y: 1 })!;
+    const extractorB = engine.placeBuilding('extractor_basic', { x: 5, y: 2 })!;
+    expect(engine.connectBuildings(solarId, batteryId)).toBe(true);
+    expect(engine.connectBuildings(batteryId, extractorA)).toBe(true);
+    expect(engine.connectBuildings(batteryId, extractorB)).toBe(true);
+
+    engine.setSimulationTime(0.5);
+    engine.update(20);
+    engine.setSimulationTime(0);
+    engine.update(0.5);
+
+    const renderer = createRenderer(engine, () => 'energy_link');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    vi.spyOn(performance, 'now').mockReturnValue(100);
+
+    renderer.render();
+    const batteryTargets = new Set([batteryId]);
+    for (const component of api.flowComponents) {
+      for (const segment of component.directedDischargingToConsumers) {
+        expect(batteryTargets.has(segment.toId)).toBe(false);
+      }
+    }
+
+    renderer.destroy();
+  });
+
+  it('renders surplus dots toward both consumers and batteries without reversing consumer branches', () => {
+    const engine = makeEngine();
+    engine.placeResource(2, 1, ResourceType.Coal);
+    const solarA = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
+    const solarB = engine.placeBuilding('solar_panel', { x: 1, y: 3 })!;
+    const batteryId = engine.placeBuilding('battery_basic', { x: 4, y: 2 })!;
+    const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarA, batteryId)).toBe(true);
+    expect(engine.connectBuildings(solarB, batteryId)).toBe(true);
+    expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
+
+    engine.setSimulationTime(0.5);
+    const renderer = createRenderer(engine, () => 'energy_link');
+    const api = renderer as unknown as RendererTestApi;
+    focusViewportOnEnergyLinks(engine);
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(100);
+
+    renderer.render();
+    const firstCount = api.flowDotCountLastFrame;
+    expect(firstCount).toBeGreaterThan(0);
+    expect(api.flowDotCountToBatteriesLastFrame).toBeGreaterThan(0);
+    expect(api.flowDotCountToConsumersLastFrame).toBeGreaterThan(0);
+
+    // Different time step should still render without orientation flicker or pass loss.
+    now.mockReturnValue(200);
+    renderer.render();
+    expect(api.flowDotCountLastFrame).toBeGreaterThan(0);
+    expect(api.flowDotCountToBatteriesLastFrame).toBeGreaterThan(0);
+    expect(api.flowDotCountToConsumersLastFrame).toBeGreaterThan(0);
+
+    renderer.destroy();
+  });
+
   it('rebuilds its cached segments when links are added or removed', () => {
     const engine = makeEngine();
     const renderer = createRenderer(engine, () => 'normal');
