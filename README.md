@@ -1,6 +1,30 @@
-# React + TypeScript + Vite
+# Whitepod
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Jeu de gestion et d’optimisation industrielle sur grille.
+
+## État actuel
+
+- Phase 4: assets générés avec manifest
+- Phase 5: renderer Pixi en stabilisation
+- Simulation mode: disponible pour démo autonome
+
+## Stack
+
+- TypeScript
+- React 19
+- Zustand
+- PixiJS 8
+- Vite 8
+- Tailwind CSS 4
+- Vitest
+- ESLint
+
+## Scripts utiles
+
+- `npm run dev`
+- `npm run build`
+- `npm test`
+- `npm run assets:build`
 
 Currently, two official plugins are available:
 

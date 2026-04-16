@@ -20,4 +20,8 @@ export class TextureRepository {
   get(id: string): Texture | null {
     return this.textures.get(id) ?? this.fallbackTexture ?? null
   }
+
+  getByBaseId(baseId: string, kind: 'tile' | 'icon' | 'card'): Texture | null {
+    return this.get(`${baseId}_${kind}`)
+  }
 }

@@ -933,26 +933,28 @@ echo "Directory: public/assets/"
 ### Phase 4: Asset Pipeline (Priorité Moyenne)
 
 **Fichiers**:
-11. `scripts/extract-resources.ts` - Extraction ressources
-12. `scripts/generate-asset-prompts.ts` - Génération prompts
-13. `scripts/generate-images.ts` - Génération images (placeholder)
+11. `scripts/extract-resources.mjs` - Extraction ressources
+12. `scripts/generate-asset-prompts.mjs` - Génération prompts
+13. `scripts/generate-images.mjs` - Génération images + manifest
 14. `scripts/build-assets.sh` - Build script
-15. `public/assets/README.md` - Documentation assets
+15. `scripts/validate-assets.mjs` - Validation manifest/paths
+16. `public/assets/README.md` - Documentation assets
 
 **Délivrables**:
-- [ ] Pipeline extraction fonctionnel
-- [ ] Prompts générés (180+ ressources × 3 = 540+ prompts)
-- [ ] Structure assets prête
-- [ ] Documentation complète
-- [ ] Mapping asset-ID ↔ ResourceId défini
+- [x] Pipeline extraction fonctionnel
+- [x] Prompts générés (61 ressources + stations + fallbacks)
+- [x] Structure assets prête
+- [x] Documentation complète
+- [x] Mapping asset-ID ↔ ResourceId défini
 
 ### Phase 5: PixiJS Renderer (Priorité Moyenne - Partiellement implémenté)
 
 **Fichiers**:
-16. `src/render/pixi-renderer.ts` - Renderer PixiJS ✅
-17. `src/components/PixiCanvas.tsx` - Composant React ✅
-18. `src/assets/sprite-sheets.ts` - Loader sprite sheets
-19. `src/render/pixi-renderer.test.ts` - Tests integration
+16. `src/render/pixi-runtime.ts` - Renderer PixiJS ✅
+17. `src/components/runtime/PixiCanvas.tsx` - Composant React ✅
+18. `src/render/asset-manifest-loader.ts` - Loader manifest ✅
+19. `src/render/texture-repository.ts` - Loader textures ✅
+20. `src/render/pixi-renderer.test.ts` - Tests integration
 
 **Délivrables**:
 - [x] Renderer PixiJS de base fonctionnel
@@ -961,8 +963,16 @@ echo "Directory: public/assets/"
 - [x] Visualisation basique tokens/grid
 - [ ] Integration tests (update, cleanup, resize)
 - [ ] Diffing strategy optimisée (dirty-tracking au lieu de JSON.stringify)
-- [ ] Resize behavior et viewport scaling
+- [x] Resize behavior et viewport scaling
 - [ ] Performance budget (update frequency, export diffing)
+
+### Simulation / Demo mode
+
+**État**:
+- [x] Mode simulation/kiosk avec pacing plus lent
+- [x] Badge `DEMO` visible dans l’UI
+- [x] Boucle automatique après `done`
+- [ ] Script UX fixe plus détaillé
 
 ---
 

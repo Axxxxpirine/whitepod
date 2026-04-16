@@ -86,6 +86,7 @@ export interface GameState {
 
   tick: () => PixiExport
   getPixiExport: () => PixiExport
+  getHighlightedCell: () => { x: number; y: number } | null
   setSelectedBuildCell: (cell: { x: number; y: number } | null) => void
 }
 
@@ -962,6 +963,8 @@ export const useGameStore = create<GameState>()(
           viewport: { cellSize: GRID_CELL_SIZE, zoom: 1 },
         }
       },
+
+      getHighlightedCell: () => get().selectedBuildCell ?? get().hoveredBuildCell,
 
       setSelectedBuildCell: cell => {
         set({ selectedBuildCell: cell })
