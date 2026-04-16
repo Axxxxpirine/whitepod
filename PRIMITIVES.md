@@ -528,17 +528,22 @@ engine.getResourceRates() => ResourceStock
 
 ```ts
 engine.getProcessorState(buildingId) => { recipeId: RecipeId | null, cycleProgress: number } | undefined
-engine.setProcessorRecipe(buildingId, recipeId) => void
+engine.setProcessorRecipe(buildingId, recipeId) => boolean
+engine.getProcessorLogisticsStatus(buildingId) => {
+  badInput: boolean
+  missingInput: boolean
+  blockedOutput: boolean
+  assignments: readonly { portId: PortId; requiredResourceType: ResourceType }[]
+} | null
 ```
 
-`cycleProgress` is in `[0, 1)` — fraction of the current cycle completed.
+`cycleProgress` stores elapsed seconds within the current cycle.
 
-Processors tick only when powered and when all required inputs are available in `playerStock`.
+Processors tick only when powered, when connected upstream providers have buffered the required inputs, and when the processor can flush its output into a valid downstream chain.
 
 ### Direct state access
 
 ```ts
-engine.playerStock
 engine.batteryCharges
 engine.mapSeed
 ```

@@ -45,6 +45,11 @@ export function getPowerIndicatorColor(state: PowerState): number | null {
   return POWER_INDICATOR_COLORS[state];
 }
 
+export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean): number | null {
+  if (hasBadInput) return PIXI.error;
+  return getPowerIndicatorColor(state);
+}
+
 function isBuildingVisible(
   building: Building,
   visibleRange: { x0: number; y0: number; x1: number; y1: number },
@@ -141,7 +146,8 @@ export class BuildingRenderer {
       }
 
       const powerState = this.engine.getBuildingPowerState(building.id);
-      const indicatorColor = getPowerIndicatorColor(powerState);
+      const hasBadInput = !!this.engine.getProcessorLogisticsStatus(building.id)?.badInput;
+      const indicatorColor = getBuildingIndicatorColor(powerState, hasBadInput);
       if (indicatorColor === null) {
         this.releaseIndicator(building.id);
       } else {

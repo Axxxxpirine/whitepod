@@ -7,6 +7,7 @@ import {
   EXTRACTOR_RATE_PER_MIN,
   getBuildingType,
   SOLAR_PANEL_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 
@@ -26,6 +27,16 @@ function simulate(engine: GameEngine, totalSeconds: number, stepSeconds = 0.1) {
     engine.update(dt);
     elapsed += dt;
   }
+}
+
+function connectExtractorToStorage(engine: GameEngine, extractorId: number, storageX: number, storageY: number, port = 'in_west') {
+  const storageId = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: storageX, y: storageY })!;
+  const belt = engine.placeBelt(
+    { building: extractorId, port: 'out_east' },
+    { building: storageId, port },
+  );
+  expect(belt.ok).toBe(true);
+  return storageId;
 }
 
 function simulateUntil(
@@ -299,6 +310,7 @@ describe('GameEngine energy networks', () => {
     const solarId = steadyEngine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     steadyEngine.placeResource(2, 1, ResourceType.Regolith);
     const extractorId = steadyEngine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    connectExtractorToStorage(steadyEngine, extractorId, 6, 0);
 
     expect(steadyEngine.connectBuildings(solarId, extractorId)).toBe(true);
 
@@ -322,6 +334,7 @@ describe('GameEngine energy networks', () => {
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
     engine.placeResource(7, 1, ResourceType.Regolith);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 7, y: 1 })!;
+    connectExtractorToStorage(engine, extractorId, 11, 0);
 
     expect(engine.connectBuildings(solarAId, extractorId)).toBe(true);
     expect(engine.connectBuildings(solarBId, extractorId)).toBe(true);
@@ -389,6 +402,7 @@ describe('GameEngine energy networks', () => {
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     engine.placeResource(4, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
+    connectExtractorToStorage(engine, extractorId, 8, 0);
     expect(engine.connectBuildings(batteryId, extractorId)).toBe(true);
 
     const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;

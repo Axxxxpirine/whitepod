@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
-import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
+import { RESOURCE_ENTRIES, getResourceSprite } from '@/game/ui/resourcePresentation';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
@@ -18,6 +18,7 @@ import {
 import { getRecipesForBuilding, type Recipe } from '@/game/data/recipeCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
+import { cn } from '@/lib/utils';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -56,7 +57,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
       </>
     );
   } else if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
-    const stock = engine.getResourceCounts();
+    const stock = engine.getStorageInventory(building.id) ?? engine.getResourceCounts();
     const visibleStock = RESOURCE_ENTRIES.filter((r) => stock[r.key] > 0);
 
     rows = visibleStock.length > 0 ? (
@@ -165,6 +166,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const state = engine.getProcessorState(building.id);
     const activeRecipeId = state?.recipeId ?? null;
     const powerState = engine.getBuildingPowerState(building.id);
+    const logistics = engine.getProcessorLogisticsStatus(building.id);
     const isPowered = powerState === 'powered';
     const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
     const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
@@ -172,11 +174,14 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     rows = (
       <>
         <StatRow icon={Zap} label="Energie" value={powerLabel} valueClass={powerClass} />
+        {logistics?.badInput ? (
+          <StatRow icon={Activity} label="Erreur" value="mauvais input" valueClass="text-error" />
+        ) : null}
         <div className="mt-1">
           <span className="label text-ink-muted">Recette</span>
-          <div className="mt-0.5 flex flex-col gap-0.5">
+          <div className="mt-1 grid grid-cols-3 gap-1">
             {recipes.map((recipe) => (
-              <RecipeRow
+              <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
                 active={recipe.id === activeRecipeId}
@@ -233,21 +238,42 @@ function ResourceStockRow({ sprite, alt, count }: { sprite: string; alt: string;
   );
 }
 
-function RecipeRow({ recipe, active, onClick }: { recipe: Recipe; active: boolean; onClick: () => void }) {
-  const inputLabel = recipe.inputs.map((i) => `${i.amount}x ${resourceTypeLabel(i.resourceType)}`).join(' + ');
-  const outputLabel = `${recipe.output.amount}x ${resourceTypeLabel(recipe.output.resourceType)}`;
+function RecipeCard({ recipe, active, onClick }: { recipe: Recipe; active: boolean; onClick: () => void }) {
+  const outputLabel = resourceTypeLabel(recipe.output.resourceType);
+  const inputLabel = formatRecipeInputs(recipe);
+  const sprite = getResourceSprite(recipe.output.resourceType);
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded px-1.5 py-0.5 text-left text-xs transition-colors ${
-        active ? 'bg-accent-warm/20 text-ink font-medium' : 'text-ink-muted hover:bg-surface-2'
-      }`}
+      aria-label={`Recette ${outputLabel}`}
+      aria-pressed={active}
+      className={cn(
+        'rounded-sm border px-1.5 py-1.5 text-left transition-colors',
+        active
+          ? 'border-accent bg-accent/10 text-ink'
+          : 'border-border bg-surface-2/60 text-ink-muted hover:bg-surface-2',
+      )}
     >
-      <div>{recipe.name}</div>
-      <div className="text-[10px] text-ink-muted">
-        {inputLabel} → {outputLabel} ({recipe.cycleSeconds}s)
+      <div className="relative flex min-h-11 items-center justify-center">
+        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[10px] tabular-nums text-ink">
+          {recipe.output.amount}x
+        </span>
+        {sprite ? (
+          <img src={sprite} className="h-8 w-8 object-contain" alt={outputLabel} />
+        ) : (
+          <div aria-hidden="true" className="h-8 w-8" />
+        )}
+      </div>
+      <div className="mt-1 text-center text-[11px] leading-tight text-ink">{outputLabel}</div>
+      <div className="mt-1 text-[10px] leading-snug text-ink-muted">
+        {inputLabel}
       </div>
     </button>
   );
+}
+
+function formatRecipeInputs(recipe: Recipe): string {
+  return recipe.inputs.map((i) => `${i.amount}x ${resourceTypeLabel(i.resourceType)}`).join(' + ');
 }

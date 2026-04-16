@@ -103,7 +103,7 @@ describe('persistent storage', () => {
     expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
   });
 
-  it('migrates a legacy v2 world payload to the durable store', () => {
+  it('rejects a legacy v2 world payload and clears persisted state', () => {
     const engine = makeEngine();
     saveWorldSession(engine, 'session-legacy');
     const v3Payload = window.localStorage.getItem(WORLD_STORAGE_KEY);
@@ -113,9 +113,8 @@ describe('persistent storage', () => {
     window.localStorage.setItem(LEGACY_WORLD_STORAGE_KEY, v3Payload!.replace('"version":3', '"version":2'));
 
     const loaded = loadPersistedSession(640, 480);
-    expect(loaded).not.toBeNull();
-    expect(loaded?.sessionId).toBe('session-legacy');
-    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).not.toBeNull();
+    expect(loaded).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(LEGACY_WORLD_STORAGE_KEY)).toBeNull();
   });
 

@@ -15,8 +15,15 @@ function makePoweredExtractorEngine(): GameEngine {
   engine.grid.setResource(5, 5, ResourceType.Regolith);
   const solarId = engine.placeBuilding('solar_panel', { x: 4, y: 5 });
   const extractorId = engine.placeBuilding('extractor_basic', { x: 5, y: 5 });
+  const storageId = engine.placeBuilding('storage_basic', { x: 9, y: 4 });
   if (solarId !== null && extractorId !== null) {
     engine.connectBuildings(solarId, extractorId);
+  }
+  if (extractorId !== null && storageId !== null) {
+    engine.placeBelt(
+      { building: extractorId, port: 'out_east' },
+      { building: storageId, port: 'in_west' },
+    );
   }
   return engine;
 }

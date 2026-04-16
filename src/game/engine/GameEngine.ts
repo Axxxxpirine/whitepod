@@ -16,6 +16,7 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   CONVERTER_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { Viewport } from './Viewport';
@@ -55,6 +56,11 @@ import { EnergyNetwork } from '../systems/EnergyNetwork';
 import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
 import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
+import {
+  resolveDownstreamTerminalFromOutput,
+  resolveProcessorLogisticsStatus,
+  type ProcessorLogisticsStatus,
+} from '@/game/flow/processorLogistics';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -91,9 +97,22 @@ export interface ResourceStock {
   ceramicPlates: number;
 }
 
+export type ResourceInventory = ResourceStock;
+
+export interface ProducerOutputBuffer {
+  readonly resourceType: ResourceTypeT;
+  readonly amount: 0 | 1;
+}
+
 export interface ProcessorState {
   recipeId: RecipeId | null;
   cycleProgress: number;
+}
+
+export interface ProcessorReservation {
+  readonly resourceType: ResourceTypeT;
+  readonly providerId: BuildingId;
+  readonly inputPortId: PortId;
 }
 
 export interface SerializedGameWorld {
@@ -103,10 +122,12 @@ export interface SerializedGameWorld {
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
   readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
-  readonly playerStock?: ResourceStock;
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: BuildingId; readonly charge: number }[];
   readonly processorStates?: readonly { readonly id: BuildingId; readonly recipeId: RecipeId | null; readonly cycleProgress: number }[];
+  readonly storageInventories?: readonly { readonly id: BuildingId; readonly inventory: ResourceInventory }[];
+  readonly producerOutputBuffers?: readonly { readonly id: BuildingId; readonly buffer: ProducerOutputBuffer }[];
+  readonly processorReservations?: readonly { readonly id: BuildingId; readonly reservations: readonly ProcessorReservation[] }[];
 }
 
 interface GameEngineOptions {
@@ -117,7 +138,7 @@ interface GameEngineOptions {
   readonly dayNightCycleSeconds?: number;
 }
 
-const SERIALIZE_VERSION = 2;
+const SERIALIZE_VERSION = 3;
 
 interface BatteryBuildingRef {
   readonly id: BuildingId;
@@ -129,6 +150,11 @@ interface BatteryBuildingRef {
 
 export class GameEngine {
   private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_RATE_PER_MIN;
+  private static readonly EMPTY_RESOURCE_STOCK = (): ResourceStock => ({
+    regolith: 0, hydrogen: 0, oxygen: 0,
+    ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+    water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+  });
 
   readonly grid: TileGrid;
   readonly viewport: Viewport;
@@ -138,13 +164,11 @@ export class GameEngine {
   readonly dayNightCycleSeconds: number;
   simulationTime = 0;
   mapSeed: number;
-  readonly playerStock: ResourceStock = {
-    regolith: 0, hydrogen: 0, oxygen: 0,
-    ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
-    water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
-  };
   readonly batteryCharges = new Map<BuildingId, number>();
   readonly processorStates = new Map<BuildingId, ProcessorState>();
+  readonly storageInventories = new Map<BuildingId, ResourceInventory>();
+  readonly producerOutputBuffers = new Map<BuildingId, ProducerOutputBuffer | null>();
+  readonly processorReservations = new Map<BuildingId, readonly ProcessorReservation[]>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
   private readonly sfxListeners = new Set<GameSfxListener>();
   private notificationSuspendDepth = 0;
@@ -203,13 +227,13 @@ export class GameEngine {
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
+      if (this.producerOutputBuffers.get(id)) continue;
       const { x, y } = building.origin;
       const idx = toIndex(x, y);
-      const resourceType = this.grid.resourceType[idx];
+      const resourceType = this.grid.resourceType[idx] as ResourceTypeT;
       if (resourceType === ResourceType.None) continue;
-      if (resourceType === ResourceType.Regolith) this.playerStock.regolith++;
-      else if (resourceType === ResourceType.Hydrogen) this.playerStock.hydrogen++;
-      else if (resourceType === ResourceType.Oxygen) this.playerStock.oxygen++;
+      this.producerOutputBuffers.set(id, { resourceType, amount: 1 });
+      changed = this.flushProducerOutput(id) || changed;
       this.grid.markDirty(x, y);
       changed = true;
     }
@@ -238,31 +262,26 @@ export class GameEngine {
     for (const [id, state] of this.processorStates) {
       if (!state.recipeId) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
+      if (this.producerOutputBuffers.get(id)) continue;
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
-
-      // Check if playerStock has enough for all inputs
-      let canProduce = true;
-      for (const input of recipe.inputs) {
-        const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
-        if (!key || this.playerStock[key] < input.amount) {
-          canProduce = false;
-          break;
-        }
+      const reservations = this.processorReservations.get(id) ?? [];
+      if (reservations.length === 0) {
+        const nextReservations = this.reserveProcessorInputs(id, recipe.inputs);
+        if (nextReservations === null) continue;
+        this.processorReservations.set(id, nextReservations);
+        changed = true;
       }
-      if (!canProduce) continue;
 
       state.cycleProgress += dt;
       if (state.cycleProgress >= recipe.cycleSeconds) {
         state.cycleProgress -= recipe.cycleSeconds;
-        // Consume inputs
-        for (const input of recipe.inputs) {
-          const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType]!;
-          this.playerStock[key] -= input.amount;
-        }
-        // Produce output
-        const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType]!;
-        this.playerStock[outKey] += recipe.output.amount;
+        this.processorReservations.delete(id);
+        this.producerOutputBuffers.set(id, {
+          resourceType: recipe.output.resourceType,
+          amount: Math.min(recipe.output.amount, 1) as 0 | 1,
+        });
+        this.flushProducerOutput(id);
         changed = true;
       }
     }
@@ -274,6 +293,7 @@ export class GameEngine {
     if (!state) return false;
     const building = this.buildings.get(buildingId);
     if (!building) return false;
+    if (!this.isProcessorIdle(buildingId, state)) return false;
 
     if (recipeId !== null) {
       const recipe = getRecipe(recipeId);
@@ -284,6 +304,7 @@ export class GameEngine {
 
     state.recipeId = recipeId;
     state.cycleProgress = 0;
+    this.processorReservations.delete(buildingId);
     this.notify('world');
     return true;
   }
@@ -452,6 +473,12 @@ export class GameEngine {
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
       }
+      if (typeId === STORAGE_BUILDING_TYPE_ID) {
+        this.storageInventories.set(id, GameEngine.EMPTY_RESOURCE_STOCK());
+      }
+      if (typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(typeId)) {
+        this.producerOutputBuffers.set(id, null);
+      }
       if (isProcessorTypeId(typeId)) {
         this.processorStates.set(id, { recipeId: null, cycleProgress: 0 });
       }
@@ -502,7 +529,10 @@ export class GameEngine {
     this.connections.unregisterAllFor(id);
     this.energyNetwork.unregisterBuilding(id);
     this.batteryCharges.delete(id);
+    this.storageInventories.delete(id);
+    this.producerOutputBuffers.delete(id);
     this.processorStates.delete(id);
+    this.processorReservations.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.syncPoweredExtractors(false);
@@ -666,20 +696,56 @@ export class GameEngine {
   }
 
   getResourceCounts(): ResourceStock {
-    return { ...this.playerStock };
+    const totals = GameEngine.EMPTY_RESOURCE_STOCK();
+    for (const inventory of this.storageInventories.values()) {
+      for (const key of Object.keys(totals) as (keyof ResourceStock)[]) {
+        totals[key] += inventory[key];
+      }
+    }
+    return totals;
+  }
+
+  getStorageInventory(buildingId: BuildingId): ResourceStock | null {
+    const inventory = this.storageInventories.get(buildingId);
+    return inventory ? { ...inventory } : null;
+  }
+
+  getProducerOutputBuffer(buildingId: BuildingId): ProducerOutputBuffer | null {
+    const buffer = this.producerOutputBuffers.get(buildingId) ?? null;
+    return buffer ? { ...buffer } : null;
+  }
+
+  getProducerResourceType(buildingId: BuildingId): ResourceTypeT | null {
+    const building = this.buildings.get(buildingId);
+    if (!building) return null;
+    if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+      const resource = this.grid.getResource(building.origin.x, building.origin.y);
+      return resource === ResourceType.None ? null : resource;
+    }
+    if (isProcessorTypeId(building.typeId)) {
+      const recipeId = this.processorStates.get(buildingId)?.recipeId;
+      const recipe = recipeId ? getRecipe(recipeId) : undefined;
+      return recipe?.output.resourceType ?? null;
+    }
+    return null;
+  }
+
+  getProcessorLogisticsStatus(buildingId: BuildingId): ProcessorLogisticsStatus | null {
+    return resolveProcessorLogisticsStatus(this, buildingId);
+  }
+
+  getBuildingTypeDefinition(typeId: BuildingTypeId) {
+    return getBuildingType(typeId);
   }
 
   getResourceRates(): ResourceStock {
-    const rates: ResourceStock = {
-      regolith: 0, hydrogen: 0, oxygen: 0,
-      ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
-      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
-    };
+    const rates = GameEngine.EMPTY_RESOURCE_STOCK();
 
     // Extractors: add production rate for base resources
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
+      if (!this.hasValidDownstream(id)) continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
       const key = GameEngine.RESOURCE_STOCK_KEY[resource];
       if (key) rates[key] += EXTRACTOR_RATE_PER_MIN;
@@ -689,19 +755,10 @@ export class GameEngine {
     for (const [id, state] of this.processorStates) {
       if (!state.recipeId) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
+      const logistics = this.getProcessorLogisticsStatus(id);
+      if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
-
-      // Only count rate if inputs are available (mirrors processProcessors logic)
-      let canProduce = true;
-      for (const input of recipe.inputs) {
-        const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
-        if (!key || this.playerStock[key] < input.amount) {
-          canProduce = false;
-          break;
-        }
-      }
-      if (!canProduce) continue;
 
       // Output rate
       const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType];
@@ -1027,6 +1084,25 @@ export class GameEngine {
       processorStates.push({ id, recipeId: state.recipeId, cycleProgress: state.cycleProgress });
     }
 
+    const storageInventories: Array<{ id: BuildingId; inventory: ResourceInventory }> = [];
+    for (const [id, inventory] of this.storageInventories) {
+      storageInventories.push({ id, inventory: { ...inventory } });
+    }
+
+    const producerOutputBuffers: Array<{ id: BuildingId; buffer: ProducerOutputBuffer }> = [];
+    for (const [id, buffer] of this.producerOutputBuffers) {
+      if (!buffer) continue;
+      producerOutputBuffers.push({ id, buffer: { ...buffer } });
+    }
+
+    const processorReservations: Array<{ id: BuildingId; reservations: readonly ProcessorReservation[] }> = [];
+    for (const [id, reservations] of this.processorReservations) {
+      processorReservations.push({
+        id,
+        reservations: reservations.map((reservation) => ({ ...reservation })),
+      });
+    }
+
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
@@ -1034,10 +1110,12 @@ export class GameEngine {
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
       energyLinks,
-      playerStock: { ...this.playerStock },
       simulationTime: this.simulationTime,
       batteryCharges,
       processorStates,
+      storageInventories,
+      producerOutputBuffers,
+      processorReservations,
     };
   }
 
@@ -1067,6 +1145,12 @@ export class GameEngine {
         if (type?.energy?.battery) {
           engine.batteryCharges.set(buildingId, 0);
         }
+        if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+          engine.storageInventories.set(buildingId, GameEngine.EMPTY_RESOURCE_STOCK());
+        }
+        if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
+          engine.producerOutputBuffers.set(buildingId, null);
+        }
         if (isProcessorTypeId(building.typeId)) {
           engine.processorStates.set(buildingId, { recipeId: null, cycleProgress: 0 });
         }
@@ -1075,13 +1159,6 @@ export class GameEngine {
     for (const link of snapshot.energyLinks ?? []) {
       if (engine.buildings.get(link.a) && engine.buildings.get(link.b)) {
         engine.energyNetwork.connect(link.a, link.b);
-      }
-    }
-
-    if (snapshot.playerStock) {
-      const s = snapshot.playerStock;
-      for (const key of Object.keys(engine.playerStock) as (keyof ResourceStock)[]) {
-        engine.playerStock[key] = s[key] ?? 0;
       }
     }
 
@@ -1109,6 +1186,24 @@ export class GameEngine {
       }
     }
 
+    for (const entry of snapshot.storageInventories ?? []) {
+      if (engine.storageInventories.has(entry.id)) {
+        engine.storageInventories.set(entry.id, { ...GameEngine.EMPTY_RESOURCE_STOCK(), ...entry.inventory });
+      }
+    }
+
+    for (const entry of snapshot.producerOutputBuffers ?? []) {
+      if (engine.producerOutputBuffers.has(entry.id)) {
+        engine.producerOutputBuffers.set(entry.id, { ...entry.buffer });
+      }
+    }
+
+    for (const entry of snapshot.processorReservations ?? []) {
+      if (engine.processorStates.has(entry.id)) {
+        engine.processorReservations.set(entry.id, entry.reservations.map((reservation) => ({ ...reservation })));
+      }
+    }
+
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
       engine.grid.revealCircle(
@@ -1125,6 +1220,113 @@ export class GameEngine {
 
   getViewportSnapshot(): ViewportSnapshot {
     return this.viewport.getSnapshot();
+  }
+
+  private isProcessorIdle(buildingId: BuildingId, state: ProcessorState): boolean {
+    return (
+      state.cycleProgress === 0 &&
+      !this.producerOutputBuffers.get(buildingId) &&
+      (this.processorReservations.get(buildingId)?.length ?? 0) === 0
+    );
+  }
+
+  private hasValidDownstream(buildingId: BuildingId): boolean {
+    const building = this.buildings.get(buildingId);
+    if (!building) return false;
+    const type = getBuildingType(building.typeId);
+    const outputPort = type?.ports.find((port) => port.kind === PortKind.Output);
+    if (!outputPort) return false;
+    return resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id) !== null;
+  }
+
+  private flushProducerOutput(buildingId: BuildingId): boolean {
+    const buffer = this.producerOutputBuffers.get(buildingId);
+    if (!buffer) return false;
+
+    const building = this.buildings.get(buildingId);
+    if (!building) return false;
+    const type = getBuildingType(building.typeId);
+    const outputPort = type?.ports.find((port) => port.kind === PortKind.Output);
+    if (!outputPort) return false;
+
+    const terminal = resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id);
+    if (!terminal || terminal.kind !== 'storage') return false;
+
+    const inventory = this.storageInventories.get(terminal.buildingId);
+    const key = GameEngine.RESOURCE_STOCK_KEY[buffer.resourceType];
+    if (!inventory || !key) return false;
+
+    inventory[key] += buffer.amount;
+    this.producerOutputBuffers.set(buildingId, null);
+    return true;
+  }
+
+  private reserveProcessorInputs(
+    buildingId: BuildingId,
+    inputs: readonly { readonly resourceType: ResourceTypeT; readonly amount: number }[],
+  ): readonly ProcessorReservation[] | null {
+    const logistics = this.getProcessorLogisticsStatus(buildingId);
+    if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) {
+      return null;
+    }
+
+    const reservations: ProcessorReservation[] = [];
+    const usedProviders = new Set<BuildingId>();
+
+    for (const assignment of logistics.assignments) {
+      const input = inputs.find((entry) => entry.resourceType === assignment.requiredResourceType);
+      if (!input) return null;
+
+      const providers = this.resolveReachableProviders(buildingId, assignment.portId)
+        .filter((providerId) => !usedProviders.has(providerId))
+        .filter((providerId) => this.getProducerOutputBuffer(providerId)?.resourceType === assignment.requiredResourceType);
+
+      if (providers.length < input.amount) return null;
+
+      for (let index = 0; index < input.amount; index += 1) {
+        const providerId = providers[index]!;
+        const buffer = this.producerOutputBuffers.get(providerId);
+        if (!buffer || buffer.amount <= 0) return null;
+        this.producerOutputBuffers.set(providerId, null);
+        usedProviders.add(providerId);
+        reservations.push({
+          resourceType: assignment.requiredResourceType,
+          providerId,
+          inputPortId: assignment.portId,
+        });
+      }
+    }
+
+    return reservations;
+  }
+
+  private resolveReachableProviders(buildingId: BuildingId, portId: PortId): BuildingId[] {
+    const visited = new Set<BuildingId>();
+    const queue = this
+      .getConnectionsOf(buildingId)
+      .filter((connection) => connection.to.building === buildingId && connection.to.port === portId)
+      .map((connection) => connection.from.building);
+    const providers: BuildingId[] = [];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+      const building = this.buildings.get(currentId);
+      if (!building) continue;
+      if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
+        providers.push(currentId);
+        continue;
+      }
+      if (building.typeId === STORAGE_BUILDING_TYPE_ID) continue;
+      for (const connection of this.getConnectionsOf(currentId)) {
+        if (connection.to.building !== currentId) continue;
+        queue.push(connection.from.building);
+      }
+    }
+
+    providers.sort((a, b) => a - b);
+    return providers;
   }
 
   private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {

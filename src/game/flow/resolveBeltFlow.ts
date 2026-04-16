@@ -58,6 +58,8 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
         const state = engine.getProcessorState(upstream.id);
         if (!state?.recipeId) continue;
+        const logistics = engine.getProcessorLogisticsStatus(upstream.id);
+        if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
         const recipe = getRecipe(state.recipeId);
         if (!recipe) continue;
         const resource = recipe.output.resourceType;

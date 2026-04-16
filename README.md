@@ -124,8 +124,9 @@ engine.getEnergyStorageTotals()                // { stored, capacity } across al
 ### Resources & economy
 
 ```js
-engine.getResourceCounts()             // Current player stock { coal, ironOre, copperOre }
-engine.getResourceRates()              // Active extraction rates (items/min)
+engine.getResourceCounts()             // Aggregated storage inventories across the world
+engine.getResourceRates()              // Net connected-line rates (items/min)
+engine.getStorageInventory(buildingId) // Per-storage inventory or null
 ```
 
 ### Simulation
@@ -133,7 +134,6 @@ engine.getResourceRates()              // Active extraction rates (items/min)
 ```js
 engine.simulationTime                  // Day/night cycle position (0–1)
 engine.mapSeed                         // Current map seed
-engine.playerStock                     // Direct access to resource stock
 engine.batteryCharges                  // Map<BuildingId, number> of battery charge levels
 ```
 
