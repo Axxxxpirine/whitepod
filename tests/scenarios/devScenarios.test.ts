@@ -34,9 +34,19 @@ describe('dev scenario api', () => {
 
     expect(api.listGenerators()).toEqual([
       {
-        id: 'starter-random',
-        label: 'Generate Starter Scenario',
-        description: 'One-shot playable start with visible deposits and powered extractors.',
+        id: 'tier-simple',
+        label: 'Simple',
+        description: 'Starter layout: 3 solar + 1 battery + 2 extractors. Single energy subnet, no belts.',
+      },
+      {
+        id: 'tier-medium',
+        label: 'Medium',
+        description: 'Mid-complexity: storage, belts, 2 resource types, branched energy network.',
+      },
+      {
+        id: 'tier-complex',
+        label: 'Complex',
+        description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
       },
     ]);
   });
@@ -90,7 +100,7 @@ describe('dev scenario api', () => {
     const loaded = loadPersistedSession(640, 480);
     expect(loaded).not.toBeNull();
     expect(loaded?.selectedTool).toEqual({ kind: 'select' });
-    expect(loaded?.engine.getBuildings().size).toBe(6);
+    expect(loaded?.engine.getBuildings().size).toBe(8);
     expect(loaded?.engine.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
     expect(loaded?.engine.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
 
@@ -106,7 +116,7 @@ describe('dev scenario api', () => {
 
     expect(visibleUncoveredDeposits).toBeGreaterThanOrEqual(3);
     expect(consoleInfoSpy).toHaveBeenCalledWith(
-      '[scenarios] Generated "starter-random" and applied it to the live session.',
+      '[scenarios] Generated "tier-simple" and applied it to the live session.',
     );
   });
 });

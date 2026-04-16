@@ -360,7 +360,9 @@ describe('GameHUD', () => {
     fireEvent.click(screen.getByRole('button', { name: '▼' }));
 
     expect(screen.getByText('Scenario Generator')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Generate Starter Scenario/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Simple/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Medium/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Complex/i })).toBeInTheDocument();
   });
 
   it('generates a playable starter scenario from the debug panel', () => {
@@ -369,10 +371,10 @@ describe('GameHUD', () => {
     render(<GameHUD />);
 
     fireEvent.click(screen.getByRole('button', { name: '▼' }));
-    fireEvent.click(screen.getByRole('button', { name: /Generate Starter Scenario/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
 
     const state = useGameStore.getState();
-    expect(state.engine?.getBuildings().size).toBe(6);
+    expect(state.engine?.getBuildings().size).toBe(8);
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);
     expect(state.sessionEpoch).toBe(1);

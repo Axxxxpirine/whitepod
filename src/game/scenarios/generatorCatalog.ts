@@ -1,12 +1,26 @@
-import { generateStarterScenario } from './generateStarterScenario';
+import { generateSimpleScenario } from './generators/generateSimpleScenario';
+import { generateMediumScenario } from './generators/generateMediumScenario';
+import { generateComplexScenario } from './generators/generateComplexScenario';
 import type { ScenarioGeneratorDefinition, ScenarioGeneratorListEntry } from './types';
 
 const generators = [
   {
-    id: 'starter-random',
-    label: 'Generate Starter Scenario',
-    description: 'One-shot playable start with visible deposits and powered extractors.',
-    generate: generateStarterScenario,
+    id: 'tier-simple',
+    label: 'Simple',
+    description: 'Starter layout: 3 solar + 1 battery + 2 extractors. Single energy subnet, no belts.',
+    generate: generateSimpleScenario,
+  },
+  {
+    id: 'tier-medium',
+    label: 'Medium',
+    description: 'Mid-complexity: storage, belts, 2 resource types, branched energy network.',
+    generate: generateMediumScenario,
+  },
+  {
+    id: 'tier-complex',
+    label: 'Complex',
+    description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
+    generate: generateComplexScenario,
   },
 ] as const satisfies readonly ScenarioGeneratorDefinition[];
 

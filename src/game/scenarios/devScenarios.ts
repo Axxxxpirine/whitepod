@@ -22,7 +22,7 @@ export function createDevScenarioApi(engine: GameEngine): DevScenarioApi {
     install(id: string) {
       applyScenarioToLiveSession(engine, id);
     },
-    generate(id = 'starter-random') {
+    generate(id = 'tier-simple') {
       applyScenarioGeneratorToLiveSession(engine, id);
     },
   };

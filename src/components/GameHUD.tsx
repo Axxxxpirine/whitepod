@@ -345,15 +345,15 @@ export function GameHUD() {
 
                 <div className="space-y-1">
                   <div className="label text-ink-muted">Scenario Generator</div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
                     {scenarioGenerators.map((scenario) => (
                       <button
                         key={scenario.id}
                         type="button"
                         onClick={() => applyScenarioGenerator(scenario.id)}
-                        className="flex w-1/2 cursor-pointer items-center gap-1.5 rounded-sm border border-accent/30 bg-accent/5 px-2 py-1.5 text-xs text-accent transition-colors hover:border-accent/50 hover:bg-accent/10 active:bg-accent/15"
+                        className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-sm bg-surface-2 px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink active:bg-accent active:text-bg"
                       >
-                        <Shuffle size={10} strokeWidth={1.5} className="shrink-0" />
+                        <Shuffle size={9} strokeWidth={1.5} className="shrink-0" />
                         <span>{scenario.label}</span>
                       </button>
                     ))}

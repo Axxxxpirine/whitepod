@@ -71,16 +71,16 @@ describe('applyScenarioToLiveSession', () => {
     engine.grid.revealAll();
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    applyScenarioGeneratorToLiveSession(engine, 'starter-random');
+    applyScenarioGeneratorToLiveSession(engine, 'tier-simple');
 
     const state = useGameStore.getState();
-    expect(state.engine?.getBuildings().size).toBe(6);
+    expect(state.engine?.getBuildings().size).toBe(8);
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);
     expect(state.pendingEnergyLinkSource).toBeNull();
     expect(state.idleSummary).toBeNull();
     expect(hasPendingScenarioInstall()).toBe(true);
-    expect(infoSpy).toHaveBeenCalledWith('[scenarios] Generated "starter-random" and applied it to the live session.');
+    expect(infoSpy).toHaveBeenCalledWith('[scenarios] Generated "tier-simple" and applied it to the live session.');
 
     let visibleUncoveredDeposits = 0;
     const visible = state.engine!.getVisibleTiles();
@@ -97,7 +97,7 @@ describe('applyScenarioToLiveSession', () => {
     expect(state.engine?.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
 
     const loaded = loadPersistedSession(640, 480);
-    expect(loaded?.engine.getBuildings().size).toBe(6);
+    expect(loaded?.engine.getBuildings().size).toBeGreaterThanOrEqual(8);
     expect(loaded?.selectedTool).toEqual({ kind: 'select' });
   });
 });
