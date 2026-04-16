@@ -181,8 +181,6 @@ export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
 ```typescript
 export interface ProcessorState {
   recipeId: RecipeId | null;
-  inputBuffers: Map<ResourceTypeValue, number>;
-  outputBuffer: number;
   cycleProgress: number; // secondes accumulées
 }
 ```
@@ -190,7 +188,7 @@ export interface ProcessorState {
 - Nouveau champ : `readonly processorStates = new Map<BuildingId, ProcessorState>()`
 - `placeBuilding()` : initialiser un `ProcessorState` si `typeId` est converter ou synthesizer
 - `removeBuilding()` : supprimer l'entrée
-- Nouvelle méthode : `setProcessorRecipe(buildingId, recipeId | null): boolean` — valide que la recette correspond au type de bâtiment, reset buffers/progress
+- Nouvelle méthode : `setProcessorRecipe(buildingId, recipeId | null): boolean` — valide que la recette correspond au type de bâtiment, reset progress
 - Helper : `isProcessorTypeId(typeId)` pour tester si un bâtiment est un processeur
 
 ---
@@ -203,14 +201,11 @@ Ajouter `this.processProcessors(dt)` dans `update(dt)`, après `processExtractio
 
 Pour chaque processeur (convertisseur ou synthétiseur) :
 1. **Skip** si pas de recette ou pas alimenté en énergie
-2. **Résoudre le flow entrant** via `resolveBeltFlow` sur chaque port d'entrée → types et débits
-3. **Accumuler** dans `inputBuffers` proportionnellement à `dt` et au débit entrant
-4. **Vérifier** si les buffers contiennent assez pour un cycle
-5. **Avancer** `cycleProgress += dt` si inputs suffisants
-6. **Produire** quand `cycleProgress >= recipe.cycleSeconds` : consommer inputs, incrémenter `outputBuffer`, reporter l'excédent
-7. **Drainer** `outputBuffer` vers `playerStock`
+2. **Vérifier** si `playerStock` contient assez de chaque input pour un cycle complet
+3. **Avancer** `cycleProgress += dt` si inputs suffisants dans `playerStock`
+4. **Produire** quand `cycleProgress >= recipe.cycleSeconds` : déduire les inputs de `playerStock`, ajouter l'output dans `playerStock`, reporter l'excédent de temps
 
-> Cohérent avec l'archi actuelle : `playerStock` = source de vérité, belts = visuels.
+> **Modèle playerStock-centric** : le processeur consomme et produit directement dans `playerStock`, comme l'extracteur. Pas de buffers locaux. Les belts restent purement visuels (affichage de taux). `playerStock` = source de vérité unique.
 
 ---
 
@@ -232,8 +227,15 @@ Ajouter une branche pour les processeurs (converter + synthesizer) :
 
 - Bump `SERIALIZE_VERSION` de 2 à 3
 - Étendre `SerializedGameWorld` avec `processorStates`
-- Étendre `ResourceStock` avec les 10 nouvelles ressources (défaut à 0 pour anciens saves)
+- Étendre `ResourceStock` : renommer `coal`→`regolith`, `ironOre`→`hydrogen`, `copperOre`→`oxygen` + ajouter les 9 nouvelles ressources (défaut à 0 pour anciens saves)
 - `serializeWorld()` / `fromSnapshot()` : sérialiser/restaurer les `processorStates`
+
+**Fichier : `src/game/persistence/sessionStorage.ts`**
+
+- Bump `WORLD_STORAGE_VERSION` de 3 à 4 (nouvelle clé `whitepod:session:world:v4`)
+- Ajouter un `LEGACY_WORLD_STORAGE_KEY_V3` pour le fallback
+- Migration V3→V4 : renommer les clés `playerStock` (`coal`→`regolith`, `ironOre`→`hydrogen`, `copperOre`→`oxygen`), ajouter les nouvelles ressources à 0, ajouter `processorStates: []`
+- Conserver la chaîne V2→V3→V4 pour les anciens saves
 
 ---
 
@@ -306,7 +308,7 @@ Ajouter dans `public/sprites/` :
 
 - **`ResourceStock`** : ajouter `ironOxide`, `aluminumOxide`, `siliconDioxide`, `nitrogenGas`, `water`, `methane`, `carbonDioxide`, `ammonia`, `ceramicPlates` (défaut 0)
 - **`BuildingStatsPanel.tsx` (stockage)** : afficher les nouvelles ressources dans le panel stockage
-- **`sessionStorage.ts`** : migration v2→v3
+- **`sessionStorage.ts`** : migration v3→v4 (renommage clés `playerStock`, nouvelles ressources, `processorStates`)
 - **`IdleCatchup.ts`** : `processProcessors` sera appelé via `update(dt)`, pas de changement spécifique
 
 ---
@@ -314,16 +316,17 @@ Ajouter dans `public/sprites/` :
 ## Ordre d'implémentation
 
 1. `types.ts` — renommage ressources de base + nouvelles ressources
-2. `recipeCatalog.ts` — nouveau fichier, recettes
-3. `buildingCatalog.ts` — entrées convertisseur + synthétiseur + labels
-4. `GameEngine.ts` — ProcessorState, lifecycle, `processProcessors()`, `setProcessorRecipe()`, sérialisation, ResourceStock étendu
-5. `resolveBeltFlow.ts` — reconnaître processeurs comme sources
-6. `buildingPresentation.ts` — toolbar entries
-7. `BuildingStatsPanel.tsx` — UI recette + stockage étendu
-8. `BuildingRenderer.ts` — tints
-9. `sessionStorage.ts` — migration sérialisation
-10. Sprites
-11. Tests
+2. `GameEngine.ts` — renommer les champs `ResourceStock` (`coal`→`regolith`, `ironOre`→`hydrogen`, `copperOre`→`oxygen`) + propager dans `processExtraction()` et tout accès à `playerStock`
+3. `recipeCatalog.ts` — nouveau fichier, recettes
+4. `buildingCatalog.ts` — entrées convertisseur + synthétiseur + labels
+5. `GameEngine.ts` — ProcessorState, lifecycle, `processProcessors()`, `setProcessorRecipe()`, sérialisation, ResourceStock étendu (9 nouvelles ressources)
+6. `resolveBeltFlow.ts` — reconnaître processeurs comme sources
+7. `buildingPresentation.ts` — toolbar entries
+8. `BuildingStatsPanel.tsx` — UI recette + stockage étendu (clés renommées + nouvelles ressources)
+9. `BuildingRenderer.ts` — tints
+10. `sessionStorage.ts` — migration v3→v4 (renommage clés playerStock, nouvelles ressources, processorStates)
+11. Sprites
+12. Tests
 
 ---
 
