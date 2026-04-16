@@ -3,7 +3,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
 import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
-import { EXTRACTOR_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import {
+  BATTERY_BASIC_BUILDING_TYPE_ID,
+  EXTRACTOR_BUILDING_TYPE_ID,
+  SOLAR_PANEL_BUILDING_TYPE_ID,
+} from '@/game/data/buildingCatalog';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { Direction, ResourceType, TileType } from '@/game/types';
 
@@ -236,6 +240,80 @@ describe('GameHUD', () => {
     render(<GameHUD />);
 
     expect(screen.getByText(/12:00/)).toBeInTheDocument();
+  });
+
+  it('renders explicit global energy labels and storage totals', () => {
+    const engine = makeEngine();
+    engine.simulationTime = 0.5;
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    engine.placeResource(9, 8, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 11, y: 8 })!;
+    engine.connectBuildings(solarId, extractorId);
+    engine.connectBuildings(solarId, batteryId);
+    engine.batteryCharges.set(batteryId, 1.7);
+
+    useGameStore.setState({ engine, simulationTime: 0.5 });
+    render(<GameHUD />);
+
+    expect(screen.getByText('Surplus')).toBeInTheDocument();
+    expect(screen.getByText('+6 kW')).toBeInTheDocument();
+    expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
+    expect(screen.getByText('Utilisée 4 kW')).toBeInTheDocument();
+    expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
+    expect(screen.queryByText('Non servie 0 kW')).not.toBeInTheDocument();
+    expect(screen.getByText('Stockage 1.7 / 10 kWh')).toBeInTheDocument();
+  });
+
+  it('shows deficit and unmet demand without ambiguous energy labels', () => {
+    const engine = makeEngine();
+    engine.simulationTime = 0.5;
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 10, y: 8 })!;
+    engine.placeResource(13, 8, ResourceType.Coal);
+    engine.placeResource(15, 8, ResourceType.IronOre);
+    engine.placeResource(17, 8, ResourceType.CopperOre);
+    const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 13, y: 8 })!;
+    const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 15, y: 8 })!;
+    const extractorC = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 17, y: 8 })!;
+    engine.connectBuildings(solarId, batteryId);
+    engine.connectBuildings(solarId, extractorA);
+    engine.connectBuildings(solarId, extractorB);
+    engine.connectBuildings(solarId, extractorC);
+    engine.batteryCharges.set(batteryId, 10);
+
+    useGameStore.setState({ engine, simulationTime: 0.5 });
+    render(<GameHUD />);
+
+    expect(screen.getByText('Déficit')).toBeInTheDocument();
+    expect(screen.getByText('-2 kW')).toBeInTheDocument();
+    expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
+    expect(screen.getByText('Utilisée 12 kW')).toBeInTheDocument();
+    expect(screen.getByText('Demande 12 kW')).toBeInTheDocument();
+    expect(screen.queryByText('Non servie 0 kW')).not.toBeInTheDocument();
+    expect(screen.queryByText('↑')).not.toBeInTheDocument();
+    expect(screen.queryByText('↓')).not.toBeInTheDocument();
+  });
+
+  it('uses explicit solar network wording in the selected building panel', () => {
+    const engine = makeEngine();
+    engine.simulationTime = 0.5;
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    engine.placeResource(9, 8, ResourceType.IronOre);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
+    engine.connectBuildings(solarId, extractorId);
+
+    useGameStore.setState({
+      engine,
+      simulationTime: 0.5,
+      selectedBuildingId: solarId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+    render(<GameHUD />);
+
+    expect(screen.getByText('Surplus reseau')).toBeInTheDocument();
+    expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
+    expect(screen.queryByText('Bilan reseau')).not.toBeInTheDocument();
   });
 
   it('opens debug panel and allows simulation presets', () => {

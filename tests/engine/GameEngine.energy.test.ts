@@ -173,13 +173,106 @@ describe('GameEngine energy networks', () => {
     const stats = engine.getEnergyGlobalStats();
     expect(stats).toEqual({
       production: 10,
-      consumption: 4,
-      remaining: 2,
+      servedConsumption: 4,
+      demandedConsumption: 8,
+      surplusPower: 6,
+      demandBalance: 2,
+      unservedLoad: 4,
       onlineConsumers: 1,
       offlineConsumers: 1,
     });
     expect(engine.getBuildingPowerState(extractorA)).toBe('powered');
     expect(engine.getBuildingPowerState(extractorB)).toBe('unpowered');
+  });
+
+  it('reports explicit network stats for powered and unpowered components', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(2, 1, ResourceType.IronOre);
+    const poweredExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    engine.placeResource(8, 8, ResourceType.Coal);
+    const offlineExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+
+    engine.connectBuildings(solarId, poweredExtractor);
+
+    expect(engine.getEnergyStatsForBuilding(poweredExtractor)).toEqual({
+      buildingIds: [solarId, poweredExtractor].sort((a, b) => a - b),
+      isPowered: true,
+      production: 10,
+      servedConsumption: 4,
+      demandedConsumption: 4,
+      surplusPower: 6,
+      demandBalance: 6,
+      unservedLoad: 0,
+    });
+
+    expect(engine.getEnergyStatsForBuilding(offlineExtractor)).toEqual({
+      buildingIds: [offlineExtractor],
+      isPowered: false,
+      production: 0,
+      servedConsumption: 0,
+      demandedConsumption: 4,
+      surplusPower: 0,
+      demandBalance: -4,
+      unservedLoad: 4,
+    });
+  });
+
+  it('keeps served load online when a battery can cover a deficit', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
+    engine.placeResource(6, 1, ResourceType.Coal);
+    engine.placeResource(8, 1, ResourceType.IronOre);
+    engine.placeResource(10, 1, ResourceType.CopperOre);
+    const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 6, y: 1 })!;
+    const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 1 })!;
+    const extractorC = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 10, y: 1 })!;
+
+    engine.connectBuildings(solarId, batteryId);
+    engine.connectBuildings(solarId, extractorA);
+    engine.connectBuildings(solarId, extractorB);
+    engine.connectBuildings(solarId, extractorC);
+    engine.batteryCharges.set(batteryId, 10);
+
+    expect(engine.getEnergyGlobalStats()).toEqual({
+      production: 10,
+      servedConsumption: 12,
+      demandedConsumption: 12,
+      surplusPower: -2,
+      demandBalance: -2,
+      unservedLoad: 0,
+      onlineConsumers: 3,
+      offlineConsumers: 0,
+    });
+
+    engine.update(12);
+
+    expect(engine.batteryCharges.get(batteryId)).toBeLessThan(10);
+  });
+
+  it('treats isolated generation as pure surplus in display stats', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 14, y: 14 })!;
+
+    expect(engine.getEnergyGlobalStats()).toEqual({
+      production: 10,
+      servedConsumption: 0,
+      demandedConsumption: 0,
+      surplusPower: 10,
+      demandBalance: 10,
+      unservedLoad: 0,
+      onlineConsumers: 0,
+      offlineConsumers: 0,
+    });
+
+    expect(engine.getEnergyStatsForBuilding(solarId)).toEqual({
+      buildingIds: [solarId],
+      isPowered: true,
+      production: 10,
+      servedConsumption: 0,
+      demandedConsumption: 0,
+      surplusPower: 10,
+      demandBalance: 10,
+      unservedLoad: 0,
+    });
   });
 
   it('can disconnect an existing energy link', () => {

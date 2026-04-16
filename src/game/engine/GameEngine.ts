@@ -37,6 +37,7 @@ import {
   type Port,
   type PortId,
   type EnergyNetworkBalance,
+  type EnergyNetworkStats,
   type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
@@ -459,6 +460,12 @@ export class GameEngine {
     return this.computeEnergyBalance(component);
   }
 
+  getEnergyStatsForBuilding(buildingId: BuildingId): EnergyNetworkStats | null {
+    const network = this.getEnergyNetworkForBuilding(buildingId);
+    if (!network) return null;
+    return this.toEnergyStats(network);
+  }
+
   getEnergyNetworkBalances(): readonly EnergyNetworkBalance[] {
     return this.energyNetwork.getComponents().map((component) => this.computeEnergyBalance(component));
   }
@@ -499,27 +506,42 @@ export class GameEngine {
     return this.getNetworkDischargeRate(network.buildingIds) >= -network.remaining;
   }
 
+  private toEnergyStats(network: EnergyNetworkBalance): EnergyNetworkStats {
+    const isPowered = this.isNetworkPowered(network);
+    const servedConsumption = isPowered ? network.consumption : 0;
+    const demandedConsumption = network.consumption;
+
+    return {
+      buildingIds: network.buildingIds,
+      isPowered,
+      production: network.production,
+      servedConsumption,
+      demandedConsumption,
+      surplusPower: network.production - servedConsumption,
+      demandBalance: network.production - demandedConsumption,
+      unservedLoad: demandedConsumption - servedConsumption,
+    };
+  }
+
   getEnergyGlobalStats(): EnergyGlobalStats {
     let production = 0;
-    let consumption = 0;
+    let servedConsumption = 0;
     let demandedConsumption = 0;
     let onlineConsumers = 0;
     let offlineConsumers = 0;
 
     for (const network of this.getEnergyNetworkBalances()) {
-      production += network.production;
-      demandedConsumption += network.consumption;
-      const networkIsPowered = this.isNetworkPowered(network);
-      if (networkIsPowered) {
-        consumption += network.consumption;
-      }
-      for (const buildingId of network.buildingIds) {
+      const stats = this.toEnergyStats(network);
+      production += stats.production;
+      servedConsumption += stats.servedConsumption;
+      demandedConsumption += stats.demandedConsumption;
+      for (const buildingId of stats.buildingIds) {
         const building = this.buildings.get(buildingId);
         if (!building) continue;
         const buildingType = getBuildingType(building.typeId);
         const machineConsumption = buildingType?.energy?.consumption ?? 0;
         if (machineConsumption <= 0) continue;
-        if (networkIsPowered) {
+        if (stats.isPowered) {
           onlineConsumers += 1;
         } else {
           offlineConsumers += 1;
@@ -529,9 +551,11 @@ export class GameEngine {
 
     return {
       production,
-      consumption,
-      // "remaining" is the net electrical balance against total demand.
-      remaining: production - demandedConsumption,
+      servedConsumption,
+      demandedConsumption,
+      surplusPower: production - servedConsumption,
+      demandBalance: production - demandedConsumption,
+      unservedLoad: demandedConsumption - servedConsumption,
       onlineConsumers,
       offlineConsumers,
     };

@@ -175,19 +175,26 @@ src/
 │   ├── systems/      # EnergyNetwork
 │   ├── flow/         # Belt flow resolution
 │   ├── input/        # CancelStack
-│   ├── persistence/  # localStorage-backed persistence layer
+│   ├── persistence/  # localStorage-backed persistence layer (v3 world snapshot)
+│   ├── idle/         # IdleCatchup — offline progression replay on pause→resume
+│   ├── audio/        # GameMusicPlayer, GameSfxPlayer, sfxEvents (randomized music, SFX bus)
 │   ├── ui/           # Building presentation, sprite paths, toolbar icons
 │   ├── constants.ts
 │   └── types.ts
 ├── components/
 │   ├── hud/          # BuildingPicker, SelectedBuildingPanel, ToolModeIndicator
+│   ├── ui/           # Design-system primitives (Panel, PanelHeading, Chip, Icon)
 │   ├── GameCanvas.tsx
 │   ├── GameHUD.tsx
 │   ├── BuildingStatsPanel.tsx
-│   └── BeltFlowStats.tsx
+│   ├── BeltFlowStats.tsx
+│   ├── GameMusicController.tsx
+│   ├── GameSfxController.tsx
+│   └── energyLinkHandlers.ts
+├── design/           # Design tokens (colors, typography, spacing) — see DESIGN.md
 ├── assets/           # Static assets
 ├── lib/              # Shared utilities
 ├── store/            # Zustand game store
 └── test/             # Test setup
-tests/                # Vitest test suites
+tests/                # Vitest test suites (engine, components, data, renderer, persistence, audio)
 ```

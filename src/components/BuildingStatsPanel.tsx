@@ -78,7 +78,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
             <div className="flex items-center gap-1.5">
               <Icon icon={Zap} size={11} className="text-ink-muted" />
               <span className="text-xs font-medium tabular-nums text-ink">
-                {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
+                Reserve {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
               </span>
             </div>
           </div>
@@ -132,15 +132,22 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     );
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
-    const network = engine.getEnergyNetworkForBuilding(building.id);
-    const bilanValue = network !== null ? `${Math.round(network.remaining)} kW` : 'Reseau isole';
-    const bilanClass =
-      network === null ? 'text-ink-muted' : network.remaining >= 0 ? 'text-ok' : 'text-error';
+    const network = engine.getEnergyStatsForBuilding(building.id);
+    const surplusValue = network !== null ? `${Math.round(network.surplusPower)} kW` : 'Reseau isole';
+    const surplusClass =
+      network === null ? 'text-ink-muted' : network.surplusPower >= 0 ? 'text-ok' : 'text-error';
+    const demandValue = network !== null ? `${Math.round(network.demandedConsumption)} kW` : '0 kW';
 
     rows = (
       <>
         <StatRow icon={Sun} label="Production" value={`+${production} kW`} />
-        <StatRow icon={Zap} label="Bilan reseau" value={bilanValue} valueClass={bilanClass} />
+        <StatRow
+          icon={Zap}
+          label={network !== null && network.surplusPower < 0 ? 'Deficit reseau' : 'Surplus reseau'}
+          value={surplusValue}
+          valueClass={surplusClass}
+        />
+        <StatRow icon={Activity} label="Demande" value={demandValue} valueClass={network ? 'text-ink' : 'text-ink-muted'} />
       </>
     );
   }

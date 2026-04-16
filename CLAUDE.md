@@ -13,7 +13,14 @@ Jeu de gestion et d'optimisation industrielle sur grille. Le joueur incarne l'ar
 - shadcn (composants UI)
 - Vitest (tests)
 - ESLint (qualite code)
-- localStorage (persistance locale durable)
+- localStorage (persistance locale durable, restauree apres fermeture du navigateur)
+
+## Documentation de reference
+
+- [`README.md`](./README.md) — setup, commandes npm, reference de l'API moteur (`window.engine`), structure du projet.
+- [`PRIMITIVES.md`](./PRIMITIVES.md) — contrat operationnel des primitives de jeu (scenarios, tests de regression, solveurs).
+- [`DESIGN.md`](./DESIGN.md) — source de verite du design system "Architect's Drawing Board" (tokens, typographie, espacement, decisions log).
+- [`CHANGELOG.md`](./CHANGELOG.md) — historique des versions.
 
 ## Priorites fondamentales
 
