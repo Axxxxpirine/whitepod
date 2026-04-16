@@ -20,6 +20,8 @@ describe('GameHUD', () => {
       engine: null,
       simulationTime: 0,
       simulationSpeed: 1,
+      musicVolume: 0.5,
+      sfxVolume: 0.7,
       hoverTile: { x: 12, y: 7 },
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
@@ -217,6 +219,15 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
     expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+  });
+
+  it('updates SFX volume from the settings popover', () => {
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
+    fireEvent.change(screen.getByLabelText('SFX volume'), { target: { value: '0.42' } });
+
+    expect(useGameStore.getState().sfxVolume).toBeCloseTo(0.42);
   });
 
   it('shows simulation time in the HUD panel', () => {
