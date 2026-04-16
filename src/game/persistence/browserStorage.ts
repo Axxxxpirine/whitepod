@@ -10,6 +10,10 @@ function isStorageLike(value: unknown): value is Storage {
 
 export function getLocalStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
-  if (isStorageLike(window.localStorage)) return window.localStorage;
-  return null;
+  try {
+    const storage = window.localStorage;
+    return isStorageLike(storage) ? storage : null;
+  } catch {
+    return null;
+  }
 }

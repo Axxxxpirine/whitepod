@@ -11,7 +11,7 @@ export function selectedToolsEqual(left: SelectedTool, right: SelectedTool): boo
   if (left.kind === 'building' && right.kind === 'building') {
     return left.buildingType === right.buildingType;
   }
-  return left.kind === 'energy_link' && right.kind === 'energy_link';
+  return true;
 }
 
 export interface EnergyLinkClickState {

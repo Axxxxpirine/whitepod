@@ -14,6 +14,7 @@ export function GameHUD() {
   const simulationTime = useGameStore((s) => s.simulationTime);
   const simulationSpeed = useGameStore((s) => s.simulationSpeed);
   const musicVolume = useGameStore((s) => s.musicVolume);
+  const sfxVolume = useGameStore((s) => s.sfxVolume);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
   const linkSolarOnPlacement = useGameStore((s) => s.linkSolarOnPlacement);
@@ -21,6 +22,7 @@ export function GameHUD() {
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
+  const setSfxVolume = useGameStore((s) => s.setSfxVolume);
   const resetSession = useGameStore((s) => s.resetSession);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
   const setIdleSummary = useGameStore((s) => s.setIdleSummary);
@@ -145,8 +147,10 @@ export function GameHUD() {
 
   const handleResetSession = () => {
     if (!window.confirm('Reset the current session and start a new game?')) {
+      engine?.emitSfx({ type: 'ui_back', context: 'reset_session' });
       return;
     }
+    engine?.emitSfx({ type: 'ui_confirm', context: 'reset_session' });
     resetSession();
   };
 
@@ -241,7 +245,14 @@ export function GameHUD() {
               <span className="tabular-nums">{simulationClockLabel}</span> ({isDaylight ? 'Jour' : 'Nuit'})
               <button
                 type="button"
-                onClick={() => setDebugOpen((value) => !value)}
+                onClick={() =>
+                  setDebugOpen((value) => {
+                    if (value) {
+                      engine?.emitSfx({ type: 'ui_back', context: 'debug_close' });
+                    }
+                    return !value;
+                  })
+                }
                 aria-expanded={debugOpen}
                 className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
               >
@@ -333,6 +344,7 @@ export function GameHUD() {
                     <span>100%</span>
                   </div>
                 </div>
+
               </div>
             )}
           </Panel>
@@ -434,9 +446,35 @@ export function GameHUD() {
                       </Chip>
                     </button>
 
+                    <div className="space-y-1 px-2 py-1.5">
+                      <div className="label text-ink-muted">Volume effets</div>
+                      <input
+                        aria-label="SFX volume"
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={sfxVolume}
+                        onChange={(e) => setSfxVolume(Number(e.target.value))}
+                        className="w-full accent-accent"
+                      />
+                      <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                        <span>0%</span>
+                        <span>{Math.round(sfxVolume * 100)}%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => setConsoleOpen((o) => !o)}
+                      onClick={() =>
+                        setConsoleOpen((open) => {
+                          if (open) {
+                            engine?.emitSfx({ type: 'ui_back', context: 'console_close' });
+                          }
+                          return !open;
+                        })
+                      }
                       aria-pressed={consoleOpen}
                       className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >

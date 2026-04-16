@@ -30,6 +30,7 @@ import {
   type ConnectionResult,
   type EnergyGlobalStats,
   type PendingEndpoint,
+  type BeltFailure,
   type PlacementResult,
   type PlaceBeltResult,
   type PowerState,
@@ -49,6 +50,7 @@ import { planBelt } from './BeltRouter';
 import { EnergyNetwork } from '../systems/EnergyNetwork';
 import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
 import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../data/buildingCatalog';
+import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
 
 interface PortEndpoint {
   readonly building: BuildingId;
@@ -61,6 +63,14 @@ interface ResolvedPort {
 }
 
 export type GameEngineChangeKind = 'world' | 'viewport';
+
+interface PlaceBuildingOptions {
+  readonly emitSfx?: boolean;
+}
+
+interface RemoveBuildingOptions {
+  readonly emitSfx?: boolean;
+}
 
 export interface ResourceStock {
   coal: number;
@@ -112,10 +122,12 @@ export class GameEngine {
   readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
   readonly batteryCharges = new Map<BuildingId, number>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
+  private readonly sfxListeners = new Set<GameSfxListener>();
   private notificationSuspendDepth = 0;
   private hasPendingWorldNotification = false;
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
+  private readonly poweredExtractors = new Set<BuildingId>();
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -155,6 +167,8 @@ export class GameEngine {
 
     // Battery charge/discharge
     this.updateBatteries(dt);
+
+    this.syncPoweredExtractors();
   }
 
   private processExtraction(): void {
@@ -319,9 +333,16 @@ export class GameEngine {
     typeId: BuildingTypeId,
     origin: TileCoord,
     rotation: Direction = Direction.North,
+    options: PlaceBuildingOptions = {},
   ): BuildingId | null {
+    const emitSfx = options.emitSfx ?? true;
     const result = this.canPlaceBuilding(typeId, origin, rotation);
-    if (!result.ok) return null;
+    if (!result.ok) {
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_place_fail', buildingType: typeId, reason: result.reason });
+      }
+      return null;
+    }
 
     const type = getBuildingType(typeId)!;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
@@ -336,15 +357,24 @@ export class GameEngine {
         this.grid.revealCircle(cx, cy, WATCHTOWER_REVEAL_RADIUS);
       }
       this.notify('world');
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_place_success', buildingType: typeId });
+      }
+    } else if (emitSfx) {
+      this.publishSfx({
+        type: 'building_place_fail',
+        buildingType: typeId,
+        reason: this.buildings.hasIdCapacity() ? 'tile_occupied' : 'id_overflow',
+      });
     }
     return id;
   }
 
-  removeBuilding(id: BuildingId): boolean {
-    return this.removeBuildingInternal(id, true);
+  removeBuilding(id: BuildingId, options: RemoveBuildingOptions = {}): boolean {
+    return this.removeBuildingInternal(id, true, options.emitSfx ?? true);
   }
 
-  private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean): boolean {
+  private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean, emitSfx = false): boolean {
     const building = this.buildings.get(id);
     if (!building) return false;
     const type = getBuildingType(building.typeId);
@@ -370,7 +400,11 @@ export class GameEngine {
     this.batteryCharges.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
+      this.syncPoweredExtractors(false);
       this.notify('world');
+      if (emitSfx) {
+        this.publishSfx({ type: 'building_remove_success', buildingType: building.typeId });
+      }
     }
     return removed;
   }
@@ -378,22 +412,37 @@ export class GameEngine {
   connectBuildings(a: BuildingId, b: BuildingId): boolean {
     const buildingA = this.buildings.get(a);
     const buildingB = this.buildings.get(b);
-    if (!buildingA || !buildingB) return false;
+    if (!buildingA || !buildingB) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
+      return false;
+    }
     if (!this.isEnergyLinkableBuilding(buildingA.typeId) || !this.isEnergyLinkableBuilding(buildingB.typeId)) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
       return false;
     }
     const connected = this.energyNetwork.connect(a, b);
     if (connected) {
+      this.syncPoweredExtractors();
       this.notify('world');
+      this.publishSfx({ type: 'energy_link_connect' });
+    } else {
+      this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
     }
     return connected;
   }
 
   disconnectBuildings(a: BuildingId, b: BuildingId): boolean {
-    if (!this.buildings.get(a) || !this.buildings.get(b)) return false;
+    if (!this.buildings.get(a) || !this.buildings.get(b)) {
+      this.publishSfx({ type: 'energy_link_fail', action: 'disconnect' });
+      return false;
+    }
     const disconnected = this.energyNetwork.disconnect(a, b);
     if (disconnected) {
+      this.syncPoweredExtractors(false);
       this.notify('world');
+      this.publishSfx({ type: 'energy_link_disconnect' });
+    } else {
+      this.publishSfx({ type: 'energy_link_fail', action: 'disconnect' });
     }
     return disconnected;
   }
@@ -545,32 +594,30 @@ export class GameEngine {
 
   placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
     const planned = this.canPlaceBelt(from, to);
-    if (!planned.ok) return planned;
+    const fail = (reason: BeltFailure): PlaceBeltResult => {
+      this.publishSfx({ type: 'belt_place_fail', reason });
+      return { ok: false, reason };
+    };
+    if (!planned.ok) return fail(planned.reason);
 
     const placedSegmentIds: BuildingId[] = [];
 
     for (const segment of planned.plan.segments) {
       if (!this.buildings.hasIdCapacity()) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return { ok: false, reason: 'id_overflow' };
+        return fail('id_overflow');
       }
 
       const placement = this.canPlaceBuilding(segment.typeId, segment.coord, segment.rotation);
       if (!placement.ok) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return {
-          ok: false,
-          reason: placement.reason === 'id_overflow' ? 'id_overflow' : 'tiles_blocked',
-        };
+        return fail(placement.reason === 'id_overflow' ? 'id_overflow' : 'tiles_blocked');
       }
 
-      const id = this.placeBuilding(segment.typeId, segment.coord, segment.rotation);
+      const id = this.placeBuilding(segment.typeId, segment.coord, segment.rotation, { emitSfx: false });
       if (id === null) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return {
-          ok: false,
-          reason: this.buildings.hasIdCapacity() ? 'tiles_blocked' : 'id_overflow',
-        };
+        return fail(this.buildings.hasIdCapacity() ? 'tiles_blocked' : 'id_overflow');
       }
 
       placedSegmentIds.push(id);
@@ -579,23 +626,24 @@ export class GameEngine {
     for (const pending of planned.plan.connections) {
       if (!this.connections.hasIdCapacity()) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return { ok: false, reason: 'id_overflow' };
+        return fail('id_overflow');
       }
 
       const pendingFrom = this.resolvePendingEndpoint(pending.from, placedSegmentIds);
       const pendingTo = this.resolvePendingEndpoint(pending.to, placedSegmentIds);
       if (!pendingFrom || !pendingTo) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return { ok: false, reason: 'tiles_blocked' };
+        return fail('tiles_blocked');
       }
 
       const connectionId = this.connect(pendingFrom, pendingTo);
       if (connectionId === null) {
         this.rollbackPlacedBelts(placedSegmentIds);
-        return { ok: false, reason: 'tiles_blocked' };
+        return fail('tiles_blocked');
       }
     }
 
+    this.publishSfx({ type: 'belt_place_success', segmentCount: placedSegmentIds.length });
     return {
       ok: true,
       segmentIds: placedSegmentIds,
@@ -610,7 +658,7 @@ export class GameEngine {
     const component = this.collectConnectedBeltComponent(segmentId);
     let removedAny = false;
     for (const beltId of component) {
-      removedAny = this.removeBuildingInternal(beltId, false) || removedAny;
+      removedAny = this.removeBuildingInternal(beltId, false, false) || removedAny;
     }
     return removedAny;
   }
@@ -762,6 +810,17 @@ export class GameEngine {
     };
   }
 
+  subscribeSfx(listener: GameSfxListener): () => void {
+    this.sfxListeners.add(listener);
+    return () => {
+      this.sfxListeners.delete(listener);
+    };
+  }
+
+  emitSfx(event: GameSfxEvent): void {
+    this.publishSfx(event);
+  }
+
   runWithoutNotifications<T>(work: () => T): T {
     this.notificationSuspendDepth += 1;
     try {
@@ -876,6 +935,8 @@ export class GameEngine {
       );
     }
 
+    engine.syncPoweredExtractors(false);
+
     return engine;
   }
 
@@ -916,6 +977,23 @@ export class GameEngine {
     return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
 
+  private syncPoweredExtractors(emitSfx = true): void {
+    const nextPowered = new Set<BuildingId>();
+    for (const [id, building] of this.buildings.getAll().entries()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      nextPowered.add(id);
+      if (emitSfx && !this.poweredExtractors.has(id)) {
+        this.publishSfx({ type: 'extractor_on' });
+      }
+    }
+
+    this.poweredExtractors.clear();
+    for (const id of nextPowered) {
+      this.poweredExtractors.add(id);
+    }
+  }
+
   private notify(kind: GameEngineChangeKind): void {
     if (this.notificationSuspendDepth > 0) {
       if (kind === 'world') this.hasPendingWorldNotification = true;
@@ -928,6 +1006,12 @@ export class GameEngine {
   private notifyListeners(kind: GameEngineChangeKind): void {
     for (const listener of this.listeners) {
       listener(kind);
+    }
+  }
+
+  private publishSfx(event: GameSfxEvent): void {
+    for (const listener of this.sfxListeners) {
+      listener(event);
     }
   }
 }
