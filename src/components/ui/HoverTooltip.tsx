@@ -1,4 +1,11 @@
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+
+interface TooltipBubbleProps {
+  content: ReactNode;
+  className?: string;
+  id?: string;
+}
 
 interface HoverTooltipProps {
   content: ReactNode;
@@ -6,17 +13,32 @@ interface HoverTooltipProps {
   id?: string;
 }
 
+export function TooltipBubble({ content, className, id }: TooltipBubbleProps) {
+  return (
+    <div
+      id={id}
+      role="tooltip"
+      className={cn(
+        'pointer-events-none rounded-md border border-border bg-surface px-2 py-1',
+        'panel-title whitespace-nowrap text-[11px] leading-none text-ink',
+        'transition-opacity duration-[var(--duration-hover)]',
+        className,
+      )}
+    >
+      {content}
+    </div>
+  );
+}
+
 export function HoverTooltip({ content, children, id }: HoverTooltipProps) {
   return (
     <div className="group relative">
       {children}
-      <div
+      <TooltipBubble
         id={id}
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-ink whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
-      >
-        {content}
-      </div>
+        content={content}
+        className="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+      />
     </div>
   );
 }

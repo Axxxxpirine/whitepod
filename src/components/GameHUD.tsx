@@ -6,6 +6,7 @@ import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
+import { SelectedResourceTooltip } from './hud/SelectedResourceTooltip';
 import { BuildingPicker } from './hud/BuildingPicker';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
 import { Chip, HoverTooltip, Icon, Panel, PanelHeading } from './ui';
@@ -369,6 +370,7 @@ export function GameHUD() {
       )}
 
       <SelectedBuildingPanel />
+      <SelectedResourceTooltip />
 
       {consoleOpen && (
         <Panel elevated className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden tabular-nums text-xs">

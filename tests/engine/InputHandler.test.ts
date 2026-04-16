@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { TILE_SIZE } from '@/game/constants';
-import { Direction, TileType, type SelectedTool } from '@/game/types';
+import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
 import { SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 
 function makeEngine() {
@@ -21,16 +21,19 @@ describe('InputHandler', () => {
 
   it('selects a building when the selected tool is select', () => {
     engine.grid.fill(TileType.Ground);
-  engine.grid.revealAll();
+    engine.grid.revealAll();
     engine.placeBuilding('placeholder_1x1', { x: 0, y: 0 });
     const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const onBuildingSelected = vi.fn();
+    const onResourceSelected = vi.fn();
     const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
     handler.setBuildingSelectedCallback(onBuildingSelected);
+    handler.setResourceSelectedCallback(onResourceSelected);
 
     handler.onPointerDown(320, 240, 0);
 
     expect(onBuildingSelected).toHaveBeenCalledWith(1);
+    expect(onResourceSelected).toHaveBeenCalledWith(null);
   });
 
   it('places the selected building when the selected tool is a building', () => {
@@ -49,12 +52,32 @@ describe('InputHandler', () => {
   it('returns null when selecting an empty tile', () => {
     const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
     const onBuildingSelected = vi.fn();
+    const onResourceSelected = vi.fn();
     const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
     handler.setBuildingSelectedCallback(onBuildingSelected);
+    handler.setResourceSelectedCallback(onResourceSelected);
 
     handler.onPointerDown(320, 240, 0);
 
     expect(onBuildingSelected).toHaveBeenCalledWith(null);
+    expect(onResourceSelected).toHaveBeenCalledWith(null);
+  });
+
+  it('selects a resource deposit when the selected tool is select', () => {
+    engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
+    const getSelectedTool = (): SelectedTool => ({ kind: 'select' });
+    const onBuildingSelected = vi.fn();
+    const onResourceSelected = vi.fn();
+    const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
+    handler.setBuildingSelectedCallback(onBuildingSelected);
+    handler.setResourceSelectedCallback(onResourceSelected);
+
+    handler.onPointerDown(320, 240, 0);
+
+    expect(onBuildingSelected).toHaveBeenCalledWith(null);
+    expect(onResourceSelected).toHaveBeenCalledWith({ x: 0, y: 0 });
   });
 
   it('places the selected building when the selected tool is building', () => {
@@ -95,7 +118,7 @@ describe('InputHandler', () => {
 
   it('emits clicked building id in energy link mode', () => {
     engine.grid.fill(TileType.Ground);
-  engine.grid.revealAll();
+    engine.grid.revealAll();
     const source = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 0, y: 0 })!;
     const getSelectedTool = (): SelectedTool => ({ kind: 'energy_link' });
     const onEnergyLinkClick = vi.fn();
@@ -165,7 +188,7 @@ describe('InputHandler', () => {
 
   it('does not select a building while building placement mode is active', () => {
     engine.grid.fill(TileType.Ground);
-  engine.grid.revealAll();
+    engine.grid.revealAll();
     engine.placeBuilding('placeholder_1x1', { x: 0, y: 0 });
     const getSelectedTool = (): SelectedTool => ({
       kind: 'building',

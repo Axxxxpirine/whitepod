@@ -5,6 +5,7 @@ import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionS
 import { useGameStore } from '@/store/useGameStore';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
@@ -43,6 +44,8 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'select' },
       selectedBuildingId: null,
       selectedBuildingAnchor: null,
+      selectedResourceTile: null,
+      selectedResourceAnchor: null,
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       sessionEpoch: 0,
@@ -140,6 +143,98 @@ describe('GameHUD', () => {
 
     expect(screen.getByRole('heading', { name: 'Extracteur' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Supprimer le bâtiment' })).toBeInTheDocument();
+  });
+
+  it('renders processor recipes as cards in the selected building panel and widens the panel', () => {
+    const engine = makeEngine();
+    const buildingId = engine.placeBuilding(CONVERTER_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    useGameStore.setState({
+      engine,
+      selectedBuildingId: buildingId,
+      selectedBuildingAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).toBeInTheDocument();
+    expect(screen.getByText('1x Régolithe')).toBeInTheDocument();
+    expect(screen.queryByText('Oxydation (fer)')).not.toBeInTheDocument();
+    expect(screen.queryByText(/\(\d+s\)/)).not.toBeInTheDocument();
+
+    const heading = screen.getByRole('heading', { name: 'Convertisseur' });
+    const panel = heading.parentElement?.parentElement;
+    expect(panel).not.toBeNull();
+    expect(panel).toHaveClass('w-[280px]');
+  });
+
+  it('renders the selected resource tooltip when a deposit is selected', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.getByRole('tooltip', { name: 'Hydrogène' })).toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip outside select mode', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    render(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip when the deposit is removed', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    const { rerender } = render(<GameHUD />);
+    expect(screen.getByText('Hydrogène')).toBeInTheDocument();
+
+    engine.removeResource(8, 8);
+    useGameStore.setState({ selectedResourceAnchor: { x: 121, y: 160 } });
+    rerender(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
+  });
+
+  it('hides the selected resource tooltip when a building covers the deposit', () => {
+    const engine = makeEngine();
+    engine.placeResource(8, 8, ResourceType.Hydrogen);
+    useGameStore.setState({
+      engine,
+      selectedTool: { kind: 'select' },
+      selectedResourceTile: { x: 8, y: 8 },
+      selectedResourceAnchor: { x: 120, y: 160 },
+    });
+
+    const { rerender } = render(<GameHUD />);
+    expect(screen.getByText('Hydrogène')).toBeInTheDocument();
+
+    engine.placeBuilding('extractor_basic', { x: 8, y: 8 });
+    useGameStore.setState({ selectedResourceAnchor: { x: 122, y: 160 } });
+    rerender(<GameHUD />);
+
+    expect(screen.queryByText('Hydrogène')).not.toBeInTheDocument();
   });
 
   it('deletes the selected building and closes the panel', () => {
