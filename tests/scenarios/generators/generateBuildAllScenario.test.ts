@@ -20,8 +20,8 @@ describe('generateBuildAllScenario', () => {
     const synthesizers = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
     const storages     = buildings.filter((b) => b.typeId === STORAGE_BUILDING_TYPE_ID);
 
-    expect(extractors.length).toBe(3);    // Regolith, Hydrogen, Oxygen
-    expect(converters.length).toBe(4);    // IronOxide, AlumOx, SiO2, N2
+    expect(extractors.length).toBe(31);   // Dedicated providers for every storage and processor chain
+    expect(converters.length).toBe(6);    // 4 stored tier-1 outputs + 2 dedicated ceramic feeders
     expect(synthesizers.length).toBe(5);  // Ceramic, Water, Methane, CO2, Ammonia
     expect(storages.length).toBe(12);     // 3 base + 4 converter + 5 synthesizer
   });
@@ -29,9 +29,8 @@ describe('generateBuildAllScenario', () => {
   it('all energy consumers are in a single connected network', () => {
     const result = generateBuildAllScenario(640, 480);
     const networks = result.engine.getEnergyNetworkBalances();
-    // 3 extractors × 4 kW + 4 converters × 6 kW + 5 synthesizers × 10 kW = 86 kW total demand.
-    // All consumers share one subnet through the battery.
-    const mainNetwork = networks.find((n) => n.consumption === 86);
+    // 31 extractors × 4 kW + 6 converters × 6 kW + 5 synthesizers × 10 kW = 210 kW total demand.
+    const mainNetwork = networks.find((n) => n.consumption === 210);
     expect(mainNetwork).toBeDefined();
   });
 
@@ -40,7 +39,7 @@ describe('generateBuildAllScenario', () => {
     const buildings = [...result.engine.getBuildings().values()];
     const processors = buildings.filter((b) => isProcessorTypeId(b.typeId));
 
-    expect(processors.length).toBe(9);
+    expect(processors.length).toBe(11);
     for (const processor of processors) {
       const state = result.engine.getProcessorState(processor.id);
       expect(state).toBeDefined();
@@ -122,6 +121,6 @@ describe('generateBuildAllScenario', () => {
   it('returns select tool and valid viewport', () => {
     const result = generateBuildAllScenario(640, 480);
     expect(result.selectedTool).toEqual({ kind: 'select' });
-    expect(result.viewport.zoom).toBeCloseTo(0.28);
+    expect(result.viewport.zoom).toBeCloseTo(0.25);
   });
 });

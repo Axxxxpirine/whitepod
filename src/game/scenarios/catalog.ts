@@ -6,6 +6,7 @@ import {
 } from '@/game/data/buildingCatalog';
 import { ResourceType, TileType } from '@/game/types';
 import type { ScenarioDefinition, ScenarioListEntry } from './types';
+import { tryBelt } from './generatorUtils';
 
 const bootstrapEnergyScenario: ScenarioDefinition = {
   id: 'bootstrap-energy-grid',
@@ -43,6 +44,13 @@ const bootstrapEnergyScenario: ScenarioDefinition = {
       !engine.connectBuildings(solarEast, ironExtractor)
     ) {
       throw new Error('Failed to wire energy links in bootstrap-energy-grid scenario');
+    }
+
+    if (
+      !tryBelt(engine, { building: regolithExtractor, port: 'out_east' }, { building: storage, port: 'in_west' }) ||
+      !tryBelt(engine, { building: ironExtractor, port: 'out_east' }, { building: storage, port: 'in_north' })
+    ) {
+      throw new Error('Failed to route bootstrap-energy-grid belts');
     }
   },
   simulate: {

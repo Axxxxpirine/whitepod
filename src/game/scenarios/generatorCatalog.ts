@@ -8,7 +8,7 @@ const generators = [
   {
     id: 'tier-simple',
     label: 'Simple',
-    description: 'Starter layout: 3 solar + 1 battery + 2 extractors. Single energy subnet, no belts.',
+    description: 'Starter layout: 4 solar + 1 battery + 3 extractors + 3 storages. Single energy subnet with belts.',
     generate: generateSimpleScenario,
   },
   {

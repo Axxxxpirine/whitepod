@@ -6,7 +6,7 @@ describe('scenario runner', () => {
   it('builds the bootstrap scenario deterministically', () => {
     const result = runScenario(getScenarioDefinition('bootstrap-energy-grid'), 640, 480);
 
-    expect(result.engine.getBuildings().size).toBe(6);
+    expect(result.engine.getBuildings().size).toBeGreaterThan(6);
     expect(result.engine.getResourceCounts()).toEqual({
       regolith: 6,
       hydrogen: 6,

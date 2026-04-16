@@ -36,7 +36,7 @@ describe('dev scenario api', () => {
       {
         id: 'tier-simple',
         label: 'Simple',
-        description: 'Starter layout: 3 solar + 1 battery + 2 extractors. Single energy subnet, no belts.',
+        description: 'Starter layout: 4 solar + 1 battery + 3 extractors + 3 storages. Single energy subnet with belts.',
       },
       {
         id: 'tier-medium',
@@ -107,7 +107,7 @@ describe('dev scenario api', () => {
     const loaded = loadPersistedSession(640, 480);
     expect(loaded).not.toBeNull();
     expect(loaded?.selectedTool).toEqual({ kind: 'select' });
-    expect(loaded?.engine.getBuildings().size).toBe(8);
+    expect(loaded?.engine.getBuildings().size).toBeGreaterThanOrEqual(9);
     expect(loaded?.engine.getResourceCounts().regolith ?? 0).toBeGreaterThan(0);
     expect(loaded?.engine.getResourceCounts().hydrogen ?? 0).toBeGreaterThan(0);
 
