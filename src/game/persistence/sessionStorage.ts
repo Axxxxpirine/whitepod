@@ -26,9 +26,10 @@ export interface PersistedWorldStateV3 {
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
-  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
+  readonly playerStock?: SerializedGameWorld['playerStock'];
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
+  readonly processorStates?: SerializedGameWorld['processorStates'];
 }
 
 export interface PersistedWorldStateV2 {
@@ -39,7 +40,7 @@ export interface PersistedWorldStateV2 {
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
-  readonly playerStock?: { readonly coal: number; readonly ironOre: number; readonly copperOre: number };
+  readonly playerStock?: SerializedGameWorld['playerStock'];
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
 }
@@ -243,6 +244,7 @@ function toSnapshotInput(value: PersistedWorldStateV3 | PersistedWorldStateV2): 
     playerStock: value.playerStock,
     simulationTime: value.simulationTime,
     batteryCharges: value.batteryCharges,
+    processorStates: 'processorStates' in value ? (value as PersistedWorldStateV3).processorStates : undefined,
   };
 }
 
@@ -383,6 +385,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     playerStock: snapshot.playerStock,
     simulationTime: snapshot.simulationTime,
     batteryCharges: snapshot.batteryCharges,
+    processorStates: snapshot.processorStates,
   };
 }
 

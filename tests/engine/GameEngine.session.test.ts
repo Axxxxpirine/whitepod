@@ -8,7 +8,7 @@ describe('GameEngine session snapshots', () => {
     engine.generateMap(77);
     engine.grid.fill(TileType.Ground);
     engine.grid.revealAll();
-    engine.grid.setResource(5, 5, ResourceType.IronOre);
+    engine.grid.setResource(5, 5, ResourceType.Hydrogen);
     engine.placeBuilding('extractor_basic', { x: 5, y: 5 });
     const a = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 10 })!;
     const b = engine.placeBuilding('placeholder_node_1x1', { x: 11, y: 10 })!;
@@ -26,7 +26,7 @@ describe('GameEngine session snapshots', () => {
     restored.viewport.restore(viewport);
 
     expect(restored.mapSeed).toBe(77);
-    expect(restored.getResourceAt(5, 5)).toBe(ResourceType.IronOre);
+    expect(restored.getResourceAt(5, 5)).toBe(ResourceType.Hydrogen);
     expect(restored.getBuildingAt(5, 5)?.typeId).toBe('extractor_basic');
     expect(restored.getConnections().get(connectionId)).toEqual({
       id: connectionId,
@@ -91,7 +91,7 @@ describe('GameEngine session snapshots', () => {
     engine.grid.fill(TileType.Ground);
     engine.grid.revealAll();
     const solarId = engine.placeBuilding('solar_panel', { x: 1, y: 1 })!;
-    engine.grid.setResource(2, 1, ResourceType.IronOre);
+    engine.grid.setResource(2, 1, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding('extractor_basic', { x: 2, y: 1 })!;
     expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
 

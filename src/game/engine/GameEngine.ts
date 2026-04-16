@@ -11,10 +11,13 @@ import {
 import {
   getBuildingType,
   isBeltTypeId,
+  isProcessorTypeId,
   validateCatalog,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
+  CONVERTER_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
+import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -74,9 +77,23 @@ interface RemoveBuildingOptions {
 }
 
 export interface ResourceStock {
-  coal: number;
-  ironOre: number;
-  copperOre: number;
+  regolith: number;
+  hydrogen: number;
+  oxygen: number;
+  ironOxide: number;
+  aluminumOxide: number;
+  siliconDioxide: number;
+  nitrogenGas: number;
+  water: number;
+  methane: number;
+  carbonDioxide: number;
+  ammonia: number;
+  ceramicPlates: number;
+}
+
+export interface ProcessorState {
+  recipeId: RecipeId | null;
+  cycleProgress: number;
 }
 
 export interface SerializedGameWorld {
@@ -89,6 +106,7 @@ export interface SerializedGameWorld {
   readonly playerStock?: ResourceStock;
   readonly simulationTime?: number;
   readonly batteryCharges?: readonly { readonly id: BuildingId; readonly charge: number }[];
+  readonly processorStates?: readonly { readonly id: BuildingId; readonly recipeId: RecipeId | null; readonly cycleProgress: number }[];
 }
 
 interface GameEngineOptions {
@@ -120,8 +138,13 @@ export class GameEngine {
   readonly dayNightCycleSeconds: number;
   simulationTime = 0;
   mapSeed: number;
-  readonly playerStock: ResourceStock = { coal: 0, ironOre: 0, copperOre: 0 };
+  readonly playerStock: ResourceStock = {
+    regolith: 0, hydrogen: 0, oxygen: 0,
+    ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+    water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+  };
   readonly batteryCharges = new Map<BuildingId, number>();
+  readonly processorStates = new Map<BuildingId, ProcessorState>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
   private readonly sfxListeners = new Set<GameSfxListener>();
   private notificationSuspendDepth = 0;
@@ -166,6 +189,9 @@ export class GameEngine {
       this.processExtraction();
     }
 
+    // Processor production
+    this.processProcessors(dt);
+
     // Battery charge/discharge
     this.updateBatteries(dt);
 
@@ -181,15 +207,89 @@ export class GameEngine {
       const idx = toIndex(x, y);
       const resourceType = this.grid.resourceType[idx];
       if (resourceType === ResourceType.None) continue;
-      if (resourceType === ResourceType.Coal) this.playerStock.coal++;
-      else if (resourceType === ResourceType.IronOre) this.playerStock.ironOre++;
-      else if (resourceType === ResourceType.CopperOre) this.playerStock.copperOre++;
+      if (resourceType === ResourceType.Regolith) this.playerStock.regolith++;
+      else if (resourceType === ResourceType.Hydrogen) this.playerStock.hydrogen++;
+      else if (resourceType === ResourceType.Oxygen) this.playerStock.oxygen++;
       this.grid.markDirty(x, y);
       changed = true;
     }
     if (changed) {
       this.notify('world');
     }
+  }
+
+  private static readonly RESOURCE_STOCK_KEY: Record<number, keyof ResourceStock> = {
+    [ResourceType.Regolith]: 'regolith',
+    [ResourceType.Hydrogen]: 'hydrogen',
+    [ResourceType.Oxygen]: 'oxygen',
+    [ResourceType.IronOxide]: 'ironOxide',
+    [ResourceType.AluminumOxide]: 'aluminumOxide',
+    [ResourceType.SiliconDioxide]: 'siliconDioxide',
+    [ResourceType.NitrogenGas]: 'nitrogenGas',
+    [ResourceType.Water]: 'water',
+    [ResourceType.Methane]: 'methane',
+    [ResourceType.CarbonDioxide]: 'carbonDioxide',
+    [ResourceType.Ammonia]: 'ammonia',
+    [ResourceType.CeramicPlates]: 'ceramicPlates',
+  };
+
+  private processProcessors(dt: number): void {
+    let changed = false;
+    for (const [id, state] of this.processorStates) {
+      if (!state.recipeId) continue;
+      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      const recipe = getRecipe(state.recipeId);
+      if (!recipe) continue;
+
+      // Check if playerStock has enough for all inputs
+      let canProduce = true;
+      for (const input of recipe.inputs) {
+        const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
+        if (!key || this.playerStock[key] < input.amount) {
+          canProduce = false;
+          break;
+        }
+      }
+      if (!canProduce) continue;
+
+      state.cycleProgress += dt;
+      if (state.cycleProgress >= recipe.cycleSeconds) {
+        state.cycleProgress -= recipe.cycleSeconds;
+        // Consume inputs
+        for (const input of recipe.inputs) {
+          const key = GameEngine.RESOURCE_STOCK_KEY[input.resourceType]!;
+          this.playerStock[key] -= input.amount;
+        }
+        // Produce output
+        const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType]!;
+        this.playerStock[outKey] += recipe.output.amount;
+        changed = true;
+      }
+    }
+    if (changed) this.notify('world');
+  }
+
+  setProcessorRecipe(buildingId: BuildingId, recipeId: RecipeId | null): boolean {
+    const state = this.processorStates.get(buildingId);
+    if (!state) return false;
+    const building = this.buildings.get(buildingId);
+    if (!building) return false;
+
+    if (recipeId !== null) {
+      const recipe = getRecipe(recipeId);
+      if (!recipe) return false;
+      const expectedBuilding = building.typeId === CONVERTER_BUILDING_TYPE_ID ? 'converter' : 'synthesizer';
+      if (recipe.building !== expectedBuilding) return false;
+    }
+
+    state.recipeId = recipeId;
+    state.cycleProgress = 0;
+    this.notify('world');
+    return true;
+  }
+
+  getProcessorState(buildingId: BuildingId): ProcessorState | undefined {
+    return this.processorStates.get(buildingId);
   }
 
   private collectBatteries(buildingIds: readonly BuildingId[]): BatteryBuildingRef[] {
@@ -352,6 +452,9 @@ export class GameEngine {
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
       }
+      if (isProcessorTypeId(typeId)) {
+        this.processorStates.set(id, { recipeId: null, cycleProgress: 0 });
+      }
       if (typeId === WATCHTOWER_BUILDING_TYPE_ID) {
         const cx = origin.x + Math.floor(type.footprint.w / 2);
         const cy = origin.y + Math.floor(type.footprint.h / 2);
@@ -399,6 +502,7 @@ export class GameEngine {
     this.connections.unregisterAllFor(id);
     this.energyNetwork.unregisterBuilding(id);
     this.batteryCharges.delete(id);
+    this.processorStates.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
       this.syncPoweredExtractors(false);
@@ -565,17 +669,17 @@ export class GameEngine {
     return { ...this.playerStock };
   }
 
-  getResourceRates(): { coal: number; ironOre: number; copperOre: number } {
-    let coal = 0, ironOre = 0, copperOre = 0;
+  getResourceRates(): { regolith: number; hydrogen: number; oxygen: number } {
+    let regolith = 0, hydrogen = 0, oxygen = 0;
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
-      if (resource === ResourceType.Coal) coal += EXTRACTOR_RATE_PER_MIN;
-      else if (resource === ResourceType.IronOre) ironOre += EXTRACTOR_RATE_PER_MIN;
-      else if (resource === ResourceType.CopperOre) copperOre += EXTRACTOR_RATE_PER_MIN;
+      if (resource === ResourceType.Regolith) regolith += EXTRACTOR_RATE_PER_MIN;
+      else if (resource === ResourceType.Hydrogen) hydrogen += EXTRACTOR_RATE_PER_MIN;
+      else if (resource === ResourceType.Oxygen) oxygen += EXTRACTOR_RATE_PER_MIN;
     }
-    return { coal, ironOre, copperOre };
+    return { regolith, hydrogen, oxygen };
   }
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
@@ -883,6 +987,11 @@ export class GameEngine {
       batteryCharges.push({ id, charge });
     }
 
+    const processorStates: Array<{ id: BuildingId; recipeId: RecipeId | null; cycleProgress: number }> = [];
+    for (const [id, state] of this.processorStates) {
+      processorStates.push({ id, recipeId: state.recipeId, cycleProgress: state.cycleProgress });
+    }
+
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
@@ -893,6 +1002,7 @@ export class GameEngine {
       playerStock: { ...this.playerStock },
       simulationTime: this.simulationTime,
       batteryCharges,
+      processorStates,
     };
   }
 
@@ -922,6 +1032,9 @@ export class GameEngine {
         if (type?.energy?.battery) {
           engine.batteryCharges.set(buildingId, 0);
         }
+        if (isProcessorTypeId(building.typeId)) {
+          engine.processorStates.set(buildingId, { recipeId: null, cycleProgress: 0 });
+        }
       }
     }
     for (const link of snapshot.energyLinks ?? []) {
@@ -931,9 +1044,10 @@ export class GameEngine {
     }
 
     if (snapshot.playerStock) {
-      engine.playerStock.coal = snapshot.playerStock.coal;
-      engine.playerStock.ironOre = snapshot.playerStock.ironOre;
-      engine.playerStock.copperOre = snapshot.playerStock.copperOre;
+      const s = snapshot.playerStock;
+      for (const key of Object.keys(engine.playerStock) as (keyof ResourceStock)[]) {
+        engine.playerStock[key] = s[key] ?? 0;
+      }
     }
 
     if (typeof snapshot.simulationTime === 'number' && Number.isFinite(snapshot.simulationTime)) {
@@ -947,6 +1061,16 @@ export class GameEngine {
           const capacity = type?.energy?.battery?.capacity ?? 0;
           engine.batteryCharges.set(entry.id, Math.max(0, Math.min(entry.charge, capacity)));
         }
+      }
+    }
+
+    // Restore processor states from snapshot
+    for (const entry of snapshot.processorStates ?? []) {
+      if (engine.processorStates.has(entry.id)) {
+        engine.processorStates.set(entry.id, {
+          recipeId: entry.recipeId,
+          cycleProgress: entry.cycleProgress,
+        });
       }
     }
 

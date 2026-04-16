@@ -48,6 +48,11 @@ describe('dev scenario api', () => {
         label: 'Complex',
         description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
       },
+      {
+        id: 'tier-full-isru',
+        label: 'Full ISRU',
+        description: 'Complete pipeline: extractors + converters + synthesizer. All base + refined resources.',
+      },
     ]);
   });
 
@@ -63,9 +68,11 @@ describe('dev scenario api', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.selectedTool).toEqual({ kind: 'building', buildingType: 'solar_panel' });
     expect(loaded?.engine.getResourceCounts()).toEqual({
-      coal: 6,
-      ironOre: 6,
-      copperOre: 0,
+      regolith: 6,
+      hydrogen: 6,
+      oxygen: 0,
+      ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
     });
     expect(loaded?.engine.getViewportSnapshot()).toEqual({
       centerX: 384,
@@ -101,8 +108,8 @@ describe('dev scenario api', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.selectedTool).toEqual({ kind: 'select' });
     expect(loaded?.engine.getBuildings().size).toBe(8);
-    expect(loaded?.engine.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
-    expect(loaded?.engine.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
+    expect(loaded?.engine.getResourceCounts().regolith ?? 0).toBeGreaterThan(0);
+    expect(loaded?.engine.getResourceCounts().hydrogen ?? 0).toBeGreaterThan(0);
 
     let visibleUncoveredDeposits = 0;
     const visible = loaded!.engine.getVisibleTiles();

@@ -128,7 +128,7 @@ describe('GameHUD', () => {
 
   it('renders the selected building panel when a building is selected', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -144,7 +144,7 @@ describe('GameHUD', () => {
 
   it('deletes the selected building and closes the panel', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     const removeBuilding = vi.spyOn(engine, 'removeBuilding');
     useGameStore.setState({
@@ -165,7 +165,7 @@ describe('GameHUD', () => {
 
   it('clears the selected building panel when switching tools', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -184,7 +184,7 @@ describe('GameHUD', () => {
 
   it('clears pending energy-link source when deleting the selected building', () => {
     const engine = makeEngine();
-    engine.grid.setResource(8, 8, ResourceType.IronOre);
+    engine.grid.setResource(8, 8, ResourceType.Hydrogen);
     const buildingId = engine.placeBuilding('extractor_basic', { x: 8, y: 8 })!;
     useGameStore.setState({
       engine,
@@ -259,7 +259,7 @@ describe('GameHUD', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
-    engine.placeResource(9, 8, ResourceType.IronOre);
+    engine.placeResource(9, 8, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 11, y: 8 })!;
     engine.connectBuildings(solarId, extractorId);
@@ -283,9 +283,9 @@ describe('GameHUD', () => {
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
     const batteryId = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 10, y: 8 })!;
-    engine.placeResource(13, 8, ResourceType.Coal);
-    engine.placeResource(15, 8, ResourceType.IronOre);
-    engine.placeResource(17, 8, ResourceType.CopperOre);
+    engine.placeResource(13, 8, ResourceType.Regolith);
+    engine.placeResource(15, 8, ResourceType.Hydrogen);
+    engine.placeResource(17, 8, ResourceType.Oxygen);
     const extractorA = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 13, y: 8 })!;
     const extractorB = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 15, y: 8 })!;
     const extractorC = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 17, y: 8 })!;
@@ -312,7 +312,7 @@ describe('GameHUD', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
     const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
-    engine.placeResource(9, 8, ResourceType.IronOre);
+    engine.placeResource(9, 8, ResourceType.Hydrogen);
     const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 9, y: 8 })!;
     engine.connectBuildings(solarId, extractorId);
 
@@ -378,8 +378,8 @@ describe('GameHUD', () => {
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);
     expect(state.sessionEpoch).toBe(1);
-    expect(state.engine?.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
-    expect(state.engine?.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().regolith ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().hydrogen ?? 0).toBeGreaterThan(0);
     expect(countUncoveredResources(state.engine!)).toBeGreaterThanOrEqual(3);
     expect(screen.queryByText('Active')).not.toBeInTheDocument();
   });

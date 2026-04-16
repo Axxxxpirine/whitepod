@@ -22,7 +22,7 @@ function makeEngine() {
   engine.generateMap(99);
   engine.grid.fill(TileType.Ground);
   engine.grid.revealAll();
-  engine.grid.setResource(8, 8, ResourceType.Coal);
+  engine.grid.setResource(8, 8, ResourceType.Regolith);
   engine.placeBuilding('extractor_basic', { x: 8, y: 8 });
   return engine;
 }
@@ -52,7 +52,7 @@ describe('persistent storage', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.sessionId).toBe('session-a');
     expect(loaded?.selectedTool).toEqual({ kind: 'building', buildingType: 'extractor_basic' });
-    expect(loaded?.engine.getResourceAt(8, 8)).toBe(ResourceType.Coal);
+    expect(loaded?.engine.getResourceAt(8, 8)).toBe(ResourceType.Regolith);
     expect(loaded?.engine.getBuildingAt(8, 8)?.typeId).toBe('extractor_basic');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });

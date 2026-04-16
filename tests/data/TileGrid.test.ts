@@ -84,7 +84,7 @@ describe('TileGrid', () => {
       const grid = new TileGrid();
       grid.fill(TileType.Ground);
       grid.setType(0, 0, TileType.Water);
-      grid.setResource(1, 0, ResourceType.Coal);
+      grid.setResource(1, 0, ResourceType.Regolith);
       grid.elevation[0] = 42;
       grid.flags[100] = 7;
 
@@ -92,7 +92,7 @@ describe('TileGrid', () => {
 
       expect(restored.getType(0, 0)).toBe(TileType.Water);
       expect(restored.getType(1, 0)).toBe(TileType.Ground);
-      expect(restored.getResource(1, 0)).toBe(ResourceType.Coal);
+      expect(restored.getResource(1, 0)).toBe(ResourceType.Regolith);
       expect(restored.elevation[0]).toBe(42);
       expect(restored.flags[100]).toBe(7);
     });
@@ -100,12 +100,12 @@ describe('TileGrid', () => {
     it('normalizes restored resource amounts for existing deposits', () => {
       const grid = new TileGrid();
       grid.fill(TileType.Ground);
-      grid.setResource(1, 0, ResourceType.Coal);
+      grid.setResource(1, 0, ResourceType.Regolith);
       grid.resourceAmount[1] = 0;
 
       const restored = TileGrid.deserialize(grid.serialize());
 
-      expect(restored.getResource(1, 0)).toBe(ResourceType.Coal);
+      expect(restored.getResource(1, 0)).toBe(ResourceType.Regolith);
       expect(restored.getResourceAmount(1, 0)).toBe(RESOURCE_DEPOSIT_AMOUNT);
     });
   });

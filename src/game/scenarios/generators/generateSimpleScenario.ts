@@ -38,16 +38,16 @@ interface LayoutTemplate {
 const STARTER_LAYOUTS: readonly LayoutTemplate[] = [
   {
     extractorDeposits: [
-      { dx: -5, dy: -1, type: ResourceType.Coal },
-      { dx: 5, dy: 0, type: ResourceType.IronOre },
-      { dx: 0, dy: -5, type: ResourceType.Coal },
+      { dx: -5, dy: -1, type: ResourceType.Regolith },
+      { dx: 5, dy: 0, type: ResourceType.Hydrogen },
+      { dx: 0, dy: -5, type: ResourceType.Regolith },
     ],
     visibleDeposits: [
-      { dx: -2, dy: 6, type: ResourceType.Coal },
-      { dx: 3, dy: 7, type: ResourceType.CopperOre },
-      { dx: 7, dy: -5, type: ResourceType.IronOre },
-      { dx: -7, dy: 4, type: ResourceType.IronOre },
-      { dx: 6, dy: 6, type: ResourceType.Coal },
+      { dx: -2, dy: 6, type: ResourceType.Regolith },
+      { dx: 3, dy: 7, type: ResourceType.Oxygen },
+      { dx: 7, dy: -5, type: ResourceType.Hydrogen },
+      { dx: -7, dy: 4, type: ResourceType.Hydrogen },
+      { dx: 6, dy: 6, type: ResourceType.Regolith },
     ],
     solarTargets: [
       { dx: -1, dy: 2 },
@@ -59,16 +59,16 @@ const STARTER_LAYOUTS: readonly LayoutTemplate[] = [
   },
   {
     extractorDeposits: [
-      { dx: -1, dy: -5, type: ResourceType.Coal },
-      { dx: 0, dy: 5, type: ResourceType.IronOre },
-      { dx: 6, dy: 0, type: ResourceType.Coal },
+      { dx: -1, dy: -5, type: ResourceType.Regolith },
+      { dx: 0, dy: 5, type: ResourceType.Hydrogen },
+      { dx: 6, dy: 0, type: ResourceType.Regolith },
     ],
     visibleDeposits: [
-      { dx: 6, dy: -3, type: ResourceType.IronOre },
-      { dx: 7, dy: 3, type: ResourceType.CopperOre },
-      { dx: -6, dy: 6, type: ResourceType.IronOre },
-      { dx: -7, dy: 0, type: ResourceType.Coal },
-      { dx: 4, dy: 7, type: ResourceType.CopperOre },
+      { dx: 6, dy: -3, type: ResourceType.Hydrogen },
+      { dx: 7, dy: 3, type: ResourceType.Oxygen },
+      { dx: -6, dy: 6, type: ResourceType.Hydrogen },
+      { dx: -7, dy: 0, type: ResourceType.Regolith },
+      { dx: 4, dy: 7, type: ResourceType.Oxygen },
     ],
     solarTargets: [
       { dx: 2, dy: -1 },
@@ -80,16 +80,16 @@ const STARTER_LAYOUTS: readonly LayoutTemplate[] = [
   },
   {
     extractorDeposits: [
-      { dx: -6, dy: 1, type: ResourceType.Coal },
-      { dx: 4, dy: -3, type: ResourceType.IronOre },
-      { dx: -3, dy: 6, type: ResourceType.Coal },
+      { dx: -6, dy: 1, type: ResourceType.Regolith },
+      { dx: 4, dy: -3, type: ResourceType.Hydrogen },
+      { dx: -3, dy: 6, type: ResourceType.Regolith },
     ],
     visibleDeposits: [
-      { dx: 1, dy: 7, type: ResourceType.IronOre },
-      { dx: 6, dy: 5, type: ResourceType.CopperOre },
-      { dx: -7, dy: -5, type: ResourceType.IronOre },
-      { dx: 7, dy: -1, type: ResourceType.CopperOre },
-      { dx: -7, dy: 7, type: ResourceType.Coal },
+      { dx: 1, dy: 7, type: ResourceType.Hydrogen },
+      { dx: 6, dy: 5, type: ResourceType.Oxygen },
+      { dx: -7, dy: -5, type: ResourceType.Hydrogen },
+      { dx: 7, dy: -1, type: ResourceType.Oxygen },
+      { dx: -7, dy: 7, type: ResourceType.Regolith },
     ],
     solarTargets: [
       { dx: -1, dy: -1 },

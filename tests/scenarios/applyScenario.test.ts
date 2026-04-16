@@ -29,7 +29,11 @@ describe('applyScenarioToLiveSession', () => {
       linkSolarOnPlacement: true,
       idleSummary: {
         appliedSeconds: 60,
-        resourceDelta: { coal: 1, ironOre: 2, copperOre: 3 },
+        resourceDelta: {
+          regolith: 1, hydrogen: 2, oxygen: 3,
+          ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
+          water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+        },
         capped: false,
       },
     });
@@ -93,8 +97,8 @@ describe('applyScenarioToLiveSession', () => {
     }
 
     expect(visibleUncoveredDeposits).toBeGreaterThanOrEqual(3);
-    expect(state.engine?.getResourceCounts().coal ?? 0).toBeGreaterThan(0);
-    expect(state.engine?.getResourceCounts().ironOre ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().regolith ?? 0).toBeGreaterThan(0);
+    expect(state.engine?.getResourceCounts().hydrogen ?? 0).toBeGreaterThan(0);
 
     const loaded = loadPersistedSession(640, 480);
     expect(loaded?.engine.getBuildings().size).toBeGreaterThanOrEqual(8);

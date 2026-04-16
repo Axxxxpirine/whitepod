@@ -15,13 +15,13 @@ const bootstrapEnergyScenario: ScenarioDefinition = {
     engine.grid.revealAll();
     engine.setSimulationTime(0.5);
 
-    engine.placeResource(8, 8, ResourceType.Coal);
-    engine.placeResource(12, 8, ResourceType.IronOre);
+    engine.placeResource(8, 8, ResourceType.Regolith);
+    engine.placeResource(12, 8, ResourceType.Hydrogen);
 
     const solarWest = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 6, y: 8 });
     const battery = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 9, y: 10 });
     const solarEast = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 12, y: 10 });
-    const coalExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 });
+    const regolithExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 });
     const ironExtractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 12, y: 8 });
     const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 15, y: 7 });
 
@@ -29,7 +29,7 @@ const bootstrapEnergyScenario: ScenarioDefinition = {
       solarWest === null ||
       battery === null ||
       solarEast === null ||
-      coalExtractor === null ||
+      regolithExtractor === null ||
       ironExtractor === null ||
       storage === null
     ) {
@@ -39,7 +39,7 @@ const bootstrapEnergyScenario: ScenarioDefinition = {
     if (
       !engine.connectBuildings(solarWest, battery) ||
       !engine.connectBuildings(battery, solarEast) ||
-      !engine.connectBuildings(battery, coalExtractor) ||
+      !engine.connectBuildings(battery, regolithExtractor) ||
       !engine.connectBuildings(solarEast, ironExtractor)
     ) {
       throw new Error('Failed to wire energy links in bootstrap-energy-grid scenario');

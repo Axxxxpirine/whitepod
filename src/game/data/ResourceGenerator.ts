@@ -16,21 +16,21 @@ const RESOURCE_COVERAGE_MULTIPLIER = 0.7;
 
 const DEFAULT_CONFIGS: readonly ResourceConfig[] = [
   {
-    type: ResourceType.Coal,
+    type: ResourceType.Regolith,
     coverage: 0.016 * RESOURCE_COVERAGE_MULTIPLIER,
     minSpacing: 2,
     pairChance: 0.12,
     seedOffset: 0,
   },
   {
-    type: ResourceType.IronOre,
+    type: ResourceType.Hydrogen,
     coverage: 0.006 * RESOURCE_COVERAGE_MULTIPLIER,
     minSpacing: 2,
     pairChance: 0.08,
     seedOffset: 1000,
   },
   {
-    type: ResourceType.CopperOre,
+    type: ResourceType.Oxygen,
     coverage: 0.0026 * RESOURCE_COVERAGE_MULTIPLIER,
     minSpacing: 2,
     pairChance: 0.06,

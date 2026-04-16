@@ -12,7 +12,7 @@ function makePoweredExtractorEngine(): GameEngine {
   engine.grid.fill(TileType.Ground);
   engine.grid.revealAll();
   engine.setSimulationTime(0.5);
-  engine.grid.setResource(5, 5, ResourceType.Coal);
+  engine.grid.setResource(5, 5, ResourceType.Regolith);
   const solarId = engine.placeBuilding('solar_panel', { x: 4, y: 5 });
   const extractorId = engine.placeBuilding('extractor_basic', { x: 5, y: 5 });
   if (solarId !== null && extractorId !== null) {
@@ -41,7 +41,7 @@ describe('IdleCatchup', () => {
     expect(idleResult.appliedSeconds).toBe(3600);
     expect(idleEngine.simulationTime).toBeCloseTo(activeEngine.simulationTime, 8);
     expect(idleEngine.getResourceCounts()).toEqual(activeEngine.getResourceCounts());
-    expect(idleResult.resourceDelta.coal).toBeGreaterThan(0);
+    expect(idleResult.resourceDelta.regolith).toBeGreaterThan(0);
   });
 
   it('caps catchup to 8h', () => {

@@ -97,9 +97,9 @@ export function GameHUD() {
     const delta = idleSummary.resourceDelta;
     return {
       durationLabel,
-      coal: delta.coal,
-      ironOre: delta.ironOre,
-      copperOre: delta.copperOre,
+      regolith: delta.regolith,
+      hydrogen: delta.hydrogen,
+      oxygen: delta.oxygen,
       capped: idleSummary.capped,
     };
   }, [idleSummary]);
@@ -181,7 +181,7 @@ export function GameHUD() {
           <div className="rounded-xl border border-emerald-300/25 bg-black/75 px-3 py-2 text-xs text-white/90 shadow-xl backdrop-blur-md">
             <div className="font-semibold text-emerald-300">Progression hors ligne: {idleSummaryText.durationLabel}</div>
             <div className="mt-1 text-white/75">
-              +{idleSummaryText.coal} charbon, +{idleSummaryText.ironOre} fer, +{idleSummaryText.copperOre} cuivre
+              +{idleSummaryText.regolith} régolithe, +{idleSummaryText.hydrogen} hydrogène, +{idleSummaryText.oxygen} oxygène
             </div>
             {idleSummaryText.capped && <div className="mt-0.5 text-[11px] text-amber-300/90">Cap offline appliqué (8h).</div>}
           </div>
@@ -196,19 +196,19 @@ export function GameHUD() {
                 <div className="label mb-1.5 text-ink-muted">Ressources</div>
                 <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/coal.png" className="h-4 w-4 object-contain" alt="Charbon" />
-                    <span className="font-bold tabular-nums">{resourceCounts.coal}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.coal ?? 0}/min</span>
+                    <img src="sprites/regolith.png" className="h-4 w-4 object-contain" alt="Régolithe" />
+                    <span className="font-bold tabular-nums">{resourceCounts.regolith}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.regolith ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/iron-ore.png" className="h-4 w-4 object-contain" alt="Minerai de fer" />
-                    <span className="font-bold tabular-nums">{resourceCounts.ironOre}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.ironOre ?? 0}/min</span>
+                    <img src="sprites/hydrogen.png" className="h-4 w-4 object-contain" alt="Hydrogène" />
+                    <span className="font-bold tabular-nums">{resourceCounts.hydrogen}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.hydrogen ?? 0}/min</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <img src="sprites/copper-ore.png" className="h-4 w-4 object-contain" alt="Cuivre" />
-                    <span className="font-bold tabular-nums">{resourceCounts.copperOre}</span>
-                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.copperOre ?? 0}/min</span>
+                    <img src="sprites/oxygen.png" className="h-4 w-4 object-contain" alt="Oxygène" />
+                    <span className="font-bold tabular-nums">{resourceCounts.oxygen}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{resourceRates?.oxygen ?? 0}/min</span>
                   </div>
                 </div>
               </>

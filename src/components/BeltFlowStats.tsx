@@ -11,9 +11,9 @@ interface BeltFlowStatsProps {
 }
 
 const SPRITE_BY_RESOURCE: Record<number, string> = {
-  [ResourceType.Coal]: 'sprites/coal.png',
-  [ResourceType.IronOre]: 'sprites/iron-ore.png',
-  [ResourceType.CopperOre]: 'sprites/copper-ore.png',
+  [ResourceType.Regolith]: 'sprites/regolith.png',
+  [ResourceType.Hydrogen]: 'sprites/hydrogen.png',
+  [ResourceType.Oxygen]: 'sprites/oxygen.png',
 };
 
 export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {

@@ -59,30 +59,30 @@ describe('Extraction rate accuracy', () => {
   it('produces exactly N items after N extraction intervals', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     for (let n = 1; n <= 10; n++) {
       engine.update(EXTRACTION_INTERVAL_S);
-      expect(engine.getResourceCounts().coal).toBe(n);
+      expect(engine.getResourceCounts().regolith).toBe(n);
     }
   });
 
   it('produces 30 items in exactly 60 seconds at steady state', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     simulate(engine, 60, EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().coal).toBe(30);
+    expect(engine.getResourceCounts().regolith).toBe(30);
   });
 
   it('produces 0 items when extractor is unpowered', () => {
     const engine = steadyEngine();
-    placeExtractorWithResource(engine, 5, 5, ResourceType.IronOre);
+    placeExtractorWithResource(engine, 5, 5, ResourceType.Hydrogen);
     simulate(engine, 120, EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().ironOre).toBe(0);
+    expect(engine.getResourceCounts().hydrogen).toBe(0);
   });
 
   it('handles all three resource types independently', () => {
@@ -90,32 +90,32 @@ describe('Extraction rate accuracy', () => {
     const s1 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const s2 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 3 })!;
     const s3 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 5 })!;
-    const eCoal = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
-    const eIron = placeExtractorWithResource(engine, 2, 3, ResourceType.IronOre);
-    const eCopper = placeExtractorWithResource(engine, 2, 5, ResourceType.CopperOre);
-    engine.connectBuildings(s1, eCoal);
-    engine.connectBuildings(s2, eIron);
-    engine.connectBuildings(s3, eCopper);
+    const eRegolith = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
+    const eHydrogen = placeExtractorWithResource(engine, 2, 3, ResourceType.Hydrogen);
+    const eOxygen = placeExtractorWithResource(engine, 2, 5, ResourceType.Oxygen);
+    engine.connectBuildings(s1, eRegolith);
+    engine.connectBuildings(s2, eHydrogen);
+    engine.connectBuildings(s3, eOxygen);
 
     for (let i = 0; i < 15; i++) engine.update(EXTRACTION_INTERVAL_S);
 
     const counts = engine.getResourceCounts();
-    expect(counts.coal).toBe(15);
-    expect(counts.ironOre).toBe(15);
-    expect(counts.copperOre).toBe(15);
+    expect(counts.regolith).toBe(15);
+    expect(counts.hydrogen).toBe(15);
+    expect(counts.oxygen).toBe(15);
   });
 
   it('reports correct rates for mixed powered/unpowered extractors', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const powered = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
-    placeExtractorWithResource(engine, 10, 10, ResourceType.Coal);
+    const powered = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
+    placeExtractorWithResource(engine, 10, 10, ResourceType.Regolith);
     engine.connectBuildings(solar, powered);
 
     const rates = engine.getResourceRates();
-    expect(rates.coal).toBe(EXTRACTOR_RATE_PER_MIN);
-    expect(rates.ironOre).toBe(0);
-    expect(rates.copperOre).toBe(0);
+    expect(rates.regolith).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(rates.hydrogen).toBe(0);
+    expect(rates.oxygen).toBe(0);
   });
 });
 
@@ -131,8 +131,8 @@ describe('Energy balance arithmetic', () => {
 
   it('1 solar (10 kW) powers exactly 2 extractors (4 kW each) with 2 kW remaining', () => {
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const e1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Coal);
-    const e2 = placeExtractorWithResource(engine, 5, 1, ResourceType.IronOre);
+    const e1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Regolith);
+    const e2 = placeExtractorWithResource(engine, 5, 1, ResourceType.Hydrogen);
     engine.connectBuildings(solar, e1);
     engine.connectBuildings(solar, e2);
 
@@ -147,7 +147,7 @@ describe('Energy balance arithmetic', () => {
   it('1 solar cannot power 3 extractors (12 kW > 10 kW), all unpowered', () => {
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractors = [3, 5, 7].map((x) => {
-      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Coal);
+      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Regolith);
       engine.connectBuildings(solar, ext);
       return ext;
     });
@@ -165,7 +165,7 @@ describe('Energy balance arithmetic', () => {
     const s1 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const s2 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 3 })!;
     const extractors = [3, 5, 7, 9, 11].map((x) => {
-      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Coal);
+      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Regolith);
       engine.connectBuildings(s1, ext);
       return ext;
     });
@@ -183,7 +183,7 @@ describe('Energy balance arithmetic', () => {
   it('adding a solar to an underpowered network restores power', () => {
     const s1 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const extractors = [3, 5, 7].map((x) => {
-      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Coal);
+      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Regolith);
       engine.connectBuildings(s1, ext);
       return ext;
     });
@@ -202,9 +202,9 @@ describe('Energy balance arithmetic', () => {
   it('removing a solar from a balanced network cuts all consumers', () => {
     const s1 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const s2 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 3 })!;
-    const ext1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Coal);
-    const ext2 = placeExtractorWithResource(engine, 5, 1, ResourceType.IronOre);
-    const ext3 = placeExtractorWithResource(engine, 7, 1, ResourceType.CopperOre);
+    const ext1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Regolith);
+    const ext2 = placeExtractorWithResource(engine, 5, 1, ResourceType.Hydrogen);
+    const ext3 = placeExtractorWithResource(engine, 7, 1, ResourceType.Oxygen);
     engine.connectBuildings(s1, s2);
     engine.connectBuildings(s1, ext1);
     engine.connectBuildings(s1, ext2);
@@ -266,7 +266,7 @@ describe('Battery charge/discharge numerics', () => {
   it('discharges at deficit rate: 4 kW deficit for 1 sim-hour = 4 kWh', () => {
     const engine = noonEngine();
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Regolith);
     engine.connectBuildings(bat, ext);
     engine.batteryCharges.set(bat, battery.capacity);
 
@@ -280,7 +280,7 @@ describe('Battery charge/discharge numerics', () => {
   it('battery fully depletes and extractor stops', () => {
     const engine = noonEngine();
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Regolith);
     engine.connectBuildings(bat, ext);
     engine.batteryCharges.set(bat, battery.capacity);
 
@@ -293,7 +293,7 @@ describe('Battery charge/discharge numerics', () => {
   it('battery runtime: charge decreases monotonically under pure deficit', () => {
     const engine = noonEngine();
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Regolith);
     engine.connectBuildings(bat, ext);
     engine.batteryCharges.set(bat, battery.capacity);
 
@@ -326,7 +326,7 @@ describe('Battery charge/discharge numerics', () => {
     const engine = noonEngine();
     const bat1 = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const bat2 = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 4, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 7, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 7, 1, ResourceType.Regolith);
     engine.connectBuildings(bat1, ext);
     engine.connectBuildings(bat2, ext);
     engine.batteryCharges.set(bat1, battery.capacity);
@@ -344,7 +344,7 @@ describe('Battery charge/discharge numerics', () => {
     const engine = noonEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 6, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 6, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, bat);
     engine.connectBuildings(solar, ext);
 
@@ -395,7 +395,7 @@ describe('Day/night cycle & solar production', () => {
     groundEverywhere(engine);
 
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     const net = engine.getEnergyNetworkForBuilding(solar)!;
@@ -430,11 +430,11 @@ describe('Day/night cycle & solar production', () => {
     groundEverywhere(engine);
 
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     simulate(engine, CYCLE_S / 2, EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().coal).toBe(0);
+    expect(engine.getResourceCounts().regolith).toBe(0);
   });
 });
 
@@ -450,7 +450,7 @@ describe('Integrated economy scenarios', () => {
 
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 6, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 6, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, bat);
     engine.connectBuildings(solar, ext);
 
@@ -458,7 +458,7 @@ describe('Integrated economy scenarios', () => {
     engine.batteryCharges.set(bat, battery.capacity);
 
     simulate(engine, CYCLE_S, EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().coal).toBeGreaterThan(0);
+    expect(engine.getResourceCounts().regolith).toBeGreaterThan(0);
   });
 
   it('scaling: N extractors need ceil(N*4/10) solars', () => {
@@ -474,7 +474,7 @@ describe('Integrated economy scenarios', () => {
       const extractors: number[] = [];
       for (let i = 0; i < n; i++) {
         const x = 10 + i * 2;
-        const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Coal);
+        const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Regolith);
         engine.connectBuildings(solars[0], ext);
         extractors.push(ext);
       }
@@ -492,7 +492,7 @@ describe('Integrated economy scenarios', () => {
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
     const extractors = [6, 8, 10].map((x) => {
-      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Coal);
+      const ext = placeExtractorWithResource(engine, x, 1, ResourceType.Regolith);
       engine.connectBuildings(solar, ext);
       return ext;
     });
@@ -519,41 +519,41 @@ describe('Integrated economy scenarios', () => {
     const s2 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 3 })!;
     engine.connectBuildings(s1, s2);
 
-    const coal1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Coal);
-    const coal2 = placeExtractorWithResource(engine, 5, 1, ResourceType.Coal);
-    const iron1 = placeExtractorWithResource(engine, 7, 1, ResourceType.IronOre);
-    const copper1 = placeExtractorWithResource(engine, 9, 1, ResourceType.CopperOre);
-    for (const ext of [coal1, coal2, iron1, copper1]) {
+    const regolith1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Regolith);
+    const regolith2 = placeExtractorWithResource(engine, 5, 1, ResourceType.Regolith);
+    const hydrogen1 = placeExtractorWithResource(engine, 7, 1, ResourceType.Hydrogen);
+    const oxygen1 = placeExtractorWithResource(engine, 9, 1, ResourceType.Oxygen);
+    for (const ext of [regolith1, regolith2, hydrogen1, oxygen1]) {
       engine.connectBuildings(s1, ext);
     }
 
     for (let i = 0; i < 20; i++) engine.update(EXTRACTION_INTERVAL_S);
 
     const counts = engine.getResourceCounts();
-    expect(counts.coal).toBe(40);
-    expect(counts.ironOre).toBe(20);
-    expect(counts.copperOre).toBe(20);
+    expect(counts.regolith).toBe(40);
+    expect(counts.hydrogen).toBe(20);
+    expect(counts.oxygen).toBe(20);
   });
 
   it('disconnecting power mid-extraction stops production immediately', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     for (let i = 0; i < 5; i++) engine.update(EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().coal).toBe(5);
+    expect(engine.getResourceCounts().regolith).toBe(5);
 
     engine.disconnectBuildings(solar, ext);
 
     for (let i = 0; i < 10; i++) engine.update(EXTRACTION_INTERVAL_S);
-    expect(engine.getResourceCounts().coal).toBe(5);
+    expect(engine.getResourceCounts().regolith).toBe(5);
   });
 
   it('reconnecting power resumes production', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     for (let i = 0; i < 5; i++) engine.update(EXTRACTION_INTERVAL_S);
@@ -562,7 +562,7 @@ describe('Integrated economy scenarios', () => {
     engine.connectBuildings(solar, ext);
     for (let i = 0; i < 5; i++) engine.update(EXTRACTION_INTERVAL_S);
 
-    expect(engine.getResourceCounts().coal).toBe(10);
+    expect(engine.getResourceCounts().regolith).toBe(10);
   });
 });
 
@@ -589,7 +589,7 @@ describe('Edge cases & invariants', () => {
   it('battery charge never goes negative', () => {
     const engine = steadyEngine();
     const bat = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 4, 1, ResourceType.Regolith);
     engine.connectBuildings(bat, ext);
     engine.batteryCharges.set(bat, 0.5);
 
@@ -600,15 +600,15 @@ describe('Edge cases & invariants', () => {
   it('resource counts never decrease', () => {
     const engine = steadyEngine();
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
-    let prevCoal = 0;
+    let prevRegolith = 0;
     for (let i = 0; i < 100; i++) {
       engine.update(EXTRACTION_INTERVAL_S);
-      const coal = engine.getResourceCounts().coal;
-      expect(coal).toBeGreaterThanOrEqual(prevCoal);
-      prevCoal = coal;
+      const regolith = engine.getResourceCounts().regolith;
+      expect(regolith).toBeGreaterThanOrEqual(prevRegolith);
+      prevRegolith = regolith;
     }
   });
 
@@ -643,8 +643,8 @@ describe('Edge cases & invariants', () => {
     const engine = steadyEngine();
     const s1 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const s2 = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 3 })!;
-    const e1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Coal);
-    const e2 = placeExtractorWithResource(engine, 5, 1, ResourceType.IronOre);
+    const e1 = placeExtractorWithResource(engine, 3, 1, ResourceType.Regolith);
+    const e2 = placeExtractorWithResource(engine, 5, 1, ResourceType.Hydrogen);
 
     engine.connectBuildings(s1, e1);
     let stats = engine.getEnergyGlobalStats();
@@ -723,7 +723,7 @@ describe('Full cycle numerical verification', () => {
     groundEverywhere(engine);
 
     const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Coal);
+    const ext = placeExtractorWithResource(engine, 2, 1, ResourceType.Regolith);
     engine.connectBuildings(solar, ext);
 
     const extractorCons = getBuildingType(EXTRACTOR_BUILDING_TYPE_ID)!.energy!.consumption!;
@@ -739,7 +739,7 @@ describe('Full cycle numerical verification', () => {
     }
 
     simulate(engine, CYCLE_S, step);
-    expect(engine.getResourceCounts().coal).toBe(expectedItems);
+    expect(engine.getResourceCounts().regolith).toBe(expectedItems);
   });
 
   it('battery-backed extractor produces more items per cycle than solar-only', () => {
@@ -747,7 +747,7 @@ describe('Full cycle numerical verification', () => {
     eng1.simulationTime = 0;
     groundEverywhere(eng1);
     const s1 = eng1.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
-    const ext1 = placeExtractorWithResource(eng1, 2, 1, ResourceType.Coal);
+    const ext1 = placeExtractorWithResource(eng1, 2, 1, ResourceType.Regolith);
     eng1.connectBuildings(s1, ext1);
 
     const eng2 = new GameEngine(800, 600);
@@ -755,7 +755,7 @@ describe('Full cycle numerical verification', () => {
     groundEverywhere(eng2);
     const s2 = eng2.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
     const bat2 = eng2.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 3, y: 1 })!;
-    const ext2 = placeExtractorWithResource(eng2, 6, 1, ResourceType.Coal);
+    const ext2 = placeExtractorWithResource(eng2, 6, 1, ResourceType.Regolith);
     eng2.connectBuildings(s2, bat2);
     eng2.connectBuildings(s2, ext2);
     const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
@@ -764,6 +764,6 @@ describe('Full cycle numerical verification', () => {
     simulate(eng1, CYCLE_S, EXTRACTION_INTERVAL_S);
     simulate(eng2, CYCLE_S, EXTRACTION_INTERVAL_S);
 
-    expect(eng2.getResourceCounts().coal).toBeGreaterThan(eng1.getResourceCounts().coal);
+    expect(eng2.getResourceCounts().regolith).toBeGreaterThan(eng1.getResourceCounts().regolith);
   });
 });

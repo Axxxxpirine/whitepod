@@ -289,7 +289,7 @@ describe('GameEngine belts', () => {
   });
 
   it('uses the extractor rotation to start from the shortest side', () => {
-    engine.placeResource(8, 8, ResourceType.Coal);
+    engine.placeResource(8, 8, ResourceType.Regolith);
     const extractor = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 8, y: 8 }, Direction.East)!;
     const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 7, y: 12 })!;
 
