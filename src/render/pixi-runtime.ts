@@ -79,8 +79,10 @@ export class PixiRuntime {
         ? DEPOSIT_COLORS[cell.resourceId ?? ''] ?? 0x4f46e5
         : STATION_COLORS[this.stationKind(cell.transitionId)] ?? 0x94a3b8
 
-      graphic.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).fill({ color: fill, alpha: cell.kind === 'deposit' ? 0.72 : 0.58 })
-      graphic.stroke({ width: 1, color: 0xffffff, alpha: cell.kind === 'deposit' ? 0.12 : 0.08 })
+      const base = ((cell.x + cell.y) % 2 === 0) ? 0x162033 : 0x111827
+      graphic.rect(0, 0, GRID_CELL_SIZE - 1, GRID_CELL_SIZE - 1).fill({ color: base, alpha: 1 })
+      graphic.rect(2, 2, GRID_CELL_SIZE - 5, GRID_CELL_SIZE - 5).fill({ color: fill, alpha: cell.kind === 'deposit' ? 0.92 : 0.82 })
+      graphic.stroke({ width: 1, color: 0xffffff, alpha: cell.kind === 'deposit' ? 0.16 : 0.1 })
       graphic.x = cell.x * GRID_CELL_SIZE
       graphic.y = cell.y * GRID_CELL_SIZE
       this.worldLayer.addChild(graphic)

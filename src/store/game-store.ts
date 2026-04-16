@@ -46,6 +46,7 @@ export interface GameState {
   demoModeEnabled: boolean
   demoLoopEnabled: boolean
   simulationSpeed: 1 | 10 | 1000
+  demoCelebrationOpen: boolean
   lastFiredTransitionIds: string[]
   pixiActivities: PixiActivity[]
   fireEventSeq: number
@@ -62,6 +63,7 @@ export interface GameState {
   setDemoModeEnabled: (enabled: boolean) => void
   setDemoLoopEnabled: (enabled: boolean) => void
   setSimulationSpeed: (speed: 1 | 10 | 1000) => void
+  setDemoCelebrationOpen: (open: boolean) => void
   resetSave: () => void
   newGame: (seed: number) => void
 
@@ -569,6 +571,7 @@ export const useGameStore = create<GameState>()(
       demoModeEnabled: false,
       demoLoopEnabled: true,
       simulationSpeed: 1,
+      demoCelebrationOpen: false,
       lastFiredTransitionIds: [],
       pixiActivities: [],
       fireEventSeq: 0,
@@ -616,6 +619,7 @@ export const useGameStore = create<GameState>()(
           demonstrationEnabled: false,
           demoModeEnabled: false,
           demoLoopEnabled: true,
+          demoCelebrationOpen: false,
           engineSnapshot: engine.getSnapshot(),
 
           gridSnapshot: grid.getSnapshot(),
@@ -641,6 +645,7 @@ export const useGameStore = create<GameState>()(
           demonstrationEnabled: false,
           demoModeEnabled: false,
           pixiActivities: [],
+          demoCelebrationOpen: false,
         })
       },
 
@@ -653,6 +658,7 @@ export const useGameStore = create<GameState>()(
           demonstrationEnabled: enabled,
           autoTickEnabled: enabled ? true : state.autoTickEnabled,
           pixiActivities: enabled ? state.pixiActivities : [],
+          demoCelebrationOpen: enabled ? state.demoCelebrationOpen : false,
         }))
       },
 
@@ -665,6 +671,8 @@ export const useGameStore = create<GameState>()(
           selectedBuildCell: null,
           hoveredBuildCell: null,
           selectedBuildTransitionId: enabled ? null : state.selectedBuildTransitionId,
+          demoLoopEnabled: true,
+          demoCelebrationOpen: enabled ? state.demoCelebrationOpen : false,
         }))
       },
 
@@ -674,6 +682,10 @@ export const useGameStore = create<GameState>()(
 
       setSimulationSpeed: speed => {
         set({ simulationSpeed: speed })
+      },
+
+      setDemoCelebrationOpen: open => {
+        set({ demoCelebrationOpen: open })
       },
 
       resetSave: () => {
@@ -707,6 +719,7 @@ export const useGameStore = create<GameState>()(
           demonstrationEnabled: false,
           demoModeEnabled: false,
           demoLoopEnabled: true,
+          demoCelebrationOpen: false,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -748,6 +761,7 @@ export const useGameStore = create<GameState>()(
           demonstrationEnabled: false,
           demoModeEnabled: false,
           demoLoopEnabled: true,
+          demoCelebrationOpen: false,
           requestedSystemTransitionIds: [],
           stations: grid.listStations(),
           engineSnapshot: engine ? engine.getSnapshot() : null,
@@ -1179,6 +1193,8 @@ export const useGameStore = create<GameState>()(
           requestedTransitionIds: effectiveRequestedTransitionIds,
         })
 
+        const demoLaunched = fired.includes('launch') && (demonstrationEnabled || demoModeEnabled)
+
         for (const transitionId of fired) {
           const resourceId = extractResourceId(transitionId)
           if (!resourceId) continue
@@ -1212,6 +1228,21 @@ export const useGameStore = create<GameState>()(
             lastFiredTransitionIds: fired,
             pixiActivities: tickActivities,
             fireEventSeq: state.fireEventSeq + 1,
+          }
+
+          if (demoLaunched) {
+            return {
+              ...base,
+              autoTickEnabled: false,
+              demonstrationEnabled: false,
+              demoModeEnabled: false,
+              demoLoopEnabled: false,
+              demoCelebrationOpen: true,
+              autosaveTickIndex: nextTickIndex,
+              saveRevision: state.saveRevision + 1,
+              engineSnapshot: engine.getSnapshot(),
+              gridSnapshot: grid.getSnapshot(),
+            }
           }
 
           const maybeAutosaved = shouldAutosave

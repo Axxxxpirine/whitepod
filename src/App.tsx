@@ -8,6 +8,7 @@ import {
   getTransitionLabel,
 } from '@/core/build-planning'
 import { TierGuideModal } from '@/components/help/TierGuideModal'
+import { LaunchCongratsModal } from '@/components/runtime/LaunchCongratsModal'
 import { RuntimeSelectionPanel } from '@/components/runtime/RuntimeSelectionPanel'
 import { RuntimeSettingsPopover } from '@/components/runtime/RuntimeSettingsPopover'
 import { RuntimeToolIndicator } from '@/components/runtime/RuntimeToolIndicator'
@@ -82,6 +83,7 @@ function App() {
   const autoTickEnabled = useGameStore(s => s.autoTickEnabled)
   const demoModeEnabled = useGameStore(s => s.demoModeEnabled)
   const simulationSpeed = useGameStore(s => s.simulationSpeed)
+  const demoCelebrationOpen = useGameStore(s => s.demoCelebrationOpen)
   const demonstrationEnabled = useGameStore(s => s.demonstrationEnabled)
   const selectedBuildCell = useGameStore(s => s.selectedBuildCell)
   const hoveredBuildCell = useGameStore(s => s.hoveredBuildCell)
@@ -90,7 +92,9 @@ function App() {
   const setAutoTickEnabled = useGameStore(s => s.setAutoTickEnabled)
   const setDemonstrationEnabled = useGameStore(s => s.setDemonstrationEnabled)
   const setDemoModeEnabled = useGameStore(s => s.setDemoModeEnabled)
+  const setDemoLoopEnabled = useGameStore(s => s.setDemoLoopEnabled)
   const setSimulationSpeed = useGameStore(s => s.setSimulationSpeed)
+  const setDemoCelebrationOpen = useGameStore(s => s.setDemoCelebrationOpen)
   const setBuildPalette = useGameStore(s => s.setBuildPalette)
   const selectedBuildTransitionId = useGameStore(s => s.selectedBuildTransitionId)
   const setSelectedBuildTransitionId = useGameStore(s => s.setSelectedBuildTransitionId)
@@ -236,6 +240,7 @@ function App() {
   return (
     <div className={`app-shell min-h-screen ${canvasOnlyMode ? 'app-shell--canvas-only' : ''}`}>
       <TierGuideModal open={helpOpen} metadata={metadata} transitions={transitions} onClose={() => setHelpOpen(false)} />
+      <LaunchCongratsModal open={demoCelebrationOpen} onClose={() => setDemoCelebrationOpen(false)} />
 
       {!canvasOnlyMode && <header className="hud-header panel-surface panel-dark">
         <div>
@@ -452,6 +457,9 @@ function App() {
                   onToggleDemonstration={() => {
                     const nextEnabled = !demonstrationEnabled
                     setDemonstrationEnabled(nextEnabled)
+                    setDemoModeEnabled(nextEnabled)
+                    setDemoLoopEnabled(!nextEnabled)
+                    setDemoCelebrationOpen(false)
                     if (nextEnabled) setAutoTickEnabled(true)
                   }}
                   onChangeSimulationSpeed={setSimulationSpeed}

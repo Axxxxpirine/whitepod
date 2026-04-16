@@ -14,7 +14,7 @@ export class GameLoop {
       if (!this.running) return
 
       const state = useGameStore.getState()
-      const active = state.mode === 'player' || state.autoTickEnabled || state.demoModeEnabled
+      const active = state.autoTickEnabled || state.demoModeEnabled
       const interval = (state.demoModeEnabled ? 2200 : 1000) / state.simulationSpeed
 
       if (!active) {
@@ -32,7 +32,7 @@ export class GameLoop {
 
       while (this.accumulator >= interval) {
         const currentState = useGameStore.getState()
-        if (!(currentState.mode === 'player' || currentState.autoTickEnabled || currentState.demoModeEnabled)) {
+        if (!(currentState.autoTickEnabled || currentState.demoModeEnabled)) {
           this.accumulator = 0
           break
         }
