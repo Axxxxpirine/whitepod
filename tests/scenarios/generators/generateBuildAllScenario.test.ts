@@ -11,7 +11,7 @@ import {
 import { ResourceType } from '@/game/types';
 
 describe('generateBuildAllScenario', () => {
-  it('places all processor types and storage', () => {
+  it('places the correct building counts', () => {
     const result = generateBuildAllScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
 
@@ -20,16 +20,19 @@ describe('generateBuildAllScenario', () => {
     const synthesizers = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
     const storages     = buildings.filter((b) => b.typeId === STORAGE_BUILDING_TYPE_ID);
 
-    expect(extractors.length).toBeGreaterThanOrEqual(4);
-    expect(converters.length).toBeGreaterThanOrEqual(4);
-    expect(synthesizers.length).toBeGreaterThanOrEqual(5);
-    expect(storages.length).toBeGreaterThanOrEqual(1);
+    expect(extractors.length).toBe(3);    // Regolith, Hydrogen, Oxygen
+    expect(converters.length).toBe(4);    // IronOxide, AlumOx, SiO2, N2
+    expect(synthesizers.length).toBe(5);  // Ceramic, Water, Methane, CO2, Ammonia
+    expect(storages.length).toBe(12);     // 3 base + 4 converter + 5 synthesizer
   });
 
-  it('has at least 2 disjoint energy subnets', () => {
+  it('all energy consumers are in a single connected network', () => {
     const result = generateBuildAllScenario(640, 480);
     const networks = result.engine.getEnergyNetworkBalances();
-    expect(networks.length).toBeGreaterThanOrEqual(2);
+    // 3 extractors × 4 kW + 4 converters × 6 kW + 5 synthesizers × 10 kW = 86 kW total demand.
+    // All consumers share one subnet through the battery.
+    const mainNetwork = networks.find((n) => n.consumption === 86);
+    expect(mainNetwork).toBeDefined();
   });
 
   it('all processors have active recipes', () => {
@@ -37,7 +40,7 @@ describe('generateBuildAllScenario', () => {
     const buildings = [...result.engine.getBuildings().values()];
     const processors = buildings.filter((b) => isProcessorTypeId(b.typeId));
 
-    expect(processors.length).toBeGreaterThanOrEqual(9);
+    expect(processors.length).toBe(9);
     for (const processor of processors) {
       const state = result.engine.getProcessorState(processor.id);
       expect(state).toBeDefined();
@@ -68,16 +71,14 @@ describe('generateBuildAllScenario', () => {
     expect(counts.ceramicPlates).toBeGreaterThan(0);
   });
 
-  it('exposes all 3 base resource types as visible deposits', () => {
+  it('all 3 base resource deposit types are visible', () => {
     const result = generateBuildAllScenario(640, 480);
     const types = new Set<ResourceType>();
     const visible = result.engine.getVisibleTiles();
     for (let y = visible.y0; y <= visible.y1; y++) {
       for (let x = visible.x0; x <= visible.x1; x++) {
         const resource = result.engine.getResourceAt(x, y);
-        if (resource !== ResourceType.None) {
-          types.add(resource);
-        }
+        if (resource !== ResourceType.None) types.add(resource);
       }
     }
     expect(types.has(ResourceType.Regolith)).toBe(true);
@@ -85,36 +86,42 @@ describe('generateBuildAllScenario', () => {
     expect(types.has(ResourceType.Oxygen)).toBe(true);
   });
 
-  it('has belt segments connecting the ceramic_plates pipeline', () => {
+  it('every extractor, converter and synthesizer has an output belt to its storage', () => {
     const result = generateBuildAllScenario(640, 480);
     const buildings = [...result.engine.getBuildings().values()];
     const belts = buildings.filter((b) => isBeltTypeId(b.typeId));
 
-    // At minimum: 2 chains (extractor→converter) + 2 chains (converter→synth) + 2 (extractor→storage)
-    expect(belts.length).toBeGreaterThanOrEqual(6);
+    // 3 extractors × ~2 belts + 4 converters × ~3 belts + 5 synthesizers × ~3 belts = ~33 belts
+    expect(belts.length).toBeGreaterThanOrEqual(12);
 
-    // At least 2 converters have both input and output belt connections (the main pipeline)
+    // Every extractor has at least one output belt connection
+    const extractors = buildings.filter((b) => b.typeId === EXTRACTOR_BUILDING_TYPE_ID);
+    for (const extractor of extractors) {
+      const connections = result.engine.getConnectionsOf(extractor.id);
+      const outputs = connections.filter((c) => c.from.building === extractor.id);
+      expect(outputs.length).toBeGreaterThanOrEqual(1);
+    }
+
+    // Every converter has at least one output belt connection (→ storage)
     const converters = buildings.filter((b) => b.typeId === CONVERTER_BUILDING_TYPE_ID);
-    const convertersWithBelts = converters.filter((converter) => {
+    for (const converter of converters) {
       const connections = result.engine.getConnectionsOf(converter.id);
-      const inputs  = connections.filter((c) => c.to.building === converter.id);
       const outputs = connections.filter((c) => c.from.building === converter.id);
-      return inputs.length >= 1 && outputs.length >= 1;
-    });
-    expect(convertersWithBelts.length).toBeGreaterThanOrEqual(2);
+      expect(outputs.length).toBeGreaterThanOrEqual(1);
+    }
 
-    // At least 1 synthesizer has ≥2 belt input connections (the ceramic_plates synth)
-    const synths = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
-    const synthsWithInputs = synths.filter((synth) => {
-      const connections = result.engine.getConnectionsOf(synth.id);
-      return connections.filter((c) => c.to.building === synth.id).length >= 2;
-    });
-    expect(synthsWithInputs.length).toBeGreaterThanOrEqual(1);
+    // Every synthesizer has at least one output belt connection (→ storage)
+    const synthesizers = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
+    for (const synthesizer of synthesizers) {
+      const connections = result.engine.getConnectionsOf(synthesizer.id);
+      const outputs = connections.filter((c) => c.from.building === synthesizer.id);
+      expect(outputs.length).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it('returns select tool and valid viewport', () => {
     const result = generateBuildAllScenario(640, 480);
     expect(result.selectedTool).toEqual({ kind: 'select' });
-    expect(result.viewport.zoom).toBeCloseTo(0.35);
+    expect(result.viewport.zoom).toBeCloseTo(0.28);
   });
 });

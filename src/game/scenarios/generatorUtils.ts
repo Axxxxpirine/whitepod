@@ -154,6 +154,7 @@ export function prepareBuildZone(engine: GameEngine, cx: number, cy: number, rad
       const dy = y - cy;
       if (dx * dx + dy * dy <= r2) {
         engine.placeTile(x, y, TileType.Ground);
+        engine.removeResource(x, y);
       }
     }
   }
