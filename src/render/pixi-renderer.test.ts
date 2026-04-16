@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GRID_HEIGHT, GRID_WIDTH } from '@/core/grid/config'
 import type { PixiExport } from '@/core/types'
-import { PixiRenderer } from './pixi-renderer'
+import { PixiRenderer } from './pixi-runtime'
 
 vi.mock('pixi.js', () => {
   class MockGraphics {

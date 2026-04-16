@@ -1,4 +1,3 @@
-import type { PixiExport } from '@/core/types'
 import { useGameStore } from '@/store/game-store'
 
 export class GameLoop {
@@ -15,11 +14,7 @@ export class GameLoop {
 
       if (timestamp - this.lastTick >= 1000) {
         const state = useGameStore.getState()
-        const shouldAutoTick = state.mode === 'player' || state.autoTickEnabled
-        if (shouldAutoTick) {
-          const exportData = state.tick()
-          this.dispatchToPixi(exportData)
-        }
+        if (state.mode === 'player' || state.autoTickEnabled) state.tick()
         this.lastTick = timestamp
       }
 
@@ -33,19 +28,5 @@ export class GameLoop {
     this.running = false
     if (this.rafId !== null) cancelAnimationFrame(this.rafId)
     this.rafId = null
-  }
-
-  private dispatchToPixi(exportData: PixiExport): void {
-    if (typeof window.__whitepodOnPixiUpdate === 'function') {
-      window.__whitepodOnPixiUpdate(exportData)
-    }
-
-    window.dispatchEvent(new CustomEvent('whitepod-pixi-update', { detail: exportData }))
-  }
-}
-
-declare global {
-  interface Window {
-    __whitepodOnPixiUpdate?: (exportData: PixiExport) => void
   }
 }
