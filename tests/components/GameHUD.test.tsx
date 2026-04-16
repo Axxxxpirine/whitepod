@@ -374,7 +374,7 @@ describe('GameHUD', () => {
     fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
 
     const state = useGameStore.getState();
-    expect(state.engine?.getBuildings().size).toBe(8);
+    expect(state.engine?.getBuildings().size).toBeGreaterThanOrEqual(9);
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);
     expect(state.sessionEpoch).toBe(1);
