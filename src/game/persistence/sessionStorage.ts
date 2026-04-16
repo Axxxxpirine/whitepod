@@ -228,8 +228,13 @@ function isPersistedViewStateV3(value: unknown): value is PersistedViewStateV3 {
     isFiniteNumber(value.viewport.centerY) &&
     isFiniteNumber(value.viewport.zoom) &&
     isSelectedTool(value.selectedTool) &&
-    typeof value.selectedBotProfileId === 'string' &&
-    (value.selectedBotProfileId === 'greedy' || value.selectedBotProfileId === 'fractal') &&
+      typeof value.selectedBotProfileId === 'string' &&
+      (value.selectedBotProfileId === 'greedy' ||
+        value.selectedBotProfileId === 'fractal' ||
+        value.selectedBotProfileId === 'explorer' ||
+        value.selectedBotProfileId === 'balanced' ||
+        value.selectedBotProfileId === 'logistics' ||
+        value.selectedBotProfileId === 'speedrun') &&
     typeof value.seedInput === 'string'
   );
 }
