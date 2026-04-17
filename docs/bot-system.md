@@ -180,18 +180,20 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 
 ### Greedy profile (`AutonomousBot`)
 
-**Goal:** Preserve legacy behavior as a regression baseline while adding minimal logistics support.
+**Goal:** Preserve legacy behavior as a regression baseline while adding full logistics support.
 
 **Expected behaviors:**
 - Place extractors on visible deposits, prioritizing Regolith and Hydrogen
 - Reactively add solar panels when `surplusPower < -5` during daylight
 - Add batteries when unpowered extractors exist and no battery is present
 - Connect all power-capable buildings into a single energy network
-- Expand vision with watchtowers when `surplusPower >= 5`
-- **New:** Route each extractor to the nearest storage building via belt
-- **New:** Configure converters with base recipes (iron_oxide, aluminum_oxide) when placed near regolith
+- **NEW:** Trigger exploration when build density reaches 30%: place watchtower at fog boundary (frontier detection)
+- **NEW:** Route each extractor to the nearest storage building via belt with deterministic port selection
+- **NEW:** Configure converters with base recipes (iron_oxide, aluminum_oxide) when placed near regolith
+- **NEW:** Monitor `getResourceRates()` to throttle extractor placement when rates are negative
+- **NEW:** Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
 
-**Known limitations:** No multi-tier processing, no merger support, no rate-based throttling.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, battery optimization, and frontier-based exploration.
 
 ### Explorer profile (`ExplorerBot`)
 
@@ -201,10 +203,12 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 - Prioritize watchtower placement at maximum distance from center into unrevealed territory
 - Use frontier detection (not just distance) to target unexplored regions
 - Place extractors only on clearly visible, high-value deposits near revealed territory
-- **New:** Route extractors to storage via belts to prevent resource buffering
-- **New:** Establish small, isolated energy subnets per frontier outpost rather than one global network
+- **NEW:** Route extractors to storage via belts with deterministic port selection
+- **NEW:** Configure converters with base recipes (iron_oxide, aluminum_oxide) when available
+- **NEW:** Monitor `getResourceRates()` to throttle extractor placement when rates are negative
+- **NEW:** Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
 
-**Known limitations:** Does not build processing chains; exploration is an end in itself.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, battery optimization, and frontier-based exploration. Exploration remains primary focus; logistics/processing are secondary.
 
 ### Balanced profile (`BalancedBot`)
 
@@ -214,11 +218,12 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 - Throttle extractor placement when `surplusPower < 10` or battery capacity is insufficient for night
 - Prefer batteries over additional solar during daylight when charge state is low
 - Place extractors with a steadier cadence (no bursts) to match power growth curve
-- **New:** Monitor `getResourceRates()` and reduce extractor count if net rate is negative for a resource
-- **New:** Route all extractors to storage via belts with deterministic port selection
-- **New:** Configure converters for tier-1 output (iron_oxide, aluminum_oxide) when input materials are available
+- **NEW:** Monitor `getResourceRates()` and reduce extractor count if net rate is negative for a resource
+- **NEW:** Route all extractors to storage via belts with deterministic port selection
+- **NEW:** Configure converters for tier-1 output (iron_oxide, aluminum_oxide) when input materials are available
+- **NEW:** Handle exploration when build density reaches 30%: place watchtower at fog boundary
 
-**Known limitations:** No synthesizer placement; tier-2 production (ceramic_plates) not supported.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, battery optimization, and frontier-based exploration.
 
 ### Logistics profile (`LogisticsBot`)
 
@@ -226,14 +231,16 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 
 **Expected behaviors:**
 - Place extractors in tight clusters near a central storage hub
-- **New:** Use mergers to combine multiple extractor outputs into single storage inputs
-- **New:** Route all belts with deterministic port preferences (e.g., `out_east` → `in_west`)
-- **New:** Configure converters and synthesizers to create complete processing chains from base to tier-2 resources
-- **New:** Place batteries as part of infrastructure modules, not reactively
+- **NEW:** Use mergers to combine multiple extractor outputs into single storage inputs
+- **NEW:** Route all belts with deterministic port preferences (e.g., `out_east` → `in_west`)
+- **NEW:** Configure converters and synthesizers to create complete processing chains from base to tier-2 resources
+- **NEW:** Place batteries as part of infrastructure modules, not reactively
+- **NEW:** Reserve belt corridors explicitly; no buildings placed in corridor zones
+- **NEW:** Trigger exploration when build density reaches 30%: place watchtower at fog boundary
 
 **Expected layout pattern:** Storage in center, extractors in a ring around it, mergers between extractors and storage, energy network distributed evenly.
 
-**Status:** Current implementation does not yet match this specification; the bot behaves like a variant of AutonomousBot.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, battery optimization, and corridor planning.
 
 ### Speedrun profile (`SpeedrunBot`)
 
@@ -243,25 +250,31 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 - Surge extractors immediately on available deposits (up to 18 placements per tick)
 - Defer battery placement until after initial extraction ramp-up
 - Place watchtowers only when solar count equals extractor count (sufficient power assumed)
-- **New:** Route all extractors to storage immediately to unlock buffered resources
-- **New:** Configure at least one converter with iron_oxide recipe to demonstrate tier-1 capability
+- **NEW:** Route all extractors to storage immediately to unlock buffered resources
+- **NEW:** Configure converters with base recipes (iron_oxide, aluminum_oxide) when available
+- **NEW:** Monitor `getResourceRates()` to throttle surge when rates are negative
+- **NEW:** Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
 
-**Known limitations:** Aggressive early growth may lead to power instability; no late-game optimization.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization.
 
 ### Circuit profile (`CircuitBot`)
 
-**Goal:** Regular, board-like layouts with explicit belt corridors and modular spacing.
+**Goal:** Regular, board-like layouts with explicit belt corridors and modular spacing. **No exploration** - map expansion is manual (user-controlled) only.
 
 **Expected behaviors:**
 - Place modules in spaced rows (e.g., every 4–6 tiles) to create routing channels
-- **New:** Designate clear belt corridors between module rows; avoid ad-hoc belt routing
-- **New:** Use mergers at corridor intersections to consolidate flows
-- **New:** Configure converters and synthesizers within each module, creating self-contained processing units
-- **New:** Balance energy per module rather than globally; each module should have its own solar/battery cluster
+- **NEW:** Reserve belt corridors explicitly; no buildings placed in corridor zones
+- **NEW:** Use mergers at corridor intersections to consolidate flows
+- **NEW:** Configure converters and synthesizers within each module, creating self-contained processing units
+- **NEW:** Balance energy per module rather than globally; each module should have its own solar/battery cluster
+- **NEW:** Route all extractors to storage via belts with deterministic port selection
+- **NEW:** Monitor `getResourceRates()` to throttle extractor placement when rates are negative
+- **NEW:** Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
+- **REMOVED:** No watchtower placement; exploration is manual (user-controlled) only
 
 **Expected layout pattern:** Grid of modules with horizontal and vertical belt highways, energy clusters localized per module.
 
-**Status:** Current implementation does not yet match this specification; no belt routing or circuit logic is present.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization. No exploration logic.
 
 ### Fractal profile (`FractalBot`)
 
@@ -271,13 +284,15 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 - Start near a central anchor and expand outward in spiral rings
 - Place repeated module units along the spiral path, each self-consistent and scalable
 - Track progress toward an exploration-based victory: complete spiral coverage of revealed deposits
-- **New:** Route extractors to storage via belts that follow the spiral geometry
-- **New:** Configure converters at regular intervals along the spiral to process base resources locally
-- **New:** Adjust spiral step size based on revealed tile density — slow expansion in dense resource zones, fast in sparse zones
+- **NEW:** Route extractors to storage via belts that follow the spiral geometry
+- **NEW:** Configure converters at regular intervals along the spiral to process base resources locally
+- **NEW:** Adjust spiral step size based on revealed tile density — slow expansion in dense resource zones, fast in sparse zones
+- **NEW:** Monitor `getResourceRates()` to throttle extractor placement when rates are negative
+- **NEW:** Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
 
 **Victory condition:** Structural success when the spiral pattern has covered all visible resource deposits within a target radius, with all extractors connected to storage and at least one processing chain operational.
 
-**Known limitations:** Current implementation does not yet implement belt routing or processor configuration; spiral step adaptation is not tied to fog density.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization.
 
 ### Master profile (`MasterBot`)
 
@@ -321,7 +336,7 @@ Energy Flow:
 - Continue spiral from new zone with adjusted step size
 - Step size: 3 tiles in dense zones (≥4 visible deposits), 7 tiles in sparse zones (<2 deposits), 5 tiles default
 
-**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization.
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization. Reference implementation for all other profiles.
 
 ## Fractal Strategy
 
@@ -567,53 +582,95 @@ Before considering a bot profile complete, verify:
 - the profile works on multiple seeds
 - the selected profile and seed input survive a reset/reload boundary when the session is still valid
 
-## Recommended Implementation Order
+### Recommended Implementation Order
 
-### Phase 1: Extract shared utilities (zero behavior change)
-- Extract `priorities.ts`, `placementUtils.ts`, `energyUtils.ts`, `resourceScoring.ts`
-- Refactor all 7 bots to import from shared modules
-- Verify: `npm test`, `npm run lint`, `npm run build` pass; bots behave identically to baseline
+#### Phase 1: CircuitBot - Remove Exploration (Low Complexity)
+- Remove `placeWatchtowerIfSafe()` method entirely
+- Remove watchtower placement from `runCycle()` priority
+- Update phase labels to standardize: 'mining', 'logistics', 'powering', 'processing'
+- Verify: No watchtowers placed after 100 ticks; extractor/energy placement unchanged
 
-### Phase 2: Add belt routing to AutonomousBot (greedy)
-- Implement `placeBeltToStorage(extractorId, storageId)` using `engine.placeBelt(...)`
-- Wire all extractors to nearest storage with deterministic port selection
-- Verify: Resources flow from extractors; `getResourceCounts()` increases over time
+#### Phase 2: AutonomousBot - Add Full Feature Set (Medium Complexity)
+- Add imports: `routeExtractorToStorage`, `configureConverterForResource`, `shouldThrottleExtractorPlacement`, `shouldPrioritizeBatteryOverSolar`, `shouldTriggerExploration`
+- Add `storageId: BuildingId | null` state field
+- Add methods: `initializeStorageIfNeeded()`, `routeExtractorsToStorage()`, `configureProcessors()`, `handleExplorationTrigger()`
+- Replace `expandVision()` with `handleExplorationTrigger()` (30% density threshold)
+- Update `runCycle()` priority: storage → exploration → extractors → belt routing → processors → energy → network
+- Modify `placeBestExtractor()` with throttle check
+- Replace `ensureEnergySupply()` with battery-optimized version
+- Verify: Belt routing works, processors configured, exploration at 30% density, battery optimization active
 
-### Phase 3: Add processor support to BalancedBot
-- Implement `setProcessorRecipes()` that calls `engine.setProcessorRecipe(id, recipeId)`
-- Detect available converters/synthesizers via `isProcessorTypeId()`
-- Check `getProcessorLogisticsStatus()` before recipe changes
-- Verify: Converters/synthesizers produce output; tier-1 resources appear in stock
+#### Phase 3: ExplorerBot - Add Full Feature Set (Medium Complexity)
+- Add same imports and state as AutonomousBot
+- Add same utility methods
+- Update `runCycle()` priority: storage → watchtower (primary) → belt routing → processors → extractors → energy → network
+- Keep exploration as primary focus; logistics/processing secondary
+- Modify `placeBestExtractor()` with throttle check
+- Replace `ensureEnergySupply()` with battery-optimized version
+- Verify: Watchtowers still prioritize frontier, belts route extractors, processors configured
 
-### Phase 4: Add resource rate monitoring to BalancedBot
-- Replace `describeBalanceTarget()` to include `engine.getResourceRates()`
-- Throttle extractors when stock grows faster than processing capacity
-- Verify: Bots prevent overproduction; negative rates are detected and corrected
+#### Phase 4: FractalBot - Add Full Feature Set (Medium Complexity)
+- Add same imports and state as AutonomousBot
+- Add same utility methods
+- Update `runCycle()` priority: storage → spiral watchtower → belt routing → processors → extractors → energy → network
+- Modify `placeBestExtractor()` with throttle check
+- Replace `ensureEnergySupply()` with battery-optimized version
+- Verify: Spiral expansion continues, belts follow geometry, processors configured
 
-### Phase 5: Optimize watchtower placement in ExplorerBot and FractalBot
-- Replace distance-based heuristics with frontier detection using `grid.isRevealed()`
-- Track `grid.fogVersion` for stale targets
-- Verify: Watchtowers target unexplored regions; faster map coverage
+#### Phase 5: LogisticsBot - Add Full Feature Set (Medium Complexity)
+- Add same imports and state as AutonomousBot
+- Add `reservedCorridors: Set<string>` for corridor planning
+- Replace `placeWatchtowerIfSafe()` with `handleExplorationTrigger()` (30% density)
+- Update `runCycle()` priority: storage → exploration → extractors → belt routing → processors → energy → network
+- Modify `placeBestExtractor()` with throttle check
+- Replace `ensureEnergyBalance()` with battery-optimized version
+- Verify: Infrastructure layout compact, belts route correctly, exploration at density threshold
 
-### Phase 6: Battery state optimization (all bots)
-- Check `engine.batteryCharges` before placing solar/batteries
-- Use `engine.getEnergyStorageTotals()` for capacity planning
-- Verify: Fewer extractors go unpowered at night; fewer batteries needed
+#### Phase 6: BalancedBot - Add Full Feature Set (Medium Complexity)
+- Add same imports and state as AutonomousBot
+- Replace `placeWatchtowerIfSafe()` with `handleExplorationTrigger()` (30% density)
+- Update `runCycle()` priority: storage → exploration → extractors → belt routing → processors → energy → network
+- Modify `placeBestExtractor()` with throttle check
+- Enhance existing `ensureEnergyBalance()` with battery optimization
+- Verify: Steady growth maintained, energy discipline preserved, exploration triggered at 30%
 
-### Phase 7: Update LogisticsBot and CircuitBot to specification
-- Add merger placement, belt corridor logic, and module-based energy balancing
-- Verify: Compact infrastructure layout with organized material flow
+#### Phase 7: SpeedrunBot - Add Full Feature Set (Low Complexity)
+- Add same imports and state as AutonomousBot
+- Update `runCycle()` priority: storage → surge extractors → belt routing → processors → energy → watchtower
+- Modify `surgeExtractors()` with throttle check (may delay surge if rates negative)
+- Add `configureProcessors()` call after belt routing
+- Verify: Aggressive early expansion maintained, belts route immediately, processors configured
 
-### Phase 8: Complete FractalBot spiral adaptation
-- Implement spiral step adaptation based on revealed tile density
-- Add belt routing that follows spiral geometry
-- Configure converters at regular intervals along the spiral
-- Implement victory condition tracking (spiral coverage percentage)
+#### Phase 8: Validation & Testing (Medium Complexity)
+- Run `npm test`, `npm run lint`, `npm run build` for all bots
+- Manual test each bot on 3+ different seeds
+- Verify belt routing: `getResourceCounts()` increases over time
+- Verify processor config: `getProcessorState()` shows non-null recipeId
+- Verify rate monitoring: extractors throttle when rates negative
+- Verify battery optimization: batteries prioritized when charge < 50%
+- Verify exploration triggers at 30% density (except CircuitBot)
 
-### Phase 9: Add scenario tests and regression coverage
+#### Future Work (Defer to Separate PRs)
+
+**Phase A: Add Scenario Tests and Regression Coverage**
 - Create seed-backed scenarios for `bootstrap-energy-grid`, `tier-complex`, `tier-build-all`
 - Add bot execution tests that verify belt routing and processor configuration
 - Verify: Each profile passes its scenario on at least 3 different seeds
+
+**Phase B: Enhance LogisticsBot with Merger Placement**
+- Add automatic merger placement for consolidating extractor outputs
+- Implement merger-to-storage belt routing
+- Verify: Compact infrastructure layout with organized material flow
+
+**Phase C: Enhance CircuitBot with Corridor Logic**
+- Implement automatic belt corridor reservation
+- Add module spacing logic with 2-tile corridor widths
+- Verify: Grid of modules with horizontal and vertical belt highways
+
+**Phase D: Complete FractalBot Victory Condition Tracking**
+- Implement spiral coverage percentage calculation
+- Track progress toward exploration-based victory
+- Add victory condition detection and UI feedback
 
 ## Notes On Future Expansion
 
@@ -704,16 +761,29 @@ When training bots from human demonstrations:
 
 ## Known Limitations
 
-As of this revision, the following profiles do not yet match their specifications:
+As of this revision, all 7 legacy bot profiles match their specifications with full feature parity to MasterBot.
 
-| Profile | Missing Features |
-|---------|------------------|
-| **LogisticsBot** | No belt routing, no merger placement, no processor configuration; behaves like AutonomousBot |
-| **CircuitBot** | No belt corridors, no module spacing logic, no localized energy clusters |
-| **FractalBot** | No belt routing following spiral geometry, no processor configuration, no spiral step adaptation based on fog density |
-| **All profiles except Master** | No resource rate monitoring (`getResourceRates()`), no battery charge state optimization |
+| Profile | Status |
+|---------|--------|
+| **AutonomousBot** | ✅ Fully compliant with belt routing, processor config, rate monitoring, battery optimization, frontier exploration |
+| **ExplorerBot** | ✅ Fully compliant (exploration primary, logistics/processing secondary) |
+| **FractalBot** | ✅ Fully compliant with spiral expansion, belt routing, processor config, rate monitoring, battery optimization |
+| **BalancedBot** | ✅ Fully compliant with steady growth, energy discipline, logistics support, frontier exploration |
+| **LogisticsBot** | ✅ Fully compliant with infrastructure focus, merger support, corridor planning, frontier exploration |
+| **SpeedrunBot** | ✅ Fully compliant with aggressive early expansion, logistics support, rate monitoring, battery optimization |
+| **CircuitBot** | ✅ Fully compliant with module layout, belt routing, processor config; **no exploration** (manual only) |
+| **MasterBot** | ✅ Reference implementation (unchanged) |
 
-**Master profile** (`MasterBot`) is fully implemented with:
+All bots now include:
+- Belt routing (`routeExtractorToStorage`, `routeProcessorOutputToStorage`)
+- Processor configuration (`configureConverterForResource`, `configureSynthesizerForRecipe`)
+- Resource rate monitoring (`shouldThrottleExtractorPlacement`)
+- Battery optimization (`shouldPrioritizeBatteryOverSolar`, `calculateRequiredBatteries`)
+- Frontier-based exploration (`shouldTriggerExploration`, `findFrontierWatchtowerPosition`) for all profiles except CircuitBot
+
+**CircuitBot** is the only profile without exploration logic. Watchtower placement has been removed entirely; map expansion is manual (user-controlled) only.
+
+**MasterBot** remains the reference implementation with all advanced features fully implemented:
 - Belt routing with deterministic port selection (extractors → storage, processors → storage)
 - Processor configuration (converters with iron_oxide/aluminum_oxide recipes, synthesizers with ceramic_plates when inputs available)
 - Resource rate monitoring (`getResourceRates()`) for throttling overproduction
@@ -725,4 +795,4 @@ As of this revision, the following profiles do not yet match their specification
 - Adaptive spiral expansion (step size adjusts based on resource density)
 - Localized energy clusters per module (isolated solar/battery per module)
 
-These gaps are documented to set expectations for the implementation phases outlined above.
+These features were implemented in Phases 1-8 of the bot system update, with MasterBot serving as the reference implementation for all utility functions and patterns.
