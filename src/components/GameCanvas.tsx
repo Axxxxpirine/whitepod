@@ -295,20 +295,15 @@ export function GameCanvas() {
         return { selectedTool, hoverTile };
       });
 
-      const keyboardHandler = new KeyboardHandler(engine);
-      keyboardHandler.initialize();
-
       const currentInputHandler = new InputHandler(
         engine,
         () => useGameStore.getState().selectedTool,
         () => useGameStore.getState().currentBuildingRotation,
       );
       
-      // Subscribe to engine actions for LLM training data collection
-      engine.setActionListener(({ kind, payload }: { kind: string; payload: Record<string, unknown> }) => {
-        useGameStore.getState().actionLogger?.log(kind as any, payload);
-      });
-      
+      const keyboardHandler = new KeyboardHandler(engine);
+      keyboardHandler.initialize();
+
       const currentBeltToolController = new BeltToolController(
         engine,
         () => useGameStore.getState().selectedTool,
