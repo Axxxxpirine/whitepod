@@ -585,6 +585,79 @@ Future examples might include:
 
 Any new profile should follow the same contract: manual control, explicit registration, deterministic behavior when possible, clear UI status, and **complete logistics support** (belts, storage routing, processor recipes).
 
+## Action Logging For LLM Training
+
+The game includes an action logging system to collect demonstration data for training autonomous bots.
+
+### How It Works
+
+- **Always-on logging**: All successful user actions are automatically logged during gameplay
+- **Persistent storage**: Actions are saved to localStorage every 10 actions, plus on tab visibility change
+- **Session-based**: Each game session has a unique ID; actions are tied to that session
+- **Manual export**: Users can export their action log as JSON from the settings panel
+
+### Captured Actions
+
+The logger captures all successful gameplay actions:
+
+- `place_building` — building placement with type, origin, and rotation
+- `remove_building` — building removal with type
+- `connect_buildings` — energy network connections
+- `disconnect_buildings` — energy network disconnections
+- `place_belt` — belt placement with endpoints and segment count
+- `set_processor_recipe` — processor recipe assignments
+- `place_resource` — resource tile placement
+- `remove_resource` — resource tile removal
+- `generate_map` — map generation with seed
+
+### Export Format
+
+Actions are exported as JSON with the following structure:
+
+```json
+{
+  "sessionId": "uuid-string",
+  "startedAtMs": 1713289200000,
+  "actions": [
+    {
+      "sequence": 0,
+      "timestampMs": 1713289205000,
+      "kind": "generate_map",
+      "payload": { "seed": 42 }
+    },
+    {
+      "sequence": 1,
+      "timestampMs": 1713289210000,
+      "kind": "place_building",
+      "payload": { "typeId": "solar_panel", "origin": { "x": 10, "y": 10 }, "rotation": 0 }
+    }
+  ]
+}
+```
+
+### Using The Export
+
+1. Open the game settings (gear icon in bottom-right HUD)
+2. Click "Export actions" button
+3. A JSON file downloads with all actions from the current session
+4. Use this data for LLM training or analysis
+
+### For Bot Developers
+
+When training bots from human demonstrations:
+
+- Parse the exported JSON to extract action sequences
+- Each action includes `timestampMs` for temporal ordering
+- `sequence` provides a global action counter
+- `payload` contains action-specific parameters
+- Only successful actions are logged (failed placements are excluded)
+
+### Storage Details
+
+- Actions are stored per-session in `localStorage` under key `whitepod:actions:v1`
+- Old sessions are cleaned up on session reset
+- Action logs persist across page reloads but are separate from world state
+
 ## Known Limitations
 
 As of this revision, the following profiles do not yet match their specifications:

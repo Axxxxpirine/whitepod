@@ -23,6 +23,7 @@ import {
   saveWorldSession,
   writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
+import { ActionLogger } from '@/game/persistence/actionLogger';
 import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
@@ -220,6 +221,11 @@ export function GameCanvas() {
         writeIdleSidecar(sessionId, pausedAtWallClockMs);
       }
 
+      // Initialize action logger for LLM training data collection
+      const actionLogger = new ActionLogger(sessionId);
+      actionLogger.bindAutoSave();
+      useGameStore.getState().setActionLogger(actionLogger);
+
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
           worldSaver?.schedule();
@@ -287,6 +293,12 @@ export function GameCanvas() {
         () => useGameStore.getState().selectedTool,
         () => useGameStore.getState().currentBuildingRotation,
       );
+      
+      // Subscribe to engine actions for LLM training data collection
+      engine.setActionListener(({ kind, payload }: { kind: string; payload: Record<string, unknown> }) => {
+        useGameStore.getState().actionLogger?.log(kind as any, payload);
+      });
+      
       const currentBeltToolController = new BeltToolController(
         engine,
         () => useGameStore.getState().selectedTool,

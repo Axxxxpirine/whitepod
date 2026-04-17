@@ -7,6 +7,7 @@ import {
   loadPersistedSettings,
   savePersistedSettings,
 } from '@/game/persistence/settingsStorage';
+import type { ActionLogger } from '@/game/persistence/actionLogger';
 import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
 import { Direction, type BuildingId, type SelectedTool, type TileCoord } from '@/game/types';
 import { DEFAULT_MAP_SEED } from '@/game/constants';
@@ -39,6 +40,7 @@ interface GameState {
   idleSummary: IdleCatchupResult | null;
   selectedBotProfileId: BotProfileId;
   seedInput: string;
+  actionLogger: ActionLogger | null;
   bot: {
     active: boolean;
     phase: string;
@@ -67,6 +69,7 @@ interface GameState {
   setIdleSummary: (summary: IdleCatchupResult | null) => void;
   setSelectedBotProfileId: (profileId: BotProfileId) => void;
   setSeedInput: (value: string) => void;
+  setActionLogger: (logger: ActionLogger | null) => void;
   setBotControls: (controls: GameState['botControls']) => void;
   setBot: (bot: Partial<GameState['bot']>) => void;
   activateScenarioSession: (args: {
@@ -100,6 +103,7 @@ export const useGameStore = create<GameState>((set) => ({
   idleSummary: null,
   selectedBotProfileId: DEFAULT_BOT_PROFILE_ID,
   seedInput: String(DEFAULT_MAP_SEED),
+  actionLogger: null,
   bot: {
     active: false,
     phase: 'idle',
@@ -175,6 +179,7 @@ export const useGameStore = create<GameState>((set) => ({
     set((state) => ({
       bot: { ...state.bot, ...bot },
     })),
+  setActionLogger: (logger) => set({ actionLogger: logger }),
   activateScenarioSession: (args) =>
     set((state) => ({
       engine: args.engine,

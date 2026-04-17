@@ -528,6 +528,30 @@ export function GameHUD() {
                     <button
                       type="button"
                       onClick={() => {
+                        const logger = useGameStore.getState().actionLogger;
+                        if (!logger) return;
+
+                        const blob = new Blob([logger.exportToJson()], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `whitepod-actions-${Date.now()}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        engine?.emitSfx({ type: 'ui_confirm', context: 'export_actions' });
+                      }}
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Export actions</span>
+                      <span className="tabular-nums text-[11px] text-ink-muted">
+                        {useGameStore.getState().actionLogger?.getActions().length ?? 0}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setSettingsOpen(false);
                         handleResetSession();
                       }}
