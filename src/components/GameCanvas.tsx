@@ -38,6 +38,8 @@ import {
   handleEnergyLinkClick,
   selectedToolsEqual,
 } from './energyLinkHandlers';
+import { MinimapRenderer } from '@/game/renderer/MinimapRenderer';
+import { KeyboardHandler } from '@/game/input/KeyboardHandler';
 
 const WORLD_SAVE_DELAY_MS = 150;
 const VIEW_SAVE_DELAY_MS = 100;
@@ -108,6 +110,7 @@ export function GameCanvas() {
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let fogOfWarRenderer: FogOfWarRenderer | null = null;
     let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
+    let minimapRenderer: MinimapRenderer | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -287,6 +290,13 @@ export function GameCanvas() {
         return { selectedTool, hoverTile };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
+      minimapRenderer = new MinimapRenderer(app, engine, () => {
+        const { selectedTool, hoverTile } = useGameStore.getState();
+        return { selectedTool, hoverTile };
+      });
+
+      const keyboardHandler = new KeyboardHandler(engine);
+      keyboardHandler.initialize();
 
       const currentInputHandler = new InputHandler(
         engine,
@@ -389,7 +399,7 @@ export function GameCanvas() {
       };
       handleWheel = (e) => {
         e.preventDefault();
-        currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode);
+        currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode, e.shiftKey);
       };
       handleKeyDown = (e) => {
         const target = e.target;
@@ -553,6 +563,7 @@ export function GameCanvas() {
         energyLinkRenderer!.render();
         fogOfWarRenderer!.render();
         dayNightOverlayRenderer!.render();
+        minimapRenderer!.render();
         engine.grid.clearDirty();
       });
     };

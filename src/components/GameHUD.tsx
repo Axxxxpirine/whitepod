@@ -414,6 +414,9 @@ export function GameHUD() {
           <div className="flex min-w-0 items-end justify-self-start">
             <div className="pointer-events-auto flex flex-col items-start gap-2">
               <ToolModeIndicator />
+              <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+                Zoom: Shift+Wheel | Pan: Wheel/WASD/Arrows
+              </div>
               {hoverTile && (
                 <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
                   {hoverTile.x}, {hoverTile.y}

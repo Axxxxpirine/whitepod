@@ -154,9 +154,12 @@ export class InputHandler {
     this.onHoverChange?.(null);
   }
 
-  onWheel(screenX: number, screenY: number, deltaX: number, deltaY: number, ctrlKey: boolean, deltaMode: number): void {
+  onWheel(screenX: number, screenY: number, deltaX: number, deltaY: number, ctrlKey: boolean, deltaMode: number, shiftKey: boolean = false): void {
     if (ctrlKey) {
       const factor = Math.pow(1.01, -deltaY);
+      this.engine.viewport.zoomAt(screenX, screenY, factor);
+    } else if (shiftKey) {
+      const factor = deltaY < 0 ? 1.1 : 0.9;
       this.engine.viewport.zoomAt(screenX, screenY, factor);
     } else if (deltaMode !== 0 || Math.abs(deltaY) >= 50) {
       const factor = deltaY < 0 ? 1.1 : 0.9;
