@@ -1,17 +1,23 @@
+import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 import { GRID_HEIGHT, GRID_WIDTH } from '@/game/constants';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
-  WATCHTOWER_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   getBuildingType,
+  isProcessorTypeId,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
-import { isInBounds } from '@/game/data/coords';
 import type { BotLifecycle, BotStatus } from './botTypes';
+import { routeExtractorToStorage } from './util/beltRouting';
+import { configureConverterForResource, checkProcessorLogisticsReadiness, shouldConfigureProcessor } from './util/processorConfig';
+import { calculateSpiralAnchor } from './util/spatialPlanning';
+import { shouldPrioritizeBatteryOverSolar } from './util/energyPlanning';
+import { shouldThrottleExtractorPlacement } from './util/resourceAnalysis';
 
 const MAX_ACTIONS_PER_TICK = 12;
 
@@ -22,40 +28,6 @@ const RESOURCE_PRIORITY: Partial<Record<ResourceTypeT, number>> = {
   [ResourceType.Oxygen]: 3,
 };
 
-function buildingPriority(typeId: BuildingTypeId): number {
-  switch (typeId) {
-    case BATTERY_BASIC_BUILDING_TYPE_ID:
-      return 3;
-    case SOLAR_PANEL_BUILDING_TYPE_ID:
-      return 2;
-    case EXTRACTOR_BUILDING_TYPE_ID:
-      return 1;
-    case WATCHTOWER_BUILDING_TYPE_ID:
-      return 0;
-    default:
-      return 0;
-  }
-}
-
-function spiralCoordinate(step: number, centerX: number, centerY: number): { x: number; y: number } {
-  let x = 0;
-  let y = 0;
-  let dx = 0;
-  let dy = -1;
-
-  for (let index = 0; index < step; index++) {
-    if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) {
-      const previousDx = dx;
-      dx = -dy;
-      dy = previousDx;
-    }
-    x += dx;
-    y += dy;
-  }
-
-  return { x: centerX + x, y: centerY + y };
-}
-
 export class FractalBot implements BotLifecycle {
   private readonly engine: GameEngine;
   private readonly onStatusChange: (status: BotStatus) => void;
@@ -63,6 +35,7 @@ export class FractalBot implements BotLifecycle {
   private active = false;
   private running = false;
   private spiralStep = 0;
+  private storageId: BuildingId | null = null;
   private status: BotStatus = { active: false, phase: 'booting', target: null };
 
   constructor(engine: GameEngine, onStatusChange: (status: BotStatus) => void) {
@@ -105,7 +78,22 @@ export class FractalBot implements BotLifecycle {
     let didAct = false;
 
     for (let actions = 0; actions < MAX_ACTIONS_PER_TICK; actions++) {
+      if (this.initializeStorageIfNeeded()) {
+        didAct = true;
+        continue;
+      }
+
       if (this.placeSpiralWatchtower()) {
+        didAct = true;
+        continue;
+      }
+
+      if (this.routeExtractorsToStorage()) {
+        didAct = true;
+        continue;
+      }
+
+      if (this.configureProcessors()) {
         didAct = true;
         continue;
       }
@@ -131,27 +119,69 @@ export class FractalBot implements BotLifecycle {
     return { didAct };
   }
 
+  private initializeStorageIfNeeded(): boolean {
+    if (this.storageId !== null) return false;
+
+    for (const [id, building] of this.engine.getBuildings()) {
+      const type = getBuildingType(building.typeId);
+      if (type?.id === STORAGE_BUILDING_TYPE_ID) {
+        this.storageId = id;
+        return false;
+      }
+    }
+
+    const centerX = Math.floor(GRID_WIDTH / 2);
+    const centerY = Math.floor(GRID_HEIGHT / 2);
+
+    for (let y = centerY - 2; y <= centerY + 2; y++) {
+      for (let x = centerX - 2; x <= centerX + 2; x++) {
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) continue;
+        if (!this.engine.grid.isRevealed(x, y)) continue;
+        if (!this.engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x, y }, Direction.North).ok) continue;
+
+        const placedId = this.engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x, y }, Direction.North, { emitSfx: false });
+        if (placedId !== null) {
+          this.storageId = placedId;
+          this.setStatus({ active: true, phase: 'booting', target: `storage @ ${x},${y}` });
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   private placeSpiralWatchtower(): boolean {
-    const target = this.findSpiralPlacement(WATCHTOWER_BUILDING_TYPE_ID, this.spiralStep);
-    if (!target) return false;
+    const anchor = calculateSpiralAnchor(this.engine, this.spiralStep);
+    const target = { x: anchor.x, y: anchor.y };
 
-    const placedId = this.engine.placeBuilding(WATCHTOWER_BUILDING_TYPE_ID, { x: target.x, y: target.y }, Direction.North, {
-      emitSfx: false,
-    });
-    if (placedId === null) return false;
+    if (!this.engine.canPlaceBuilding('watchtower_basic', target, Direction.North).ok) {
+      this.spiralStep += anchor.adaptiveStepSize;
+      return false;
+    }
 
-    this.spiralStep = target.step + 1;
+    const placedId = this.engine.placeBuilding('watchtower_basic', target, Direction.North, { emitSfx: false });
+    if (placedId === null) {
+      this.spiralStep += anchor.adaptiveStepSize;
+      return false;
+    }
+
+    this.spiralStep += anchor.adaptiveStepSize;
     this.setStatus({ active: true, phase: 'spiraling', target: `tower @ ${target.x},${target.y}` });
     return true;
   }
 
   private placeBestExtractor(): boolean {
-    const anchor = this.getSpiralAnchor();
+    const anchor = calculateSpiralAnchor(this.engine, this.spiralStep);
     const candidates = this.collectVisibleDeposits(anchor);
     if (candidates.length === 0) return false;
 
     const target = candidates[0];
     if (!target) return false;
+
+    if (shouldThrottleExtractorPlacement(this.engine, target.resource)) {
+      return false;
+    }
 
     const placement = this.engine.canPlaceBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: target.x, y: target.y }, Direction.North);
     if (!placement.ok) return false;
@@ -169,11 +199,67 @@ export class FractalBot implements BotLifecycle {
     return true;
   }
 
+  private routeExtractorsToStorage(): boolean {
+    if (this.storageId === null) return false;
+
+    for (const [id, building] of this.engine.getBuildings()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+
+      const type = getBuildingType(building.typeId);
+      if (!type) continue;
+
+      const result = routeExtractorToStorage(this.engine, id, this.storageId);
+      if (result.success) {
+        this.setStatus({ active: true, phase: 'logistics', target: `belt: extractor → storage` });
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private configureProcessors(): boolean {
+    for (const [id, building] of this.engine.getBuildings()) {
+      if (!isProcessorTypeId(building.typeId)) continue;
+
+      if (!shouldConfigureProcessor(this.engine, id)) continue;
+
+      if (!checkProcessorLogisticsReadiness(this.engine, id)) continue;
+
+      const resourceType = this.findResourceForProcessor(id);
+      if (!resourceType) continue;
+
+      if (building.typeId === CONVERTER_BUILDING_TYPE_ID) {
+        const recipeId = configureConverterForResource(this.engine, id, resourceType);
+        if (recipeId) {
+          this.setStatus({ active: true, phase: 'processing', target: `recipe: ${recipeId}` });
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private findResourceForProcessor(_processorId: BuildingId): ResourceTypeT | null {
+    for (const [, building] of this.engine.getBuildings()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+
+      const extractorResource = this.engine.getResourceAt(building.origin.x, building.origin.y);
+      if (extractorResource !== 0) {
+        return extractorResource;
+      }
+    }
+
+    return ResourceType.Regolith;
+  }
+
   private ensureEnergySupply(): boolean {
     const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
     if (extractors.length === 0) return false;
 
-    const anchor = this.getSpiralAnchor();
+    const shouldPrioritizeBattery = shouldPrioritizeBatteryOverSolar(this.engine);
+    const anchor = calculateSpiralAnchor(this.engine, this.spiralStep);
     const solarPanels = this.getBuildingsByType(SOLAR_PANEL_BUILDING_TYPE_ID);
     const batteries = this.getBuildingsByType(BATTERY_BASIC_BUILDING_TYPE_ID);
     const unpoweredExtractors = extractors.filter((id) => this.engine.getBuildingPowerState(id) !== 'powered');
@@ -193,7 +279,7 @@ export class FractalBot implements BotLifecycle {
       }
     }
 
-    if (batteries.length < targetBatteries || unpoweredExtractors.length > 0) {
+    if (batteries.length < targetBatteries || unpoweredExtractors.length > 0 || shouldPrioritizeBattery) {
       const origin = this.findBestPlacement(BATTERY_BASIC_BUILDING_TYPE_ID, anchor);
       if (origin) {
         const placedId = this.engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
@@ -237,8 +323,7 @@ export class FractalBot implements BotLifecycle {
           x,
           y,
           resource,
-          score:
-            (RESOURCE_PRIORITY[resource] ?? 0) * 1000 - (Math.abs(x - reference.x) + Math.abs(y - reference.y)),
+          score: (RESOURCE_PRIORITY[resource] ?? 0) * 1000 - (Math.abs(x - reference.x) + Math.abs(y - reference.y)),
         });
       }
     }
@@ -263,7 +348,7 @@ export class FractalBot implements BotLifecycle {
       nodes.push({
         id,
         label: type.name,
-        priority: buildingPriority(building.typeId),
+        priority: this.buildingPriority(building.typeId),
       });
     }
     return nodes;
@@ -277,12 +362,26 @@ export class FractalBot implements BotLifecycle {
     return { id: hub.id, label: hub.label };
   }
 
+  private buildingPriority(typeId: BuildingTypeId): number {
+    switch (typeId) {
+      case BATTERY_BASIC_BUILDING_TYPE_ID:
+        return 3;
+      case SOLAR_PANEL_BUILDING_TYPE_ID:
+        return 2;
+      case EXTRACTOR_BUILDING_TYPE_ID:
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
   private findBestPlacement(typeId: BuildingTypeId, reference: { x: number; y: number }): { x: number; y: number } | null {
     let best: { x: number; y: number; score: number } | null = null;
 
     for (let y = 0; y < GRID_HEIGHT; y++) {
       for (let x = 0; x < GRID_WIDTH; x++) {
         if (!this.engine.canPlaceBuilding(typeId, { x, y }, Direction.North).ok) continue;
+
         const distance = Math.abs(x - reference.x) + Math.abs(y - reference.y);
         if (!best || distance < best.score || (distance === best.score && (y < best.y || (y === best.y && x < best.x)))) {
           best = { x, y, score: distance };
@@ -291,27 +390,6 @@ export class FractalBot implements BotLifecycle {
     }
 
     return best ? { x: best.x, y: best.y } : null;
-  }
-
-  private findSpiralPlacement(typeId: BuildingTypeId, startStep: number): { x: number; y: number; step: number } | null {
-    const centerX = Math.floor(GRID_WIDTH / 2);
-    const centerY = Math.floor(GRID_HEIGHT / 2);
-    const limit = GRID_WIDTH * GRID_HEIGHT * 2;
-
-    for (let step = startStep; step < limit; step++) {
-      const candidate = spiralCoordinate(step, centerX, centerY);
-      if (!isInBounds(candidate.x, candidate.y)) continue;
-      if (!this.engine.canPlaceBuilding(typeId, candidate, Direction.North).ok) continue;
-      return { ...candidate, step };
-    }
-
-    return null;
-  }
-
-  private getSpiralAnchor(): { x: number; y: number } {
-    const centerX = Math.floor(GRID_WIDTH / 2);
-    const centerY = Math.floor(GRID_HEIGHT / 2);
-    return spiralCoordinate(this.spiralStep, centerX, centerY);
   }
 
   private describeStockTarget(): string {

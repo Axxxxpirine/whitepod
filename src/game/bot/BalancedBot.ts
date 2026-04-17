@@ -4,13 +4,20 @@ import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
-  WATCHTOWER_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
+  CONVERTER_BUILDING_TYPE_ID,
   getBuildingType,
+  isProcessorTypeId,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import type { BotLifecycle, BotStatus } from './botTypes';
+import { routeExtractorToStorage } from './util/beltRouting';
+import { configureConverterForResource, checkProcessorLogisticsReadiness, shouldConfigureProcessor } from './util/processorConfig';
+import { shouldTriggerExploration, findFrontierWatchtowerPosition } from './util/spatialPlanning';
+import { shouldPrioritizeBatteryOverSolar } from './util/energyPlanning';
+import { shouldThrottleExtractorPlacement } from './util/resourceAnalysis';
 
 const MAX_ACTIONS_PER_TICK = 14;
 
@@ -21,27 +28,13 @@ const RESOURCE_PRIORITY: Partial<Record<ResourceTypeT, number>> = {
   [ResourceType.Oxygen]: 3,
 };
 
-function buildingPriority(typeId: BuildingTypeId): number {
-  switch (typeId) {
-    case BATTERY_BASIC_BUILDING_TYPE_ID:
-      return 3;
-    case SOLAR_PANEL_BUILDING_TYPE_ID:
-      return 2;
-    case EXTRACTOR_BUILDING_TYPE_ID:
-      return 1;
-    case WATCHTOWER_BUILDING_TYPE_ID:
-      return 0;
-    default:
-      return 0;
-  }
-}
-
 export class BalancedBot implements BotLifecycle {
   private readonly engine: GameEngine;
   private readonly onStatusChange: (status: BotStatus) => void;
   private timerId: number | null = null;
   private active = false;
   private running = false;
+  private storageId: BuildingId | null = null;
   private status: BotStatus = { active: false, phase: 'booting', target: null };
 
   constructor(engine: GameEngine, onStatusChange: (status: BotStatus) => void) {
@@ -84,7 +77,12 @@ export class BalancedBot implements BotLifecycle {
     let didAct = false;
 
     for (let actions = 0; actions < MAX_ACTIONS_PER_TICK; actions++) {
-      if (this.ensureEnergyBalance()) {
+      if (this.initializeStorageIfNeeded()) {
+        didAct = true;
+        continue;
+      }
+
+      if (this.handleExplorationTrigger()) {
         didAct = true;
         continue;
       }
@@ -94,12 +92,22 @@ export class BalancedBot implements BotLifecycle {
         continue;
       }
 
-      if (this.connectEnergyNetwork()) {
+      if (this.routeExtractorsToStorage()) {
         didAct = true;
         continue;
       }
 
-      if (this.placeWatchtowerIfSafe()) {
+      if (this.configureProcessors()) {
+        didAct = true;
+        continue;
+      }
+
+      if (this.ensureEnergyBalance()) {
+        didAct = true;
+        continue;
+      }
+
+      if (this.connectEnergyNetwork()) {
         didAct = true;
         continue;
       }
@@ -110,35 +118,52 @@ export class BalancedBot implements BotLifecycle {
     return { didAct };
   }
 
-  private ensureEnergyBalance(): boolean {
-    const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
-    const batteries = this.getBuildingsByType(BATTERY_BASIC_BUILDING_TYPE_ID);
-    const unpoweredExtractors = extractors.filter((id) => this.engine.getBuildingPowerState(id) !== 'powered');
-    const globalEnergy = this.engine.getEnergyGlobalStats();
-    const daylight = getDaylightFactor(this.engine.simulationTime);
+  private initializeStorageIfNeeded(): boolean {
+    if (this.storageId !== null) return false;
 
-    if (globalEnergy.surplusPower < -5 && daylight >= 0.2) {
-      const origin = this.findBestPlacement(SOLAR_PANEL_BUILDING_TYPE_ID, 'closest');
-      if (origin) {
-        const placedId = this.engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
+    for (const [id, building] of this.engine.getBuildings()) {
+      const type = getBuildingType(building.typeId);
+      if (type?.id === STORAGE_BUILDING_TYPE_ID) {
+        this.storageId = id;
+        return false;
+      }
+    }
+
+    const centerX = Math.floor(GRID_WIDTH / 2);
+    const centerY = Math.floor(GRID_HEIGHT / 2);
+
+    for (let y = centerY - 2; y <= centerY + 2; y++) {
+      for (let x = centerX - 2; x <= centerX + 2; x++) {
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) continue;
+        if (!this.engine.grid.isRevealed(x, y)) continue;
+        if (!this.engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, { x, y }, Direction.North).ok) continue;
+
+        const placedId = this.engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x, y }, Direction.North, { emitSfx: false });
         if (placedId !== null) {
-          this.setStatus({ active: true, phase: 'powering', target: `solar @ ${origin.x},${origin.y}` });
+          this.storageId = placedId;
+          this.setStatus({ active: true, phase: 'booting', target: `storage @ ${x},${y}` });
           return true;
         }
       }
     }
 
-    if (unpoweredExtractors.length > 0) {
-      if (batteries.length === 0) {
-        const origin = this.findBestPlacement(BATTERY_BASIC_BUILDING_TYPE_ID, 'closest');
-        if (origin) {
-          const placedId = this.engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
-          if (placedId !== null) {
-            this.setStatus({ active: true, phase: 'powering', target: `battery @ ${origin.x},${origin.y}` });
-            return true;
-          }
-        }
-      }
+    return false;
+  }
+
+  private handleExplorationTrigger(): boolean {
+    if (!shouldTriggerExploration(this.engine, 0.3)) return false;
+
+    const frontierPos = findFrontierWatchtowerPosition(this.engine);
+    if (!frontierPos) return false;
+
+    if (!this.engine.canPlaceBuilding('watchtower_basic', frontierPos, Direction.North).ok) {
+      return false;
+    }
+
+    const placedId = this.engine.placeBuilding('watchtower_basic', frontierPos, Direction.North, { emitSfx: false });
+    if (placedId !== null) {
+      this.setStatus({ active: true, phase: 'expanding', target: `tower @ ${frontierPos.x},${frontierPos.y}` });
+      return true;
     }
 
     return false;
@@ -151,11 +176,7 @@ export class BalancedBot implements BotLifecycle {
     const target = candidates[0];
     if (!target) return false;
 
-    const energy = this.engine.getEnergyGlobalStats();
-    const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
-    const maxExtractors = Math.floor(energy.production / 2);
-
-    if (extractors.length >= maxExtractors && energy.surplusPower < 10) {
+    if (shouldThrottleExtractorPlacement(this.engine, target.resource)) {
       return false;
     }
 
@@ -175,6 +196,99 @@ export class BalancedBot implements BotLifecycle {
     return true;
   }
 
+  private routeExtractorsToStorage(): boolean {
+    if (this.storageId === null) return false;
+
+    for (const [id, building] of this.engine.getBuildings()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+
+      const type = getBuildingType(building.typeId);
+      if (!type) continue;
+
+      const result = routeExtractorToStorage(this.engine, id, this.storageId);
+      if (result.success) {
+        this.setStatus({ active: true, phase: 'logistics', target: `belt: extractor → storage` });
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private configureProcessors(): boolean {
+    for (const [id, building] of this.engine.getBuildings()) {
+      if (!isProcessorTypeId(building.typeId)) continue;
+
+      if (!shouldConfigureProcessor(this.engine, id)) continue;
+
+      if (!checkProcessorLogisticsReadiness(this.engine, id)) continue;
+
+      const resourceType = this.findResourceForProcessor(id);
+      if (!resourceType) continue;
+
+      if (building.typeId === CONVERTER_BUILDING_TYPE_ID) {
+        const recipeId = configureConverterForResource(this.engine, id, resourceType);
+        if (recipeId) {
+          this.setStatus({ active: true, phase: 'processing', target: `recipe: ${recipeId}` });
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private findResourceForProcessor(_processorId: BuildingId): ResourceTypeT | null {
+    for (const [, building] of this.engine.getBuildings()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+
+      const extractorResource = this.engine.getResourceAt(building.origin.x, building.origin.y);
+      if (extractorResource !== 0) {
+        return extractorResource;
+      }
+    }
+
+    return ResourceType.Regolith;
+  }
+
+  private ensureEnergyBalance(): boolean {
+    const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
+    if (extractors.length === 0) return false;
+
+    const shouldPrioritizeBattery = shouldPrioritizeBatteryOverSolar(this.engine);
+    const solarPanels = this.getBuildingsByType(SOLAR_PANEL_BUILDING_TYPE_ID);
+    const batteries = this.getBuildingsByType(BATTERY_BASIC_BUILDING_TYPE_ID);
+    const unpoweredExtractors = extractors.filter((id) => this.engine.getBuildingPowerState(id) !== 'powered');
+    const daylight = getDaylightFactor(this.engine.simulationTime);
+
+    const targetSolarPanels = Math.max(extractors.length, Math.ceil(extractors.length * 1.25));
+    const targetBatteries = Math.max(1, Math.ceil(extractors.length / 3));
+
+    if (solarPanels.length < targetSolarPanels || (unpoweredExtractors.length > 0 && daylight >= 0.2)) {
+      const origin = this.findBestPlacement(SOLAR_PANEL_BUILDING_TYPE_ID);
+      if (origin) {
+        const placedId = this.engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
+        if (placedId !== null) {
+          this.setStatus({ active: true, phase: 'powering', target: `solar @ ${origin.x},${origin.y}` });
+          return true;
+        }
+      }
+    }
+
+    if (batteries.length < targetBatteries || unpoweredExtractors.length > 0 || shouldPrioritizeBattery) {
+      const origin = this.findBestPlacement(BATTERY_BASIC_BUILDING_TYPE_ID);
+      if (origin) {
+        const placedId = this.engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
+        if (placedId !== null) {
+          this.setStatus({ active: true, phase: 'powering', target: `battery @ ${origin.x},${origin.y}` });
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   private connectEnergyNetwork(): boolean {
     const nodes = this.getEnergyNodes();
     if (nodes.length < 2) return false;
@@ -190,20 +304,6 @@ export class BalancedBot implements BotLifecycle {
     }
 
     return false;
-  }
-
-  private placeWatchtowerIfSafe(): boolean {
-    const globalEnergy = this.engine.getEnergyGlobalStats();
-    if (globalEnergy.surplusPower < 5) return false;
-
-    const origin = this.findBestPlacement(WATCHTOWER_BUILDING_TYPE_ID, 'farthest');
-    if (!origin) return false;
-
-    const placedId = this.engine.placeBuilding(WATCHTOWER_BUILDING_TYPE_ID, origin, Direction.North, { emitSfx: false });
-    if (placedId === null) return false;
-
-    this.setStatus({ active: true, phase: 'expanding', target: `tower @ ${origin.x},${origin.y}` });
-    return true;
   }
 
   private collectVisibleDeposits(): Array<{ x: number; y: number; resource: ResourceTypeT; score: number }> {
@@ -246,7 +346,7 @@ export class BalancedBot implements BotLifecycle {
       nodes.push({
         id,
         label: type.name,
-        priority: buildingPriority(building.typeId),
+        priority: this.buildingPriority(building.typeId),
       });
     }
     return nodes;
@@ -260,7 +360,20 @@ export class BalancedBot implements BotLifecycle {
     return { id: hub.id, label: hub.label };
   }
 
-  private findBestPlacement(typeId: BuildingTypeId, preference: 'closest' | 'farthest'): { x: number; y: number } | null {
+  private buildingPriority(typeId: BuildingTypeId): number {
+    switch (typeId) {
+      case BATTERY_BASIC_BUILDING_TYPE_ID:
+        return 3;
+      case SOLAR_PANEL_BUILDING_TYPE_ID:
+        return 2;
+      case EXTRACTOR_BUILDING_TYPE_ID:
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  private findBestPlacement(typeId: BuildingTypeId): { x: number; y: number } | null {
     let best: { x: number; y: number; score: number } | null = null;
     const centerX = Math.floor(GRID_WIDTH / 2);
     const centerY = Math.floor(GRID_HEIGHT / 2);
@@ -268,20 +381,20 @@ export class BalancedBot implements BotLifecycle {
     for (let y = 0; y < GRID_HEIGHT; y++) {
       for (let x = 0; x < GRID_WIDTH; x++) {
         if (!this.engine.canPlaceBuilding(typeId, { x, y }, Direction.North).ok) continue;
+
         const distance = Math.abs(x - centerX) + Math.abs(y - centerY);
-        if (preference === 'closest') {
-          if (!best || distance < best.score || (distance === best.score && (y < best.y || (y === best.y && x < best.x)))) {
-            best = { x, y, score: distance };
-          }
-        } else {
-          if (!best || distance > best.score || (distance === best.score && (y < best.y || (y === best.y && x < best.x)))) {
-            best = { x, y, score: distance };
-          }
+        if (!best || distance < best.score || (distance === best.score && (y < best.y || (y === best.y && x < best.x)))) {
+          best = { x, y, score: distance };
         }
       }
     }
 
     return best ? { x: best.x, y: best.y } : null;
+  }
+
+  private describeBalanceTarget(): string {
+    const stock = this.engine.getResourceCounts();
+    return `stock r${stock.regolith} h${stock.hydrogen} o${stock.oxygen}`;
   }
 
   private setStatus(status: BotStatus): void {
@@ -295,11 +408,5 @@ export class BalancedBot implements BotLifecycle {
 
     this.status = status;
     this.onStatusChange(status);
-  }
-
-  private describeBalanceTarget(): string {
-    const energy = this.engine.getEnergyGlobalStats();
-    const stock = this.engine.getResourceCounts();
-    return `e${Math.round(energy.surplusPower)} r${stock.regolith} h${stock.hydrogen} o${stock.oxygen}`;
   }
 }
