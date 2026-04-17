@@ -1,6 +1,6 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
-import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from '../constants';
+import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import type { SelectedTool, TileCoord } from '../types';
 
 interface MinimapPreviewState {
@@ -9,7 +9,6 @@ interface MinimapPreviewState {
 }
 
 const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower';
-const WATCHTOWER_REVEAL_RADIUS = 15;
 
 export class MinimapRenderer {
   private readonly container: Container;
@@ -34,8 +33,6 @@ export class MinimapRenderer {
     app: Application,
     engine: GameEngine,
     getPreviewState: () => MinimapPreviewState,
-    x: number = 0,
-    y: number = 20,
     size: number = 180,
   ) {
     this.engine = engine;
@@ -44,8 +41,9 @@ export class MinimapRenderer {
 
     this.container = new Container();
     this.container.eventMode = 'static';
-    this.container.x = x;
-    this.container.y = y;
+    // Position in top-right corner (20px from edges)
+    this.container.x = app.screen.width - size - 20;
+    this.container.y = 20;
     app.stage.addChild(this.container);
 
     this.canvas = document.createElement('canvas');
@@ -227,7 +225,7 @@ export class MinimapRenderer {
       .fill({ color: 0xFFFFFF, alpha: 0.1 });
   }
 
-  private onPointerDown(event: { data: { global: { x: number; y: number } } }): void {
+  private onPointerDown(event: any): void {
     this.isDragging = true;
     this.dragStartX = event.data.global.x;
     this.dragStartY = event.data.global.y;
@@ -236,7 +234,7 @@ export class MinimapRenderer {
     this.dragStartCenterY = this.engine.viewport.centerY;
   }
 
-  private onPointerMove(event: { data: { global: { x: number; y: number } } }): void {
+  private onPointerMove(event: any): void {
     if (!this.isDragging) return;
 
     const dx = event.data.global.x - this.dragStartX;
