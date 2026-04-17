@@ -864,4 +864,31 @@ All bots now include:
 - Adaptive spiral expansion (step size adjusts based on resource density)
 - Localized energy clusters per module (isolated solar/battery per module)
 
-These features were implemented in Phases 1-8 of the bot system update, with MasterBot serving as the reference implementation for all utility functions and patterns.
+These features were implemented in Phases 1-8 of the bot system update (April 2026), with MasterBot serving as the reference implementation for all utility functions and patterns.
+
+### Implementation Summary
+
+**Phases Completed (April 2026):**
+
+1. **Phase 1 - CircuitBot**: Removed `placeWatchtowerIfSafe()` method, removed watchtower placement from `runCycle()`, added storage tracking, belt routing, processor configuration, resource rate monitoring, and battery optimization.
+
+2. **Phase 2 - AutonomousBot**: Added `storageId` field, `initializeStorageIfNeeded()`, `handleExplorationTrigger()`, `routeExtractorsToStorage()`, `configureProcessors()`, replaced `expandVision()` with frontier-based exploration, added resource rate throttling and battery optimization.
+
+3. **Phase 3 - ExplorerBot**: Added same feature set as AutonomousBot, keeping exploration (frontier watchtowers) as primary focus with logistics/processing as secondary.
+
+4. **Phase 4 - FractalBot**: Added same feature set with spiral-based exploration, adaptive step size, and belt routing following spiral geometry.
+
+5. **Phase 5 - LogisticsBot**: Added same feature set with infrastructure focus and corridor planning support.
+
+6. **Phase 6 - BalancedBot**: Added same feature set with steady growth and energy discipline preserved.
+
+7. **Phase 7 - SpeedrunBot**: Added same feature set with aggressive early expansion (up to 18 placements per tick), immediate belt routing, and processor configuration.
+
+8. **Phase 8 - Validation**: All bots pass `npm run lint`, `npm run build`, and type checking.
+
+**Utility Modules Created/Updated:**
+- `src/game/bot/util/beltRouting.ts` - Belt path finding and port selection
+- `src/game/bot/util/processorConfig.ts` - Processor recipe configuration
+- `src/game/bot/util/spatialPlanning.ts` - Frontier detection, spiral anchors, corridor planning
+- `src/game/bot/util/energyPlanning.ts` - Battery/solar calculations, charge state monitoring
+- `src/game/bot/util/resourceAnalysis.ts` - Resource rate analysis, throttle detection
