@@ -23,7 +23,7 @@ import {
   saveWorldSession,
   writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
-import { ActionLogger } from '@/game/persistence/actionLogger';
+import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
 import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
@@ -126,6 +126,7 @@ export function GameCanvas() {
     let resizeObserver: ResizeObserver | null = null;
     let unsubscribeEngine: (() => void) | null = null;
     let unsubscribeTool: (() => void) | null = null;
+    let unsubscribeActions: (() => void) | null = null;
     let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let currentEngine: GameEngine | null = null;
@@ -228,6 +229,11 @@ export function GameCanvas() {
       const actionLogger = new ActionLogger(sessionId);
       actionLogger.bindAutoSave();
       useGameStore.getState().setActionLogger(actionLogger);
+      
+      // Register action logger with engine to capture all actions
+      unsubscribeActions = engine.setActionListener((action) => {
+        actionLogger.log(action.kind as ActionKind, action.payload);
+      });
 
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
@@ -578,6 +584,7 @@ export function GameCanvas() {
         viewSaver?.cancel();
         unsubscribeTool?.();
         unsubscribeEngine?.();
+        unsubscribeActions?.();
         resizeObserver?.disconnect();
         if (app?.canvas && handlePointerDown) app.canvas.removeEventListener('pointerdown', handlePointerDown);
         if (app?.canvas && handlePointerMove) app.canvas.removeEventListener('pointermove', handlePointerMove);
