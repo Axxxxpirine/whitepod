@@ -52,7 +52,7 @@ describe('GameHUD', () => {
       pendingEnergyLinkSource: null,
       linkSolarOnPlacement: true,
       idleSummary: null,
-      selectedBotProfileId: 'greedy',
+      selectedBotProfileId: 'master',
       seedInput: '42',
       botControls: null,
       bot: {
@@ -337,7 +337,7 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
     expect(useGameStore.getState().beltPreview).toBeNull();
     expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
-    expect(useGameStore.getState().selectedBotProfileId).toBe('greedy');
+    expect(useGameStore.getState().selectedBotProfileId).toBe('master');
     expect(useGameStore.getState().seedInput).toBe('42');
     expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
@@ -361,7 +361,7 @@ describe('GameHUD', () => {
   });
 
   it('updates the bot profile and seed before reset', () => {
-    useGameStore.setState({ selectedBotProfileId: 'greedy', seedInput: '42' });
+    useGameStore.setState({ selectedBotProfileId: 'master', seedInput: '42' });
 
     render(<GameHUD />);
 

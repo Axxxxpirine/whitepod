@@ -42,7 +42,7 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
-      selectedBotProfileId: 'fractal',
+      selectedBotProfileId: 'master',
       seedInput: '99',
       sessionId: 'session-a',
     });
@@ -66,7 +66,7 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'belt' },
-      selectedBotProfileId: 'greedy',
+      selectedBotProfileId: 'master',
       seedInput: '42',
       sessionId: 'session-a',
     });
@@ -86,7 +86,7 @@ describe('persistent storage', () => {
         sessionId: 'session-b',
         viewport: { centerX: 10, centerY: 20, zoom: 2 },
         selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
-        selectedBotProfileId: 'greedy',
+        selectedBotProfileId: 'master',
         seedInput: '42',
       }),
     );
@@ -131,7 +131,7 @@ describe('persistent storage', () => {
     const payloads = buildPersistedSessionPayloads({
       engine,
       selectedTool: { kind: 'belt' },
-      selectedBotProfileId: 'fractal',
+      selectedBotProfileId: 'master',
       seedInput: '77',
       sessionId: 'session-shared',
     });
@@ -143,7 +143,7 @@ describe('persistent storage', () => {
     installPersistedSession({
       engine,
       selectedTool: { kind: 'belt' },
-      selectedBotProfileId: 'fractal',
+      selectedBotProfileId: 'master',
       seedInput: '77',
       sessionId: 'session-shared',
     });
@@ -151,7 +151,7 @@ describe('persistent storage', () => {
     const loaded = loadPersistedSession(640, 480);
     expect(loaded?.sessionId).toBe('session-shared');
     expect(loaded?.selectedTool).toEqual({ kind: 'belt' });
-    expect(loaded?.selectedBotProfileId).toBe('fractal');
+    expect(loaded?.selectedBotProfileId).toBe('master');
     expect(loaded?.seedInput).toBe('77');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
