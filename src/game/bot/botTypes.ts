@@ -1,6 +1,6 @@
 import type { GameEngine } from '@/game/engine/GameEngine';
 
-export type BotProfileId = 'greedy' | 'fractal' | 'explorer' | 'balanced' | 'logistics' | 'speedrun' | 'circuit' | 'master';
+export type BotProfileId = 'greedy' | 'fractal' | 'explorer' | 'balanced' | 'logistics' | 'speedrun' | 'circuit' | 'master' | 'tactful';
 
 export interface BotStatus {
   readonly active: boolean;
