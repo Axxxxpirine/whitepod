@@ -34,7 +34,7 @@ export class MinimapRenderer {
     app: Application,
     engine: GameEngine,
     getPreviewState: () => MinimapPreviewState,
-    x: number = 20,
+    x: number = 0,
     y: number = 20,
     size: number = 180,
   ) {

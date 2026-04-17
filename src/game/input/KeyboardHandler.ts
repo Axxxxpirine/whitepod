@@ -10,7 +10,7 @@ export class KeyboardHandler {
   private readonly engine: GameEngine;
   private keyboardState: KeyboardState = { keysPressed: new Set(), shiftPressed: false };
   private animationFrameId: number | null = null;
-  private readonly panSpeed = 200;
+  private readonly panSpeed = 50;
   private isInitialized = false;
 
   constructor(engine: GameEngine) {
