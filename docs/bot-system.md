@@ -759,6 +759,75 @@ When training bots from human demonstrations:
 - Old sessions are cleaned up on session reset
 - Action logs persist across page reloads but are separate from world state
 
+## Minimap and Keyboard Controls
+
+The game includes an interactive minimap in the top-right corner with keyboard controls for camera navigation and zoom management.
+
+### Minimap Features
+
+**Position and Appearance:**
+- Located in top-right corner (20px from edges)
+- Default size: 180x180px
+- Fully opaque with minimal thin border for viewport indicator
+- Displays: resources, buildings, and viewport border
+- Mode indicator text in corner showing current mode (zoom vs. navigate)
+
+**Interactive Behavior:**
+- **Click**: Jump camera to clicked position
+- **Drag**: Smoothly pan camera to target position
+- **Viewport border**: Shows current view area as thin outline
+
+### Keyboard Controls
+
+**Camera Panning (WASD/Arrows):**
+- `W` / `↑`: Pan camera up (200px/sec)
+- `A` / `←`: Pan camera left (200px/sec)
+- `S` / `↓`: Pan camera down (200px/sec)
+- `D` / `→`: Pan camera right (200px/sec)
+
+**Zoom Control:**
+- `+` / `=`: Zoom in (1.1x multiplier)
+- `-` / `_`: Zoom out (1.1x multiplier)
+- `Shift` + `Wheel`: Zoom mode (scroll to zoom)
+- `Space`: Center viewport on map center
+
+**Mode Indicator:**
+- Shows current mode in minimap corner
+- **Navigate mode**: Default, WASD/arrows pan camera
+- **Zoom mode**: Shift key held, wheel input zooms
+
+### Implementation Details
+
+**Renderer Architecture:**
+- `MinimapRenderer.ts`: PixiJS-based minimap renderer
+- Uses `eventMode = 'static'` for pointer events (consistent with other renderers)
+- Positioned via `app.stage.addChild()` to add to scene
+- Updates each frame to reflect current game state
+
+**Input Handling:**
+- `KeyboardHandler.ts`: Handles WASD/arrows, +/-, Space
+- `InputHandler.ts`: Passes `shiftKey` state to wheel handler
+- Smooth animation for all camera movements via `Viewport.pan()` and `Viewport.zoomAt()`
+
+**Integration:**
+- Integrated into `GameCanvas.tsx` with keyboard handler
+- Mode indicator added to `GameHUD.tsx`
+- Build and lint pass successfully
+
+### Design Decisions
+
+- **Abandoned**: Shift-drag-to-move minimap position (removed due to PixiJS type complexity)
+- **Chosen**: Full opacity minimap with minimal viewport border (per DESIGN.md)
+- **Chosen**: Mode indicator text instead of color-coded borders
+- **Avoided**: `R` key for rotation (reserved for building rotation)
+- **Smooth transitions**: All camera movements use animation for visual consistency
+
+### Future Enhancements (Optional)
+
+- Add persistence for minimap position/size in localStorage
+- Add resize handle for minimap dimensions
+- Add visual polish (animations, better mode indicators)
+
 ## Known Limitations
 
 As of this revision, all 7 legacy bot profiles match their specifications with full feature parity to MasterBot.
