@@ -279,6 +279,50 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 
 **Known limitations:** Current implementation does not yet implement belt routing or processor configuration; spiral step adaptation is not tied to fog density.
 
+### Master profile (`MasterBot`)
+
+**Goal:** Demonstrate all advanced bot features with spaced module placement, complete logistics routing, and adaptive spiral expansion.
+
+**Expected behaviors:**
+- Place modules in spaced rows (every 5 tiles) creating 2-tile belt corridors between modules
+- Each module contains: 3 extractors, 1 merger, 1 converter, localized solar/battery cluster
+- Route all extractors to storage via belts with deterministic port selection
+- Route extractor outputs to mergers, then mergers to storage
+- Configure converters with base recipes (iron_oxide, aluminum_oxide) when regolith is available
+- Defer synthesizer placement until late game (requires 50+ iron_oxide and 50+ aluminum_oxide stock)
+- Use mergers to consolidate multiple extractor outputs into single storage inputs
+- Reserve belt corridors explicitly; no buildings placed in corridor zones
+- Trigger exploration when build density reaches 30%: place watchtower at fog boundary
+- Expand using adaptive spiral pattern: step size adjusts based on resource density
+- Maintain isolated energy clusters per module (not global network)
+- Monitor `getResourceRates()` to throttle extractor placement when rates are negative
+- Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
+
+**Module template specification:**
+```
+Module Layout (5x5 grid):
+    [S] [E] [M] [E] [S]
+    
+[S] = Solar panel (local energy cluster)
+[E] = Extractor (3 per module, spaced 2 tiles apart)
+[M] = Merger (centralized after extractors)
+
+Belt Flow:
+  Extractor → (corridor) → Merger → (corridor) → Storage
+  Converter → (corridor) → Storage
+
+Energy Flow:
+  Solar → Battery → Extractors/Converter (isolated per module)
+```
+
+**Expansion logic:**
+- Start near center, expand outward in adaptive spiral
+- When density ≥ 30%: place watchtower at fog boundary (farthest frontier tile)
+- Continue spiral from new zone with adjusted step size
+- Step size: 3 tiles in dense zones (≥4 visible deposits), 7 tiles in sparse zones (<2 deposits), 5 tiles default
+
+**Status:** Fully implemented with belt routing, processor configuration, resource rate monitoring, and battery optimization.
+
 ## Fractal Strategy
 
 The fractal strategy should be thought of as a large spiral that recursively repeats a module pattern.
@@ -667,6 +711,18 @@ As of this revision, the following profiles do not yet match their specification
 | **LogisticsBot** | No belt routing, no merger placement, no processor configuration; behaves like AutonomousBot |
 | **CircuitBot** | No belt corridors, no module spacing logic, no localized energy clusters |
 | **FractalBot** | No belt routing following spiral geometry, no processor configuration, no spiral step adaptation based on fog density |
-| **All profiles** | No resource rate monitoring (`getResourceRates()`), no battery charge state optimization |
+| **All profiles except Master** | No resource rate monitoring (`getResourceRates()`), no battery charge state optimization |
+
+**Master profile** (`MasterBot`) is fully implemented with:
+- Belt routing with deterministic port selection (extractors → storage, processors → storage)
+- Processor configuration (converters with iron_oxide/aluminum_oxide recipes, synthesizers with ceramic_plates when inputs available)
+- Resource rate monitoring (`getResourceRates()`) for throttling overproduction
+- Battery charge optimization (`batteryCharges`, `getEnergyStorageTotals()`)
+- Frontier-based watchtower placement (not just distance)
+- Spacious layout with reserved belt corridors (2-tile wide highways)
+- 30% density trigger for exploration (watchtowers at fog boundary)
+- Mergers for belt network consolidation (3 extractors → 1 merger → storage)
+- Adaptive spiral expansion (step size adjusts based on resource density)
+- Localized energy clusters per module (isolated solar/battery per module)
 
 These gaps are documented to set expectations for the implementation phases outlined above.

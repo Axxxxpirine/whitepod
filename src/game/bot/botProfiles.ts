@@ -5,6 +5,7 @@ import { BalancedBot } from './BalancedBot';
 import { LogisticsBot } from './LogisticsBot';
 import { SpeedrunBot } from './SpeedrunBot';
 import { CircuitBot } from './CircuitBot';
+import { MasterBot } from './MasterBot';
 import type { BotFactoryArgs, BotProfileDefinition, BotProfileId } from './botTypes';
 
 export const DEFAULT_BOT_PROFILE_ID: BotProfileId = 'greedy';
@@ -51,6 +52,12 @@ export const BOT_PROFILES: readonly BotProfileDefinition[] = [
     label: 'Circuit',
     description: 'Circuit-board style layout with spaced modules and belt routing.',
     create: (args: BotFactoryArgs) => new CircuitBot(args.engine, args.onStatusChange),
+  },
+  {
+    id: 'master',
+    label: 'Master',
+    description: 'Advanced bot with belt routing, processor chains, and adaptive spiral expansion.',
+    create: (args: BotFactoryArgs) => new MasterBot(args.engine, args.onStatusChange),
   },
 ] as const;
 
