@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, type Application, type FederatedPointerEvent } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
 import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import type { SelectedTool, TileCoord } from '../types';
@@ -225,7 +225,7 @@ export class MinimapRenderer {
       .fill({ color: 0xFFFFFF, alpha: 0.1 });
   }
 
-  private onPointerDown(event: any): void {
+  private onPointerDown(event: FederatedPointerEvent): void {
     this.isDragging = true;
     this.dragStartX = event.data.global.x;
     this.dragStartY = event.data.global.y;
@@ -234,7 +234,7 @@ export class MinimapRenderer {
     this.dragStartCenterY = this.engine.viewport.centerY;
   }
 
-  private onPointerMove(event: any): void {
+  private onPointerMove(event: FederatedPointerEvent): void {
     if (!this.isDragging) return;
 
     const dx = event.data.global.x - this.dragStartX;

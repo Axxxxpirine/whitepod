@@ -365,11 +365,11 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    fireEvent.change(screen.getByLabelText('Bot profile'), { target: { value: 'fractal' } });
+    fireEvent.change(screen.getByLabelText('Bot profile'), { target: { value: 'connector' } });
     fireEvent.change(screen.getByLabelText('Seed input'), { target: { value: '77' } });
     fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
 
-    expect(useGameStore.getState().selectedBotProfileId).toBe('fractal');
+    expect(useGameStore.getState().selectedBotProfileId).toBe('connector');
     expect(useGameStore.getState().seedInput).toBe('77');
     expect(useGameStore.getState().sessionEpoch).toBe(1);
   });
