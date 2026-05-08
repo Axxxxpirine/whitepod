@@ -15,11 +15,15 @@ import type { GameEngine } from '../engine/GameEngine';
 import type { Building, PowerState } from '../types';
 import { drawBuildingPortMarkers } from './buildingPortMarkers';
 import { getBuildingTexture } from './TileSprite';
+import { getBuildingSpriteSpec } from '../ui/spritePaths';
 import { PIXI } from '@/design/tokens';
 
 const BUILDING_INSET = 2;
 const POWER_INDICATOR_RADIUS = 4;
 const POWER_INDICATOR_OFFSET = 7;
+const SHADOW_ALPHA = 0.26;
+const SHADOW_VERTICAL_SCALE = 0.34;
+const RTS_CULL_MARGIN_TILES = 3;
 // Building family palette (Architect's Drawing Board).
 // Each family owns a distinct token from the design system, scoped to
 // functional roles rather than decorative hues.
@@ -61,19 +65,22 @@ function isBuildingVisible(
   const y1 = building.origin.y + type.footprint.h - 1;
 
   return !(
-    x1 < visibleRange.x0 ||
-    building.origin.x > visibleRange.x1 ||
-    y1 < visibleRange.y0 ||
-    building.origin.y > visibleRange.y1
+    x1 < visibleRange.x0 - RTS_CULL_MARGIN_TILES ||
+    building.origin.x > visibleRange.x1 + RTS_CULL_MARGIN_TILES ||
+    y1 < visibleRange.y0 - RTS_CULL_MARGIN_TILES ||
+    building.origin.y > visibleRange.y1 + RTS_CULL_MARGIN_TILES
   );
 }
 
 export class BuildingRenderer {
   private readonly buildingContainer: Container;
+  private readonly shadowContainer: Container;
   private readonly indicatorContainer: Container;
   private readonly portMarkerContainer: Container;
   private readonly spritePool: Sprite[] = [];
+  private readonly shadowPool: Graphics[] = [];
   private readonly activeSprites: Map<number, Sprite> = new Map();
+  private readonly activeShadows: Map<number, Graphics> = new Map();
   private readonly activeIndicators: Map<number, Graphics> = new Map();
   private readonly activePortMarkers: Map<number, Graphics> = new Map();
   private readonly indicatorPool: Graphics[] = [];
@@ -84,8 +91,12 @@ export class BuildingRenderer {
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
     this.buildingContainer = new Container();
+    this.buildingContainer.sortableChildren = true;
+    this.shadowContainer = new Container();
+    this.shadowContainer.sortableChildren = true;
     this.indicatorContainer = new Container();
     this.portMarkerContainer = new Container();
+    app.stage.addChild(this.shadowContainer);
     app.stage.addChild(this.buildingContainer);
     app.stage.addChild(this.portMarkerContainer);
     app.stage.addChild(this.indicatorContainer);
@@ -98,6 +109,9 @@ export class BuildingRenderer {
     this.buildingContainer.x = -viewport.centerX * viewport.zoom + viewport.screenWidth / 2;
     this.buildingContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.buildingContainer.scale.set(viewport.zoom);
+    this.shadowContainer.x = this.buildingContainer.x;
+    this.shadowContainer.y = this.buildingContainer.y;
+    this.shadowContainer.scale.set(viewport.zoom);
     this.indicatorContainer.x = this.buildingContainer.x;
     this.indicatorContainer.y = this.buildingContainer.y;
     this.indicatorContainer.scale.set(viewport.zoom);
@@ -113,6 +127,10 @@ export class BuildingRenderer {
 
       const type = getBuildingType(building.typeId);
       if (!type) continue;
+      const spriteSpec = getBuildingSpriteSpec(building.typeId);
+      const baselineX = (building.origin.x + type.footprint.w / 2) * TILE_SIZE;
+      const baselineY = (building.origin.y + type.footprint.h) * TILE_SIZE - BUILDING_INSET;
+      const zIndex = building.origin.y + type.footprint.h;
 
       let sprite = this.activeSprites.get(building.id);
       if (!sprite) {
@@ -121,16 +139,28 @@ export class BuildingRenderer {
         this.activeSprites.set(building.id, sprite);
       }
 
-      sprite.x = building.origin.x * TILE_SIZE + BUILDING_INSET;
-      sprite.y = building.origin.y * TILE_SIZE + BUILDING_INSET;
-      sprite.width = type.footprint.w * TILE_SIZE - BUILDING_INSET * 2;
-      sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
       const buildingTexture = getBuildingTexture(building.typeId);
       sprite.texture = buildingTexture ?? Texture.WHITE;
+      if (spriteSpec?.anchor === 'bottom-center') {
+        const displayHeight = spriteSpec.displayHeightTiles * TILE_SIZE;
+        sprite.anchor.set(0.5, 1);
+        sprite.x = baselineX;
+        sprite.y = baselineY;
+        sprite.width = displayHeight;
+        sprite.height = displayHeight;
+      } else {
+        sprite.anchor.set(0, 0);
+        sprite.x = building.origin.x * TILE_SIZE + BUILDING_INSET;
+        sprite.y = building.origin.y * TILE_SIZE + BUILDING_INSET;
+        sprite.width = type.footprint.w * TILE_SIZE - BUILDING_INSET * 2;
+        sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
+      }
+      sprite.zIndex = zIndex;
       sprite.tint = buildingTexture ? 0xffffff : (BUILDING_TINTS[building.typeId] ?? PIXI.ink);
       sprite.alpha =
         building.typeId === EXTRACTOR_BUILDING_TYPE_ID ? EXTRACTOR_BUILDING_ALPHA : DEFAULT_BUILDING_ALPHA;
       sprite.visible = true;
+      this.renderShadow(building.id, building, zIndex);
 
       if (type.ports.length === 0) {
         this.releasePortMarker(building.id);
@@ -177,6 +207,7 @@ export class BuildingRenderer {
       sprite.visible = false;
       this.spritePool.push(sprite);
       this.activeSprites.delete(id);
+      this.releaseShadow(id);
       this.releasePortMarker(id);
       this.releaseIndicator(id);
     }
@@ -200,6 +231,34 @@ export class BuildingRenderer {
     return marker;
   }
 
+  private acquireShadow(): Graphics {
+    const shadow = this.shadowPool.pop() ?? new Graphics();
+    shadow.visible = true;
+    return shadow;
+  }
+
+  private renderShadow(buildingId: number, building: Building, zIndex: number): void {
+    const type = getBuildingType(building.typeId);
+    if (!type) return;
+
+    let shadow = this.activeShadows.get(buildingId);
+    if (!shadow) {
+      shadow = this.acquireShadow();
+      this.shadowContainer.addChild(shadow);
+      this.activeShadows.set(buildingId, shadow);
+    }
+
+    const width = Math.max(type.footprint.w * TILE_SIZE - BUILDING_INSET * 2, TILE_SIZE * 0.72);
+    const height = Math.max(type.footprint.h * TILE_SIZE * SHADOW_VERTICAL_SCALE, TILE_SIZE * 0.28);
+    const centerX = (building.origin.x + type.footprint.w / 2) * TILE_SIZE;
+    const centerY = (building.origin.y + type.footprint.h) * TILE_SIZE - height / 2 - 2;
+
+    shadow.clear();
+    shadow.ellipse(centerX, centerY, width / 2, height / 2).fill({ color: PIXI.bg, alpha: SHADOW_ALPHA });
+    shadow.zIndex = zIndex - 0.01;
+    shadow.visible = true;
+  }
+
   private releaseIndicator(id: number): void {
     const indicator = this.activeIndicators.get(id);
     if (!indicator) return;
@@ -221,14 +280,27 @@ export class BuildingRenderer {
     this.activePortMarkers.delete(id);
   }
 
+  private releaseShadow(id: number): void {
+    const shadow = this.activeShadows.get(id);
+    if (!shadow) return;
+    this.shadowContainer.removeChild(shadow);
+    shadow.clear();
+    shadow.visible = false;
+    this.shadowPool.push(shadow);
+    this.activeShadows.delete(id);
+  }
+
   destroy(): void {
     this.buildingContainer.destroy({ children: true });
+    this.shadowContainer.destroy({ children: true });
     this.portMarkerContainer.destroy({ children: true });
     this.indicatorContainer.destroy({ children: true });
     this.spritePool.length = 0;
+    this.shadowPool.length = 0;
     this.portMarkerPool.length = 0;
     this.indicatorPool.length = 0;
     this.activeSprites.clear();
+    this.activeShadows.clear();
     this.activePortMarkers.clear();
     this.activeIndicators.clear();
     this.indicatorColorCache.clear();
