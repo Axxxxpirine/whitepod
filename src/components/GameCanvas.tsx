@@ -4,6 +4,7 @@ import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
+import { TerrainDecalRenderer } from '@/game/renderer/TerrainDecalRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
 import { BeltRenderer } from '@/game/renderer/BeltRenderer';
 import { EnergyLinkRenderer } from '@/game/renderer/EnergyLinkRenderer';
@@ -25,7 +26,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
-import { loadBuildingTextures, loadResourceTextures } from '@/game/renderer/TileSprite';
+import { loadBuildingTextures, loadResourceTextures, loadTerrainDecalTextures } from '@/game/renderer/TileSprite';
 import { ResourceType, type SelectedTool } from '@/game/types';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { finalizePendingScenarioInstall } from '@/game/scenarios/applyScenario';
@@ -96,6 +97,7 @@ export function GameCanvas() {
     let initCompleted = false;
     let app: Application | null = null;
     let gridRenderer: GridRenderer | null = null;
+    let terrainDecalRenderer: TerrainDecalRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
     let buildingRenderer: BuildingRenderer | null = null;
     let beltRenderer: BeltRenderer | null = null;
@@ -128,7 +130,7 @@ export function GameCanvas() {
       app = new Application();
       await app.init({
         resizeTo: container,
-        backgroundColor: 0xe0e0e0,
+        backgroundColor: 0x0b0d10,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
@@ -144,6 +146,7 @@ export function GameCanvas() {
       container.appendChild(app.canvas);
 
       await loadResourceTextures();
+      await loadTerrainDecalTextures();
       await loadBuildingTextures();
 
       if (destroyed) {
@@ -236,6 +239,7 @@ export function GameCanvas() {
       };
 
       gridRenderer = new GridRenderer(app, engine);
+      terrainDecalRenderer = new TerrainDecalRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
       buildingRenderer = new BuildingRenderer(app, engine);
       beltRenderer = new BeltRenderer(app, engine);
@@ -511,6 +515,7 @@ export function GameCanvas() {
         }
 
         gridRenderer!.render();
+        terrainDecalRenderer!.render();
         resourceRenderer!.render();
         buildingRenderer!.render();
         beltRenderer!.render();
@@ -559,6 +564,7 @@ export function GameCanvas() {
         dayNightOverlayRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
+        terrainDecalRenderer?.destroy();
         gridRenderer?.destroy();
         app?.destroy(true);
       }
