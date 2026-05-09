@@ -8,7 +8,7 @@ import {
   STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
-import { TILE_SIZE } from '@/game/constants';
+import { ISO_TILE_H, ISO_TILE_W } from '@/game/constants';
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -18,12 +18,39 @@ function makeEngine() {
 }
 
 function screenPointForTile(engine: GameEngine, x: number, y: number) {
+  // gridToWorld returns the iso center of the tile diamond.
   const { wx, wy } = gridToWorld(x, y);
-  return worldToScreen(engine.viewport, wx + TILE_SIZE / 2, wy + TILE_SIZE / 2);
+  return worldToScreen(engine.viewport, wx, wy);
 }
 
-function screenPointForTileOffset(engine: GameEngine, x: number, y: number, offsetX: number, offsetY: number) {
+// Click slightly inward from a cardinal port edge midpoint.
+// In iso, port anchors live at center + (±W/4, ±H/4) — see BeltToolController.
+type Side = 'north' | 'east' | 'south' | 'west';
+function screenPointForTilePort(engine: GameEngine, x: number, y: number, side: Side) {
   const { wx, wy } = gridToWorld(x, y);
+  // Use half the port anchor offset so we stay clearly inside the tile diamond.
+  const dx = ISO_TILE_W / 8;
+  const dy = ISO_TILE_H / 8;
+  let offsetX = 0;
+  let offsetY = 0;
+  switch (side) {
+    case 'north':
+      offsetX = dx;
+      offsetY = -dy;
+      break;
+    case 'east':
+      offsetX = dx;
+      offsetY = dy;
+      break;
+    case 'south':
+      offsetX = -dx;
+      offsetY = dy;
+      break;
+    case 'west':
+      offsetX = -dx;
+      offsetY = -dy;
+      break;
+  }
   return worldToScreen(engine.viewport, wx + offsetX, wy + offsetY);
 }
 
@@ -116,9 +143,9 @@ describe('BeltToolController', () => {
 
     const selectedTool: SelectedTool = { kind: 'belt' };
     const controller = new BeltToolController(engine, () => selectedTool, () => {});
-    const mergerNorthPoint = screenPointForTileOffset(engine, 10, 10, TILE_SIZE / 2, 4);
-    const mergerSouthPoint = screenPointForTileOffset(engine, 10, 10, TILE_SIZE / 2, TILE_SIZE - 4);
-    const mergerWestPoint = screenPointForTileOffset(engine, 10, 10, 4, TILE_SIZE / 2);
+    const mergerNorthPoint = screenPointForTilePort(engine, 10, 10, 'north');
+    const mergerSouthPoint = screenPointForTilePort(engine, 10, 10, 'south');
+    const mergerWestPoint = screenPointForTilePort(engine, 10, 10, 'west');
 
     const northPoint = screenPointForTile(engine, 10, 5);
     controller.onPointerDown(northPoint.sx, northPoint.sy, 0);
