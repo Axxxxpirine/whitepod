@@ -1,13 +1,12 @@
 import { Container, Graphics, type Application } from 'pixi.js';
-import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
+import { footprintDiamond } from './isoFootprint';
 import type { SelectedTool, TileCoord } from '../types';
 import { getPlacementPreviewModel, type BeltPlacementPreviewModel } from './placementPreviewModel';
 import { drawBuildingPortMarkers } from './buildingPortMarkers';
 import { PIXI } from '@/design/tokens';
 
-const PREVIEW_INSET = 2;
 const VALID_FILL = PIXI.ok;
 const VALID_STROKE = PIXI.accent;
 const INVALID_FILL = PIXI.error;
@@ -90,24 +89,31 @@ export class PlacementPreviewRenderer {
 
     if (preview.kind === 'belt') {
       for (const tile of preview.tiles) {
+        const diamond = footprintDiamond(tile.coord.x, tile.coord.y, 1, 1);
         this.previewGraphic
-          .rect(
-            tile.coord.x * TILE_SIZE + PREVIEW_INSET,
-            tile.coord.y * TILE_SIZE + PREVIEW_INSET,
-            TILE_SIZE - PREVIEW_INSET * 2,
-            TILE_SIZE - PREVIEW_INSET * 2,
-          )
+          .poly([
+            diamond.north.x, diamond.north.y,
+            diamond.east.x, diamond.east.y,
+            diamond.south.x, diamond.south.y,
+            diamond.west.x, diamond.west.y,
+          ], true)
           .fill({ color: tile.tint, alpha: fillAlpha })
           .stroke({ color: strokeColor, width: 1, alpha: 0.95 });
       }
     } else {
+      const diamond = footprintDiamond(
+        preview.origin.x,
+        preview.origin.y,
+        preview.footprint.w,
+        preview.footprint.h,
+      );
       this.previewGraphic
-        .rect(
-          preview.origin.x * TILE_SIZE + PREVIEW_INSET,
-          preview.origin.y * TILE_SIZE + PREVIEW_INSET,
-          preview.footprint.w * TILE_SIZE - PREVIEW_INSET * 2,
-          preview.footprint.h * TILE_SIZE - PREVIEW_INSET * 2,
-        )
+        .poly([
+          diamond.north.x, diamond.north.y,
+          diamond.east.x, diamond.east.y,
+          diamond.south.x, diamond.south.y,
+          diamond.west.x, diamond.west.y,
+        ], true)
         .fill({ color: fillColor, alpha: fillAlpha })
         .stroke({ color: strokeColor, width: 1, alpha: 0.95 });
 
@@ -146,14 +152,15 @@ export class PlacementPreviewRenderer {
     const alpha = FLASH_PEAK_ALPHA * (1 - t) * (1 - t);
 
     const { origin, footprint } = this.activeFlash;
+    const diamond = footprintDiamond(origin.x, origin.y, footprint.w, footprint.h);
     this.flashGraphic.clear();
     this.flashGraphic
-      .rect(
-        origin.x * TILE_SIZE,
-        origin.y * TILE_SIZE,
-        footprint.w * TILE_SIZE,
-        footprint.h * TILE_SIZE,
-      )
+      .poly([
+        diamond.north.x, diamond.north.y,
+        diamond.east.x, diamond.east.y,
+        diamond.south.x, diamond.south.y,
+        diamond.west.x, diamond.west.y,
+      ], true)
       .fill({ color: INVALID_FILL, alpha })
       .stroke({ color: INVALID_STROKE, width: 2, alpha: Math.min(1, alpha * 1.5) });
     this.flashGraphic.visible = true;
