@@ -1,6 +1,7 @@
 import { Container, Sprite, type Application } from 'pixi.js';
-import { GRID_WIDTH, TILE_SIZE } from '../constants';
+import { GRID_WIDTH, ISO_TILE_H, ISO_TILE_W } from '../constants';
 import type { GameEngine } from '../engine/GameEngine';
+import { tileCenterToIso } from '../engine/IsoTransform';
 import { TileType } from '../types';
 import { getTerrainDecalTexture } from './TileSprite';
 import { TERRAIN_DECAL_SPECS } from '../ui/spritePaths';
@@ -8,8 +9,12 @@ import { PIXI } from '@/design/tokens';
 
 type TerrainDecalKey = keyof typeof TERRAIN_DECAL_SPECS;
 
-const DECAL_WIDTH = TILE_SIZE * 2.2;
-const DECAL_HEIGHT = TILE_SIZE * 1.45;
+// Decal sizes are expressed in iso-world pixels. The 2.2/1.45 ratio (over a
+// single iso tile) preserves the proportions used by the source PNGs while
+// staying within roughly two diamonds of footprint for the larger crater
+// and rock seam decals.
+const DECAL_WIDTH = ISO_TILE_W * 1.1;
+const DECAL_HEIGHT = ISO_TILE_H * 1.45;
 const DECAL_ALPHA = 0.48;
 const DECAL_SHADOW_ALPHA = 0.18;
 const DECAL_SHADOW_OFFSET_X = -4;
@@ -105,8 +110,9 @@ export class TerrainDecalRenderer {
 
         const sprite = this.acquireSprite();
         sprite.texture = texture;
-        sprite.x = tx * TILE_SIZE + TILE_SIZE / 2;
-        sprite.y = ty * TILE_SIZE + TILE_SIZE / 2;
+        const iso = tileCenterToIso(tx, ty);
+        sprite.x = iso.wx;
+        sprite.y = iso.wy;
         sprite.rotation = (hashTile(tx, ty, 41) - 0.5) * 0.18;
         sprite.alpha = DECAL_ALPHA;
         this.container.addChild(sprite);
