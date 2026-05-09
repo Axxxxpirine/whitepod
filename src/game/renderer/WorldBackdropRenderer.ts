@@ -1,8 +1,15 @@
 import { ImageSource, Sprite, Texture, type Application } from 'pixi.js';
 
-const BACKDROP_INNER = '#0B0D10';
-const BACKDROP_MID = '#080A0D';
-const BACKDROP_OUTER = '#04060A';
+// Stronger backdrop gradient: the perceptible delta between center and edge
+// is larger than the original (#0B0D10 -> #04060A), so the iso play-field now
+// sits inside a clearly visible "lit area" surrounded by deep-space dark.
+const BACKDROP_INNER = '#10131A';
+const BACKDROP_MID = '#0A0C12';
+const BACKDROP_OUTER = '#02040A';
+// Vignette darkens the screen corners further, focusing attention on the
+// play-field center. Alpha tops out at ~0.55 in the corners.
+const VIGNETTE_INNER = 'rgba(0, 0, 0, 0)';
+const VIGNETTE_OUTER = 'rgba(0, 0, 0, 0.55)';
 
 export class WorldBackdropRenderer {
   private readonly app: Application;
@@ -33,20 +40,36 @@ export class WorldBackdropRenderer {
     this.canvas.width = width;
     this.canvas.height = height;
 
-    const radius = Math.max(width, height) * 0.72;
-    const gradient = this.ctx.createRadialGradient(
+    // Layer 1 — radial backdrop (planetary atmosphere).
+    const backdropRadius = Math.max(width, height) * 0.7;
+    const backdrop = this.ctx.createRadialGradient(
       width * 0.5,
-      height * 0.48,
+      height * 0.46,
       0,
       width * 0.5,
       height * 0.5,
-      radius,
+      backdropRadius,
     );
-    gradient.addColorStop(0, BACKDROP_INNER);
-    gradient.addColorStop(0.62, BACKDROP_MID);
-    gradient.addColorStop(1, BACKDROP_OUTER);
+    backdrop.addColorStop(0, BACKDROP_INNER);
+    backdrop.addColorStop(0.55, BACKDROP_MID);
+    backdrop.addColorStop(1, BACKDROP_OUTER);
 
-    this.ctx.fillStyle = gradient;
+    this.ctx.fillStyle = backdrop;
+    this.ctx.fillRect(0, 0, width, height);
+
+    // Layer 2 — vignette (screen corners darker than center).
+    const vignetteRadius = Math.hypot(width, height) * 0.62;
+    const vignette = this.ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.5,
+      Math.min(width, height) * 0.35,
+      width * 0.5,
+      height * 0.5,
+      vignetteRadius,
+    );
+    vignette.addColorStop(0, VIGNETTE_INNER);
+    vignette.addColorStop(1, VIGNETTE_OUTER);
+    this.ctx.fillStyle = vignette;
     this.ctx.fillRect(0, 0, width, height);
 
     this.sprite.width = width;

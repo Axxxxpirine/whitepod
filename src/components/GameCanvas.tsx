@@ -4,6 +4,7 @@ import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
 import { WorldBackdropRenderer } from '@/game/renderer/WorldBackdropRenderer';
+import { AmbientHazeRenderer } from '@/game/renderer/AmbientHazeRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { TerrainDecalRenderer } from '@/game/renderer/TerrainDecalRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
@@ -98,6 +99,7 @@ export function GameCanvas() {
     let initCompleted = false;
     let app: Application | null = null;
     let worldBackdropRenderer: WorldBackdropRenderer | null = null;
+    let ambientHazeRenderer: AmbientHazeRenderer | null = null;
     let gridRenderer: GridRenderer | null = null;
     let terrainDecalRenderer: TerrainDecalRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
@@ -275,6 +277,7 @@ export function GameCanvas() {
         return { selectedTool, hoverTile };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
+      ambientHazeRenderer = new AmbientHazeRenderer(app);
 
       const currentInputHandler = new InputHandler(
         engine,
@@ -529,6 +532,7 @@ export function GameCanvas() {
         energyLinkRenderer!.render();
         fogOfWarRenderer!.render();
         dayNightOverlayRenderer!.render();
+        ambientHazeRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -571,6 +575,7 @@ export function GameCanvas() {
         terrainDecalRenderer?.destroy();
         gridRenderer?.destroy();
         worldBackdropRenderer?.destroy();
+        ambientHazeRenderer?.destroy();
         app?.destroy(true);
       }
     };
