@@ -4,12 +4,16 @@ import type { GameEngine } from '../engine/GameEngine';
 import { TileType } from '../types';
 import { getTerrainDecalTexture } from './TileSprite';
 import { TERRAIN_DECAL_SPECS } from '../ui/spritePaths';
+import { PIXI } from '@/design/tokens';
 
 type TerrainDecalKey = keyof typeof TERRAIN_DECAL_SPECS;
 
 const DECAL_WIDTH = TILE_SIZE * 2.2;
 const DECAL_HEIGHT = TILE_SIZE * 1.45;
 const DECAL_ALPHA = 0.48;
+const DECAL_SHADOW_ALPHA = 0.18;
+const DECAL_SHADOW_OFFSET_X = -4;
+const DECAL_SHADOW_OFFSET_Y = -3;
 const CULL_STRIDE = 4;
 
 function hashTile(x: number, y: number, salt: number): number {
@@ -35,16 +39,25 @@ function chooseDecal(tileType: TileType, x: number, y: number): TerrainDecalKey 
   return null;
 }
 
+function hasDecalShadow(decalKey: TerrainDecalKey): boolean {
+  return decalKey === 'crater' || decalKey === 'rockSeam';
+}
+
 export class TerrainDecalRenderer {
   private readonly container: Container;
+  private readonly shadowContainer: Container;
   private readonly spritePool: Sprite[] = [];
+  private readonly shadowPool: Sprite[] = [];
   private readonly activeSprites: Map<number, Sprite> = new Map();
+  private readonly activeShadows: Map<number, Sprite> = new Map();
   private readonly engine: GameEngine;
   private lastRange = { x0: -1, y0: -1, x1: -1, y1: -1 };
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
     this.container = new Container();
+    this.shadowContainer = new Container();
+    app.stage.addChild(this.shadowContainer);
     app.stage.addChild(this.container);
   }
 
@@ -55,6 +68,9 @@ export class TerrainDecalRenderer {
     this.container.x = -viewport.centerX * viewport.zoom + viewport.screenWidth / 2;
     this.container.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.container.scale.set(viewport.zoom);
+    this.shadowContainer.x = this.container.x;
+    this.shadowContainer.y = this.container.y;
+    this.shadowContainer.scale.set(viewport.zoom);
 
     const rangeChanged =
       range.x0 !== this.lastRange.x0 ||
@@ -72,6 +88,7 @@ export class TerrainDecalRenderer {
         sprite.visible = false;
         this.spritePool.push(sprite);
         this.activeSprites.delete(index);
+        this.releaseShadow(index);
       }
     }
 
@@ -94,6 +111,16 @@ export class TerrainDecalRenderer {
         sprite.alpha = DECAL_ALPHA;
         this.container.addChild(sprite);
         this.activeSprites.set(index, sprite);
+
+        if (hasDecalShadow(decalKey)) {
+          const shadow = this.acquireShadow();
+          shadow.texture = texture;
+          shadow.x = sprite.x + DECAL_SHADOW_OFFSET_X;
+          shadow.y = sprite.y + DECAL_SHADOW_OFFSET_Y;
+          shadow.rotation = sprite.rotation;
+          this.shadowContainer.addChild(shadow);
+          this.activeShadows.set(index, shadow);
+        }
       }
     }
 
@@ -109,9 +136,32 @@ export class TerrainDecalRenderer {
     return sprite;
   }
 
+  private acquireShadow(): Sprite {
+    const shadow = this.shadowPool.pop() ?? new Sprite();
+    shadow.anchor.set(0.5, 0.5);
+    shadow.width = DECAL_WIDTH;
+    shadow.height = DECAL_HEIGHT;
+    shadow.tint = PIXI.bg;
+    shadow.alpha = DECAL_SHADOW_ALPHA;
+    shadow.visible = true;
+    return shadow;
+  }
+
+  private releaseShadow(index: number): void {
+    const shadow = this.activeShadows.get(index);
+    if (!shadow) return;
+    this.shadowContainer.removeChild(shadow);
+    shadow.visible = false;
+    this.shadowPool.push(shadow);
+    this.activeShadows.delete(index);
+  }
+
   destroy(): void {
     this.container.destroy({ children: true });
+    this.shadowContainer.destroy({ children: true });
     this.spritePool.length = 0;
+    this.shadowPool.length = 0;
     this.activeSprites.clear();
+    this.activeShadows.clear();
   }
 }

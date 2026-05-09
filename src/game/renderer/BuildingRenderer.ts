@@ -23,6 +23,10 @@ const POWER_INDICATOR_RADIUS = 4;
 const POWER_INDICATOR_OFFSET = 7;
 const SHADOW_ALPHA = 0.26;
 const SHADOW_VERTICAL_SCALE = 0.34;
+const SHADOW_WIDTH_OVERFLOW = 1.12;
+const SHADOW_HEIGHT_OVERFLOW = 1.06;
+const SHADOW_OFFSET_X = -TILE_SIZE * 0.16;
+const SHADOW_OFFSET_Y = -TILE_SIZE * 0.11;
 const RTS_CULL_MARGIN_TILES = 3;
 // Building family palette (Architect's Drawing Board).
 // Each family owns a distinct token from the design system, scoped to
@@ -52,6 +56,31 @@ export function getPowerIndicatorColor(state: PowerState): number | null {
 export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean): number | null {
   if (hasBadInput) return PIXI.error;
   return getPowerIndicatorColor(state);
+}
+
+export interface BuildingShadowGeometry {
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly radiusX: number;
+  readonly radiusY: number;
+}
+
+export function getBuildingShadowGeometry(building: Building): BuildingShadowGeometry | null {
+  const type = getBuildingType(building.typeId);
+  if (!type) return null;
+
+  const width = Math.max(
+    (type.footprint.w * TILE_SIZE - BUILDING_INSET * 2) * SHADOW_WIDTH_OVERFLOW,
+    TILE_SIZE * 0.72,
+  );
+  const height = Math.max(
+    type.footprint.h * TILE_SIZE * SHADOW_VERTICAL_SCALE * SHADOW_HEIGHT_OVERFLOW,
+    TILE_SIZE * 0.28,
+  );
+  const centerX = (building.origin.x + type.footprint.w / 2) * TILE_SIZE + SHADOW_OFFSET_X;
+  const centerY = (building.origin.y + type.footprint.h) * TILE_SIZE - height / 2 - 2 + SHADOW_OFFSET_Y;
+
+  return { centerX, centerY, radiusX: width / 2, radiusY: height / 2 };
 }
 
 function isBuildingVisible(
@@ -143,10 +172,11 @@ export class BuildingRenderer {
       sprite.texture = buildingTexture ?? Texture.WHITE;
       if (spriteSpec?.anchor === 'bottom-center') {
         const displayHeight = spriteSpec.displayHeightTiles * TILE_SIZE;
+        const displayWidth = (spriteSpec.displayWidthTiles ?? spriteSpec.displayHeightTiles) * TILE_SIZE;
         sprite.anchor.set(0.5, 1);
         sprite.x = baselineX;
         sprite.y = baselineY;
-        sprite.width = displayHeight;
+        sprite.width = displayWidth;
         sprite.height = displayHeight;
       } else {
         sprite.anchor.set(0, 0);
@@ -238,8 +268,8 @@ export class BuildingRenderer {
   }
 
   private renderShadow(buildingId: number, building: Building, zIndex: number): void {
-    const type = getBuildingType(building.typeId);
-    if (!type) return;
+    const geometry = getBuildingShadowGeometry(building);
+    if (!geometry) return;
 
     let shadow = this.activeShadows.get(buildingId);
     if (!shadow) {
@@ -248,13 +278,10 @@ export class BuildingRenderer {
       this.activeShadows.set(buildingId, shadow);
     }
 
-    const width = Math.max(type.footprint.w * TILE_SIZE - BUILDING_INSET * 2, TILE_SIZE * 0.72);
-    const height = Math.max(type.footprint.h * TILE_SIZE * SHADOW_VERTICAL_SCALE, TILE_SIZE * 0.28);
-    const centerX = (building.origin.x + type.footprint.w / 2) * TILE_SIZE;
-    const centerY = (building.origin.y + type.footprint.h) * TILE_SIZE - height / 2 - 2;
-
     shadow.clear();
-    shadow.ellipse(centerX, centerY, width / 2, height / 2).fill({ color: PIXI.bg, alpha: SHADOW_ALPHA });
+    shadow
+      .ellipse(geometry.centerX, geometry.centerY, geometry.radiusX, geometry.radiusY)
+      .fill({ color: PIXI.bg, alpha: SHADOW_ALPHA });
     shadow.zIndex = zIndex - 0.01;
     shadow.visible = true;
   }

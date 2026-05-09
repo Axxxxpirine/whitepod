@@ -64,11 +64,10 @@ const GROUND_BASE = 0x2a;
 const GROUND_MIN = 0x17;
 const ROCK_BASE = 0x36;
 const ROCK_MIN = 0x22;
-const SHADE_STEPS = 8;
 const WATER_COLOR = 0x123044;
 
 function grayToHex(gray: number): number {
-  const g = Math.max(0, Math.min(255, gray));
+  const g = Math.round(Math.max(0, Math.min(255, gray)));
   return (g << 16) | (g << 8) | g;
 }
 
@@ -76,16 +75,17 @@ export function getTileColor(type: TileType, x: number, y: number): number {
   if (type === TileTypeConst.Water) return WATER_COLOR;
 
   const dark = craterDarkening(x, y);
-  // Add subtle per-tile noise so flat areas aren't perfectly uniform
-  const noise = (hashCell(x, y, 0) - 0.5) * 4;
+  const patchX = Math.floor(x / 6);
+  const patchY = Math.floor(y / 6);
+  const patchNoise = (hashCell(patchX, patchY, 0) - 0.5) * 0.7;
+  const microNoise = (hashCell(x, y, 7) - 0.5) * 0.18;
+  const noise = patchNoise + microNoise;
 
   const base = type === TileTypeConst.Rock || type === TileTypeConst.Empty && false
     ? ROCK_BASE : GROUND_BASE;
   const min = type === TileTypeConst.Rock ? ROCK_MIN : GROUND_MIN;
 
-  let gray = base - dark * (base - min) + noise;
-  // Quantize to SHADE_STEPS levels for pixelated look
-  gray = Math.round(gray / (256 / SHADE_STEPS)) * (256 / SHADE_STEPS);
+  const gray = base - dark * (base - min) + noise;
 
   switch (type) {
     case TileTypeConst.Empty:
@@ -128,10 +128,10 @@ function createRegolithTexture(size: number): Texture {
     const r = rng();
     // Most pixels stay bright, occasional darker speckles
     let brightness: number;
-    if (r < 0.06) {
+    if (r < 0.03) {
       // Dark speckle (dust grain) — subtle
       brightness = 210 + Math.floor(rng() * 25);
-    } else if (r < 0.20) {
+    } else if (r < 0.11) {
       // Slight dimming
       brightness = 235 + Math.floor(rng() * 12);
     } else {

@@ -1,6 +1,10 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
 import { describe, expect, it, vi } from 'vitest';
-import { getPowerIndicatorColor, BuildingRenderer } from '@/game/renderer/BuildingRenderer';
+import {
+  getBuildingShadowGeometry,
+  getPowerIndicatorColor,
+  BuildingRenderer,
+} from '@/game/renderer/BuildingRenderer';
 import { PIXI } from '@/design/tokens';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { TILE_SIZE } from '@/game/constants';
@@ -25,6 +29,23 @@ describe('BuildingRenderer power indicator color', () => {
 });
 
 describe('BuildingRenderer RTS sprite placement', () => {
+  it('offsets and widens local shadows toward the lunar NW direction', () => {
+    const engine = new GameEngine(800, 600);
+    engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
+    const id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 4, y: 5 })!;
+    const building = engine.getBuildings().get(id)!;
+
+    const geometry = getBuildingShadowGeometry(building)!;
+    const baselineX = (4 + 0.5) * TILE_SIZE;
+    const baselineY = 6 * TILE_SIZE;
+
+    expect(geometry.centerX).toBeLessThan(baselineX);
+    expect(geometry.centerY).toBeLessThan(baselineY);
+    expect(geometry.radiusX).toBeGreaterThan(TILE_SIZE * 0.45);
+    expect(geometry.centerY + geometry.radiusY).toBeLessThan(baselineY);
+  });
+
   it('bottom-anchors generated RTS sprites to the gameplay footprint baseline', () => {
     const engine = new GameEngine(800, 600);
     engine.grid.fill(TileType.Ground);
@@ -42,6 +63,24 @@ describe('BuildingRenderer RTS sprite placement', () => {
     expect(sprite.x).toBeCloseTo((4 + 0.5) * TILE_SIZE);
     expect(sprite.y).toBeCloseTo(6 * TILE_SIZE - 2);
     expect(sprite.height).toBeGreaterThan(TILE_SIZE);
+
+    renderer.destroy();
+  });
+
+  it('allows generated RTS sprites to preserve a wider visual footprint than their height', () => {
+    const engine = new GameEngine(800, 600);
+    engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
+    engine.viewport.centerX = 5 * TILE_SIZE;
+    engine.viewport.centerY = 6 * TILE_SIZE;
+    const id = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 4, y: 5 })!;
+    const renderer = new BuildingRenderer({ stage: new Container() } as unknown as Application, engine);
+
+    renderer.render();
+
+    const sprite = (renderer as unknown as BuildingRendererTestApi).activeSprites.get(id)!;
+    expect(sprite.width).toBeGreaterThan(sprite.height);
+    expect(sprite.y).toBeCloseTo(6 * TILE_SIZE - 2);
 
     renderer.destroy();
   });

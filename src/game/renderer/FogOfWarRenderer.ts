@@ -8,12 +8,46 @@ import { PIXI } from '@/design/tokens';
 const TEX_SCALE = 2; // 2 pixels per tile for smoother edges
 const TEX_W = GRID_WIDTH * TEX_SCALE;
 const TEX_H = GRID_HEIGHT * TEX_SCALE;
-const FOG_ALPHA = 0.92;
+const DEEP_FOG_COLOR = { r: 2, g: 3, b: 10 };
+const EARTHLIGHT_FOG_COLOR = { r: 26, g: 42, b: 58 };
 
 const REVEAL_PREVIEW_COLOR = PIXI.accent;
 const REVEAL_PREVIEW_STROKE_ALPHA = 0.7;
 const REVEAL_PREVIEW_FILL_ALPHA = 0.08;
 const REVEAL_PREVIEW_STROKE_WIDTH = 2;
+
+export interface FogTileStyle {
+  readonly color: { readonly r: number; readonly g: number; readonly b: number };
+  readonly alpha: number;
+}
+
+export function getFogTileStyle(flags: Uint8Array, x: number, y: number): FogTileStyle {
+  const idx = y * GRID_WIDTH + x;
+  if (flags[idx] & REVEALED_FLAG) {
+    return { color: DEEP_FOG_COLOR, alpha: 0 };
+  }
+
+  let nearestRevealed = Number.POSITIVE_INFINITY;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;
+      if (flags[ny * GRID_WIDTH + nx] & REVEALED_FLAG) {
+        nearestRevealed = Math.min(nearestRevealed, Math.max(Math.abs(dx), Math.abs(dy)));
+      }
+    }
+  }
+
+  if (nearestRevealed === 1) {
+    return { color: EARTHLIGHT_FOG_COLOR, alpha: 0.35 };
+  }
+  if (nearestRevealed === 2) {
+    return { color: EARTHLIGHT_FOG_COLOR, alpha: 0.68 };
+  }
+  return { color: DEEP_FOG_COLOR, alpha: 0.95 };
+}
 
 interface FogPreviewState {
   readonly selectedTool: SelectedTool;
@@ -125,63 +159,22 @@ export class FogOfWarRenderer {
     const { ctx, canvas } = this;
     const { grid } = this.engine;
 
-    // Fill with fog
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = `rgba(0, 0, 0, ${FOG_ALPHA})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Erase revealed areas
-    ctx.globalCompositeOperation = 'destination-out';
-
-    // Build a path for all revealed tiles, then fill once
-    // For smooth edges, find revealed circles and draw them
-    // But since we store per-tile flags, we draw per-tile rects with a smooth border
-    this.drawRevealedArea(grid.flags);
-
-    ctx.globalCompositeOperation = 'source-over';
+    this.drawFogTiles(grid.flags);
 
     // Update the PixiJS texture from the canvas
     this.texture.source.update();
   }
 
-  private drawRevealedArea(flags: Uint8Array): void {
+  private drawFogTiles(flags: Uint8Array): void {
     const { ctx } = this;
 
-    // First pass: draw all revealed tiles as small rects (clears fog)
     for (let y = 0; y < GRID_HEIGHT; y++) {
       for (let x = 0; x < GRID_WIDTH; x++) {
-        if (flags[y * GRID_WIDTH + x] & REVEALED_FLAG) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-          ctx.fillRect(x * TEX_SCALE, y * TEX_SCALE, TEX_SCALE, TEX_SCALE);
-        }
-      }
-    }
-
-    // Second pass: smooth the border with a soft gradient
-    // For each fogged tile adjacent to a revealed tile, draw a partial alpha clear
-    for (let y = 0; y < GRID_HEIGHT; y++) {
-      for (let x = 0; x < GRID_WIDTH; x++) {
-        const idx = y * GRID_WIDTH + x;
-        if (flags[idx] & REVEALED_FLAG) continue;
-
-        // Check if any neighbor is revealed
-        let revealedNeighbors = 0;
-        if (x > 0 && flags[idx - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && flags[idx + 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (y > 0 && flags[idx - GRID_WIDTH] & REVEALED_FLAG) revealedNeighbors++;
-        if (y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH] & REVEALED_FLAG) revealedNeighbors++;
-        // Diagonals
-        if (x > 0 && y > 0 && flags[idx - GRID_WIDTH - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && y > 0 && flags[idx - GRID_WIDTH + 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x > 0 && y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH + 1] & REVEALED_FLAG) revealedNeighbors++;
-
-        if (revealedNeighbors > 0) {
-          // Partial alpha erase — more neighbors = more transparent
-          const alpha = Math.min(1, revealedNeighbors / 6);
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-          ctx.fillRect(x * TEX_SCALE, y * TEX_SCALE, TEX_SCALE, TEX_SCALE);
-        }
+        const style = getFogTileStyle(flags, x, y);
+        if (style.alpha <= 0) continue;
+        ctx.fillStyle = `rgba(${style.color.r}, ${style.color.g}, ${style.color.b}, ${style.alpha})`;
+        ctx.fillRect(x * TEX_SCALE, y * TEX_SCALE, TEX_SCALE, TEX_SCALE);
       }
     }
   }

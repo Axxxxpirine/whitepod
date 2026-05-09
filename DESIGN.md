@@ -133,6 +133,8 @@ The approved HUD includes:
 | 2026-04-16 | Re-add Google Fonts link in `index.html` | Without it, every font variable silently degrades to system fallbacks (Georgia for headings, system-ui for body, SFMono for data), breaking the "headings MUST be Newsreader" anti-pattern rule. Kept Google Fonts over `@fontsource` to avoid adding a dependency. |
 | 2026-04-16 | Align grid tokens to DESIGN.md values | `--color-grid-tile` and `--color-grid-line` had drifted in tokens.ts/index.css to brighter values. Reverted to `#181A1F` / `#2A3038`. Dropped unused `--color-grid-tile-rock`. |
 | 2026-05-08 | Add RTS Field Model world asset extension | The game keeps rectangular 2D gameplay but upgrades world assets to generated 3/4 RTS-hybrid sprites. This preserves engine predictability while making the play field more dimensional and screenshot-legible. |
+| 2026-05-08 | Refactor map/grid atmosphere | The lunar field keeps strict top-down gameplay while adding explicit zoom-aware grid hairlines, calmer regolith, screen-space planetary backdrop, earthlight fog, and fixed SE-light/NW-shadow anchoring. Reference: `docs/map-grid-refacto.md`. |
+| 2026-05-09 | Add axonometric guide grid | A diagonal guide layer gives the field a drawing-board/isometric read across active zoom levels while preserving rectangular gameplay, placement, picking, ports, and API coordinates. Orthographic terrain grid lines stay hidden. |
 
 ---
 

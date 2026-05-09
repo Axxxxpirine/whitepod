@@ -3,6 +3,7 @@ import { Application } from 'pixi.js';
 import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
+import { WorldBackdropRenderer } from '@/game/renderer/WorldBackdropRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { TerrainDecalRenderer } from '@/game/renderer/TerrainDecalRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
@@ -96,6 +97,7 @@ export function GameCanvas() {
     let destroyed = false;
     let initCompleted = false;
     let app: Application | null = null;
+    let worldBackdropRenderer: WorldBackdropRenderer | null = null;
     let gridRenderer: GridRenderer | null = null;
     let terrainDecalRenderer: TerrainDecalRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
@@ -238,6 +240,7 @@ export function GameCanvas() {
         saveWorldSession(engine, sessionId);
       };
 
+      worldBackdropRenderer = new WorldBackdropRenderer(app);
       gridRenderer = new GridRenderer(app, engine);
       terrainDecalRenderer = new TerrainDecalRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
@@ -514,6 +517,7 @@ export function GameCanvas() {
           }
         }
 
+        worldBackdropRenderer!.render();
         gridRenderer!.render();
         terrainDecalRenderer!.render();
         resourceRenderer!.render();
@@ -566,6 +570,7 @@ export function GameCanvas() {
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
         gridRenderer?.destroy();
+        worldBackdropRenderer?.destroy();
         app?.destroy(true);
       }
     };
