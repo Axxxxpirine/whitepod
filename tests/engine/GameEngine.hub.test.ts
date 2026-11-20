@@ -160,7 +160,10 @@ describe('hub deliveries', () => {
     clearDeposits(engine);
     fundHub(engine);
     const origin = hubOrigin(engine);
-    const source = engine.placeBuilding('placeholder_node_1x1', { x: origin.x - 6, y: origin.y - 6 })!;
+    const sourceAt = { x: origin.x - 6, y: origin.y - 6 };
+    engine.placeResource(sourceAt.x, sourceAt.y, ResourceType.Regolith);
+    const source = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, sourceAt)!;
+    expect(source).not.toBeNull();
 
     for (const port of getBuildingType(HUB_BUILDING_TYPE_ID)!.ports) {
       expect(

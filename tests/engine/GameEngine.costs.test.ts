@@ -31,6 +31,17 @@ function spotNearHub(engine: GameEngine, dx: number, dy = 0) {
   return { x: hub.origin.x - 8 + dx, y: hub.origin.y + dy };
 }
 
+/** An extractor and a storage a few tiles apart, west of the hub: both ends of a belt. */
+function placeBeltEnds(engine: GameEngine) {
+  const at = spotNearHub(engine, 0);
+  engine.placeResource(at.x, at.y, ResourceType.Regolith);
+  const source = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, at)!;
+  const target = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, spotNearHub(engine, 3, -1))!;
+  expect(source).not.toBeNull();
+  expect(target).not.toBeNull();
+  return { source, target };
+}
+
 describe('construction cost catalog', () => {
   it('prices every player building except dev placeholders', () => {
     const unpriced = getAllBuildingTypes()
@@ -104,8 +115,8 @@ describe('campaign construction costs', () => {
   it('charges a belt route per segment and refunds the whole chain', () => {
     const engine = campaign();
     hubStock(engine).regolith = 1000;
-    const source = engine.placeBuilding('placeholder_node_1x1', spotNearHub(engine, 0))!;
-    const target = engine.placeBuilding('placeholder_node_1x1', spotNearHub(engine, 6))!;
+    const { source, target } = placeBeltEnds(engine);
+    hubStock(engine).regolith = 1000;
 
     const result = engine.placeBelt({ building: source, port: 'out_east' }, { building: target, port: 'in_west' });
     expect(result.ok).toBe(true);
@@ -120,9 +131,10 @@ describe('campaign construction costs', () => {
 
   it('refuses a belt route the stock cannot fully pay and places nothing', () => {
     const engine = campaign();
-    hubStock(engine).regolith = 2;
-    const source = engine.placeBuilding('placeholder_node_1x1', spotNearHub(engine, 0))!;
-    const target = engine.placeBuilding('placeholder_node_1x1', spotNearHub(engine, 6))!;
+    hubStock(engine).regolith = 1000;
+    const { source, target } = placeBeltEnds(engine);
+    // The route needs at least two segments: one Regolith is not enough.
+    hubStock(engine).regolith = 1;
     const buildingsBefore = engine.getBuildings().size;
 
     const from = { building: source, port: 'out_east' };
@@ -130,7 +142,7 @@ describe('campaign construction costs', () => {
     expect(engine.canPlaceBelt(from, to)).toEqual({ ok: false, reason: 'insufficient_resources' });
     expect(engine.placeBelt(from, to)).toEqual({ ok: false, reason: 'insufficient_resources' });
     expect(engine.getBuildings().size).toBe(buildingsBefore);
-    expect(hubStock(engine).regolith).toBe(2);
+    expect(hubStock(engine).regolith).toBe(1);
   });
 
   it('does not refund a removed storage into itself', () => {

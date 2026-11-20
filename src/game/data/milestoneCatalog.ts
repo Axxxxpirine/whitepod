@@ -1,8 +1,14 @@
 import type { RecipeId } from './recipeCatalog';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
+  BELT_CORNER_CCW_BUILDING_TYPE_ID,
+  BELT_CORNER_CW_BUILDING_TYPE_ID,
+  BELT_STRAIGHT_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
+  EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
+  SOLAR_PANEL_BUILDING_TYPE_ID,
+  STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
 } from './buildingCatalog';
@@ -22,9 +28,26 @@ export interface Milestone {
   readonly title: string;
   /** Resources the hub must hold; consumed when the player completes the milestone. */
   readonly requirements: readonly ResourceCost[];
-  /** Content made available by completing it (enforced by the unlock system, #66). */
+  /** Content made available by completing it (see campaign/unlocks.ts). */
   readonly unlocks: MilestoneUnlocks;
 }
+
+/**
+ * Content available from the first minute of a campaign: enough to extract,
+ * store, belt and power a first line. Everything else comes from milestones;
+ * content no milestone unlocks stays locked in campaign (later chapters).
+ */
+export const STARTING_UNLOCKS: MilestoneUnlocks = {
+  buildings: [
+    EXTRACTOR_BUILDING_TYPE_ID,
+    STORAGE_BUILDING_TYPE_ID,
+    BELT_STRAIGHT_BUILDING_TYPE_ID,
+    BELT_CORNER_CW_BUILDING_TYPE_ID,
+    BELT_CORNER_CCW_BUILDING_TYPE_ID,
+    SOLAR_PANEL_BUILDING_TYPE_ID,
+  ],
+  recipes: [],
+};
 
 /**
  * Campaign milestones in play order: the active milestone is always the first

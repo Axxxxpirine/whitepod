@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Battery, GitMerge, Pickaxe, Sun, Zap } from 'lucide-react';
+import { Activity, Battery, GitMerge, Lock, Pickaxe, Sun, Zap } from 'lucide-react';
 import { RESOURCE_ENTRIES, getResourceSprite } from '@/game/ui/resourcePresentation';
+import { lockedHint } from '@/game/ui/unlockPresentation';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
@@ -185,6 +186,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
                 key={recipe.id}
                 recipe={recipe}
                 active={recipe.id === activeRecipeId}
+                lockHint={lockedHint(engine, 'recipes', recipe.id)}
                 onClick={() => {
                   engine.setProcessorRecipe(
                     building.id,
@@ -243,25 +245,41 @@ function ResourceStockCard({ sprite, alt, count }: { sprite: string; alt: string
   );
 }
 
-function RecipeCard({ recipe, active, onClick }: { recipe: Recipe; active: boolean; onClick: () => void }) {
+function RecipeCard({
+  recipe,
+  active,
+  lockHint,
+  onClick,
+}: {
+  recipe: Recipe;
+  active: boolean;
+  /** Set when the recipe is locked (campaign): shown instead of the inputs. */
+  lockHint: string | null;
+  onClick: () => void;
+}) {
   const outputLabel = resourceTypeLabel(recipe.output.resourceType);
   const inputLabel = formatRecipeInputs(recipe);
   const sprite = getResourceSprite(recipe.output.resourceType);
+  const locked = lockHint !== null;
 
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={`Recette ${outputLabel}`}
+      onClick={locked ? undefined : onClick}
+      aria-label={locked ? `Recette ${outputLabel}, verrouillée` : `Recette ${outputLabel}`}
       aria-pressed={active}
+      aria-disabled={locked || undefined}
+      title={lockHint ?? undefined}
       className={cn(
         'rounded-sm border px-1.5 py-1.5 text-left transition-colors',
-        active
-          ? 'border-accent bg-accent/10 text-ink'
-          : 'border-border bg-surface-2/60 text-ink-muted hover:bg-surface-2',
+        locked
+          ? 'cursor-not-allowed border-border bg-surface text-ink-muted'
+          : active
+            ? 'border-accent bg-accent/10 text-ink'
+            : 'border-border bg-surface-2/60 text-ink-muted hover:bg-surface-2',
       )}
     >
-      <div className="relative flex min-h-11 items-center justify-center">
+      <div className={cn('relative flex min-h-11 items-center justify-center', locked && 'opacity-30 grayscale')}>
         <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[10px] tabular-nums text-ink">
           {recipe.output.amount}x
         </span>
@@ -273,7 +291,14 @@ function RecipeCard({ recipe, active, onClick }: { recipe: Recipe; active: boole
       </div>
       <div className="mt-1 text-center text-[11px] leading-tight text-ink">{outputLabel}</div>
       <div className="mt-1 text-[10px] leading-snug text-ink-muted">
-        {inputLabel}
+        {locked ? (
+          <span className="flex items-start gap-1">
+            <Icon icon={Lock} size={10} className="mt-px" aria-hidden="true" />
+            {lockHint}
+          </span>
+        ) : (
+          inputLabel
+        )}
       </div>
     </button>
   );

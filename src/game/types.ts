@@ -131,6 +131,7 @@ export type PlacementFailure =
   | 'id_overflow'
   | 'tile_fogged'
   | 'system_placed'
+  | 'locked'
   | 'insufficient_resources';
 
 export type PlacementResult =

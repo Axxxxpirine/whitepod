@@ -149,6 +149,9 @@ engine.getMilestoneProgress()          // { milestone, requirements: [{ resource
 engine.completeActiveMilestone()       // Consume the requirements from the hub; false if not ready
 engine.getCompletedMilestoneIds()
 engine.onMilestoneCompleted((milestone) => { /* ... */ })
+engine.isBuildingUnlocked('converter_basic') // Always true in sandbox
+engine.isRecipeUnlocked('iron_oxide')
+engine.getUnlockingMilestone('buildings', 'converter_basic') // Milestone that unlocks it, or null
 ```
 
 ### Simulation
