@@ -213,6 +213,10 @@ export function getBuildingType(id: BuildingTypeId): BuildingType | undefined {
   return catalog.get(id);
 }
 
+export function getAllBuildingTypes(): readonly BuildingType[] {
+  return entries;
+}
+
 export function resourceTypeLabel(type: ResourceTypeT): string {
   switch (type) {
     case ResourceType.Regolith:

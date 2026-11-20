@@ -2,7 +2,7 @@ import type { TileType } from '../types';
 import { TileType as TileTypeConst } from '../types';
 import type { ResourceType } from '../types';
 import { Assets, Texture, ImageSource } from 'pixi.js';
-import { BUILDING_SPRITE_PATHS, assetUrl, RESOURCE_SPRITE_PATHS } from '../ui/spritePaths';
+import { BUILDING_SPRITE_PATHS, RESOURCE_SPRITE_PATHS, TERRAIN_DECAL_SPECS } from '../ui/spritePaths';
 
 /* ── Deterministic hash helpers ── */
 
@@ -60,12 +60,12 @@ function craterDarkening(x: number, y: number): number {
 
 /* ── Tile color with lunar palette ── */
 
-const GROUND_BASE = 0xd0;
-const GROUND_MIN = 0x90;
-const ROCK_BASE = 0x70;
-const ROCK_MIN = 0x4a;
+const GROUND_BASE = 0x2a;
+const GROUND_MIN = 0x17;
+const ROCK_BASE = 0x36;
+const ROCK_MIN = 0x22;
 const SHADE_STEPS = 8;
-const WATER_COLOR = 0x2d6a9f;
+const WATER_COLOR = 0x123044;
 
 function grayToHex(gray: number): number {
   const g = Math.max(0, Math.min(255, gray));
@@ -77,7 +77,7 @@ export function getTileColor(type: TileType, x: number, y: number): number {
 
   const dark = craterDarkening(x, y);
   // Add subtle per-tile noise so flat areas aren't perfectly uniform
-  const noise = (hashCell(x, y, 0) - 0.5) * 6;
+  const noise = (hashCell(x, y, 0) - 0.5) * 4;
 
   const base = type === TileTypeConst.Rock || type === TileTypeConst.Empty && false
     ? ROCK_BASE : GROUND_BASE;
@@ -157,10 +157,11 @@ export function getTileTexture(): Texture {
 }
 
 const resourceTextures = new Map<ResourceType, Texture>();
+const terrainDecalTextures = new Map<keyof typeof TERRAIN_DECAL_SPECS, Texture>();
 
 export async function loadResourceTextures(): Promise<void> {
   for (const [type, path] of RESOURCE_SPRITE_PATHS) {
-    const texture = await Assets.load<Texture>(assetUrl(path));
+    const texture = await Assets.load<Texture>(path);
     resourceTextures.set(type, texture);
   }
 }
@@ -169,11 +170,25 @@ export function getResourceTexture(type: ResourceType): Texture | null {
   return resourceTextures.get(type) ?? null;
 }
 
+export async function loadTerrainDecalTextures(): Promise<void> {
+  for (const [key, spec] of Object.entries(TERRAIN_DECAL_SPECS) as [
+    keyof typeof TERRAIN_DECAL_SPECS,
+    (typeof TERRAIN_DECAL_SPECS)[keyof typeof TERRAIN_DECAL_SPECS],
+  ][]) {
+    const texture = await Assets.load<Texture>(spec.path);
+    terrainDecalTextures.set(key, texture);
+  }
+}
+
+export function getTerrainDecalTexture(key: keyof typeof TERRAIN_DECAL_SPECS): Texture | null {
+  return terrainDecalTextures.get(key) ?? null;
+}
+
 const buildingTextures = new Map<string, Texture>();
 
 export async function loadBuildingTextures(): Promise<void> {
   for (const [typeId, path] of BUILDING_SPRITE_PATHS) {
-    const texture = await Assets.load<Texture>(assetUrl(path));
+    const texture = await Assets.load<Texture>(path);
     buildingTextures.set(typeId, texture);
   }
 }

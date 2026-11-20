@@ -8,6 +8,8 @@ import { PIXI } from '@/design/tokens';
 
 export const BELT_INSET = 0;
 const BELT_PATH = PIXI.border;
+const BELT_RAIL = PIXI.surface2;
+const BELT_DATA_LINE = PIXI.accent;
 
 export class BeltRenderer {
   private readonly beltContainer: Container;
@@ -84,7 +86,19 @@ export class BeltRenderer {
       .moveTo(inPoint.x, inPoint.y)
       .lineTo(center.x, center.y)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_PATH, width: 1.5, alpha: 0.225 });
+      .stroke({ color: BELT_RAIL, width: 8, alpha: 0.72 });
+
+    this.graphics
+      .moveTo(inPoint.x, inPoint.y)
+      .lineTo(center.x, center.y)
+      .lineTo(outPoint.x, outPoint.y)
+      .stroke({ color: BELT_PATH, width: 3, alpha: 0.86 });
+
+    this.graphics
+      .moveTo(inPoint.x, inPoint.y)
+      .lineTo(center.x, center.y)
+      .lineTo(outPoint.x, outPoint.y)
+      .stroke({ color: BELT_DATA_LINE, width: 1, alpha: 0.2 });
   }
 
   private edgePoint(baseX: number, baseY: number, side: Direction): TileCoord {

@@ -1,6 +1,7 @@
 # Design System — Whitepod
 
 **Direction name:** Architect's Drawing Board
+**World asset extension:** RTS Field Model
 **Approved:** 2026-04-16 (variant A, Stitch project `7790137728698909132`)
 **Mockup reference:** `~/.gstack/projects/Axxxxpirine-whitepod/designs/design-system-20260416-011614/variant-A-hud.png`
 
@@ -8,12 +9,13 @@
 
 - **What this is:** grid-based industrial automation game. The player is an architect of a living automated system — belts, buildings, energy networks, fog-of-war exploration.
 - **Who it's for:** systems-thinkers who sit with the game for long focused sessions (Factorio / Satisfactory / Shapez 2 audience).
-- **Category:** 2D top-down factory automation sim.
+- **Category:** 2D RTS-hybrid factory automation sim.
 - **Differentiation:** every competitor in the category looks like a grimy industrial world (muddy browns, rivets, orange rust). Whitepod takes the opposite posture — architectural, clean, systems-as-art. A Steam screenshot should read immediately as "not Factorio".
 
 ## Aesthetic direction
 
 - **Direction:** Architect's Drawing Board — technical blueprint aesthetic on a dark matte graphite surface.
+- **World asset extension:** RTS Field Model — orthographic 3/4 industrial maquettes from a south-east camera, with gameplay remaining on the rectangular tile grid.
 - **Decoration level:** intentional. Hairline 1px rules, ghosted tile grids, subtle grain allowed on panels. Never expressive.
 - **Mood:** Dieter Rams + Teenage Engineering manual + ArchDaily dark mode. Calm, precise, confidently typographic. The world animates; the UI stays still.
 - **References:** Braun product design, Teenage Engineering OP-1 manual, Figma dark mode, architectural drawing conventions, Dyson Sphere Program's diagrammatic moments (not Satisfactory's gloss).
@@ -108,7 +110,19 @@ The approved HUD includes:
 - Right panel: `BELT FLOW` (Newsreader small-caps), mono rate table with cyan flow dots, muted rows for zero.
 - Bottom hotbar: centered, 10 slots, hairline borders, active slot cyan ring, numeric `01-10` labels.
 - Bottom-left chip: `BUILD: BELT` in Space Grotesk small-caps on cyan 10%-tint surface with cyan 1px border.
-- Play field: dark graphite tiles with faint hairline grid, buildings as flat top-down sprites.
+- Play field: dark graphite tiles with faint hairline grid, buildings as 3/4 RTS-hybrid sprites anchored to the bottom-center of their gameplay footprint.
+
+## World asset direction — RTS Field Model
+
+**Camera language:** orthographic 3/4 from the south-east, roughly 55-60 degree pitch. This is a visual model only: the gameplay grid, picking, coordinates, ports, and API remain rectangular 2D.
+
+**Asset generation:** building, resource, and terrain decal bitmaps may be generated through Codex image generation / ChatGPT Image 2. Use flat chroma-key backgrounds for source images, remove the key to RGBA PNG locally, and keep source sheets under `public/sprites/rts/sources/` when they document the pipeline.
+
+**Material language:** matte graphite metal, ceramic technical panels, smoked glass, ivory markings, cold cyan data strips, and rare amber extraction or warning details. Never bake cast shadows into generated assets; shadows belong in Pixi so every sprite shares the same deterministic world lighting.
+
+**Sprite contract:** generated building sprites live under `public/sprites/rts/buildings/`, resource sprites under `public/sprites/rts/resources/`, and terrain decals under `public/sprites/rts/terrain/`. The TypeScript sprite manifest is the source of truth for path, footprint, anchor, display height, and generated/procedural status.
+
+**Implementation constraint:** the building catalog remains the source of truth for gameplay footprint and ports. The sprite manifest can make a building visually taller, but it cannot change placement, pathfinding, energy links, or belt connectivity.
 
 ## Decisions log
 
@@ -118,6 +132,7 @@ The approved HUD includes:
 | 2026-04-16 | Drop `--color-accent-violet` token | Violet is listed as a category anti-pattern ("AI-slop"). Merger & watchtower re-mapped to `--color-ink-muted`; icon + hotkey badge still carry identity. |
 | 2026-04-16 | Re-add Google Fonts link in `index.html` | Without it, every font variable silently degrades to system fallbacks (Georgia for headings, system-ui for body, SFMono for data), breaking the "headings MUST be Newsreader" anti-pattern rule. Kept Google Fonts over `@fontsource` to avoid adding a dependency. |
 | 2026-04-16 | Align grid tokens to DESIGN.md values | `--color-grid-tile` and `--color-grid-line` had drifted in tokens.ts/index.css to brighter values. Reverted to `#181A1F` / `#2A3038`. Dropped unused `--color-grid-tile-rock`. |
+| 2026-05-08 | Add RTS Field Model world asset extension | The game keeps rectangular 2D gameplay but upgrades world assets to generated 3/4 RTS-hybrid sprites. This preserves engine predictability while making the play field more dimensional and screenshot-legible. |
 
 ---
 
