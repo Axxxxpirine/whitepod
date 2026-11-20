@@ -32,7 +32,7 @@ import {
 import { MILESTONES, STARTING_UNLOCKS, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
 import { computeUnlocks, findUnlockingMilestone, type UnlockKind, type UnlockState } from '../campaign/unlocks';
 import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
-import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
+import { canAfford, mergeCosts, missingFor, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -50,6 +50,8 @@ import {
   type EnergyGlobalStats,
   type PendingEndpoint,
   type BeltFailure,
+  type BeltResult,
+  type BeltRouteQuote,
   type PlacementResult,
   type PlaceBeltResult,
   type PowerState,
@@ -882,12 +884,22 @@ export class GameEngine {
     return id;
   }
 
-  canPlaceBelt(from: PortEndpoint, to: PortEndpoint): ReturnType<typeof planBelt> {
+  canPlaceBelt(from: PortEndpoint, to: PortEndpoint): BeltResult {
+    const quote = this.quoteBelt(from, to);
+    if (!quote.ok) return quote;
+    if (quote.missing.length > 0) return { ok: false, reason: 'insufficient_resources' };
+    return { ok: true, plan: quote.plan };
+  }
+
+  /**
+   * Plans a belt route and prices it without refusing it for cost, so the
+   * preview can show an unaffordable route and what it lacks.
+   */
+  quoteBelt(from: PortEndpoint, to: PortEndpoint): BeltRouteQuote {
     const planned = planBelt(this, from, to);
-    if (planned.ok && !this.canAfford(this.getBeltRouteCost(planned.plan.segments))) {
-      return { ok: false, reason: 'insufficient_resources' };
-    }
-    return planned;
+    if (!planned.ok) return planned;
+    const cost = this.getBeltRouteCost(planned.plan.segments);
+    return { ok: true, plan: planned.plan, cost, missing: this.getMissingResources(cost) };
   }
 
   /** Total cost of a planned belt route (one segment cost per tile). */
@@ -1106,6 +1118,11 @@ export class GameEngine {
 
   canAfford(cost: readonly ResourceCost[]): boolean {
     return cost.length === 0 || canAfford(this.walletInventories(), cost);
+  }
+
+  /** What the global stock lacks to pay `cost`, per resource (empty when affordable). */
+  getMissingResources(cost: readonly ResourceCost[]): ResourceCost[] {
+    return cost.length === 0 ? [] : missingFor(this.walletInventories(), cost);
   }
 
   /**

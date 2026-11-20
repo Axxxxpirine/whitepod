@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
@@ -143,6 +143,49 @@ describe('campaign construction costs', () => {
     expect(engine.placeBelt(from, to)).toEqual({ ok: false, reason: 'insufficient_resources' });
     expect(engine.getBuildings().size).toBe(buildingsBefore);
     expect(hubStock(engine).regolith).toBe(1);
+  });
+
+  it('quotes an unaffordable belt route with its plan and what is missing', () => {
+    const engine = campaign();
+    hubStock(engine).regolith = 1000;
+    const { source, target } = placeBeltEnds(engine);
+    hubStock(engine).regolith = 1;
+
+    const quote = engine.quoteBelt({ building: source, port: 'out_east' }, { building: target, port: 'in_west' });
+
+    expect(quote.ok).toBe(true);
+    if (!quote.ok) return;
+    const segments = quote.plan.segments.length;
+    expect(quote.cost).toEqual([{ resourceType: ResourceType.Regolith, amount: segments }]);
+    expect(quote.missing).toEqual([{ resourceType: ResourceType.Regolith, amount: segments - 1 }]);
+  });
+
+  it('reports what the stock lacks for a cost, and nothing in sandbox', () => {
+    const engine = campaign();
+    hubStock(engine).regolith = STORAGE_REGOLITH - 3;
+
+    expect(engine.getMissingResources(STORAGE_COST)).toContainEqual({ resourceType: ResourceType.Regolith, amount: 3 });
+    hubStock(engine).regolith = STORAGE_REGOLITH;
+    expect(engine.getMissingResources(engine.getBuildingCost(STORAGE_BUILDING_TYPE_ID))).toEqual([]);
+
+    const sandbox = new GameEngine(800, 600);
+    expect(sandbox.getBuildingCost(STORAGE_BUILDING_TYPE_ID)).toEqual([]);
+    expect(sandbox.getMissingResources(sandbox.getBuildingCost(STORAGE_BUILDING_TYPE_ID))).toEqual([]);
+  });
+
+  it('plays the refusal sound when the stock cannot pay', () => {
+    const engine = campaign();
+    hubStock(engine).regolith = 1000;
+    const { source, target } = placeBeltEnds(engine);
+    hubStock(engine).regolith = 1;
+    const onSfx = vi.fn();
+    engine.subscribeSfx(onSfx);
+
+    engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, spotNearHub(engine, 0, -4));
+    engine.placeBelt({ building: source, port: 'out_east' }, { building: target, port: 'in_west' });
+
+    expect(onSfx).toHaveBeenCalledWith(expect.objectContaining({ type: 'building_place_fail', reason: 'insufficient_resources' }));
+    expect(onSfx).toHaveBeenCalledWith({ type: 'belt_place_fail', reason: 'insufficient_resources' });
   });
 
   it('does not refund a removed storage into itself', () => {
