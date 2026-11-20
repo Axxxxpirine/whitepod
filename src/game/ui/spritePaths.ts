@@ -2,6 +2,7 @@ import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
+  HUB_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
@@ -44,6 +45,18 @@ export const BUILDING_SPRITE_SPECS: ReadonlyMap<BuildingTypeId, SpriteAssetSpec>
       path: 'sprites/rts/buildings/storage.png',
       footprint: { w: 3, h: 3 },
       displayHeightTiles: 3.2,
+      anchor: 'bottom-center',
+      kind: 'generated',
+    },
+  ],
+  [
+    // Placeholder: the storage maquette scaled to the hub footprint until the
+    // 0.4 art pass gives the lander its own sprite.
+    HUB_BUILDING_TYPE_ID,
+    {
+      path: 'sprites/rts/buildings/storage.png',
+      footprint: { w: 5, h: 5 },
+      displayHeightTiles: 5.4,
       anchor: 'bottom-center',
       kind: 'generated',
     },

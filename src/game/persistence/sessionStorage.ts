@@ -1,4 +1,5 @@
 import { GRID_SIZE } from '@/game/constants';
+import { isGameMode } from '@/game/data/gameMode';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
 import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
 import type { BotProfileId } from '@/game/bot/botTypes';
@@ -24,6 +25,7 @@ export interface PersistedWorldStateV3 {
   readonly idleVersion: number;
   readonly sessionId: string;
   readonly mapSeed: number;
+  readonly gameMode?: SerializedGameWorld['gameMode'];
   readonly gridBase64: string;
   readonly buildings: SerializedGameWorld['buildings'];
   readonly connections: SerializedGameWorld['connections'];
@@ -180,6 +182,7 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     typeof value.sessionId === 'string' &&
     value.sessionId.length > 0 &&
     isFiniteNumber(value.mapSeed) &&
+    (value.gameMode === undefined || isGameMode(value.gameMode)) &&
     typeof value.gridBase64 === 'string' &&
     value.gridBase64.length > 0 &&
     isSerializedBuildingRegistry(value.buildings) &&
@@ -245,6 +248,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
   return {
     version: 3,
     mapSeed: value.mapSeed,
+    gameMode: value.gameMode,
     grid: base64ToArrayBuffer(value.gridBase64),
     buildings: value.buildings,
     connections: value.connections,
@@ -384,6 +388,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     idleVersion: WORLD_IDLE_VERSION,
     sessionId,
     mapSeed: snapshot.mapSeed,
+    gameMode: snapshot.gameMode,
     gridBase64: arrayBufferToBase64(snapshot.grid),
     buildings: snapshot.buildings,
     connections: snapshot.connections,

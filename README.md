@@ -133,6 +133,19 @@ engine.getResourceRates()              // Net connected-line rates (items/min)
 engine.getStorageInventory(buildingId) // Per-storage inventory or null
 ```
 
+### Game mode
+
+```js
+engine.gameMode                        // 'sandbox' (default) | 'campaign', fixed for the world's lifetime
+// Dev scenarios, generators and bots always run in sandbox. See PRIMITIVES.md.
+
+engine.getHubId()                      // Campaign hub (lander) id, or null in sandbox
+engine.getHubInventory()               // Hub inventory, or null in sandbox
+engine.getBuildingCost('storage_basic') // Campaign construction cost ([] in sandbox)
+engine.canAfford(cost)                 // Payable from the global stock (hub + storages)?
+engine.getBeltRouteCost(plan.segments) // Total cost of a planned belt route
+```
+
 ### Simulation
 
 ```js
