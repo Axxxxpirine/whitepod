@@ -4,13 +4,9 @@ import {
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
-import { gridToWorld } from '@/game/engine/CoordinateTransform';
 import { ResourceType, TileType } from '@/game/types';
 import type { ScenarioDefinition, ScenarioListEntry } from './types';
 import { tryBelt } from './generatorUtils';
-
-// Camera target between the solar/battery chain and the storage (logical tile space).
-const BOOTSTRAP_VIEW_CENTER = gridToWorld(11.5, 8.5);
 
 const bootstrapEnergyScenario: ScenarioDefinition = {
   id: 'bootstrap-energy-grid',
@@ -64,8 +60,8 @@ const bootstrapEnergyScenario: ScenarioDefinition = {
   view: {
     selectedTool: { kind: 'building', buildingType: SOLAR_PANEL_BUILDING_TYPE_ID },
     viewport: {
-      centerX: BOOTSTRAP_VIEW_CENTER.wx,
-      centerY: BOOTSTRAP_VIEW_CENTER.wy,
+      centerX: 384,
+      centerY: 288,
       zoom: 1.6,
     },
   },

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
-import { isoWorldCenter } from '@/game/engine/IsoTransform';
+import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '@/game/constants';
 import { KeyboardHandler } from '@/game/input/KeyboardHandler';
 
 function press(key: string): void {
@@ -16,7 +16,7 @@ describe('KeyboardHandler', () => {
     handler = null;
   });
 
-  it('recenters the camera on the middle of the iso world with Space', () => {
+  it('recenters the camera on the middle of the map with Space', () => {
     const engine = new GameEngine(800, 600);
     engine.viewport.restore({ centerX: 0, centerY: 10, zoom: 2.5 });
     const kinds: string[] = [];
@@ -26,8 +26,11 @@ describe('KeyboardHandler', () => {
 
     press(' ');
 
-    const center = isoWorldCenter();
-    expect(engine.viewport.getSnapshot()).toEqual({ centerX: center.wx, centerY: center.wy, zoom: 1 });
+    expect(engine.viewport.getSnapshot()).toEqual({
+      centerX: (GRID_WIDTH * TILE_SIZE) / 2,
+      centerY: (GRID_HEIGHT * TILE_SIZE) / 2,
+      zoom: 1,
+    });
     expect(kinds).toContain('viewport');
   });
 

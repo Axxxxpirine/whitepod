@@ -1,20 +1,18 @@
-import { GRID_HEIGHT, GRID_WIDTH } from '../constants';
+import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '../constants';
 import { screenToWorld } from '../engine/CoordinateTransform';
-import { isoToTileContinuous, tileCenterToIso, type IsoPoint } from '../engine/IsoTransform';
 import type { Viewport } from '../engine/Viewport';
 
 /**
  * Minimap geometry, kept free of PixiJS so it can be unit-tested.
  *
- * The minimap shows the logical grid with the same 2:1 iso projection as the
- * main view, scaled down to a diamond `width` px wide and `width / 2` px tall.
- * Grid space here is continuous tile coordinates where tile (tx, ty) covers
- * [tx, tx + 1) x [ty, ty + 1), so its center is (tx + 0.5, ty + 0.5).
+ * The minimap is a top-down, scaled-down copy of the logical grid. Grid space
+ * here is continuous tile coordinates where tile (tx, ty) covers
+ * [tx, tx + 1) x [ty, ty + 1), matching world space divided by TILE_SIZE.
  */
 export interface MinimapLayout {
   readonly width: number;
   readonly height: number;
-  /** Minimap pixels per grid unit along each iso axis. */
+  /** Minimap pixels per tile. */
   readonly scale: number;
   readonly gridWidth: number;
   readonly gridHeight: number;
@@ -30,10 +28,11 @@ export function createMinimapLayout(
   gridWidth: number = GRID_WIDTH,
   gridHeight: number = GRID_HEIGHT,
 ): MinimapLayout {
+  const scale = width / gridWidth;
   return {
     width,
-    height: width / 2,
-    scale: width / (gridWidth + gridHeight),
+    height: gridHeight * scale,
+    scale,
     gridWidth,
     gridHeight,
   };
@@ -41,52 +40,36 @@ export function createMinimapLayout(
 
 /** Grid space -> minimap local pixels. */
 export function gridToMinimap(layout: MinimapLayout, gx: number, gy: number): MinimapPoint {
-  const { scale, gridHeight } = layout;
-  return {
-    x: (gx - gy + gridHeight) * scale,
-    y: ((gx + gy) / 2) * scale,
-  };
+  return { x: gx * layout.scale, y: gy * layout.scale };
 }
 
 /** Minimap local pixels -> grid space (inverse of gridToMinimap). */
 export function minimapToGrid(layout: MinimapLayout, mx: number, my: number): MinimapPoint {
-  const { scale, gridHeight } = layout;
-  const diff = mx / scale - gridHeight;
-  const sum = (2 * my) / scale;
-  return {
-    x: (sum + diff) / 2,
-    y: (sum - diff) / 2,
-  };
+  return { x: mx / layout.scale, y: my / layout.scale };
 }
 
-/** The four corners of the grid diamond in minimap pixels (N, E, S, W). */
-export function minimapDiamond(layout: MinimapLayout): MinimapPoint[] {
-  const { gridWidth, gridHeight } = layout;
+/** The four corners of the grid in minimap pixels (clockwise from top-left). */
+export function minimapOutline(layout: MinimapLayout): MinimapPoint[] {
   return [
-    gridToMinimap(layout, 0, 0),
-    gridToMinimap(layout, gridWidth, 0),
-    gridToMinimap(layout, gridWidth, gridHeight),
-    gridToMinimap(layout, 0, gridHeight),
+    { x: 0, y: 0 },
+    { x: layout.width, y: 0 },
+    { x: layout.width, y: layout.height },
+    { x: 0, y: layout.height },
   ];
 }
 
-/** True when a minimap-local point lies inside the grid diamond. */
+/** True when a minimap-local point lies on the grid. */
 export function isInsideMinimap(layout: MinimapLayout, mx: number, my: number): boolean {
-  const g = minimapToGrid(layout, mx, my);
-  return g.x >= 0 && g.y >= 0 && g.x <= layout.gridWidth && g.y <= layout.gridHeight;
+  return mx >= 0 && my >= 0 && mx <= layout.width && my <= layout.height;
 }
 
-/** Iso world point the camera should center on to look at a minimap point. */
-export function minimapToWorld(layout: MinimapLayout, mx: number, my: number): IsoPoint {
+/** World point the camera should center on to look at a minimap point. */
+export function minimapToWorld(layout: MinimapLayout, mx: number, my: number): { wx: number; wy: number } {
   const g = minimapToGrid(layout, mx, my);
-  return tileCenterToIso(g.x - 0.5, g.y - 0.5);
+  return { wx: g.x * TILE_SIZE, wy: g.y * TILE_SIZE };
 }
 
-/**
- * Outline of the area the main view shows, in minimap pixels. The screen is a
- * rectangle in iso world space, which stays a rectangle on the minimap since
- * both use the same projection.
- */
+/** Outline of the area the main view shows, in minimap pixels. */
 export function viewportOutline(layout: MinimapLayout, viewport: Viewport): MinimapPoint[] {
   const corners: ReadonlyArray<readonly [number, number]> = [
     [0, 0],
@@ -96,18 +79,11 @@ export function viewportOutline(layout: MinimapLayout, viewport: Viewport): Mini
   ];
   return corners.map(([sx, sy]) => {
     const { wx, wy } = screenToWorld(viewport, sx, sy);
-    const t = isoToTileContinuous(wx, wy);
-    return gridToMinimap(layout, t.tx + 0.5, t.ty + 0.5);
+    return gridToMinimap(layout, wx / TILE_SIZE, wy / TILE_SIZE);
   });
 }
 
-/**
- * Radii of the ellipse a circle of `radius` tiles becomes on the minimap
- * (the iso projection stretches diagonals horizontally and squashes them vertically).
- */
-export function minimapCircleRadii(layout: MinimapLayout, radius: number): { rx: number; ry: number } {
-  return {
-    rx: radius * layout.scale * Math.SQRT2,
-    ry: (radius * layout.scale) / Math.SQRT2,
-  };
+/** Radius on the minimap of a circle of `radius` tiles. */
+export function minimapCircleRadius(layout: MinimapLayout, radius: number): number {
+  return radius * layout.scale;
 }

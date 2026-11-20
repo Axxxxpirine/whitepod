@@ -1,7 +1,7 @@
 import { Container, Graphics, type Application } from 'pixi.js';
+import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
-import { footprintDiamond } from './isoFootprint';
 import type { SelectedTool } from '../types';
 import { getHighlightTargets } from '../ui/buildingPresentation';
 
@@ -10,7 +10,9 @@ const PULSE_PERIOD_MS = 1250;
 // as "always there, breathing" rather than fading in/out.
 const PULSE_BASE = 0.75;
 const PULSE_AMPLITUDE = 0.2;
-const STROKE_WIDTH = 2;
+const STROKE_WIDTH = 3;
+const INSET = 1;
+const CORNER_RADIUS = 4;
 
 interface HighlightState {
   readonly selectedTool: SelectedTool;
@@ -66,19 +68,14 @@ export class BuildingHighlightRenderer {
       const type = getBuildingType(building.typeId);
       if (!type) continue;
 
-      const diamond = footprintDiamond(
-        building.origin.x,
-        building.origin.y,
-        type.footprint.w,
-        type.footprint.h,
-      );
       this.graphics
-        .poly([
-          diamond.north.x, diamond.north.y,
-          diamond.east.x, diamond.east.y,
-          diamond.south.x, diamond.south.y,
-          diamond.west.x, diamond.west.y,
-        ], true)
+        .roundRect(
+          building.origin.x * TILE_SIZE + INSET,
+          building.origin.y * TILE_SIZE + INSET,
+          type.footprint.w * TILE_SIZE - INSET * 2,
+          type.footprint.h * TILE_SIZE - INSET * 2,
+          CORNER_RADIUS,
+        )
         .stroke({ color: targets.color, width: STROKE_WIDTH, alpha });
     }
   }

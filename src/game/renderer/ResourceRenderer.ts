@@ -1,15 +1,12 @@
 import { Container, Sprite, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
-import { GRID_WIDTH, ISO_TILE_H, ISO_TILE_W } from '../constants';
-import { tileCenterToIso } from '../engine/IsoTransform';
+import { TILE_SIZE, GRID_WIDTH } from '../constants';
 import { ResourceType } from '../types';
 import type { ResourceType as ResourceTypeT } from '../types';
 import { getResourceTexture } from './TileSprite';
 
-// Resource sprites sit slightly inside the diamond — fit them inside the
-// inscribed rectangle of the iso diamond rather than the diamond's bbox.
-const RESOURCE_SPRITE_WIDTH = Math.round(ISO_TILE_W * 0.7);
-const RESOURCE_SPRITE_HEIGHT = Math.round(ISO_TILE_H * 0.7);
+const RESOURCE_SPRITE_SIZE = TILE_SIZE - 2;
+const RESOURCE_OFFSET = (TILE_SIZE - RESOURCE_SPRITE_SIZE) / 2;
 
 export class ResourceRenderer {
   private readonly resourceContainer: Container;
@@ -65,9 +62,8 @@ export class ResourceRenderer {
           if (!texture) continue;
 
           const sprite = this.acquireSprite(resourceType);
-          const iso = tileCenterToIso(tx, ty);
-          sprite.x = iso.wx;
-          sprite.y = iso.wy;
+          sprite.x = tx * TILE_SIZE + RESOURCE_OFFSET;
+          sprite.y = ty * TILE_SIZE + RESOURCE_OFFSET;
           this.resourceContainer.addChild(sprite);
           this.activeSprites.set(index, sprite);
         }
@@ -108,9 +104,8 @@ export class ResourceRenderer {
             } else {
               // Add new sprite
               const sprite = this.acquireSprite(resourceType);
-              const iso = tileCenterToIso(tx, ty);
-              sprite.x = iso.wx;
-              sprite.y = iso.wy;
+              sprite.x = tx * TILE_SIZE + RESOURCE_OFFSET;
+              sprite.y = ty * TILE_SIZE + RESOURCE_OFFSET;
               this.resourceContainer.addChild(sprite);
               this.activeSprites.set(index, sprite);
             }
@@ -124,9 +119,8 @@ export class ResourceRenderer {
     const sprite = this.spritePool.pop() ?? new Sprite();
     const texture = getResourceTexture(resourceType);
     if (texture) sprite.texture = texture;
-    sprite.anchor.set(0.5, 0.5);
-    sprite.width = RESOURCE_SPRITE_WIDTH;
-    sprite.height = RESOURCE_SPRITE_HEIGHT;
+    sprite.width = RESOURCE_SPRITE_SIZE;
+    sprite.height = RESOURCE_SPRITE_SIZE;
     sprite.visible = true;
     return sprite;
   }

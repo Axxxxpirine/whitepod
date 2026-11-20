@@ -1,5 +1,5 @@
 import type { GameEngine } from '../engine/GameEngine';
-import { isoWorldCenter } from '../engine/IsoTransform';
+import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '../constants';
 
 export interface KeyboardState {
   keysPressed: Set<string>;
@@ -90,7 +90,7 @@ export class KeyboardHandler {
 
   private handleContinuousInput(): void {
     const { keysPressed } = this.keyboardState;
-    // Pan in screen pixels per frame: screen-aligned, so it works the same in iso.
+    // Pan in screen pixels per frame.
     const step = this.panSpeed;
 
     if (keysPressed.has('w') || keysPressed.has('arrowup')) {
@@ -108,9 +108,12 @@ export class KeyboardHandler {
   }
 
   private centerViewport(): void {
-    const center = isoWorldCenter();
     // restore() clamps and notifies listeners so the view actually redraws.
-    this.engine.viewport.restore({ centerX: center.wx, centerY: center.wy, zoom: 1 });
+    this.engine.viewport.restore({
+      centerX: (GRID_WIDTH * TILE_SIZE) / 2,
+      centerY: (GRID_HEIGHT * TILE_SIZE) / 2,
+      zoom: 1,
+    });
   }
 
   private zoomIn(): void {

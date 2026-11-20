@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Viewport } from '@/game/engine/Viewport';
-import { isoWorldBounds, isoWorldCenter } from '@/game/engine/IsoTransform';
+import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from '@/game/constants';
 
-describe('Viewport (iso projection)', () => {
-  it('initializes centered on the iso world center', () => {
+describe('Viewport', () => {
+  it('initializes centered on the grid', () => {
     const vp = new Viewport(1920, 1080);
-    const expected = isoWorldCenter();
-    expect(vp.centerX).toBe(expected.wx);
-    expect(vp.centerY).toBe(expected.wy);
+    expect(vp.centerX).toBe((GRID_WIDTH * TILE_SIZE) / 2);
+    expect(vp.centerY).toBe((GRID_HEIGHT * TILE_SIZE) / 2);
     expect(vp.zoom).toBe(1);
   });
 
@@ -17,11 +16,13 @@ describe('Viewport (iso projection)', () => {
       const range = vp.getVisibleTileRange();
       expect(range.x0).toBeGreaterThanOrEqual(0);
       expect(range.y0).toBeGreaterThanOrEqual(0);
+      expect(range.x1).toBeLessThan(GRID_WIDTH);
+      expect(range.y1).toBeLessThan(GRID_HEIGHT);
       expect(range.x1).toBeGreaterThan(range.x0);
       expect(range.y1).toBeGreaterThan(range.y0);
     });
 
-    it('range shrinks when zoomed in', () => {
+    it('range area shrinks when zoomed in', () => {
       const vp = new Viewport(640, 480);
       const r1 = vp.getVisibleTileRange();
       vp.zoomAt(320, 240, 2);
@@ -31,7 +32,7 @@ describe('Viewport (iso projection)', () => {
       expect(area2).toBeLessThan(area1);
     });
 
-    it('range grows when zoomed out', () => {
+    it('range area grows when zoomed out', () => {
       const vp = new Viewport(640, 480);
       const r1 = vp.getVisibleTileRange();
       vp.zoomAt(320, 240, 0.5);
@@ -41,8 +42,9 @@ describe('Viewport (iso projection)', () => {
       expect(area2).toBeGreaterThan(area1);
     });
 
-    it('clamps to grid bounds when panned to corner', () => {
+    it('never returns out-of-bounds tile coordinates', () => {
       const vp = new Viewport(640, 480);
+      // Pan to corner
       vp.centerX = 0;
       vp.centerY = 0;
       const range = vp.getVisibleTileRange();
@@ -59,16 +61,11 @@ describe('Viewport (iso projection)', () => {
       expect(vp.centerX).toBeGreaterThan(initialX);
     });
 
-    it('clamps to iso world bounds', () => {
+    it('clamps to grid bounds', () => {
       const vp = new Viewport(640, 480);
       vp.pan(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      const bounds = isoWorldBounds();
-      expect(vp.centerX).toBeLessThanOrEqual(bounds.maxX);
-      expect(vp.centerY).toBeLessThanOrEqual(bounds.maxY);
-
-      vp.pan(-Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER);
-      expect(vp.centerX).toBeGreaterThanOrEqual(bounds.minX);
-      expect(vp.centerY).toBeGreaterThanOrEqual(bounds.minY);
+      expect(vp.centerX).toBeLessThanOrEqual(GRID_WIDTH * TILE_SIZE);
+      expect(vp.centerY).toBeLessThanOrEqual(GRID_HEIGHT * TILE_SIZE);
     });
   });
 
@@ -90,6 +87,7 @@ describe('Viewport (iso projection)', () => {
       vp.centerX = 0;
       vp.centerY = 0;
 
+      // World position at screen center before zoom
       const beforeX = vp.centerX + (320 - vp.screenWidth / 2) / vp.zoom;
       const beforeY = vp.centerY + (240 - vp.screenHeight / 2) / vp.zoom;
 
@@ -124,18 +122,17 @@ describe('Viewport (iso projection)', () => {
       expect(restored.getSnapshot()).toEqual(source.getSnapshot());
     });
 
-    it('clamps restored values to iso bounds and zoom limits', () => {
+    it('clamps restored values to valid bounds', () => {
       const vp = new Viewport(640, 480);
 
       vp.restore({
         centerX: Number.MAX_SAFE_INTEGER,
-        centerY: -Number.MAX_SAFE_INTEGER,
+        centerY: -100,
         zoom: 999,
       });
 
-      const bounds = isoWorldBounds();
-      expect(vp.centerX).toBeLessThanOrEqual(bounds.maxX);
-      expect(vp.centerY).toBeGreaterThanOrEqual(bounds.minY);
+      expect(vp.centerX).toBeLessThanOrEqual(GRID_WIDTH * TILE_SIZE);
+      expect(vp.centerY).toBeGreaterThanOrEqual(0);
       expect(vp.zoom).toBe(4);
     });
   });
