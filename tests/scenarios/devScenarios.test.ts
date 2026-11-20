@@ -75,8 +75,8 @@ describe('dev scenario api', () => {
       water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
     });
     expect(loaded?.engine.getViewportSnapshot()).toEqual({
-      centerX: 96,
-      centerY: 320,
+      centerX: 384,
+      centerY: 288,
       zoom: 1.6,
     });
     expect(window.localStorage.getItem(IDLE_SIDECAR_KEY)).toBeNull();

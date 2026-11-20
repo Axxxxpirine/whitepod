@@ -1,5 +1,4 @@
-import { GRID_HEIGHT, GRID_WIDTH } from '../constants';
-import { isoVisibleTileRange, isoWorldBounds, isoWorldCenter } from './IsoTransform';
+import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from '../constants';
 
 export interface VisibleTileRange {
   x0: number;
@@ -18,15 +17,6 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 const VIEWPORT_PADDING = 2;
 
-const ISO_BOUNDS = isoWorldBounds(GRID_WIDTH, GRID_HEIGHT);
-// Pan envelope — a generous bounding box of the iso world. Allows the camera
-// to push slightly past the grid corners (the iso world is a diamond, not a
-// rectangle, so corners of this bbox sit in empty visual space — that's fine).
-const PAN_MIN_X = ISO_BOUNDS.minX;
-const PAN_MAX_X = ISO_BOUNDS.maxX;
-const PAN_MIN_Y = ISO_BOUNDS.minY;
-const PAN_MAX_Y = ISO_BOUNDS.maxY;
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -43,29 +33,34 @@ export class Viewport {
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
     this.zoom = 1;
-    const center = isoWorldCenter();
-    this.centerX = center.wx;
-    this.centerY = center.wy;
+    this.centerX = (GRID_WIDTH * TILE_SIZE) / 2;
+    this.centerY = (GRID_HEIGHT * TILE_SIZE) / 2;
     this.onChange = onChange;
   }
 
   getVisibleTileRange(): VisibleTileRange {
-    return isoVisibleTileRange(
-      {
-        centerX: this.centerX,
-        centerY: this.centerY,
-        halfWidth: this.screenWidth / 2 / this.zoom,
-        halfHeight: this.screenHeight / 2 / this.zoom,
-      },
-      VIEWPORT_PADDING,
-      GRID_WIDTH,
-      GRID_HEIGHT,
-    );
+    const halfW = this.screenWidth / 2 / this.zoom;
+    const halfH = this.screenHeight / 2 / this.zoom;
+
+    const x0 = Math.max(0, Math.floor((this.centerX - halfW) / TILE_SIZE) - VIEWPORT_PADDING);
+    const y0 = Math.max(0, Math.floor((this.centerY - halfH) / TILE_SIZE) - VIEWPORT_PADDING);
+    const x1 = Math.min(GRID_WIDTH - 1, Math.ceil((this.centerX + halfW) / TILE_SIZE) + VIEWPORT_PADDING);
+    const y1 = Math.min(GRID_HEIGHT - 1, Math.ceil((this.centerY + halfH) / TILE_SIZE) + VIEWPORT_PADDING);
+
+    return { x0, y0, x1, y1 };
   }
 
   pan(dx: number, dy: number): void {
-    const nextCenterX = clamp(this.centerX + dx / this.zoom, PAN_MIN_X, PAN_MAX_X);
-    const nextCenterY = clamp(this.centerY + dy / this.zoom, PAN_MIN_Y, PAN_MAX_Y);
+    const nextCenterX = clamp(
+      this.centerX + dx / this.zoom,
+      0,
+      GRID_WIDTH * TILE_SIZE,
+    );
+    const nextCenterY = clamp(
+      this.centerY + dy / this.zoom,
+      0,
+      GRID_HEIGHT * TILE_SIZE,
+    );
     if (nextCenterX === this.centerX && nextCenterY === this.centerY) return;
     this.centerX = nextCenterX;
     this.centerY = nextCenterY;
@@ -100,8 +95,8 @@ export class Viewport {
   }
 
   restore(snapshot: ViewportSnapshot): void {
-    const nextCenterX = clamp(snapshot.centerX, PAN_MIN_X, PAN_MAX_X);
-    const nextCenterY = clamp(snapshot.centerY, PAN_MIN_Y, PAN_MAX_Y);
+    const nextCenterX = clamp(snapshot.centerX, 0, GRID_WIDTH * TILE_SIZE);
+    const nextCenterY = clamp(snapshot.centerY, 0, GRID_HEIGHT * TILE_SIZE);
     const nextZoom = clamp(snapshot.zoom, MIN_ZOOM, MAX_ZOOM);
     const changed =
       nextCenterX !== this.centerX ||

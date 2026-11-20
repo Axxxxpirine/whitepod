@@ -1,8 +1,7 @@
 import { Container, Graphics, type Application } from 'pixi.js';
-import { ISO_TILE_H, ISO_TILE_W } from '../constants';
+import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
-import { tileCenterToIso } from '../engine/IsoTransform';
 import type { Building, EnergyNetworkStats } from '../types';
 import { PIXI } from '@/design/tokens';
 
@@ -133,12 +132,10 @@ export function collectEnergyLinkSegments(engine: GameEngine): EnergyLinkSegment
 function getBuildingCenter(building: Building): { x: number; y: number } | null {
   const type = getBuildingType(building.typeId);
   if (!type) return null;
-  // Iso world center of the footprint diamond.
-  const iso = tileCenterToIso(
-    building.origin.x + (type.footprint.w - 1) / 2,
-    building.origin.y + (type.footprint.h - 1) / 2,
-  );
-  return { x: iso.wx, y: iso.wy };
+  return {
+    x: (building.origin.x + type.footprint.w / 2) * TILE_SIZE,
+    y: (building.origin.y + type.footprint.h / 2) * TILE_SIZE,
+  };
 }
 
 function isConsumer(engine: GameEngine, buildingId: number): boolean {
@@ -384,30 +381,11 @@ export class EnergyLinkRenderer {
     this.syncMode(this.getState().mode, now);
     const style = this.getCurrentStyle(now);
 
-    // Iso world bbox of the visible tile range. The 4 corners of the logical
-    // visible rect project to 4 different iso positions; take min/max.
     const visibleRange = this.engine.getVisibleTiles();
-    const corners = [
-      tileCenterToIso(visibleRange.x0, visibleRange.y0),
-      tileCenterToIso(visibleRange.x1, visibleRange.y0),
-      tileCenterToIso(visibleRange.x0, visibleRange.y1),
-      tileCenterToIso(visibleRange.x1, visibleRange.y1),
-    ];
-    let wx0 = Infinity;
-    let wy0 = Infinity;
-    let wx1 = -Infinity;
-    let wy1 = -Infinity;
-    for (const c of corners) {
-      if (c.wx < wx0) wx0 = c.wx;
-      if (c.wx > wx1) wx1 = c.wx;
-      if (c.wy < wy0) wy0 = c.wy;
-      if (c.wy > wy1) wy1 = c.wy;
-    }
-    // Pad so building centers near the edge aren't clipped.
-    wx0 -= ISO_TILE_W;
-    wy0 -= ISO_TILE_H;
-    wx1 += ISO_TILE_W;
-    wy1 += ISO_TILE_H;
+    const wx0 = visibleRange.x0 * TILE_SIZE;
+    const wy0 = visibleRange.y0 * TILE_SIZE;
+    const wx1 = (visibleRange.x1 + 1) * TILE_SIZE;
+    const wy1 = (visibleRange.y1 + 1) * TILE_SIZE;
 
     for (const segment of this.linkSegments) {
       const fv =

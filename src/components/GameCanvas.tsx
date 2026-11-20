@@ -1,10 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Application } from 'pixi.js';
-import { DEFAULT_MAP_SEED } from '@/game/constants';
+import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { GridRenderer } from '@/game/renderer/GridRenderer';
-import { WorldBackdropRenderer } from '@/game/renderer/WorldBackdropRenderer';
-import { AmbientHazeRenderer } from '@/game/renderer/AmbientHazeRenderer';
 import { ResourceRenderer } from '@/game/renderer/ResourceRenderer';
 import { TerrainDecalRenderer } from '@/game/renderer/TerrainDecalRenderer';
 import { BuildingRenderer } from '@/game/renderer/BuildingRenderer';
@@ -15,7 +13,6 @@ import { PlacementPreviewRenderer } from '@/game/renderer/PlacementPreviewRender
 import { BuildingHighlightRenderer } from '@/game/renderer/BuildingHighlightRenderer';
 import { DayNightOverlayRenderer } from '@/game/renderer/DayNightOverlayRenderer';
 import { FogOfWarRenderer } from '@/game/renderer/FogOfWarRenderer';
-import { footprintBottomAnchor, tileTopAnchor } from '@/game/renderer/isoFootprint';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
@@ -104,8 +101,6 @@ export function GameCanvas() {
     let destroyed = false;
     let initCompleted = false;
     let app: Application | null = null;
-    let worldBackdropRenderer: WorldBackdropRenderer | null = null;
-    let ambientHazeRenderer: AmbientHazeRenderer | null = null;
     let gridRenderer: GridRenderer | null = null;
     let terrainDecalRenderer: TerrainDecalRenderer | null = null;
     let resourceRenderer: ResourceRenderer | null = null;
@@ -272,7 +267,6 @@ export function GameCanvas() {
         saveWorldSession(engine, sessionId);
       };
 
-      worldBackdropRenderer = new WorldBackdropRenderer(app);
       gridRenderer = new GridRenderer(app, engine);
       terrainDecalRenderer = new TerrainDecalRenderer(app, engine);
       resourceRenderer = new ResourceRenderer(app, engine);
@@ -307,8 +301,6 @@ export function GameCanvas() {
         return { selectedTool, hoverTile };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
-      // Screen-space haze first so the minimap HUD stays above it.
-      ambientHazeRenderer = new AmbientHazeRenderer(app);
       minimapRenderer = new MinimapRenderer(app, engine, () => {
         const { selectedTool, hoverTile } = useGameStore.getState();
         return { selectedTool, hoverTile };
@@ -529,13 +521,9 @@ export function GameCanvas() {
               state.setSelectedBuilding(null);
               if (selectedBuildingAnchor !== null) state.setSelectedBuildingAnchor(null);
             } else {
-              const world = footprintBottomAnchor(
-                building.origin.x,
-                building.origin.y,
-                type.footprint.w,
-                type.footprint.h,
-              );
-              const anchor = worldToScreen(engine.viewport, world.x, world.y);
+              const worldX = building.origin.x * TILE_SIZE + (type.footprint.w * TILE_SIZE) / 2;
+              const worldY = building.origin.y * TILE_SIZE + type.footprint.h * TILE_SIZE;
+              const anchor = worldToScreen(engine.viewport, worldX, worldY);
               const ax = Math.round(anchor.sx);
               const ay = Math.round(anchor.sy);
               if (
@@ -558,8 +546,9 @@ export function GameCanvas() {
             state.setSelectedResourceTile(null);
             if (selectedResourceAnchor !== null) state.setSelectedResourceAnchor(null);
           } else {
-            const world = tileTopAnchor(selectedResourceTile.x, selectedResourceTile.y);
-            const anchor = worldToScreen(engine.viewport, world.x, world.y);
+            const worldX = selectedResourceTile.x * TILE_SIZE + TILE_SIZE / 2;
+            const worldY = selectedResourceTile.y * TILE_SIZE;
+            const anchor = worldToScreen(engine.viewport, worldX, worldY);
             const ax = Math.round(anchor.sx);
             const ay = Math.round(anchor.sy);
             if (
@@ -572,7 +561,6 @@ export function GameCanvas() {
           }
         }
 
-        worldBackdropRenderer!.render();
         gridRenderer!.render();
         terrainDecalRenderer!.render();
         resourceRenderer!.render();
@@ -584,7 +572,6 @@ export function GameCanvas() {
         energyLinkRenderer!.render();
         fogOfWarRenderer!.render();
         dayNightOverlayRenderer!.render();
-        ambientHazeRenderer!.render();
         minimapRenderer!.render();
         engine.grid.clearDirty();
       });
@@ -631,8 +618,6 @@ export function GameCanvas() {
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
         gridRenderer?.destroy();
-        worldBackdropRenderer?.destroy();
-        ambientHazeRenderer?.destroy();
         app?.destroy(true);
       }
     };

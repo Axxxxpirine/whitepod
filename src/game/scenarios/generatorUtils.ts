@@ -1,5 +1,4 @@
-import { GRID_HEIGHT, GRID_WIDTH } from '@/game/constants';
-import { gridToWorld } from '@/game/engine/CoordinateTransform';
+import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { Direction, ResourceType, TileType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
 
@@ -176,10 +175,9 @@ export function prepareEngine(screenWidth: number, screenHeight: number, rng: ()
 }
 
 export function makeViewport(engine: GameEngine, baseAnchor: TileCoord, zoom: number) {
-  const center = gridToWorld(baseAnchor.x, baseAnchor.y);
   const viewport = {
-    centerX: center.wx,
-    centerY: center.wy,
+    centerX: (baseAnchor.x + 0.5) * TILE_SIZE,
+    centerY: (baseAnchor.y + 0.5) * TILE_SIZE,
     zoom,
   };
   engine.viewport.restore(viewport);

@@ -1,7 +1,6 @@
 import {
   Container,
   Graphics,
-  Matrix,
   Polygon,
   Sprite,
   Texture,
@@ -16,8 +15,8 @@ import {
   createMinimapLayout,
   gridToMinimap,
   isInsideMinimap,
-  minimapCircleRadii,
-  minimapDiamond,
+  minimapCircleRadius,
+  minimapOutline,
   minimapToWorld,
   viewportOutline,
   type MinimapLayout,
@@ -45,10 +44,9 @@ const COLOR_RESOURCE = rgba(0x6ee7ff);
 const COLOR_BUILDING = rgba(0xf2b36b);
 
 /**
- * Minimap in the top-right corner, drawn with the same iso projection as the
- * main view. One canvas pixel per tile, projected by the sprite transform;
- * overlays (frame, viewport outline, watchtower preview) are drawn directly in
- * minimap pixels. Click or drag on it to move the camera.
+ * Minimap in the top-right corner: one canvas pixel per tile, scaled down by
+ * the sprite; overlays (frame, viewport outline, watchtower preview) are drawn
+ * directly in minimap pixels. Click or drag on it to move the camera.
  */
 export class MinimapRenderer {
   private readonly app: Application;
@@ -77,7 +75,7 @@ export class MinimapRenderer {
     app: Application,
     engine: GameEngine,
     getPreviewState: () => MinimapPreviewState,
-    width: number = 200,
+    width: number = 180,
   ) {
     this.app = app;
     this.engine = engine;
@@ -87,8 +85,8 @@ export class MinimapRenderer {
     this.container = new Container();
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
-    const diamond = minimapDiamond(this.layout);
-    this.container.hitArea = new Polygon(diamond.flatMap((p) => [p.x, p.y]));
+    const outline = minimapOutline(this.layout).flatMap((p) => [p.x, p.y]);
+    this.container.hitArea = new Polygon(outline);
     app.stage.addChild(this.container);
 
     this.canvas = document.createElement('canvas');
@@ -100,19 +98,17 @@ export class MinimapRenderer {
 
     this.texture = Texture.from(this.canvas);
     this.mapSprite = new Sprite(this.texture);
-    // Grid pixel (gx, gy) -> minimap pixel, same linear map as gridToMinimap.
-    const s = this.layout.scale;
-    this.mapSprite.setFromMatrix(new Matrix(s, s / 2, -s, s / 2, GRID_HEIGHT * s, 0));
+    this.mapSprite.scale.set(this.layout.scale);
     this.container.addChild(this.mapSprite);
 
     this.frame = new Graphics();
     this.frame
-      .poly(diamond.flatMap((p) => [p.x, p.y]))
+      .poly(outline)
       .stroke({ color: 0xffffff, width: 1, alpha: 0.25 });
     this.container.addChild(this.frame);
 
     this.viewportMask = new Graphics();
-    this.viewportMask.poly(diamond.flatMap((p) => [p.x, p.y])).fill({ color: 0xffffff });
+    this.viewportMask.poly(outline).fill({ color: 0xffffff });
     this.container.addChild(this.viewportMask);
 
     this.viewportBorder = new Graphics();
@@ -181,9 +177,9 @@ export class MinimapRenderer {
     }
 
     const center = gridToMinimap(this.layout, hoverTile.x + 0.5, hoverTile.y + 0.5);
-    const { rx, ry } = minimapCircleRadii(this.layout, WATCHTOWER_REVEAL_RADIUS);
+    const radius = minimapCircleRadius(this.layout, WATCHTOWER_REVEAL_RADIUS);
     this.watchtowerPreview
-      .ellipse(center.x, center.y, rx, ry)
+      .circle(center.x, center.y, radius)
       .stroke({ color: 0xffffff, width: 1, alpha: 0.7 });
     this.watchtowerPreview.visible = true;
   }

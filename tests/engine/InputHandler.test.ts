@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { GameEngine } from '@/game/engine/GameEngine';
-import { tileCenterToIso } from '@/game/engine/IsoTransform';
+import { TILE_SIZE } from '@/game/constants';
 import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
 import { SOLAR_PANEL_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
 
 function makeEngine() {
   const engine = new GameEngine(640, 480);
-  // Center the iso viewport on tile (0, 0) so screen-center clicks land on it.
-  const center = tileCenterToIso(0, 0);
-  engine.viewport.centerX = center.wx;
-  engine.viewport.centerY = center.wy;
+  engine.viewport.centerX = TILE_SIZE / 2;
+  engine.viewport.centerY = TILE_SIZE / 2;
   return engine;
 }
 
@@ -138,19 +136,12 @@ describe('InputHandler', () => {
     const handler = new InputHandler(engine, getSelectedTool, () => Direction.North);
     handler.setBuildingSelectedCallback(onBuildingSelected);
 
-    // Move the viewport away from iso world bounds before panning so the pan
-    // delta isn't clamped to zero on either axis.
-    const center = tileCenterToIso(50, 50);
-    engine.viewport.centerX = center.wx;
-    engine.viewport.centerY = center.wy;
-    const initialCenterX = engine.viewport.centerX;
-    const initialCenterY = engine.viewport.centerY;
     handler.onPointerDown(320, 240, 2);
     handler.onPointerMove(340, 255);
 
     expect(onBuildingSelected).not.toHaveBeenCalled();
-    expect(engine.viewport.centerX).not.toBe(initialCenterX);
-    expect(engine.viewport.centerY).not.toBe(initialCenterY);
+    expect(engine.viewport.centerX).not.toBe(TILE_SIZE / 2);
+    expect(engine.viewport.centerY).not.toBe(TILE_SIZE / 2);
   });
 
   it('zooms on wheel input with ctrlKey', () => {
