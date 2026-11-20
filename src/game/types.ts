@@ -72,6 +72,12 @@ export interface Port {
   readonly side: Direction;
 }
 
+/** An amount of one resource, e.g. one line of a construction cost. */
+export interface ResourceCost {
+  readonly resourceType: ResourceType;
+  readonly amount: number;
+}
+
 export interface BuildingType {
   readonly id: BuildingTypeId;
   readonly name: string;
@@ -79,6 +85,23 @@ export interface BuildingType {
   readonly allowedTiles: readonly TileType[];
   readonly requiresResourceDeposit?: boolean;
   readonly forbidsResourceDeposit?: boolean;
+  /**
+   * Storage-like building: accepts resources on its input ports and keeps
+   * them in a per-building inventory. Read through `isStorageTypeId`.
+   */
+  readonly storage?: boolean;
+  /**
+   * Placed by the engine only (e.g. the campaign hub): `canPlaceBuilding`
+   * refuses it with `system_placed`, so players and tools cannot build it.
+   */
+  readonly systemPlaced?: boolean;
+  /** Cannot be removed once placed. */
+  readonly permanent?: boolean;
+  /**
+   * Construction cost, paid in campaign mode from the global stock (hub +
+   * storages) and fully refunded on removal. Belts: cost per segment.
+   */
+  readonly cost?: readonly ResourceCost[];
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
@@ -106,7 +129,9 @@ export type PlacementFailure =
   | 'resource_forbidden'
   | 'unknown_type'
   | 'id_overflow'
-  | 'tile_fogged';
+  | 'tile_fogged'
+  | 'system_placed'
+  | 'insufficient_resources';
 
 export type PlacementResult =
   | { readonly ok: true }
@@ -168,7 +193,8 @@ export type BeltFailure =
   | 'unknown_port'
   | 'self_connection'
   | 'id_overflow'
-  | 'tiles_blocked';
+  | 'tiles_blocked'
+  | 'insufficient_resources';
 
 export type BeltResult =
   | { readonly ok: true; readonly plan: BeltPlan }
