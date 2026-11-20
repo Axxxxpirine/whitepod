@@ -174,12 +174,12 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 - Create a new storage building after every 4 extractors in the current cluster
 - Route each extractor to its nearest storage cluster via belt with deterministic port selection
 - Configure converters with base recipes (iron_oxide, aluminum_oxide) when regolith is available
-- Place solar panels and batteries as local clusters near active building zones
-- Connect all power-capable buildings into energy networks with batteries as hubs
+- Connect all power-capable buildings into energy networks with batteries as hubs, before adding any generator
+- Place solar panels until full-sun output covers demand (and at least `calculateRequiredSolar`), then batteries up to `calculateRequiredBatteries`
 - Trigger exploration when build density exceeds **10%** (occupied tiles / revealed tiles): place watchtower at fog boundary (farthest frontier tile)
 - Expand using spiral pattern from center
 - Monitor `getResourceRates()` to throttle extractor placement when rates are negative
-- Check `batteryCharges` before placing solar; prioritize batteries when charge < 50%
+- Never add batteries to cover a deficit: they only store energy, so night-time shortfalls do not trigger new buildings
 
 **Layout pattern:** Multiple distributed storage clusters, each with 4 extractors, local solar/battery clusters, and belts connecting extractors to storage.
 
@@ -582,7 +582,7 @@ Both bots now include:
 - Belt routing (`routeExtractorToStorage`, `routeProcessorOutputToStorage`, `routeExtractorToMerger`, `routeToProcessorInput`)
 - Processor configuration (`configureConverterForResource`, `checkProcessorLogisticsReadiness`)
 - Resource rate monitoring (`shouldThrottleExtractorPlacement`)
-- Battery optimization (`shouldPrioritizeBatteryOverSolar`, `calculateRequiredBatteries`)
+- Bounded energy sizing (`calculateRequiredSolar`, `calculateRequiredBatteries`, full-sun peak vs demand)
 - Frontier-based exploration for MasterBot (`shouldTriggerExploration` at 10% density, `findFrontierWatchtowerPosition`)
 
 **ConnectorBot** does NOT place any buildings - it only routes existing ones. This is by design.

@@ -12,11 +12,10 @@ import {
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT, type TileCoord } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 import type { BotLifecycle, BotStatus } from './botTypes';
 import { routeExtractorToStorage } from './util/beltRouting';
 import { configureConverterForResource, checkProcessorLogisticsReadiness, shouldConfigureProcessor } from './util/processorConfig';
-import { calculateRequiredSolar, calculateRequiredBatteries, shouldPrioritizeBatteryOverSolar } from './util/energyPlanning';
+import { calculateRequiredSolar, calculateRequiredBatteries } from './util/energyPlanning';
 import { shouldThrottleExtractorPlacement } from './util/resourceAnalysis';
 
 const MAX_ACTIONS_PER_TICK = 12;
@@ -115,12 +114,14 @@ export class MasterBot implements BotLifecycle {
         continue;
       }
 
-      if (this.ensureEnergySupply()) {
+      // Wire existing buildings before adding generators: an unlinked extractor
+      // looks unpowered, and adding more panels or batteries never fixes that.
+      if (this.connectEnergyNetwork()) {
         didAct = true;
         continue;
       }
 
-      if (this.connectEnergyNetwork()) {
+      if (this.ensureEnergySupply()) {
         didAct = true;
         continue;
       }
@@ -381,13 +382,14 @@ export class MasterBot implements BotLifecycle {
     const extractors = this.getBuildingsByType(EXTRACTOR_BUILDING_TYPE_ID);
     if (extractors.length === 0) return false;
 
-    const shouldPrioritizeBattery = shouldPrioritizeBatteryOverSolar(this.engine);
-    const daylight = getDaylightFactor(this.engine.simulationTime);
-
+    // Compare demand with full-sun output rather than current output, so the bot
+    // neither stops at night nor overbuilds at dawn. Each panel raises the peak,
+    // so this condition settles by itself.
     const solarPanels = this.getBuildingsByType(SOLAR_PANEL_BUILDING_TYPE_ID);
     const targetSolar = calculateRequiredSolar(extractors.length);
+    const { demandedConsumption } = this.engine.getEnergyGlobalStats();
 
-    if (solarPanels.length < targetSolar || (daylight >= 0.2 && this.hasUnpoweredExtractors())) {
+    if (solarPanels.length < targetSolar || this.getPeakProduction() < demandedConsumption) {
       const anchor = this.calculateSpiralAnchor();
       const origin = this.findBestPlacement(SOLAR_PANEL_BUILDING_TYPE_ID, anchor);
       if (origin) {
@@ -399,10 +401,12 @@ export class MasterBot implements BotLifecycle {
       }
     }
 
+    // Batteries only store energy: they never cure a deficit, so stop at the
+    // target sized from consumption.
     const batteries = this.getBuildingsByType(BATTERY_BASIC_BUILDING_TYPE_ID);
     const targetBatteries = calculateRequiredBatteries(this.engine);
 
-    if (batteries.length < targetBatteries || shouldPrioritizeBattery || this.hasUnpoweredExtractors()) {
+    if (batteries.length < targetBatteries) {
       const anchor = this.calculateSpiralAnchor();
       const origin = this.findBestPlacement(BATTERY_BASIC_BUILDING_TYPE_ID, anchor);
       if (origin) {
@@ -417,12 +421,13 @@ export class MasterBot implements BotLifecycle {
     return false;
   }
 
-  private hasUnpoweredExtractors(): boolean {
-    for (const [id, building] of this.engine.getBuildings()) {
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
-      if (this.engine.getBuildingPowerState(id) !== 'powered') return true;
+  /** Total generation under full sun, from the catalog. */
+  private getPeakProduction(): number {
+    let peak = 0;
+    for (const building of this.engine.getBuildings().values()) {
+      peak += getBuildingType(building.typeId)?.energy?.production ?? 0;
     }
-    return false;
+    return peak;
   }
 
   private connectEnergyNetwork(): boolean {

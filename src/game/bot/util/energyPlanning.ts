@@ -38,14 +38,15 @@ export function calculateRequiredBatteries(engine: GameEngine): number {
   return batteryNeeded;
 }
 
+/** Stored energy as a percentage of total battery capacity (charges are absolute kWh). */
+function storedPercent(engine: GameEngine): number {
+  const { stored, capacity } = engine.getEnergyStorageTotals();
+  return capacity > 0 ? (stored / capacity) * 100 : 0;
+}
+
 export function shouldPrioritizeBatteryOverSolar(engine: GameEngine): boolean {
-  const batteryCharges = engine.batteryCharges;
-
-  if (!batteryCharges || batteryCharges.size === 0) return true;
-
-  const charges = Array.from(batteryCharges.values());
-  const avgCharge = charges.reduce((sum, charge) => sum + charge, 0) / charges.length;
-  return avgCharge < 50;
+  if (engine.batteryCharges.size === 0) return true;
+  return storedPercent(engine) < 50;
 }
 
 export function findEnergyHubForModule(engine: GameEngine, moduleCenter: TileCoord): number | null {
@@ -79,20 +80,15 @@ export function findEnergyHubForModule(engine: GameEngine, moduleCenter: TileCoo
 }
 
 export function checkBatteryChargeState(engine: GameEngine): { chargedPercent: number; canSupportNight: boolean } {
-  const batteryCharges = engine.batteryCharges;
-
-  if (!batteryCharges || batteryCharges.size === 0) {
+  if (engine.batteryCharges.size === 0) {
     return { chargedPercent: 0, canSupportNight: false };
   }
 
-  const charges = Array.from(batteryCharges.values());
-  const avgCharge = charges.reduce((sum, charge) => sum + charge, 0) / charges.length;
-  const stats = engine.getEnergyStorageTotals();
-
+  const chargedPercent = storedPercent(engine);
   const nightConsumption = 100;
-  const canSupportNight = stats.stored >= nightConsumption || avgCharge >= 50;
+  const canSupportNight = engine.getEnergyStorageTotals().stored >= nightConsumption || chargedPercent >= 50;
 
-  return { chargedPercent: avgCharge, canSupportNight };
+  return { chargedPercent, canSupportNight };
 }
 
 export function calculateLocalClusterRequirements(
