@@ -29,7 +29,7 @@ export function GameHUD() {
   const setSimulationSpeed = useGameStore((s) => s.setSimulationSpeed);
   const setMusicVolume = useGameStore((s) => s.setMusicVolume);
   const setSfxVolume = useGameStore((s) => s.setSfxVolume);
-  const resetSession = useGameStore((s) => s.resetSession);
+  const openStartScreen = useGameStore((s) => s.openStartScreen);
   const setLinkSolarOnPlacement = useGameStore((s) => s.setLinkSolarOnPlacement);
   const setIdleSummary = useGameStore((s) => s.setIdleSummary);
 
@@ -153,14 +153,7 @@ export function GameHUD() {
     return () => document.removeEventListener('mousedown', onMouseDown);
   }, [settingsOpen]);
 
-  const handleResetSession = () => {
-    if (!window.confirm('Reset the current session and start a new game?')) {
-      engine?.emitSfx({ type: 'ui_back', context: 'reset_session' });
-      return;
-    }
-    engine?.emitSfx({ type: 'ui_confirm', context: 'reset_session' });
-    resetSession();
-  };
+
 
   const applySimulationTime = useCallback(
     (value: number) => {
@@ -558,11 +551,11 @@ export function GameHUD() {
                       type="button"
                       onClick={() => {
                         setSettingsOpen(false);
-                        handleResetSession();
+                        openStartScreen();
                       }}
-                      className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-error transition-colors hover:bg-error/10"
+                      className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
-                      Reset session
+                      Menu principal
                     </button>
                   </Panel>
                 )}
