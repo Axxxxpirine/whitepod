@@ -74,6 +74,7 @@ describe('getPlacementPreviewModel', () => {
     expect(preview).toMatchObject({
       origin: { x: 8, y: 8 },
       isValid: false,
+      reason: 'resource_required',
       buildingTypeId: EXTRACTOR_BUILDING_TYPE_ID,
     });
   });
@@ -95,6 +96,7 @@ describe('getPlacementPreviewModel', () => {
     expect(preview).toMatchObject({
       origin: { x: 14, y: 14 },
       isValid: false,
+      reason: 'tile_occupied',
       buildingTypeId: EXTRACTOR_BUILDING_TYPE_ID,
     });
   });
@@ -126,6 +128,8 @@ describe('getPlacementPreviewModel', () => {
       kind: 'belt' as const,
       isValid: true,
       tiles: [{ coord: { x: 6, y: 4 }, tint: 0x22c55e }],
+      cost: [],
+      missing: [],
     };
 
     const preview = getPlacementPreviewModel(
