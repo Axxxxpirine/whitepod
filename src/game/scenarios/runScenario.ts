@@ -1,4 +1,5 @@
 import { GameEngine } from '@/game/engine/GameEngine';
+import { GameMode } from '@/game/data/gameMode';
 import type { ScenarioDefinition, ScenarioRunResult } from './types';
 
 const DEFAULT_STEP_SECONDS = 0.1;
@@ -20,7 +21,7 @@ export function runScenario(
   screenWidth: number,
   screenHeight: number,
 ): ScenarioRunResult {
-  const engine = new GameEngine(screenWidth, screenHeight);
+  const engine = new GameEngine(screenWidth, screenHeight, { gameMode: GameMode.Sandbox });
   definition.build(engine);
 
   if (definition.simulate) {

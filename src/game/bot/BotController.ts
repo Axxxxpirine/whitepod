@@ -1,4 +1,5 @@
 import type { GameEngine } from '@/game/engine/GameEngine';
+import { GameMode } from '@/game/data/gameMode';
 import type { BotLifecycle, BotProfileId, BotStatus } from './botTypes';
 import { getBotProfile } from './botProfiles';
 
@@ -20,8 +21,13 @@ export class BotController {
     this.bot = this.createBot(profileId);
   }
 
+  /** Bots place buildings freely, so they only run in sandbox worlds until they learn campaign rules. */
+  get isAvailable(): boolean {
+    return this.engine.gameMode === GameMode.Sandbox;
+  }
+
   start(): void {
-    if (this.active) return;
+    if (this.active || !this.isAvailable) return;
     this.active = true;
     this.bot.start();
   }

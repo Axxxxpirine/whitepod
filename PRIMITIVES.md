@@ -72,6 +72,15 @@ type TileCoord = { x: number; y: number };
 type PortEndpoint = { building: BuildingId; port: PortId };
 ```
 
+### Game mode
+
+Every world has a fixed `engine.gameMode` (`'campaign' | 'sandbox'`, see `src/game/data/gameMode.ts`):
+
+- `sandbox` (default): everything unlocked, building is free. Dev scenarios, scenario generators and bots always run in sandbox, so the primitives below behave as documented regardless of campaign rules.
+- `campaign`: progression mode (hub, construction costs, milestones, unlocks, see `ROADMAP.md`). Campaign rules are added by later systems and must be documented here as they land.
+
+The mode is set at creation (`new GameEngine(w, h, { gameMode })`), saved with the world and restored on reload. Saves written before game modes existed load as `sandbox`. Bots refuse to start in a campaign world.
+
 ## Tool-Level Primitives
 
 The game currently exposes four player tool modes:
