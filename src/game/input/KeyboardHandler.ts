@@ -1,5 +1,5 @@
 import type { GameEngine } from '../engine/GameEngine';
-import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from '../constants';
+import { isoWorldCenter } from '../engine/IsoTransform';
 
 export interface KeyboardState {
   keysPressed: Set<string>;
@@ -17,55 +17,54 @@ export class KeyboardHandler {
     this.engine = engine;
   }
 
+  private readonly handleKeyDown = (e: KeyboardEvent): void => {
+    if (this.isInputFocused()) return;
+    
+    const key = e.key.toLowerCase();
+    if (key === 'shift') {
+      this.keyboardState.shiftPressed = true;
+      return;
+    }
+
+    if (key === ' ' || key === 'spacebar') {
+      e.preventDefault();
+      this.centerViewport();
+      return;
+    }
+
+    if (key === '+' || key === '=') {
+      e.preventDefault();
+      this.zoomIn();
+      return;
+    }
+
+    if (key === '-' || key === '_') {
+      e.preventDefault();
+      this.zoomOut();
+      return;
+    }
+
+    this.keyboardState.keysPressed.add(key);
+    if (!this.animationFrameId) {
+      this.startAnimationLoop();
+    }
+  };
+
+  private readonly handleKeyUp = (e: KeyboardEvent): void => {
+    const key = e.key.toLowerCase();
+    if (key === 'shift') {
+      this.keyboardState.shiftPressed = false;
+      return;
+    }
+
+    this.keyboardState.keysPressed.delete(key);
+  };
+
   initialize(): void {
     if (this.isInitialized) return;
     this.isInitialized = true;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (this.isInputFocused()) return;
-      
-      const key = e.key.toLowerCase();
-      if (key === 'shift') {
-        this.keyboardState.shiftPressed = true;
-        return;
-      }
-
-      if (key === ' ' || key === 'spacebar') {
-        e.preventDefault();
-        this.centerViewport();
-        return;
-      }
-
-      if (key === '+' || key === '=') {
-        e.preventDefault();
-        this.zoomIn();
-        return;
-      }
-
-      if (key === '-' || key === '_') {
-        e.preventDefault();
-        this.zoomOut();
-        return;
-      }
-
-      this.keyboardState.keysPressed.add(key);
-      if (!this.animationFrameId) {
-        this.startAnimationLoop();
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      if (key === 'shift') {
-        this.keyboardState.shiftPressed = false;
-        return;
-      }
-
-      this.keyboardState.keysPressed.delete(key);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('keyup', this.handleKeyUp);
   }
 
   private isInputFocused(): boolean {
@@ -91,26 +90,27 @@ export class KeyboardHandler {
 
   private handleContinuousInput(): void {
     const { keysPressed } = this.keyboardState;
-    const TILE_PAN_SPEED = this.panSpeed / TILE_SIZE;
+    // Pan in screen pixels per frame: screen-aligned, so it works the same in iso.
+    const step = this.panSpeed;
 
     if (keysPressed.has('w') || keysPressed.has('arrowup')) {
-      this.engine.viewport.pan(0, -TILE_PAN_SPEED * TILE_SIZE);
+      this.engine.viewport.pan(0, -step);
     }
     if (keysPressed.has('s') || keysPressed.has('arrowdown')) {
-      this.engine.viewport.pan(0, TILE_PAN_SPEED * TILE_SIZE);
+      this.engine.viewport.pan(0, step);
     }
     if (keysPressed.has('a') || keysPressed.has('arrowleft')) {
-      this.engine.viewport.pan(-TILE_PAN_SPEED * TILE_SIZE, 0);
+      this.engine.viewport.pan(-step, 0);
     }
     if (keysPressed.has('d') || keysPressed.has('arrowright')) {
-      this.engine.viewport.pan(TILE_PAN_SPEED * TILE_SIZE, 0);
+      this.engine.viewport.pan(step, 0);
     }
   }
 
   private centerViewport(): void {
-    this.engine.viewport.centerX = (GRID_WIDTH * TILE_SIZE) / 2;
-    this.engine.viewport.centerY = (GRID_HEIGHT * TILE_SIZE) / 2;
-    this.engine.viewport.zoom = 1;
+    const center = isoWorldCenter();
+    // restore() clamps and notifies listeners so the view actually redraws.
+    this.engine.viewport.restore({ centerX: center.wx, centerY: center.wy, zoom: 1 });
   }
 
   private zoomIn(): void {
@@ -136,10 +136,13 @@ export class KeyboardHandler {
   }
 
   destroy(): void {
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
+    this.keyboardState.keysPressed.clear();
     this.isInitialized = false;
   }
 }

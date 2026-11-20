@@ -118,6 +118,7 @@ export function GameCanvas() {
     let fogOfWarRenderer: FogOfWarRenderer | null = null;
     let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
     let minimapRenderer: MinimapRenderer | null = null;
+    let keyboardHandler: KeyboardHandler | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -319,7 +320,7 @@ export function GameCanvas() {
         () => useGameStore.getState().currentBuildingRotation,
       );
       
-      const keyboardHandler = new KeyboardHandler(engine);
+      keyboardHandler = new KeyboardHandler(engine);
       keyboardHandler.initialize();
 
       const currentBeltToolController = new BeltToolController(
@@ -625,6 +626,7 @@ export function GameCanvas() {
         fogOfWarRenderer?.destroy();
         dayNightOverlayRenderer?.destroy();
         minimapRenderer?.destroy();
+        keyboardHandler?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
