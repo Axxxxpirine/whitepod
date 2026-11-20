@@ -12,13 +12,26 @@ import {
   getBuildingType,
   isBeltTypeId,
   isProcessorTypeId,
+  isStorageTypeId,
   validateCatalog,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   CONVERTER_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
+  HUB_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
+import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
+import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
+import { ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
+import {
+  computeMilestoneProgress,
+  consumeMilestoneRequirements,
+  findActiveMilestone,
+  type MilestoneProgress,
+} from '../campaign/progression';
+import { MILESTONES, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
+import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
+import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -28,6 +41,7 @@ import {
   TileType as TileTypeConst,
   type Building,
   type BuildingId,
+  type BuildingType,
   type BuildingTypeId,
   type Connection,
   type ConnectionId,
@@ -42,12 +56,12 @@ import {
   type PortId,
   type EnergyNetworkBalance,
   type EnergyNetworkStats,
+  type ResourceCost,
   type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
 } from '../types';
-import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
-import { GRID_WIDTH, GRID_HEIGHT } from '../constants';
+import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { isInBounds, toIndex } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
@@ -118,6 +132,8 @@ export interface ProcessorReservation {
 export interface SerializedGameWorld {
   readonly version: number;
   readonly mapSeed: number;
+  /** Absent in saves written before game modes existed: restored as the default mode. */
+  readonly gameMode?: GameMode;
   readonly grid: ArrayBuffer;
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
@@ -128,7 +144,11 @@ export interface SerializedGameWorld {
   readonly storageInventories?: readonly { readonly id: BuildingId; readonly inventory: ResourceInventory }[];
   readonly producerOutputBuffers?: readonly { readonly id: BuildingId; readonly buffer: ProducerOutputBuffer }[];
   readonly processorReservations?: readonly { readonly id: BuildingId; readonly reservations: readonly ProcessorReservation[] }[];
+  /** Completed campaign milestones; absent in saves written before milestones existed. */
+  readonly completedMilestones?: readonly MilestoneId[];
 }
+
+export type MilestoneCompletedListener = (milestone: Milestone) => void;
 
 interface GameEngineOptions {
   readonly grid?: TileGrid;
@@ -136,6 +156,7 @@ interface GameEngineOptions {
   readonly connections?: ConnectionRegistry;
   readonly mapSeed?: number;
   readonly dayNightCycleSeconds?: number;
+  readonly gameMode?: GameMode;
 }
 
 const SERIALIZE_VERSION = 3;
@@ -164,6 +185,8 @@ export class GameEngine {
   readonly dayNightCycleSeconds: number;
   simulationTime = 0;
   mapSeed: number;
+  /** Fixed for the lifetime of the world. */
+  readonly gameMode: GameMode;
   readonly batteryCharges = new Map<BuildingId, number>();
   readonly processorStates = new Map<BuildingId, ProcessorState>();
   readonly storageInventories = new Map<BuildingId, ResourceInventory>();
@@ -178,6 +201,9 @@ export class GameEngine {
   private extractionAccumulator = 0;
   private readonly poweredExtractors = new Set<BuildingId>();
   private readonly poweredConsumers = new Set<BuildingId>();
+  private hubIdCache: BuildingId | null = null;
+  private readonly completedMilestones = new Set<MilestoneId>();
+  private readonly milestoneListeners = new Set<MilestoneCompletedListener>();
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -188,6 +214,7 @@ export class GameEngine {
     this.connections = options.connections ?? new ConnectionRegistry();
     this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
+    this.gameMode = options.gameMode ?? DEFAULT_GAME_MODE;
     this.dayNightCycleSeconds =
       options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
@@ -258,21 +285,6 @@ export class GameEngine {
       this.notify('world');
     }
   }
-
-  private static readonly RESOURCE_STOCK_KEY: Record<number, keyof ResourceStock> = {
-    [ResourceType.Regolith]: 'regolith',
-    [ResourceType.Hydrogen]: 'hydrogen',
-    [ResourceType.Oxygen]: 'oxygen',
-    [ResourceType.IronOxide]: 'ironOxide',
-    [ResourceType.AluminumOxide]: 'aluminumOxide',
-    [ResourceType.SiliconDioxide]: 'siliconDioxide',
-    [ResourceType.NitrogenGas]: 'nitrogenGas',
-    [ResourceType.Water]: 'water',
-    [ResourceType.Methane]: 'methane',
-    [ResourceType.CarbonDioxide]: 'carbonDioxide',
-    [ResourceType.Ammonia]: 'ammonia',
-    [ResourceType.CeramicPlates]: 'ceramicPlates',
-  };
 
   private processProcessors(dt: number): void {
     let changed = false;
@@ -446,6 +458,15 @@ export class GameEngine {
   ): PlacementResult {
     const type = getBuildingType(typeId);
     if (!type) return { ok: false, reason: 'unknown_type' };
+    if (type.systemPlaced) return { ok: false, reason: 'system_placed' };
+    const footprint = this.checkFootprint(type, origin);
+    if (!footprint.ok) return footprint;
+    if (!this.canAfford(this.getBuildingCost(typeId))) return { ok: false, reason: 'insufficient_resources' };
+    return { ok: true };
+  }
+
+  /** Footprint rules shared by player placement and engine-placed buildings. */
+  private checkFootprint(type: BuildingType, origin: TileCoord): PlacementResult {
     if (!this.buildings.hasIdCapacity()) return { ok: false, reason: 'id_overflow' };
 
     for (const { x, y, inBounds, idx } of this.buildings.footprintTiles(origin, type.footprint)) {
@@ -484,14 +505,33 @@ export class GameEngine {
       return null;
     }
 
-    const type = getBuildingType(typeId)!;
+    return this.commitPlacement(getBuildingType(typeId)!, origin, rotation, emitSfx, true);
+  }
+
+  /** Places a `systemPlaced` building (e.g. the campaign hub), bypassing the player-only refusal. */
+  private placeSystemBuilding(typeId: BuildingTypeId, origin: TileCoord): BuildingId | null {
+    const type = getBuildingType(typeId);
+    if (!type || !this.checkFootprint(type, origin).ok) return null;
+    return this.commitPlacement(type, origin, Direction.North, false, false);
+  }
+
+  private commitPlacement(
+    type: BuildingType,
+    origin: TileCoord,
+    rotation: Direction,
+    emitSfx: boolean,
+    charge: boolean,
+  ): BuildingId | null {
+    const typeId = type.id;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
+      // Affordability was checked by canPlaceBuilding in this same call.
+      if (charge) this.spendFromWallet(this.getBuildingCost(typeId));
       this.energyNetwork.registerBuilding(id);
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
       }
-      if (typeId === STORAGE_BUILDING_TYPE_ID) {
+      if (isStorageTypeId(typeId)) {
         this.storageInventories.set(id, GameEngine.EMPTY_RESOURCE_STOCK());
       }
       if (typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(typeId)) {
@@ -522,6 +562,7 @@ export class GameEngine {
 
   removeBuilding(id: BuildingId, options: RemoveBuildingOptions = {}): boolean {
     const building = this.buildings.get(id);
+    if (building && getBuildingType(building.typeId)?.permanent) return false;
     const result = this.removeBuildingInternal(id, true, options.emitSfx ?? true);
     if (result && building) {
       this.emitAction('remove_building', { typeId: building.typeId });
@@ -559,6 +600,8 @@ export class GameEngine {
     this.processorReservations.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
+      // After the storage inventory is gone, so a removed storage never refunds into itself.
+      this.refundToWallet(this.getBuildingCost(building.typeId));
       this.syncPowerState(false);
       this.notify('world');
       if (emitSfx) {
@@ -773,7 +816,7 @@ export class GameEngine {
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       if (!this.hasValidDownstream(id)) continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
-      const key = GameEngine.RESOURCE_STOCK_KEY[resource];
+      const key = RESOURCE_STOCK_KEY[resource];
       if (key) rates[key] += EXTRACTOR_RATE_PER_MIN;
     }
 
@@ -787,12 +830,12 @@ export class GameEngine {
       if (!recipe) continue;
 
       // Output rate
-      const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType];
+      const outKey = RESOURCE_STOCK_KEY[recipe.output.resourceType];
       if (outKey) rates[outKey] += (recipe.output.amount / recipe.cycleSeconds) * 60;
 
       // Input consumption rates (negative)
       for (const input of recipe.inputs) {
-        const inKey = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
+        const inKey = RESOURCE_STOCK_KEY[input.resourceType];
         if (inKey) rates[inKey] -= (input.amount / recipe.cycleSeconds) * 60;
       }
     }
@@ -834,8 +877,17 @@ export class GameEngine {
     return id;
   }
 
-  canPlaceBelt(from: PortEndpoint, to: PortEndpoint) {
-    return planBelt(this, from, to);
+  canPlaceBelt(from: PortEndpoint, to: PortEndpoint): ReturnType<typeof planBelt> {
+    const planned = planBelt(this, from, to);
+    if (planned.ok && !this.canAfford(this.getBeltRouteCost(planned.plan.segments))) {
+      return { ok: false, reason: 'insufficient_resources' };
+    }
+    return planned;
+  }
+
+  /** Total cost of a planned belt route (one segment cost per tile). */
+  getBeltRouteCost(segments: readonly { readonly typeId: BuildingTypeId }[]): ResourceCost[] {
+    return mergeCosts(segments.map((segment) => this.getBuildingCost(segment.typeId)));
   }
 
   placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
@@ -1036,18 +1088,138 @@ export class GameEngine {
     return true;
   }
 
+  /** True when construction is paid for (campaign); sandbox building stays free. */
+  get chargesConstruction(): boolean {
+    return this.gameMode === GameModes.Campaign;
+  }
+
+  /** Cost the player pays for one building of this type: empty in sandbox. */
+  getBuildingCost(typeId: BuildingTypeId): readonly ResourceCost[] {
+    if (!this.chargesConstruction) return [];
+    return getBuildingType(typeId)?.cost ?? [];
+  }
+
+  canAfford(cost: readonly ResourceCost[]): boolean {
+    return cost.length === 0 || canAfford(this.walletInventories(), cost);
+  }
+
+  /**
+   * Inventories construction is paid from (decision D2: global stock), in
+   * draw order: hub first, then storages by ascending id.
+   */
+  private walletInventories(): ResourceInventory[] {
+    const hubId = this.getHubId();
+    const ids = [...this.storageInventories.keys()].filter((id) => id !== hubId).sort((a, b) => a - b);
+    if (hubId !== null) ids.unshift(hubId);
+    return ids.map((id) => this.storageInventories.get(id)!).filter(Boolean);
+  }
+
+  private spendFromWallet(cost: readonly ResourceCost[]): void {
+    if (cost.length === 0) return;
+    if (!spend(this.walletInventories(), cost)) {
+      throw new Error('Construction cost not affordable: canPlaceBuilding must be checked first');
+    }
+  }
+
+  /** Refunds into the hub, or the first storage when there is no hub; lost when there is none. */
+  private refundToWallet(cost: readonly ResourceCost[]): void {
+    if (cost.length === 0) return;
+    const target = this.walletInventories()[0];
+    if (target) refund(target, cost);
+  }
+
+  /** Completed milestones in completion order (empty in sandbox). */
+  getCompletedMilestoneIds(): readonly MilestoneId[] {
+    return [...this.completedMilestones];
+  }
+
+  /** The milestone the hub currently requests, or null in sandbox and once the campaign is done. */
+  getActiveMilestone(): Milestone | null {
+    if (this.gameMode !== GameModes.Campaign) return null;
+    return findActiveMilestone(MILESTONES, this.completedMilestones);
+  }
+
+  /** Progress of the active milestone against the hub inventory, or null when there is none. */
+  getMilestoneProgress(): MilestoneProgress | null {
+    const milestone = this.getActiveMilestone();
+    const hubId = this.getHubId();
+    if (!milestone || hubId === null) return null;
+    return computeMilestoneProgress(milestone, this.storageInventories.get(hubId)!);
+  }
+
+  /**
+   * Player confirmation: consumes the active milestone requirements from the
+   * hub and marks it completed. Returns false (nothing changes) when it is not
+   * ready, so the player keeps the choice between building now or completing.
+   */
+  completeActiveMilestone(): boolean {
+    const milestone = this.getActiveMilestone();
+    const hubId = this.getHubId();
+    if (!milestone || hubId === null) return false;
+    if (!consumeMilestoneRequirements(milestone, this.storageInventories.get(hubId)!)) return false;
+    this.completedMilestones.add(milestone.id);
+    this.notify('world');
+    this.emitAction('complete_milestone', { id: milestone.id });
+    for (const listener of this.milestoneListeners) listener(milestone);
+    return true;
+  }
+
+  onMilestoneCompleted(listener: MilestoneCompletedListener): () => void {
+    this.milestoneListeners.add(listener);
+    return () => this.milestoneListeners.delete(listener);
+  }
+
+  /** The campaign hub, or null in sandbox worlds. */
+  getHubId(): BuildingId | null {
+    // The hub is permanent and placed once, so a found id never goes stale.
+    if (this.hubIdCache !== null) return this.hubIdCache;
+    for (const building of this.buildings.getAll().values()) {
+      if (building.typeId === HUB_BUILDING_TYPE_ID) {
+        this.hubIdCache = building.id;
+        return building.id;
+      }
+    }
+    return null;
+  }
+
+  getHubInventory(): ResourceInventory | null {
+    const hubId = this.getHubId();
+    return hubId === null ? null : this.getStorageInventory(hubId);
+  }
+
+  /**
+   * Campaign start: places the hub near the map center inside the initial
+   * reveal, guarantees the starting deposits around it and credits the
+   * starting kit. Idempotent: a world keeps a single hub, and its kit, across
+   * map regenerations.
+   */
+  private setupCampaignStart(): void {
+    if (this.getHubId() !== null) return;
+    const footprint = getBuildingType(HUB_BUILDING_TYPE_ID)!.footprint;
+    const isOccupied = (index: number) => this.buildings.occupantIdAt(index) !== 0;
+    const searchRadius = INITIAL_FOG_REVEAL_RADIUS - Math.max(footprint.w, footprint.h);
+    const origin =
+      findHubOrigin(this.grid, footprint, MAP_CENTER, searchRadius, isOccupied) ??
+      clearHubSite(this.grid, footprint, MAP_CENTER);
+    const hubId = this.placeSystemBuilding(HUB_BUILDING_TYPE_ID, origin);
+    if (hubId === null) {
+      throw new Error(`Campaign hub could not be placed at ${origin.x},${origin.y}`);
+    }
+    ensureStartingDeposits(this.grid, origin, footprint, isOccupied);
+    refund(this.storageInventories.get(hubId)!, STARTING_KIT);
+  }
+
   getResourceAt(x: number, y: number): ResourceTypeT {
     return this.grid.getResource(x, y);
   }
 
   generateMap(seed: number): void {
     generateResources(this.grid, seed);
-    this.grid.revealCircle(
-      Math.floor(GRID_WIDTH / 2),
-      Math.floor(GRID_HEIGHT / 2),
-      INITIAL_FOG_REVEAL_RADIUS,
-    );
+    this.grid.revealCircle(MAP_CENTER.x, MAP_CENTER.y, INITIAL_FOG_REVEAL_RADIUS);
     this.mapSeed = seed;
+    if (this.gameMode === GameModes.Campaign) {
+      this.setupCampaignStart();
+    }
     this.notify('world');
     this.emitAction('generate_map', { seed });
   }
@@ -1143,6 +1315,7 @@ export class GameEngine {
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
+      gameMode: this.gameMode,
       grid: this.grid.serialize(),
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
@@ -1153,6 +1326,7 @@ export class GameEngine {
       storageInventories,
       producerOutputBuffers,
       processorReservations,
+      completedMilestones: [...this.completedMilestones],
     };
   }
 
@@ -1166,6 +1340,7 @@ export class GameEngine {
       buildings: BuildingRegistry.deserialize(snapshot.buildings, (typeId) => getBuildingType(typeId)?.footprint),
       connections: ConnectionRegistry.deserialize(snapshot.connections),
       mapSeed: snapshot.mapSeed,
+      gameMode: resolveGameMode(snapshot.gameMode),
     });
 
     for (const connection of engine.connections.getAll().values()) {
@@ -1182,7 +1357,7 @@ export class GameEngine {
         if (type?.energy?.battery) {
           engine.batteryCharges.set(buildingId, 0);
         }
-        if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+        if (isStorageTypeId(building.typeId)) {
           engine.storageInventories.set(buildingId, GameEngine.EMPTY_RESOURCE_STOCK());
         }
         if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
@@ -1241,13 +1416,14 @@ export class GameEngine {
       }
     }
 
+    // Ids no longer in the catalog are dropped rather than failing the load.
+    for (const id of snapshot.completedMilestones ?? []) {
+      if (getMilestone(id)) engine.completedMilestones.add(id);
+    }
+
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
-      engine.grid.revealCircle(
-        Math.floor(GRID_WIDTH / 2),
-        Math.floor(GRID_HEIGHT / 2),
-        INITIAL_FOG_REVEAL_RADIUS,
-      );
+      engine.grid.revealCircle(MAP_CENTER.x, MAP_CENTER.y, INITIAL_FOG_REVEAL_RADIUS);
     }
 
     engine.syncPowerState(false);
@@ -1290,7 +1466,7 @@ export class GameEngine {
     if (!terminal || terminal.kind !== 'storage') return false;
 
     const inventory = this.storageInventories.get(terminal.buildingId);
-    const key = GameEngine.RESOURCE_STOCK_KEY[buffer.resourceType];
+    const key = RESOURCE_STOCK_KEY[buffer.resourceType];
     if (!inventory || !key) return false;
 
     inventory[key] += buffer.amount;
@@ -1355,7 +1531,7 @@ export class GameEngine {
         providers.push(currentId);
         continue;
       }
-      if (building.typeId === STORAGE_BUILDING_TYPE_ID) continue;
+      if (isStorageTypeId(building.typeId)) continue;
       for (const connection of this.getConnectionsOf(currentId)) {
         if (connection.to.building !== currentId) continue;
         queue.push(connection.from.building);

@@ -1,4 +1,4 @@
-import { STORAGE_BUILDING_TYPE_ID, getBuildingType, isProcessorTypeId } from '@/game/data/buildingCatalog';
+import { getBuildingType, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
 import { Direction, type BuildingId, type BuildingTypeId, type PortId, type TileCoord, PortKind } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
 
@@ -18,8 +18,7 @@ export function findNearestStorage(engine: GameEngine, origin: TileCoord): Build
   const storage: Array<{ id: BuildingId; distance: number }> = [];
 
   for (const [id, building] of engine.getBuildings()) {
-    const type = getBuildingType(building.typeId);
-    if (type?.id !== STORAGE_BUILDING_TYPE_ID) continue;
+    if (!isStorageTypeId(building.typeId)) continue;
 
     const distance = Math.abs(building.origin.x - origin.x) + Math.abs(building.origin.y - origin.y);
     storage.push({ id, distance });
