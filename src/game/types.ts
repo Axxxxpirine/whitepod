@@ -79,6 +79,11 @@ export interface BuildingType {
   readonly allowedTiles: readonly TileType[];
   readonly requiresResourceDeposit?: boolean;
   readonly forbidsResourceDeposit?: boolean;
+  /**
+   * Storage-like building: accepts resources on its input ports and keeps
+   * them in a per-building inventory. Read through `isStorageTypeId`.
+   */
+  readonly storage?: boolean;
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
