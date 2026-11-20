@@ -1,5 +1,6 @@
-import { TILE_SIZE } from '../constants';
+import { ISO_TILE_H, ISO_TILE_W } from '../constants';
 import { worldSideOf, worldTileOf } from '../data/ConnectionRegistry';
+import { tileCenterToIso } from '../engine/IsoTransform';
 import { Direction, PortKind, type Building, type BuildingType, type TileCoord } from '../types';
 import { PIXI } from '@/design/tokens';
 
@@ -20,42 +21,39 @@ export function drawBuildingPortMarkers(
   for (const port of type.ports) {
     const worldTile = worldTileOf(port, building.origin, building.rotation, type.footprint);
     const worldSide = worldSideOf(port, building.rotation);
-    const center = tileCenter(worldTile);
+    const center = tileCenterToIso(worldTile.x, worldTile.y);
     const edge = edgePoint(worldTile, worldSide);
     const color = port.kind === PortKind.Input ? INPUT_COLOR : OUTPUT_COLOR;
 
-    draw.moveTo(center.x, center.y);
+    draw.moveTo(center.wx, center.wy);
     draw.lineTo(edge.x, edge.y);
     draw.stroke({
       color,
-      width: 3,
+      width: 2,
       alpha: 0.95,
     });
-    draw.circle(edge.x, edge.y, 2.5);
+    draw.circle(edge.x, edge.y, 2);
     draw.fill({ color, alpha: 1 });
   }
 }
 
-function tileCenter(tile: TileCoord): TileCoord {
-  return {
-    x: tile.x * TILE_SIZE + TILE_SIZE / 2,
-    y: tile.y * TILE_SIZE + TILE_SIZE / 2,
-  };
-}
-
-function edgePoint(tile: TileCoord, side: Direction): TileCoord {
-  const cx = tile.x * TILE_SIZE + TILE_SIZE / 2;
-  const cy = tile.y * TILE_SIZE + TILE_SIZE / 2;
-  const offset = TILE_SIZE / 2 - 6;
+function edgePoint(tile: TileCoord, side: Direction): { x: number; y: number } {
+  // Iso edge midpoint between tile and its logical neighbor on `side`.
+  // (See BeltToolController.getPortAnchor for the matching offsets.)
+  const center = tileCenterToIso(tile.x, tile.y);
+  // Pull the marker slightly inward from the exact midpoint so it reads as
+  // attached to this building rather than floating between two diamonds.
+  const dx = ISO_TILE_W * 0.22;
+  const dy = ISO_TILE_H * 0.22;
 
   switch (side) {
     case Direction.North:
-      return { x: cx, y: cy - offset };
+      return { x: center.wx + dx, y: center.wy - dy };
     case Direction.East:
-      return { x: cx + offset, y: cy };
+      return { x: center.wx + dx, y: center.wy + dy };
     case Direction.South:
-      return { x: cx, y: cy + offset };
+      return { x: center.wx - dx, y: center.wy + dy };
     case Direction.West:
-      return { x: cx - offset, y: cy };
+      return { x: center.wx - dx, y: center.wy - dy };
   }
 }

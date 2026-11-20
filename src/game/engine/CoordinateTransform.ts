@@ -1,7 +1,12 @@
-import { TILE_SIZE } from '../constants';
 import type { Viewport } from './Viewport';
 import type { TileCoord } from '../types';
+import { isoToTile, tileCenterToIso } from './IsoTransform';
 
+/**
+ * Screen → iso world. The viewport center sits at iso world (centerX, centerY)
+ * and the camera zooms uniformly. The iso projection itself is applied at the
+ * tile/sprite level (see tileCenterToIso); world space is already iso here.
+ */
 export function screenToWorld(
   viewport: Viewport,
   sx: number,
@@ -24,18 +29,23 @@ export function worldToScreen(
   };
 }
 
+/**
+ * Iso world → logical tile (tx, ty).
+ * Picking uses Math.round on the inverse iso formula — see IsoTransform.
+ * Result is NOT clamped to grid bounds; callers must handle off-grid picks
+ * (return null, ignore, etc.).
+ */
 export function worldToGrid(wx: number, wy: number): TileCoord {
-  return {
-    x: Math.floor(wx / TILE_SIZE),
-    y: Math.floor(wy / TILE_SIZE),
-  };
+  const { tx, ty } = isoToTile(wx, wy);
+  return { x: tx, y: ty };
 }
 
+/**
+ * Logical tile (x, y) → iso world position of the diamond CENTER.
+ * Used by renderers to anchor sprites and by pan/zoom math to focus on a tile.
+ */
 export function gridToWorld(x: number, y: number): { wx: number; wy: number } {
-  return {
-    wx: x * TILE_SIZE,
-    wy: y * TILE_SIZE,
-  };
+  return tileCenterToIso(x, y);
 }
 
 export function screenToGrid(viewport: Viewport, sx: number, sy: number): TileCoord {

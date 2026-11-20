@@ -1,19 +1,73 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
-import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
+import {
+  GRID_HEIGHT,
+  GRID_WIDTH,
+  ISO_TILE_H,
+  ISO_TILE_W,
+  REVEALED_FLAG,
+  WATCHTOWER_REVEAL_RADIUS,
+} from '../constants';
+import { isoWorldBounds, tileCenterToIso } from '../engine/IsoTransform';
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
 import type { SelectedTool, TileCoord } from '../types';
 import { PIXI } from '@/design/tokens';
 
-const TEX_SCALE = 2; // 2 pixels per tile for smoother edges
-const TEX_W = GRID_WIDTH * TEX_SCALE;
-const TEX_H = GRID_HEIGHT * TEX_SCALE;
-const FOG_ALPHA = 0.92;
+// World-pixels-per-canvas-pixel. Lower => sharper fog edges, more memory.
+// 8 keeps each tile diamond at 8x4 canvas pixels — enough resolution for the
+// edge-diffusion bands while staying inside ~2 MB of canvas memory.
+const WORLD_PER_CANVAS_PX = 8;
+const ISO_BOUNDS = isoWorldBounds(GRID_WIDTH, GRID_HEIGHT);
+const ISO_BBOX_WIDTH = ISO_BOUNDS.maxX - ISO_BOUNDS.minX + ISO_TILE_W;
+const ISO_BBOX_HEIGHT = ISO_BOUNDS.maxY - ISO_BOUNDS.minY + ISO_TILE_H;
+const ISO_BBOX_OFFSET_X = ISO_BOUNDS.minX - ISO_TILE_W / 2;
+const ISO_BBOX_OFFSET_Y = ISO_BOUNDS.minY - ISO_TILE_H / 2;
+const TEX_W = Math.ceil(ISO_BBOX_WIDTH / WORLD_PER_CANVAS_PX);
+const TEX_H = Math.ceil(ISO_BBOX_HEIGHT / WORLD_PER_CANVAS_PX);
+const TILE_PX_W = ISO_TILE_W / WORLD_PER_CANVAS_PX; // 8
+const TILE_PX_H = ISO_TILE_H / WORLD_PER_CANVAS_PX; // 4
+
+const DEEP_FOG_COLOR = { r: 2, g: 3, b: 10 };
+const EARTHLIGHT_FOG_COLOR = { r: 26, g: 42, b: 58 };
 
 const REVEAL_PREVIEW_COLOR = PIXI.accent;
 const REVEAL_PREVIEW_STROKE_ALPHA = 0.7;
 const REVEAL_PREVIEW_FILL_ALPHA = 0.08;
 const REVEAL_PREVIEW_STROKE_WIDTH = 2;
+const REVEAL_PREVIEW_SAMPLES = 48;
+
+export interface FogTileStyle {
+  readonly color: { readonly r: number; readonly g: number; readonly b: number };
+  readonly alpha: number;
+}
+
+export function getFogTileStyle(flags: Uint8Array, x: number, y: number): FogTileStyle {
+  const idx = y * GRID_WIDTH + x;
+  if (flags[idx] & REVEALED_FLAG) {
+    return { color: DEEP_FOG_COLOR, alpha: 0 };
+  }
+
+  let nearestRevealed = Number.POSITIVE_INFINITY;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;
+      if (flags[ny * GRID_WIDTH + nx] & REVEALED_FLAG) {
+        nearestRevealed = Math.min(nearestRevealed, Math.max(Math.abs(dx), Math.abs(dy)));
+      }
+    }
+  }
+
+  if (nearestRevealed === 1) {
+    return { color: EARTHLIGHT_FOG_COLOR, alpha: 0.35 };
+  }
+  if (nearestRevealed === 2) {
+    return { color: EARTHLIGHT_FOG_COLOR, alpha: 0.68 };
+  }
+  return { color: DEEP_FOG_COLOR, alpha: 0.95 };
+}
 
 interface FogPreviewState {
   readonly selectedTool: SelectedTool;
@@ -52,8 +106,12 @@ export class FogOfWarRenderer {
 
     this.texture = Texture.from(this.canvas);
     this.sprite = new Sprite(this.texture);
-    this.sprite.width = GRID_WIDTH * TILE_SIZE;
-    this.sprite.height = GRID_HEIGHT * TILE_SIZE;
+    // Sprite covers the iso world bounding box. Position is the iso world
+    // origin of the bbox; scale matches via width/height.
+    this.sprite.x = ISO_BBOX_OFFSET_X;
+    this.sprite.y = ISO_BBOX_OFFSET_Y;
+    this.sprite.width = ISO_BBOX_WIDTH;
+    this.sprite.height = ISO_BBOX_HEIGHT;
     this.container.addChild(this.sprite);
 
     this.revealPreview = new Graphics();
@@ -102,12 +160,21 @@ export class FogOfWarRenderer {
       return;
     }
 
-    const radiusPx = WATCHTOWER_REVEAL_RADIUS * TILE_SIZE;
-    const centerPx = { x: cx * TILE_SIZE + TILE_SIZE / 2, y: cy * TILE_SIZE + TILE_SIZE / 2 };
+    // Sample points around the LOGICAL reveal circle (radius in tiles) and
+    // project each into iso world. Result is the iso projection of the
+    // reveal area (an ellipse rotated 45 degrees on screen).
+    const points: number[] = [];
+    for (let i = 0; i < REVEAL_PREVIEW_SAMPLES; i++) {
+      const angle = (i / REVEAL_PREVIEW_SAMPLES) * Math.PI * 2;
+      const tx = cx + Math.cos(angle) * WATCHTOWER_REVEAL_RADIUS;
+      const ty = cy + Math.sin(angle) * WATCHTOWER_REVEAL_RADIUS;
+      const iso = tileCenterToIso(tx, ty);
+      points.push(iso.wx, iso.wy);
+    }
 
     this.revealPreview.clear();
     this.revealPreview
-      .circle(centerPx.x, centerPx.y, radiusPx)
+      .poly(points, true)
       .fill({ color: REVEAL_PREVIEW_COLOR, alpha: REVEAL_PREVIEW_FILL_ALPHA })
       .stroke({
         color: REVEAL_PREVIEW_COLOR,
@@ -125,63 +192,28 @@ export class FogOfWarRenderer {
     const { ctx, canvas } = this;
     const { grid } = this.engine;
 
-    // Fill with fog
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = `rgba(0, 0, 0, ${FOG_ALPHA})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Erase revealed areas
-    ctx.globalCompositeOperation = 'destination-out';
-
-    // Build a path for all revealed tiles, then fill once
-    // For smooth edges, find revealed circles and draw them
-    // But since we store per-tile flags, we draw per-tile rects with a smooth border
-    this.drawRevealedArea(grid.flags);
-
-    ctx.globalCompositeOperation = 'source-over';
+    this.drawFogTiles(grid.flags);
 
     // Update the PixiJS texture from the canvas
     this.texture.source.update();
   }
 
-  private drawRevealedArea(flags: Uint8Array): void {
+  private drawFogTiles(flags: Uint8Array): void {
     const { ctx } = this;
 
-    // First pass: draw all revealed tiles as small rects (clears fog)
+    // For each tile, paint its iso diamond position into the canvas. The
+    // canvas pixel size of a diamond is small (TILE_PX_W * TILE_PX_H), so a
+    // filled rect approximates well after sprite scaling + bilinear filter.
     for (let y = 0; y < GRID_HEIGHT; y++) {
       for (let x = 0; x < GRID_WIDTH; x++) {
-        if (flags[y * GRID_WIDTH + x] & REVEALED_FLAG) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-          ctx.fillRect(x * TEX_SCALE, y * TEX_SCALE, TEX_SCALE, TEX_SCALE);
-        }
-      }
-    }
-
-    // Second pass: smooth the border with a soft gradient
-    // For each fogged tile adjacent to a revealed tile, draw a partial alpha clear
-    for (let y = 0; y < GRID_HEIGHT; y++) {
-      for (let x = 0; x < GRID_WIDTH; x++) {
-        const idx = y * GRID_WIDTH + x;
-        if (flags[idx] & REVEALED_FLAG) continue;
-
-        // Check if any neighbor is revealed
-        let revealedNeighbors = 0;
-        if (x > 0 && flags[idx - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && flags[idx + 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (y > 0 && flags[idx - GRID_WIDTH] & REVEALED_FLAG) revealedNeighbors++;
-        if (y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH] & REVEALED_FLAG) revealedNeighbors++;
-        // Diagonals
-        if (x > 0 && y > 0 && flags[idx - GRID_WIDTH - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && y > 0 && flags[idx - GRID_WIDTH + 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x > 0 && y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH - 1] & REVEALED_FLAG) revealedNeighbors++;
-        if (x < GRID_WIDTH - 1 && y < GRID_HEIGHT - 1 && flags[idx + GRID_WIDTH + 1] & REVEALED_FLAG) revealedNeighbors++;
-
-        if (revealedNeighbors > 0) {
-          // Partial alpha erase — more neighbors = more transparent
-          const alpha = Math.min(1, revealedNeighbors / 6);
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-          ctx.fillRect(x * TEX_SCALE, y * TEX_SCALE, TEX_SCALE, TEX_SCALE);
-        }
+        const style = getFogTileStyle(flags, x, y);
+        if (style.alpha <= 0) continue;
+        const iso = tileCenterToIso(x, y);
+        const cx = (iso.wx - ISO_BBOX_OFFSET_X) / WORLD_PER_CANVAS_PX - TILE_PX_W / 2;
+        const cy = (iso.wy - ISO_BBOX_OFFSET_Y) / WORLD_PER_CANVAS_PX - TILE_PX_H / 2;
+        ctx.fillStyle = `rgba(${style.color.r}, ${style.color.g}, ${style.color.b}, ${style.alpha})`;
+        ctx.fillRect(cx, cy, TILE_PX_W, TILE_PX_H);
       }
     }
   }

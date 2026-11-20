@@ -2,6 +2,7 @@ import type { TileType } from '../types';
 import { TileType as TileTypeConst } from '../types';
 import type { ResourceType } from '../types';
 import { Assets, Texture, ImageSource } from 'pixi.js';
+import { ISO_TILE_H, ISO_TILE_W } from '../constants';
 import { BUILDING_SPRITE_PATHS, RESOURCE_SPRITE_PATHS, TERRAIN_DECAL_SPECS } from '../ui/spritePaths';
 
 /* ── Deterministic hash helpers ── */
@@ -64,11 +65,10 @@ const GROUND_BASE = 0x2a;
 const GROUND_MIN = 0x17;
 const ROCK_BASE = 0x36;
 const ROCK_MIN = 0x22;
-const SHADE_STEPS = 8;
 const WATER_COLOR = 0x123044;
 
 function grayToHex(gray: number): number {
-  const g = Math.max(0, Math.min(255, gray));
+  const g = Math.round(Math.max(0, Math.min(255, gray)));
   return (g << 16) | (g << 8) | g;
 }
 
@@ -76,16 +76,17 @@ export function getTileColor(type: TileType, x: number, y: number): number {
   if (type === TileTypeConst.Water) return WATER_COLOR;
 
   const dark = craterDarkening(x, y);
-  // Add subtle per-tile noise so flat areas aren't perfectly uniform
-  const noise = (hashCell(x, y, 0) - 0.5) * 4;
+  const patchX = Math.floor(x / 6);
+  const patchY = Math.floor(y / 6);
+  const patchNoise = (hashCell(patchX, patchY, 0) - 0.5) * 0.7;
+  const microNoise = (hashCell(x, y, 7) - 0.5) * 0.18;
+  const noise = patchNoise + microNoise;
 
   const base = type === TileTypeConst.Rock || type === TileTypeConst.Empty && false
     ? ROCK_BASE : GROUND_BASE;
   const min = type === TileTypeConst.Rock ? ROCK_MIN : GROUND_MIN;
 
-  let gray = base - dark * (base - min) + noise;
-  // Quantize to SHADE_STEPS levels for pixelated look
-  gray = Math.round(gray / (256 / SHADE_STEPS)) * (256 / SHADE_STEPS);
+  const gray = base - dark * (base - min) + noise;
 
   switch (type) {
     case TileTypeConst.Empty:
@@ -101,20 +102,24 @@ export function getTileColor(type: TileType, x: number, y: number): number {
 let regolithTexture: Texture | null = null;
 
 /**
- * Generate a dusty regolith noise texture procedurally on a canvas.
- * White-based with subtle darker speckles — the tint will color it.
+ * Generate a diamond-shaped regolith texture for iso projection.
+ *
+ * The texture is ISO_TILE_W × ISO_TILE_H pixels. The interior of the diamond
+ * is filled with subtle granular noise (white-base, gets tinted at draw time);
+ * the four triangular corners stay transparent so adjacent tile sprites tile
+ * cleanly without overlap.
  */
-function createRegolithTexture(size: number): Texture {
+function createRegolithTexture(width: number, height: number): Texture {
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext('2d')!;
 
   // Base fill — slightly off-white so tint controls the hue
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, width, height);
 
-  const imageData = ctx.getImageData(0, 0, size, size);
+  const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
 
   // Seeded noise for reproducibility
@@ -126,32 +131,39 @@ function createRegolithTexture(size: number): Texture {
 
   for (let i = 0; i < data.length; i += 4) {
     const r = rng();
-    // Most pixels stay bright, occasional darker speckles
     let brightness: number;
-    if (r < 0.06) {
-      // Dark speckle (dust grain) — subtle
+    if (r < 0.03) {
       brightness = 210 + Math.floor(rng() * 25);
-    } else if (r < 0.20) {
-      // Slight dimming
+    } else if (r < 0.11) {
       brightness = 235 + Math.floor(rng() * 12);
     } else {
-      // Normal — near-white
       brightness = 247 + Math.floor(rng() * 9);
     }
     data[i] = brightness;
     data[i + 1] = brightness;
     data[i + 2] = brightness;
-    // alpha stays 255
   }
 
   ctx.putImageData(imageData, 0, 0);
+
+  // Mask everything outside the diamond to transparent
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(width / 2, 0); // north
+  ctx.lineTo(width, height / 2); // east
+  ctx.lineTo(width / 2, height); // south
+  ctx.lineTo(0, height / 2); // west
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
 
   return new Texture({ source: new ImageSource({ resource: canvas }) });
 }
 
 export function getTileTexture(): Texture {
   if (!regolithTexture) {
-    regolithTexture = createRegolithTexture(32);
+    regolithTexture = createRegolithTexture(ISO_TILE_W, ISO_TILE_H);
   }
   return regolithTexture;
 }

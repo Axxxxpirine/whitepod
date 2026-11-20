@@ -1,14 +1,18 @@
 import { Container, Sprite, type Application } from 'pixi.js';
-import { TILE_SIZE } from '../constants';
+import { ISO_TILE_H, ISO_TILE_W } from '../constants';
 import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
+import { isoToTile, tileCenterToIso } from '../engine/IsoTransform';
 import { resolveBeltFlow } from '../flow/resolveBeltFlow';
 import { Direction, PortKind, type Building, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
 import { getResourceTexture } from './TileSprite';
-import { BELT_INSET } from './BeltRenderer';
 
-const ITEM_SIZE = Math.round(TILE_SIZE * 0.52);
+const ITEM_SIZE = Math.round(ISO_TILE_W * 0.32);
+// One iso "tile step" along an iso belt = ISO_TILE_W/2 in screen pixels (the
+// distance between two adjacent tile centers). Keep the same 1 tile / second
+// flow speed as the top-down version for gameplay parity.
+const ISO_TILE_STEP_PX = ISO_TILE_W / 2;
 const SPEED_TILES_PER_MS = 1 / 1000;
 const MAX_VISUAL_SPRITES_PER_COMPONENT = 24;
 const KEY_SPACE_PER_COMPONENT = 64;
@@ -64,7 +68,7 @@ export class BeltFlowAnimator {
       this.worldDirty = false;
     }
 
-    const step = deltaMS * SPEED_TILES_PER_MS * TILE_SIZE;
+    const step = deltaMS * SPEED_TILES_PER_MS * ISO_TILE_STEP_PX;
     for (const component of this.flowComponents.values()) {
       component.visualCount = this.computeVisualCount(component.pathLength, component.totalRatePerMinute);
       if (component.pathLength <= 0 || component.resourceTypes.length === 0 || component.visualCount <= 0) continue;
@@ -97,13 +101,12 @@ export class BeltFlowAnimator {
         const key = component.componentId * KEY_SPACE_PER_COMPONENT + slot;
         const distance = (component.phase + slot * spacing) % component.pathLength;
         this.samplePathPosition(component, distance, this.positionScratch);
-        const tileX = Math.floor(this.positionScratch.x / TILE_SIZE);
-        const tileY = Math.floor(this.positionScratch.y / TILE_SIZE);
+        const { tx, ty } = isoToTile(this.positionScratch.x, this.positionScratch.y);
         if (
-          tileX < visibleRange.x0 ||
-          tileX > visibleRange.x1 ||
-          tileY < visibleRange.y0 ||
-          tileY > visibleRange.y1
+          tx < visibleRange.x0 ||
+          tx > visibleRange.x1 ||
+          ty < visibleRange.y0 ||
+          ty > visibleRange.y1
         ) {
           continue;
         }
@@ -290,7 +293,8 @@ export class BeltFlowAnimator {
   private computeVisualCount(pathLength: number, totalRatePerMinute: number): number {
     if (pathLength <= 0 || totalRatePerMinute <= 0) return 0;
 
-    const travelSeconds = pathLength / TILE_SIZE;
+    // 1 tile of travel = ISO_TILE_STEP_PX of iso path length at SPEED_TILES_PER_MS = 1/1000.
+    const travelSeconds = pathLength / ISO_TILE_STEP_PX;
     const expectedInTransit = (totalRatePerMinute / 60) * travelSeconds;
     return Math.max(1, Math.min(MAX_VISUAL_SPRITES_PER_COMPONENT, Math.ceil(expectedInTransit)));
   }
@@ -303,14 +307,10 @@ export class BeltFlowAnimator {
     const output = type.ports.find((port) => port.kind === PortKind.Output);
     if (!input || !output) return null;
 
-    const baseX = building.origin.x * TILE_SIZE;
-    const baseY = building.origin.y * TILE_SIZE;
-    const inPoint = this.edgePoint(baseX, baseY, worldSideOf(input, building.rotation));
-    const outPoint = this.edgePoint(baseX, baseY, worldSideOf(output, building.rotation));
-    const center = {
-      x: baseX + TILE_SIZE / 2,
-      y: baseY + TILE_SIZE / 2,
-    };
+    const isoCenter = tileCenterToIso(building.origin.x, building.origin.y);
+    const inPoint = this.edgePoint(isoCenter.wx, isoCenter.wy, worldSideOf(input, building.rotation));
+    const outPoint = this.edgePoint(isoCenter.wx, isoCenter.wy, worldSideOf(output, building.rotation));
+    const center = { x: isoCenter.wx, y: isoCenter.wy };
 
     return { inPoint, center, outPoint };
   }
@@ -355,20 +355,20 @@ export class BeltFlowAnimator {
     out.y = from.y + (to.y - from.y) * t;
   }
 
-  private edgePoint(baseX: number, baseY: number, side: Direction): Point {
-    const centerX = baseX + TILE_SIZE / 2;
-    const centerY = baseY + TILE_SIZE / 2;
-    const edgeOffset = TILE_SIZE / 2 - BELT_INSET;
+  // Iso edge midpoint between this tile and its logical neighbor on `side`.
+  private edgePoint(centerX: number, centerY: number, side: Direction): Point {
+    const dx = ISO_TILE_W / 4;
+    const dy = ISO_TILE_H / 4;
 
     switch (side) {
       case Direction.North:
-        return { x: centerX, y: centerY - edgeOffset };
+        return { x: centerX + dx, y: centerY - dy };
       case Direction.East:
-        return { x: centerX + edgeOffset, y: centerY };
+        return { x: centerX + dx, y: centerY + dy };
       case Direction.South:
-        return { x: centerX, y: centerY + edgeOffset };
+        return { x: centerX - dx, y: centerY + dy };
       case Direction.West:
-        return { x: centerX - edgeOffset, y: centerY };
+        return { x: centerX - dx, y: centerY - dy };
     }
   }
 

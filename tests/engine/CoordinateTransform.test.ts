@@ -7,9 +7,10 @@ import {
   screenToGrid,
 } from '@/game/engine/CoordinateTransform';
 import { Viewport } from '@/game/engine/Viewport';
-import { TILE_SIZE } from '@/game/constants';
+import { isoWorldCenter, tileCenterToIso } from '@/game/engine/IsoTransform';
+import { ISO_TILE_H, ISO_TILE_W } from '@/game/constants';
 
-describe('CoordinateTransform', () => {
+describe('CoordinateTransform (iso projection)', () => {
   const makeViewport = (zoom = 1) => {
     const vp = new Viewport(640, 480);
     vp.centerX = 0;
@@ -44,39 +45,58 @@ describe('CoordinateTransform', () => {
     });
   });
 
-  describe('worldToGrid / gridToWorld', () => {
-    it('maps world origin to tile (0,0)', () => {
+  describe('worldToGrid / gridToWorld (iso semantics)', () => {
+    it('maps iso world origin to tile (0, 0)', () => {
       expect(worldToGrid(0, 0)).toEqual({ x: 0, y: 0 });
     });
 
-    it('maps world (TILE_SIZE-1, 0) still to tile (0,0)', () => {
-      expect(worldToGrid(TILE_SIZE - 1, 0)).toEqual({ x: 0, y: 0 });
+    it('gridToWorld returns iso center of the tile diamond', () => {
+      // Tile (3, 5) center: ((3-5)*32, (3+5)*16) = (-64, 128)
+      expect(gridToWorld(3, 5)).toEqual({
+        wx: (3 - 5) * (ISO_TILE_W / 2),
+        wy: (3 + 5) * (ISO_TILE_H / 2),
+      });
     });
 
-    it('maps world (TILE_SIZE, 0) to tile (1,0)', () => {
-      expect(worldToGrid(TILE_SIZE, 0)).toEqual({ x: 1, y: 0 });
+    it('worldToGrid recovers the same tile for any tile center', () => {
+      for (const [tx, ty] of [
+        [0, 0],
+        [7, 4],
+        [10, 10],
+        [50, 80],
+        [128, 128],
+      ]) {
+        const { wx, wy } = gridToWorld(tx, ty);
+        expect(worldToGrid(wx, wy)).toEqual({ x: tx, y: ty });
+      }
     });
 
-    it('gridToWorld returns top-left corner of tile', () => {
-      expect(gridToWorld(3, 5)).toEqual({ wx: 3 * TILE_SIZE, wy: 5 * TILE_SIZE });
-    });
-
-    it('gridToWorld / worldToGrid are consistent for tile centers', () => {
-      const { wx, wy } = gridToWorld(7, 4);
-      // Top-left of tile (7,4) should map back to (7,4)
-      expect(worldToGrid(wx, wy)).toEqual({ x: 7, y: 4 });
+    it('picks neighbor tiles when offset crosses a diamond edge', () => {
+      // Tile (5, 5) center is iso (0, 160). Going east on screen by past the
+      // east vertex (32, 160) -> 1px past (33, 160) -> tile (6, 4) (NE neighbor
+      // in iso is east on screen).
+      const center = tileCenterToIso(5, 5);
+      const neighbor = worldToGrid(center.wx + ISO_TILE_W / 2 + 1, center.wy);
+      expect(neighbor).toEqual({ x: 6, y: 4 });
     });
   });
 
   describe('screenToGrid', () => {
-    it('maps screen center to tile at viewport center', () => {
+    it('maps screen center to the tile under the viewport center', () => {
+      // Center the viewport on tile (5, 7)'s diamond center.
       const vp = new Viewport(640, 480);
-      // Center viewport on the middle of tile (5,7)
-      vp.centerX = 5 * TILE_SIZE + TILE_SIZE / 2;
-      vp.centerY = 7 * TILE_SIZE + TILE_SIZE / 2;
+      const center = tileCenterToIso(5, 7);
+      vp.centerX = center.wx;
+      vp.centerY = center.wy;
       const coord = screenToGrid(vp, 320, 240);
-      expect(coord.x).toBe(5);
-      expect(coord.y).toBe(7);
+      expect(coord).toEqual({ x: 5, y: 7 });
+    });
+
+    it('default-centered viewport picks middle of grid', () => {
+      const vp = new Viewport(640, 480);
+      const expectedCenter = isoWorldCenter();
+      expect(vp.centerX).toBe(expectedCenter.wx);
+      expect(vp.centerY).toBe(expectedCenter.wy);
     });
   });
 });
