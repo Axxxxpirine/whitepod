@@ -22,6 +22,8 @@ import {
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
 import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
+import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
+import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -46,6 +48,7 @@ import {
   type PortId,
   type EnergyNetworkBalance,
   type EnergyNetworkStats,
+  type ResourceCost,
   type ResourceType as ResourceTypeT,
   type TileCoord,
   type TileType,
@@ -186,6 +189,7 @@ export class GameEngine {
   private extractionAccumulator = 0;
   private readonly poweredExtractors = new Set<BuildingId>();
   private readonly poweredConsumers = new Set<BuildingId>();
+  private hubIdCache: BuildingId | null = null;
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -267,21 +271,6 @@ export class GameEngine {
       this.notify('world');
     }
   }
-
-  private static readonly RESOURCE_STOCK_KEY: Record<number, keyof ResourceStock> = {
-    [ResourceType.Regolith]: 'regolith',
-    [ResourceType.Hydrogen]: 'hydrogen',
-    [ResourceType.Oxygen]: 'oxygen',
-    [ResourceType.IronOxide]: 'ironOxide',
-    [ResourceType.AluminumOxide]: 'aluminumOxide',
-    [ResourceType.SiliconDioxide]: 'siliconDioxide',
-    [ResourceType.NitrogenGas]: 'nitrogenGas',
-    [ResourceType.Water]: 'water',
-    [ResourceType.Methane]: 'methane',
-    [ResourceType.CarbonDioxide]: 'carbonDioxide',
-    [ResourceType.Ammonia]: 'ammonia',
-    [ResourceType.CeramicPlates]: 'ceramicPlates',
-  };
 
   private processProcessors(dt: number): void {
     let changed = false;
@@ -456,7 +445,10 @@ export class GameEngine {
     const type = getBuildingType(typeId);
     if (!type) return { ok: false, reason: 'unknown_type' };
     if (type.systemPlaced) return { ok: false, reason: 'system_placed' };
-    return this.checkFootprint(type, origin);
+    const footprint = this.checkFootprint(type, origin);
+    if (!footprint.ok) return footprint;
+    if (!this.canAfford(this.getBuildingCost(typeId))) return { ok: false, reason: 'insufficient_resources' };
+    return { ok: true };
   }
 
   /** Footprint rules shared by player placement and engine-placed buildings. */
@@ -499,14 +491,14 @@ export class GameEngine {
       return null;
     }
 
-    return this.commitPlacement(getBuildingType(typeId)!, origin, rotation, emitSfx);
+    return this.commitPlacement(getBuildingType(typeId)!, origin, rotation, emitSfx, true);
   }
 
   /** Places a `systemPlaced` building (e.g. the campaign hub), bypassing the player-only refusal. */
   private placeSystemBuilding(typeId: BuildingTypeId, origin: TileCoord): BuildingId | null {
     const type = getBuildingType(typeId);
     if (!type || !this.checkFootprint(type, origin).ok) return null;
-    return this.commitPlacement(type, origin, Direction.North, false);
+    return this.commitPlacement(type, origin, Direction.North, false, false);
   }
 
   private commitPlacement(
@@ -514,10 +506,13 @@ export class GameEngine {
     origin: TileCoord,
     rotation: Direction,
     emitSfx: boolean,
+    charge: boolean,
   ): BuildingId | null {
     const typeId = type.id;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
+      // Affordability was checked by canPlaceBuilding in this same call.
+      if (charge) this.spendFromWallet(this.getBuildingCost(typeId));
       this.energyNetwork.registerBuilding(id);
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
@@ -591,6 +586,8 @@ export class GameEngine {
     this.processorReservations.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
+      // After the storage inventory is gone, so a removed storage never refunds into itself.
+      this.refundToWallet(this.getBuildingCost(building.typeId));
       this.syncPowerState(false);
       this.notify('world');
       if (emitSfx) {
@@ -805,7 +802,7 @@ export class GameEngine {
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       if (!this.hasValidDownstream(id)) continue;
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
-      const key = GameEngine.RESOURCE_STOCK_KEY[resource];
+      const key = RESOURCE_STOCK_KEY[resource];
       if (key) rates[key] += EXTRACTOR_RATE_PER_MIN;
     }
 
@@ -819,12 +816,12 @@ export class GameEngine {
       if (!recipe) continue;
 
       // Output rate
-      const outKey = GameEngine.RESOURCE_STOCK_KEY[recipe.output.resourceType];
+      const outKey = RESOURCE_STOCK_KEY[recipe.output.resourceType];
       if (outKey) rates[outKey] += (recipe.output.amount / recipe.cycleSeconds) * 60;
 
       // Input consumption rates (negative)
       for (const input of recipe.inputs) {
-        const inKey = GameEngine.RESOURCE_STOCK_KEY[input.resourceType];
+        const inKey = RESOURCE_STOCK_KEY[input.resourceType];
         if (inKey) rates[inKey] -= (input.amount / recipe.cycleSeconds) * 60;
       }
     }
@@ -866,8 +863,17 @@ export class GameEngine {
     return id;
   }
 
-  canPlaceBelt(from: PortEndpoint, to: PortEndpoint) {
-    return planBelt(this, from, to);
+  canPlaceBelt(from: PortEndpoint, to: PortEndpoint): ReturnType<typeof planBelt> {
+    const planned = planBelt(this, from, to);
+    if (planned.ok && !this.canAfford(this.getBeltRouteCost(planned.plan.segments))) {
+      return { ok: false, reason: 'insufficient_resources' };
+    }
+    return planned;
+  }
+
+  /** Total cost of a planned belt route (one segment cost per tile). */
+  getBeltRouteCost(segments: readonly { readonly typeId: BuildingTypeId }[]): ResourceCost[] {
+    return mergeCosts(segments.map((segment) => this.getBuildingCost(segment.typeId)));
   }
 
   placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
@@ -1068,10 +1074,55 @@ export class GameEngine {
     return true;
   }
 
+  /** True when construction is paid for (campaign); sandbox building stays free. */
+  get chargesConstruction(): boolean {
+    return this.gameMode === GameModes.Campaign;
+  }
+
+  /** Cost the player pays for one building of this type: empty in sandbox. */
+  getBuildingCost(typeId: BuildingTypeId): readonly ResourceCost[] {
+    if (!this.chargesConstruction) return [];
+    return getBuildingType(typeId)?.cost ?? [];
+  }
+
+  canAfford(cost: readonly ResourceCost[]): boolean {
+    return cost.length === 0 || canAfford(this.walletInventories(), cost);
+  }
+
+  /**
+   * Inventories construction is paid from (decision D2: global stock), in
+   * draw order: hub first, then storages by ascending id.
+   */
+  private walletInventories(): ResourceInventory[] {
+    const hubId = this.getHubId();
+    const ids = [...this.storageInventories.keys()].filter((id) => id !== hubId).sort((a, b) => a - b);
+    if (hubId !== null) ids.unshift(hubId);
+    return ids.map((id) => this.storageInventories.get(id)!).filter(Boolean);
+  }
+
+  private spendFromWallet(cost: readonly ResourceCost[]): void {
+    if (cost.length === 0) return;
+    if (!spend(this.walletInventories(), cost)) {
+      throw new Error('Construction cost not affordable: canPlaceBuilding must be checked first');
+    }
+  }
+
+  /** Refunds into the hub, or the first storage when there is no hub; lost when there is none. */
+  private refundToWallet(cost: readonly ResourceCost[]): void {
+    if (cost.length === 0) return;
+    const target = this.walletInventories()[0];
+    if (target) refund(target, cost);
+  }
+
   /** The campaign hub, or null in sandbox worlds. */
   getHubId(): BuildingId | null {
+    // The hub is permanent and placed once, so a found id never goes stale.
+    if (this.hubIdCache !== null) return this.hubIdCache;
     for (const building of this.buildings.getAll().values()) {
-      if (building.typeId === HUB_BUILDING_TYPE_ID) return building.id;
+      if (building.typeId === HUB_BUILDING_TYPE_ID) {
+        this.hubIdCache = building.id;
+        return building.id;
+      }
     }
     return null;
   }
@@ -1348,7 +1399,7 @@ export class GameEngine {
     if (!terminal || terminal.kind !== 'storage') return false;
 
     const inventory = this.storageInventories.get(terminal.buildingId);
-    const key = GameEngine.RESOURCE_STOCK_KEY[buffer.resourceType];
+    const key = RESOURCE_STOCK_KEY[buffer.resourceType];
     if (!inventory || !key) return false;
 
     inventory[key] += buffer.amount;
