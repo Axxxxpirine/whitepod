@@ -29,7 +29,8 @@ import {
   findActiveMilestone,
   type MilestoneProgress,
 } from '../campaign/progression';
-import { MILESTONES, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
+import { MILESTONES, STARTING_UNLOCKS, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
+import { computeUnlocks, findUnlockingMilestone, type UnlockKind, type UnlockState } from '../campaign/unlocks';
 import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
 import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
@@ -204,6 +205,8 @@ export class GameEngine {
   private hubIdCache: BuildingId | null = null;
   private readonly completedMilestones = new Set<MilestoneId>();
   private readonly milestoneListeners = new Set<MilestoneCompletedListener>();
+  /** Derived from `completedMilestones`; reset whenever that set changes. */
+  private unlockCache: UnlockState | null = null;
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -329,6 +332,7 @@ export class GameEngine {
       if (!recipe) return false;
       const expectedBuilding = building.typeId === CONVERTER_BUILDING_TYPE_ID ? 'converter' : 'synthesizer';
       if (recipe.building !== expectedBuilding) return false;
+      if (!this.isRecipeUnlocked(recipeId)) return false;
     }
 
     state.recipeId = recipeId;
@@ -459,6 +463,7 @@ export class GameEngine {
     const type = getBuildingType(typeId);
     if (!type) return { ok: false, reason: 'unknown_type' };
     if (type.systemPlaced) return { ok: false, reason: 'system_placed' };
+    if (!this.isBuildingUnlocked(typeId)) return { ok: false, reason: 'locked' };
     const footprint = this.checkFootprint(type, origin);
     if (!footprint.ok) return footprint;
     if (!this.canAfford(this.getBuildingCost(typeId))) return { ok: false, reason: 'insufficient_resources' };
@@ -1158,10 +1163,33 @@ export class GameEngine {
     if (!milestone || hubId === null) return false;
     if (!consumeMilestoneRequirements(milestone, this.storageInventories.get(hubId)!)) return false;
     this.completedMilestones.add(milestone.id);
+    this.unlockCache = null;
     this.notify('world');
     this.emitAction('complete_milestone', { id: milestone.id });
     for (const listener of this.milestoneListeners) listener(milestone);
     return true;
+  }
+
+  private getUnlocks(): UnlockState {
+    this.unlockCache ??= computeUnlocks(MILESTONES, this.completedMilestones, STARTING_UNLOCKS);
+    return this.unlockCache;
+  }
+
+  /** True when the player may build this type: always in sandbox, unlocked content only in campaign. */
+  isBuildingUnlocked(typeId: BuildingTypeId): boolean {
+    if (this.gameMode !== GameModes.Campaign) return true;
+    return this.getUnlocks().buildings.has(typeId);
+  }
+
+  /** True when processors may run this recipe: always in sandbox, unlocked recipes only in campaign. */
+  isRecipeUnlocked(recipeId: RecipeId): boolean {
+    if (this.gameMode !== GameModes.Campaign) return true;
+    return this.getUnlocks().recipes.has(recipeId);
+  }
+
+  /** The milestone that unlocks this content, or null when none does (starting or later-chapter content). */
+  getUnlockingMilestone(kind: UnlockKind, id: BuildingTypeId | RecipeId): Milestone | null {
+    return findUnlockingMilestone(MILESTONES, kind, id);
   }
 
   onMilestoneCompleted(listener: MilestoneCompletedListener): () => void {
@@ -1420,6 +1448,7 @@ export class GameEngine {
     for (const id of snapshot.completedMilestones ?? []) {
       if (getMilestone(id)) engine.completedMilestones.add(id);
     }
+    engine.unlockCache = null;
 
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
