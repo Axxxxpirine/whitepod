@@ -388,6 +388,8 @@ export function GameCanvas() {
 
       const canvas = app.canvas;
       handlePointerDown = (e) => {
+        // The minimap handles its own clicks; don't build or select underneath it.
+        if (minimapRenderer?.containsScreenPoint(e.offsetX, e.offsetY)) return;
         currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
         currentBeltToolController.onPointerDown(e.offsetX, e.offsetY, e.button);
       };
@@ -622,6 +624,7 @@ export function GameCanvas() {
         energyLinkRenderer?.destroy();
         fogOfWarRenderer?.destroy();
         dayNightOverlayRenderer?.destroy();
+        minimapRenderer?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
