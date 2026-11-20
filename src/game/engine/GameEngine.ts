@@ -22,6 +22,7 @@ import {
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
 import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
+import { ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
 import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
 import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
@@ -1133,19 +1134,25 @@ export class GameEngine {
   }
 
   /**
-   * Places the campaign hub near the map center inside the initial reveal.
-   * Idempotent: a world keeps a single hub across map regenerations.
+   * Campaign start: places the hub near the map center inside the initial
+   * reveal, guarantees the starting deposits around it and credits the
+   * starting kit. Idempotent: a world keeps a single hub, and its kit, across
+   * map regenerations.
    */
-  private ensureCampaignHub(): void {
+  private setupCampaignStart(): void {
     if (this.getHubId() !== null) return;
     const footprint = getBuildingType(HUB_BUILDING_TYPE_ID)!.footprint;
+    const isOccupied = (index: number) => this.buildings.occupantIdAt(index) !== 0;
     const searchRadius = INITIAL_FOG_REVEAL_RADIUS - Math.max(footprint.w, footprint.h);
     const origin =
-      findHubOrigin(this.grid, footprint, MAP_CENTER, searchRadius, (index) => this.buildings.occupantIdAt(index) !== 0) ??
+      findHubOrigin(this.grid, footprint, MAP_CENTER, searchRadius, isOccupied) ??
       clearHubSite(this.grid, footprint, MAP_CENTER);
-    if (this.placeSystemBuilding(HUB_BUILDING_TYPE_ID, origin) === null) {
+    const hubId = this.placeSystemBuilding(HUB_BUILDING_TYPE_ID, origin);
+    if (hubId === null) {
       throw new Error(`Campaign hub could not be placed at ${origin.x},${origin.y}`);
     }
+    ensureStartingDeposits(this.grid, origin, footprint, isOccupied);
+    refund(this.storageInventories.get(hubId)!, STARTING_KIT);
   }
 
   getResourceAt(x: number, y: number): ResourceTypeT {
@@ -1157,7 +1164,7 @@ export class GameEngine {
     this.grid.revealCircle(MAP_CENTER.x, MAP_CENTER.y, INITIAL_FOG_REVEAL_RADIUS);
     this.mapSeed = seed;
     if (this.gameMode === GameModes.Campaign) {
-      this.ensureCampaignHub();
+      this.setupCampaignStart();
     }
     this.notify('world');
     this.emitAction('generate_map', { seed });
