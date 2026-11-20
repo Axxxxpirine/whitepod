@@ -9,10 +9,10 @@ import {
   EXTRACTOR_RATE_PER_MIN,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
   isProcessorTypeId,
+  isStorageTypeId,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
 import { getRecipesForBuilding, type Recipe } from '@/game/data/recipeCatalog';
@@ -56,7 +56,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
         />
       </>
     );
-  } else if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+  } else if (isStorageTypeId(building.typeId)) {
     const stock = engine.getStorageInventory(building.id) ?? engine.getResourceCounts();
     const visibleStock = RESOURCE_ENTRIES.filter((r) => stock[r.key] > 0);
 

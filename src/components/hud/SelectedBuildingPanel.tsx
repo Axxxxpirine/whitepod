@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { STORAGE_BUILDING_TYPE_ID, getBuildingType, isBeltTypeId, isProcessorTypeId } from '@/game/data/buildingCatalog';
+import { getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
 import { Panel, PanelHeading, Icon } from '../ui';
@@ -30,7 +30,7 @@ export function SelectedBuildingPanel() {
   if (!type) return null;
   const panelWidthClass = isProcessorTypeId(building.typeId)
     ? 'w-[280px]'
-    : building.typeId === STORAGE_BUILDING_TYPE_ID
+    : isStorageTypeId(building.typeId)
       ? 'w-[240px]'
       : 'w-[200px]';
 
@@ -62,15 +62,17 @@ export function SelectedBuildingPanel() {
       <Panel className={`flex ${panelWidthClass} flex-col gap-1.5 px-3 py-2 text-ink`}>
         <div className="flex items-center gap-2">
           <PanelHeading className="whitespace-nowrap">{type.name}</PanelHeading>
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
-            aria-label="Supprimer le bâtiment"
-            title="Supprimer le bâtiment"
-          >
-            <Icon icon={Trash2} size={16} />
-          </button>
+          {!type.permanent && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
+              aria-label="Supprimer le bâtiment"
+              title="Supprimer le bâtiment"
+            >
+              <Icon icon={Trash2} size={16} />
+            </button>
+          )}
         </div>
         <BuildingStatsPanel building={building} engine={engine} worldTick={worldTick} energyVersion={energyVersion} />
       </Panel>

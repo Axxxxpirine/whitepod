@@ -20,9 +20,19 @@ export const MERGER_BASIC_BUILDING_TYPE_ID = 'merger_basic' as const;
 export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
 export const CONVERTER_BUILDING_TYPE_ID = 'converter_basic' as const;
 export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
+export const HUB_BUILDING_TYPE_ID = 'hub_lander' as const;
 
 export function isProcessorTypeId(typeId: BuildingTypeId): boolean {
   return typeId === CONVERTER_BUILDING_TYPE_ID || typeId === SYNTHESIZER_BUILDING_TYPE_ID;
+}
+
+/**
+ * True when the building type accepts and stores resources (storage
+ * inventory, belt sink). Driven by the catalog `storage` capability so a new
+ * storage-like type only needs its catalog entry.
+ */
+export function isStorageTypeId(typeId: BuildingTypeId): boolean {
+  return catalog.get(typeId)?.storage === true;
 }
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
@@ -53,6 +63,7 @@ const entries: readonly BuildingType[] = [
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
+    storage: true,
     ports: [
       { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
       { id: 'in_north', kind: PortKind.Input, offset: { x: 1, y: 0 }, side: Direction.North },
@@ -135,6 +146,28 @@ const entries: readonly BuildingType[] = [
       { id: 'out', kind: PortKind.Output, offset: { x: 3, y: 2 }, side: Direction.East },
     ],
     energy: { consumption: 10 },
+  },
+  // Campaign hub (lander): placed once by the engine at campaign start,
+  // receives deliveries on two inputs per side and stores them like a storage.
+  {
+    id: HUB_BUILDING_TYPE_ID,
+    name: "Module d'atterrissage",
+    footprint: { w: 5, h: 5 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    storage: true,
+    systemPlaced: true,
+    permanent: true,
+    ports: [
+      { id: 'in_west_1', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
+      { id: 'in_west_2', kind: PortKind.Input, offset: { x: 0, y: 3 }, side: Direction.West },
+      { id: 'in_north_1', kind: PortKind.Input, offset: { x: 1, y: 0 }, side: Direction.North },
+      { id: 'in_north_2', kind: PortKind.Input, offset: { x: 3, y: 0 }, side: Direction.North },
+      { id: 'in_east_1', kind: PortKind.Input, offset: { x: 4, y: 1 }, side: Direction.East },
+      { id: 'in_east_2', kind: PortKind.Input, offset: { x: 4, y: 3 }, side: Direction.East },
+      { id: 'in_south_1', kind: PortKind.Input, offset: { x: 1, y: 4 }, side: Direction.South },
+      { id: 'in_south_2', kind: PortKind.Input, offset: { x: 3, y: 4 }, side: Direction.South },
+    ],
   },
   {
     id: 'placeholder_1x1',

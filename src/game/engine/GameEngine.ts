@@ -12,13 +12,16 @@ import {
   getBuildingType,
   isBeltTypeId,
   isProcessorTypeId,
+  isStorageTypeId,
   validateCatalog,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   CONVERTER_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
+  HUB_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
+import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
+import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -28,6 +31,7 @@ import {
   TileType as TileTypeConst,
   type Building,
   type BuildingId,
+  type BuildingType,
   type BuildingTypeId,
   type Connection,
   type ConnectionId,
@@ -46,8 +50,7 @@ import {
   type TileCoord,
   type TileType,
 } from '../types';
-import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
-import { GRID_WIDTH, GRID_HEIGHT } from '../constants';
+import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { isInBounds, toIndex } from '../data/coords';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
@@ -118,6 +121,8 @@ export interface ProcessorReservation {
 export interface SerializedGameWorld {
   readonly version: number;
   readonly mapSeed: number;
+  /** Absent in saves written before game modes existed: restored as the default mode. */
+  readonly gameMode?: GameMode;
   readonly grid: ArrayBuffer;
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
@@ -136,6 +141,7 @@ interface GameEngineOptions {
   readonly connections?: ConnectionRegistry;
   readonly mapSeed?: number;
   readonly dayNightCycleSeconds?: number;
+  readonly gameMode?: GameMode;
 }
 
 const SERIALIZE_VERSION = 3;
@@ -164,6 +170,8 @@ export class GameEngine {
   readonly dayNightCycleSeconds: number;
   simulationTime = 0;
   mapSeed: number;
+  /** Fixed for the lifetime of the world. */
+  readonly gameMode: GameMode;
   readonly batteryCharges = new Map<BuildingId, number>();
   readonly processorStates = new Map<BuildingId, ProcessorState>();
   readonly storageInventories = new Map<BuildingId, ResourceInventory>();
@@ -188,6 +196,7 @@ export class GameEngine {
     this.connections = options.connections ?? new ConnectionRegistry();
     this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
+    this.gameMode = options.gameMode ?? DEFAULT_GAME_MODE;
     this.dayNightCycleSeconds =
       options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
@@ -446,6 +455,12 @@ export class GameEngine {
   ): PlacementResult {
     const type = getBuildingType(typeId);
     if (!type) return { ok: false, reason: 'unknown_type' };
+    if (type.systemPlaced) return { ok: false, reason: 'system_placed' };
+    return this.checkFootprint(type, origin);
+  }
+
+  /** Footprint rules shared by player placement and engine-placed buildings. */
+  private checkFootprint(type: BuildingType, origin: TileCoord): PlacementResult {
     if (!this.buildings.hasIdCapacity()) return { ok: false, reason: 'id_overflow' };
 
     for (const { x, y, inBounds, idx } of this.buildings.footprintTiles(origin, type.footprint)) {
@@ -484,14 +499,30 @@ export class GameEngine {
       return null;
     }
 
-    const type = getBuildingType(typeId)!;
+    return this.commitPlacement(getBuildingType(typeId)!, origin, rotation, emitSfx);
+  }
+
+  /** Places a `systemPlaced` building (e.g. the campaign hub), bypassing the player-only refusal. */
+  private placeSystemBuilding(typeId: BuildingTypeId, origin: TileCoord): BuildingId | null {
+    const type = getBuildingType(typeId);
+    if (!type || !this.checkFootprint(type, origin).ok) return null;
+    return this.commitPlacement(type, origin, Direction.North, false);
+  }
+
+  private commitPlacement(
+    type: BuildingType,
+    origin: TileCoord,
+    rotation: Direction,
+    emitSfx: boolean,
+  ): BuildingId | null {
+    const typeId = type.id;
     const id = this.buildings.register({ typeId, origin, rotation }, type.footprint);
     if (id !== null) {
       this.energyNetwork.registerBuilding(id);
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
       }
-      if (typeId === STORAGE_BUILDING_TYPE_ID) {
+      if (isStorageTypeId(typeId)) {
         this.storageInventories.set(id, GameEngine.EMPTY_RESOURCE_STOCK());
       }
       if (typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(typeId)) {
@@ -522,6 +553,7 @@ export class GameEngine {
 
   removeBuilding(id: BuildingId, options: RemoveBuildingOptions = {}): boolean {
     const building = this.buildings.get(id);
+    if (building && getBuildingType(building.typeId)?.permanent) return false;
     const result = this.removeBuildingInternal(id, true, options.emitSfx ?? true);
     if (result && building) {
       this.emitAction('remove_building', { typeId: building.typeId });
@@ -1036,18 +1068,46 @@ export class GameEngine {
     return true;
   }
 
+  /** The campaign hub, or null in sandbox worlds. */
+  getHubId(): BuildingId | null {
+    for (const building of this.buildings.getAll().values()) {
+      if (building.typeId === HUB_BUILDING_TYPE_ID) return building.id;
+    }
+    return null;
+  }
+
+  getHubInventory(): ResourceInventory | null {
+    const hubId = this.getHubId();
+    return hubId === null ? null : this.getStorageInventory(hubId);
+  }
+
+  /**
+   * Places the campaign hub near the map center inside the initial reveal.
+   * Idempotent: a world keeps a single hub across map regenerations.
+   */
+  private ensureCampaignHub(): void {
+    if (this.getHubId() !== null) return;
+    const footprint = getBuildingType(HUB_BUILDING_TYPE_ID)!.footprint;
+    const searchRadius = INITIAL_FOG_REVEAL_RADIUS - Math.max(footprint.w, footprint.h);
+    const origin =
+      findHubOrigin(this.grid, footprint, MAP_CENTER, searchRadius, (index) => this.buildings.occupantIdAt(index) !== 0) ??
+      clearHubSite(this.grid, footprint, MAP_CENTER);
+    if (this.placeSystemBuilding(HUB_BUILDING_TYPE_ID, origin) === null) {
+      throw new Error(`Campaign hub could not be placed at ${origin.x},${origin.y}`);
+    }
+  }
+
   getResourceAt(x: number, y: number): ResourceTypeT {
     return this.grid.getResource(x, y);
   }
 
   generateMap(seed: number): void {
     generateResources(this.grid, seed);
-    this.grid.revealCircle(
-      Math.floor(GRID_WIDTH / 2),
-      Math.floor(GRID_HEIGHT / 2),
-      INITIAL_FOG_REVEAL_RADIUS,
-    );
+    this.grid.revealCircle(MAP_CENTER.x, MAP_CENTER.y, INITIAL_FOG_REVEAL_RADIUS);
     this.mapSeed = seed;
+    if (this.gameMode === GameModes.Campaign) {
+      this.ensureCampaignHub();
+    }
     this.notify('world');
     this.emitAction('generate_map', { seed });
   }
@@ -1143,6 +1203,7 @@ export class GameEngine {
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
+      gameMode: this.gameMode,
       grid: this.grid.serialize(),
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
@@ -1166,6 +1227,7 @@ export class GameEngine {
       buildings: BuildingRegistry.deserialize(snapshot.buildings, (typeId) => getBuildingType(typeId)?.footprint),
       connections: ConnectionRegistry.deserialize(snapshot.connections),
       mapSeed: snapshot.mapSeed,
+      gameMode: resolveGameMode(snapshot.gameMode),
     });
 
     for (const connection of engine.connections.getAll().values()) {
@@ -1182,7 +1244,7 @@ export class GameEngine {
         if (type?.energy?.battery) {
           engine.batteryCharges.set(buildingId, 0);
         }
-        if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+        if (isStorageTypeId(building.typeId)) {
           engine.storageInventories.set(buildingId, GameEngine.EMPTY_RESOURCE_STOCK());
         }
         if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
@@ -1243,11 +1305,7 @@ export class GameEngine {
 
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
-      engine.grid.revealCircle(
-        Math.floor(GRID_WIDTH / 2),
-        Math.floor(GRID_HEIGHT / 2),
-        INITIAL_FOG_REVEAL_RADIUS,
-      );
+      engine.grid.revealCircle(MAP_CENTER.x, MAP_CENTER.y, INITIAL_FOG_REVEAL_RADIUS);
     }
 
     engine.syncPowerState(false);
@@ -1355,7 +1413,7 @@ export class GameEngine {
         providers.push(currentId);
         continue;
       }
-      if (building.typeId === STORAGE_BUILDING_TYPE_ID) continue;
+      if (isStorageTypeId(building.typeId)) continue;
       for (const connection of this.getConnectionsOf(currentId)) {
         if (connection.to.building !== currentId) continue;
         queue.push(connection.from.building);
