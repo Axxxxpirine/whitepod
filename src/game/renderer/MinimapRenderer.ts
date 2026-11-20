@@ -12,6 +12,8 @@ import { GRID_WIDTH, GRID_HEIGHT, WATCHTOWER_REVEAL_RADIUS } from '../constants'
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
 import { ResourceType, type SelectedTool, type TileCoord } from '../types';
 import {
+  MINIMAP_MARGIN,
+  MINIMAP_WIDTH,
   createMinimapLayout,
   gridToMinimap,
   isInsideMinimap,
@@ -27,7 +29,6 @@ interface MinimapPreviewState {
   readonly hoverTile: TileCoord | null;
 }
 
-const MARGIN = 20;
 const REBUILD_INTERVAL_MS = 250;
 
 /** Canvas pixels are written as little-endian RGBA words (0xAABBGGRR). */
@@ -75,7 +76,7 @@ export class MinimapRenderer {
     app: Application,
     engine: GameEngine,
     getPreviewState: () => MinimapPreviewState,
-    width: number = 180,
+    width: number = MINIMAP_WIDTH,
   ) {
     this.app = app;
     this.engine = engine;
@@ -161,8 +162,8 @@ export class MinimapRenderer {
   }
 
   private updatePosition(): void {
-    this.container.x = Math.round(this.app.screen.width - this.layout.width - MARGIN);
-    this.container.y = MARGIN;
+    this.container.x = Math.round(this.app.screen.width - this.layout.width - MINIMAP_MARGIN);
+    this.container.y = MINIMAP_MARGIN;
   }
 
   private renderWatchtowerPreview(): void {

@@ -47,7 +47,7 @@ export type GameSfxEvent =
     }
   | {
       readonly type: 'ui_confirm';
-      readonly context: 'reset_session' | 'export_actions';
+      readonly context: 'reset_session' | 'export_actions' | 'milestone_complete';
     }
   | {
       readonly type: 'ui_back';
