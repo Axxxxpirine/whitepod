@@ -81,13 +81,23 @@ export function mustPlaceBuilding(
   preferredOrigin: TileCoord,
   searchRadius: number,
   rng: () => number,
+  rotation: Direction = Direction.North,
 ): BuildingId {
   const origin = findPlacement(engine, typeId, preferredOrigin, searchRadius, rng);
-  const buildingId = engine.placeBuilding(typeId, origin, Direction.North, { emitSfx: false });
+  const buildingId = engine.placeBuilding(typeId, origin, rotation, { emitSfx: false });
   if (buildingId === null) {
     throw new Error(`Failed to place ${typeId} at ${origin.x},${origin.y}`);
   }
   return buildingId;
+}
+
+/**
+ * Rotation that points a building's East-side output toward a target column.
+ * Catalog outputs face East at rotation North; rotating to South flips them West,
+ * which keeps mirrored layouts routable instead of facing away from their target.
+ */
+export function rotationFacingX(fromX: number, toX: number): Direction {
+  return toX >= fromX ? Direction.North : Direction.South;
 }
 
 export function mustConnect(engine: GameEngine, a: BuildingId, b: BuildingId): void {
