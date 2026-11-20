@@ -41,7 +41,7 @@ npm run dev   # → http://localhost:5173
 
 ## Browser console (dev only)
 
-In development, the game engine is exposed as `window.engine`. Open the browser devtools console to interact with it directly.
+In development, the game engine is exposed as `window.engine` once a game is started from the start screen (Continue, New campaign or Sandbox). Open the browser devtools console to interact with it directly.
 
 For a fuller reference of executable game primitives and failure modes, see [PRIMITIVES.md](./PRIMITIVES.md).
 
@@ -202,7 +202,8 @@ engine.screenToTile(screenX, screenY)               // → { x, y }
 - The catch-up is exact (replays simulation updates) and capped to 8 hours per batch.
 - Camera position and selected tool are also persisted locally, so reopening the game resumes the same view.
 - Temporary UI state such as hover and console history is not persisted.
-- Use the `Reset` button in the HUD to clear the current session and start a fresh game.
+- The game opens on a start screen: **Continue** (when a save exists), **New campaign** or **Sandbox**, with an optional map seed. Starting a new game over a save asks first, then clears it. No world loads before the choice.
+- In play, Settings → **Menu principal** reopens the start screen over the running game (Escape resumes).
 
 ## Project structure
 
