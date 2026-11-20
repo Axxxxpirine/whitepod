@@ -16,8 +16,8 @@ describe('scenario runner', () => {
     });
     expect(result.selectedTool).toEqual({ kind: 'building', buildingType: 'solar_panel' });
     expect(result.viewport).toEqual({
-      centerX: 384,
-      centerY: 288,
+      centerX: 96,
+      centerY: 320,
       zoom: 1.6,
     });
   });

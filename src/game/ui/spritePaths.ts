@@ -17,6 +17,7 @@ export interface SpriteAssetSpec {
   readonly path: string;
   readonly footprint: { readonly w: number; readonly h: number };
   readonly displayHeightTiles: number;
+  readonly displayWidthTiles?: number;
   readonly anchor: SpriteAnchor;
   readonly kind: SpriteAssetKind;
 }
@@ -54,6 +55,7 @@ export const BUILDING_SPRITE_SPECS: ReadonlyMap<BuildingTypeId, SpriteAssetSpec>
       path: 'sprites/rts/buildings/solar_panel.png',
       footprint: { w: 1, h: 1 },
       displayHeightTiles: 1.25,
+      displayWidthTiles: 1.7,
       anchor: 'bottom-center',
       kind: 'generated',
     },

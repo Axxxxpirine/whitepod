@@ -1,12 +1,12 @@
 import { Container, Graphics, type Application } from 'pixi.js';
-import { TILE_SIZE } from '../constants';
+import { ISO_TILE_H, ISO_TILE_W } from '../constants';
 import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
+import { tileCenterToIso } from '../engine/IsoTransform';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
 import { PIXI } from '@/design/tokens';
 
-export const BELT_INSET = 0;
 const BELT_PATH = PIXI.border;
 const BELT_RAIL = PIXI.surface2;
 const BELT_DATA_LINE = PIXI.accent;
@@ -67,54 +67,49 @@ export class BeltRenderer {
     const type = getBuildingType(building.typeId);
     if (!type) return;
 
-    const baseX = building.origin.x * TILE_SIZE;
-    const baseY = building.origin.y * TILE_SIZE;
-    const center = {
-      x: baseX + TILE_SIZE / 2,
-      y: baseY + TILE_SIZE / 2,
-    };
+    const center = tileCenterToIso(building.origin.x, building.origin.y);
     const input = type.ports.find((port) => port.kind === PortKind.Input);
     const output = type.ports.find((port) => port.kind === PortKind.Output);
     if (!input || !output) return;
 
     const inSide = worldSideOf(input, building.rotation);
     const outSide = worldSideOf(output, building.rotation);
-    const inPoint = this.edgePoint(baseX, baseY, inSide);
-    const outPoint = this.edgePoint(baseX, baseY, outSide);
+    const inPoint = this.isoEdgePoint(center.wx, center.wy, inSide);
+    const outPoint = this.isoEdgePoint(center.wx, center.wy, outSide);
 
     this.graphics
       .moveTo(inPoint.x, inPoint.y)
-      .lineTo(center.x, center.y)
+      .lineTo(center.wx, center.wy)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_RAIL, width: 8, alpha: 0.72 });
+      .stroke({ color: BELT_RAIL, width: 6, alpha: 0.72 });
 
     this.graphics
       .moveTo(inPoint.x, inPoint.y)
-      .lineTo(center.x, center.y)
+      .lineTo(center.wx, center.wy)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_PATH, width: 3, alpha: 0.86 });
+      .stroke({ color: BELT_PATH, width: 2.5, alpha: 0.86 });
 
     this.graphics
       .moveTo(inPoint.x, inPoint.y)
-      .lineTo(center.x, center.y)
+      .lineTo(center.wx, center.wy)
       .lineTo(outPoint.x, outPoint.y)
       .stroke({ color: BELT_DATA_LINE, width: 1, alpha: 0.2 });
   }
 
-  private edgePoint(baseX: number, baseY: number, side: Direction): TileCoord {
-    const centerX = baseX + TILE_SIZE / 2;
-    const centerY = baseY + TILE_SIZE / 2;
-    const edgeOffset = TILE_SIZE / 2 - BELT_INSET;
+  // Iso edge midpoint between this tile and its logical neighbor on `side`.
+  private isoEdgePoint(centerX: number, centerY: number, side: Direction): TileCoord {
+    const dx = ISO_TILE_W / 4;
+    const dy = ISO_TILE_H / 4;
 
     switch (side) {
       case Direction.North:
-        return { x: centerX, y: centerY - edgeOffset };
+        return { x: centerX + dx, y: centerY - dy };
       case Direction.East:
-        return { x: centerX + edgeOffset, y: centerY };
+        return { x: centerX + dx, y: centerY + dy };
       case Direction.South:
-        return { x: centerX, y: centerY + edgeOffset };
+        return { x: centerX - dx, y: centerY + dy };
       case Direction.West:
-        return { x: centerX - edgeOffset, y: centerY };
+        return { x: centerX - dx, y: centerY - dy };
     }
   }
 

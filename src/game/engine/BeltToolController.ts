@@ -1,10 +1,10 @@
 import { getBuildingType } from '../data/buildingCatalog';
 import { worldSideOf, worldTileOf } from '../data/ConnectionRegistry';
-import { screenToWorld } from './CoordinateTransform';
+import { gridToWorld, screenToWorld } from './CoordinateTransform';
 import type { GameEngine } from './GameEngine';
 import { PortKind, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
 import type { BeltPlacementPreviewModel } from '../renderer/placementPreviewModel';
-import { TILE_SIZE } from '../constants';
+import { ISO_TILE_H, ISO_TILE_W } from '../constants';
 import { PIXI } from '@/design/tokens';
 
 interface PortEndpoint {
@@ -212,22 +212,25 @@ export class BeltToolController {
     const type = getBuildingType(building.typeId)!;
     const tile = worldTileOf(port, building.origin, building.rotation, type.footprint);
     const side = worldSideOf(port, building.rotation);
-    const baseX = tile.x * TILE_SIZE;
-    const baseY = tile.y * TILE_SIZE;
-    const centerX = baseX + TILE_SIZE / 2;
-    const centerY = baseY + TILE_SIZE / 2;
+    const center = gridToWorld(tile.x, tile.y);
+    // Iso edge midpoints: each cardinal port sits halfway between this tile's
+    // center and its logical neighbor's center. In iso world, neighbor offsets
+    // are: N=(W/2, -H/2), E=(W/2, H/2), S=(-W/2, H/2), W=(-W/2, -H/2). Halve
+    // those to land on the shared edge midpoint.
+    const halfW = ISO_TILE_W / 4;
+    const halfH = ISO_TILE_H / 4;
 
     switch (side) {
-      case 0:
-        return { wx: centerX, wy: baseY };
-      case 1:
-        return { wx: baseX + TILE_SIZE, wy: centerY };
-      case 2:
-        return { wx: centerX, wy: baseY + TILE_SIZE };
-      case 3:
-        return { wx: baseX, wy: centerY };
+      case 0: // North
+        return { wx: center.wx + halfW, wy: center.wy - halfH };
+      case 1: // East
+        return { wx: center.wx + halfW, wy: center.wy + halfH };
+      case 2: // South
+        return { wx: center.wx - halfW, wy: center.wy + halfH };
+      case 3: // West
+        return { wx: center.wx - halfW, wy: center.wy - halfH };
       default:
-        return { wx: centerX, wy: centerY };
+        return center;
     }
   }
 }

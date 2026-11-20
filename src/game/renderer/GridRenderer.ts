@@ -1,9 +1,20 @@
 import { Container, Sprite, type Application } from 'pixi.js';
 import type { GameEngine } from '../engine/GameEngine';
-import { TILE_SIZE, GRID_WIDTH } from '../constants';
+import { GRID_WIDTH, ISO_TILE_H, ISO_TILE_W } from '../constants';
+import { tileCenterToIso } from '../engine/IsoTransform';
 import type { TileType } from '../types';
 import { getTileColor, getTileTexture } from './TileSprite';
 
+/**
+ * Iso terrain layer. Each logical tile (tx, ty) renders as a 2:1 diamond
+ * sprite anchored at its iso center; coloring still flows through getTileColor
+ * (regolith / rock / water). Sprite pool + dirty-region updates mirror the
+ * top-down version — only positions are now iso-projected.
+ *
+ * Grid lines are intentionally absent. The diamond tile shapes themselves
+ * provide the "drawing-board" cellular reading; placement preview adds a
+ * cyan diamond on hover (see PlacementPreviewRenderer).
+ */
 export class GridRenderer {
   private readonly tileContainer: Container;
   private readonly spritePool: Sprite[] = [];
@@ -21,7 +32,6 @@ export class GridRenderer {
     const { viewport, grid } = this.engine;
     const range = this.engine.getVisibleTiles();
 
-    // Update container transform to apply camera
     this.tileContainer.x = -viewport.centerX * viewport.zoom + viewport.screenWidth / 2;
     this.tileContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.tileContainer.scale.set(viewport.zoom);
@@ -51,8 +61,9 @@ export class GridRenderer {
           if (!this.activeSprites.has(index)) {
             const sprite = this.acquireSprite();
             sprite.tint = getTileColor(grid.tileType[index] as TileType, tx, ty);
-            sprite.x = tx * TILE_SIZE;
-            sprite.y = ty * TILE_SIZE;
+            const iso = tileCenterToIso(tx, ty);
+            sprite.x = iso.wx;
+            sprite.y = iso.wy;
             this.tileContainer.addChild(sprite);
             this.activeSprites.set(index, sprite);
           }
@@ -83,8 +94,9 @@ export class GridRenderer {
 
   private acquireSprite(): Sprite {
     const sprite = this.spritePool.pop() ?? new Sprite(getTileTexture());
-    sprite.width = TILE_SIZE - 1;
-    sprite.height = TILE_SIZE - 1;
+    sprite.anchor.set(0.5, 0.5);
+    sprite.width = ISO_TILE_W;
+    sprite.height = ISO_TILE_H;
     return sprite;
   }
 
