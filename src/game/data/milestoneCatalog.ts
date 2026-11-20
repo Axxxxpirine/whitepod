@@ -113,6 +113,19 @@ export const MILESTONES: readonly Milestone[] = [
   },
 ];
 
+/** Campaign chapter names (ROADMAP.md, campaign structure). */
+const CHAPTER_TITLES: Readonly<Record<number, string>> = {
+  1: 'Atterrissage',
+  2: 'Raffinage',
+  3: 'Chimie',
+  4: 'Industrie',
+  5: 'Colonie',
+};
+
+export function getChapterTitle(chapter: number): string | undefined {
+  return CHAPTER_TITLES[chapter];
+}
+
 const milestoneMap = new Map<MilestoneId, Milestone>(MILESTONES.map((milestone) => [milestone.id, milestone]));
 
 export function getMilestone(id: MilestoneId): Milestone | undefined {
