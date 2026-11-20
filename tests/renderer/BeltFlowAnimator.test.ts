@@ -78,6 +78,45 @@ describe('BeltFlowAnimator', () => {
     animator.destroy();
   });
 
+  it('stops the running animation when power is lost over time (issue #48)', () => {
+    const engine = makeEngine();
+    engine.placeResource(2, 1, ResourceType.Regolith);
+
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 7, y: 1 })!;
+    const belt = engine.placeBelt(
+      { building: extractorId, port: 'out_east' },
+      { building: targetId, port: 'in_west' },
+    );
+    if (!belt.ok) throw new Error(`belt placement failed: ${belt.reason}`);
+
+    const animator = createAnimator(engine);
+    focusViewportOnBelts(engine);
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBeGreaterThan(0);
+
+    // Night falls with no battery: nothing but time changes.
+    engine.simulationTime = 0;
+    engine.update(0.01);
+    expect(engine.getBuildingPowerState(extractorId)).toBe('unpowered');
+
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBe(0);
+
+    // Sunrise brings the animation back without any other world change.
+    engine.simulationTime = 0.5;
+    engine.update(0.01);
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBeGreaterThan(0);
+
+    animator.destroy();
+  });
+
   it('keeps belt sprite animation running when a save restores a zero resource amount', () => {
     const engine = makeEngine();
     engine.placeResource(2, 1, ResourceType.Regolith);
