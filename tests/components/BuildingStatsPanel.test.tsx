@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { BuildingStatsPanel } from '@/components/BuildingStatsPanel';
+import { GameMode } from '@/game/data/gameMode';
+import { resourceStockKey } from '@/game/data/resourceStock';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { TileType } from '@/game/types';
 
@@ -74,5 +76,34 @@ describe('BuildingStatsPanel', () => {
     render(<BuildingStatsPanel building={building} engine={engine} worldTick={0} energyVersion={0} />);
 
     expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('greys out locked campaign recipes with the milestone that unlocks them', () => {
+    const engine = new GameEngine(800, 600, { gameMode: GameMode.Campaign });
+    engine.generateMap(42);
+    const hub = engine.storageInventories.get(engine.getHubId()!)!;
+    while (!engine.getCompletedMilestoneIds().includes('landing_refinery')) {
+      for (const { resourceType, amount } of engine.getActiveMilestone()!.requirements) {
+        hub[resourceStockKey(resourceType)!] += amount;
+      }
+      engine.completeActiveMilestone();
+    }
+    hub.regolith = 1000;
+    hub.oxygen = 1000;
+    const origin = engine.getBuildings().get(engine.getHubId()!)!.origin;
+    let buildingId: number | null = null;
+    for (let dx = -14; dx <= 14 && buildingId === null; dx++) {
+      buildingId = engine.placeBuilding('converter_basic', { x: origin.x + dx, y: origin.y - 6 });
+    }
+    const building = engine.getBuildings().get(buildingId!)!;
+
+    render(<BuildingStatsPanel building={building} engine={engine} worldTick={0} energyVersion={0} />);
+
+    expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).not.toHaveAttribute('aria-disabled');
+    const silica = screen.getByRole('button', { name: 'Recette Dioxyde de silicium, verrouillée' });
+    expect(silica).toHaveAttribute('aria-disabled', 'true');
+    expect(silica).toHaveTextContent('Débloqué par : Oxyde de fer');
+    fireEvent.click(silica);
+    expect(engine.getProcessorState(buildingId!)?.recipeId).toBeNull();
   });
 });

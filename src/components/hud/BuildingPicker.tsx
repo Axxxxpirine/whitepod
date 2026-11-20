@@ -1,10 +1,13 @@
 import { useCallback, useEffect } from 'react';
+import { Lock } from 'lucide-react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
+import type { GameEngine } from '@/game/engine/GameEngine';
 import { toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentation';
+import { lockedHint } from '@/game/ui/unlockPresentation';
 import { getToolbarIcon } from '@/game/ui/toolbarIcons';
 import type { SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
-import { HoverTooltip } from '@/components/ui';
+import { HoverTooltip, Icon } from '@/components/ui';
 
 function isEntryActive(entry: ToolbarEntry, tool: SelectedTool): boolean {
   if (entry.kind === 'building') {
@@ -24,6 +27,11 @@ function entryLabel(entry: ToolbarEntry): string {
   return entry.label ?? getBuildingType(entry.typeId)?.name ?? entry.typeId;
 }
 
+/** Lock hint of a building entry; tools (belt, energy link) are always available. */
+function entryLockedHint(entry: ToolbarEntry, engine: GameEngine | null): string | null {
+  return entry.kind === 'building' ? lockedHint(engine, 'buildings', entry.typeId) : null;
+}
+
 function hexColor(n: number): string {
   return `#${n.toString(16).padStart(6, '0')}`;
 }
@@ -40,9 +48,13 @@ export function BuildingPicker() {
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
   const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
   const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
+  const engine = useGameStore((s) => s.engine);
+  // Re-render on world changes: completing a milestone unlocks entries.
+  useGameStore((s) => s.worldVersion);
 
   const selectEntry = useCallback(
     (entry: ToolbarEntry) => {
+      if (entryLockedHint(entry, useGameStore.getState().engine) !== null) return;
       setSelectedBuilding(null);
       setSelectedBuildingAnchor(null);
       setPendingEnergyLinkSource(null);
@@ -83,7 +95,9 @@ export function BuildingPicker() {
         const active = isEntryActive(entry, selectedTool);
         const key = entry.kind === 'building' ? `building:${entry.typeId}` : `tool:${entry.tool}`;
         const label = entryLabel(entry);
-        const tooltip = `${label} (${entry.shortcut.toUpperCase()})`;
+        const lockHint = entryLockedHint(entry, engine);
+        const locked = lockHint !== null;
+        const tooltip = `${label} (${entry.shortcut.toUpperCase()})${locked ? ` · ${lockHint}` : ''}`;
         const tooltipId = `${key.replace(/[^a-z0-9_-]/gi, '-')}-tooltip`;
         const icon = getToolbarIcon(entry);
         const IconComponent = icon.kind === 'lucide' ? icon.Icon : null;
@@ -94,18 +108,23 @@ export function BuildingPicker() {
               type="button"
               onClick={() => selectEntry(entry)}
               aria-pressed={active}
-              aria-label={label}
+              aria-disabled={locked || undefined}
+              aria-label={locked ? `${label}, verrouillé` : label}
               aria-describedby={tooltipId}
               className={[
                 'relative flex h-14 w-14 cursor-pointer flex-col items-center justify-center',
                 'overflow-hidden rounded-md border border-border transition-all',
                 'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent',
-                active ? 'bg-surface-2' : 'bg-surface hover:bg-surface-2',
+                locked
+                  ? 'cursor-not-allowed bg-surface'
+                  : active
+                    ? 'bg-surface-2'
+                    : 'bg-surface hover:bg-surface-2',
               ].join(' ')}
               style={active ? ringStyle(entry.highlightColor) : undefined}
             >
               {/* Sprite or lucide icon */}
-              <div className="flex h-8 w-8 items-center justify-center">
+              <div className={`flex h-8 w-8 items-center justify-center ${locked ? 'opacity-30 grayscale' : ''}`}>
                 {icon.kind === 'sprite' ? (
                   <img
                     src={icon.src}
@@ -123,6 +142,10 @@ export function BuildingPicker() {
                 )}
               </div>
 
+              {locked && (
+                <Icon icon={Lock} size={11} className="absolute left-1 top-1 text-ink-muted" aria-hidden="true" />
+              )}
+
               {/* Shortcut badge — top-right corner */}
               <span className="absolute right-1 top-0.5 tabular-nums text-[11px] text-ink-muted">
                 {entry.shortcut.toUpperCase()}
@@ -130,7 +153,7 @@ export function BuildingPicker() {
 
               {/* Family color strip — bottom edge, always visible */}
               <div
-                className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : 'opacity-35'}`}
+                className={`absolute inset-x-0 bottom-0 h-0.5 transition-opacity ${entry.activeClass} ${active ? 'opacity-100' : locked ? 'opacity-0' : 'opacity-35'}`}
               />
             </button>
           </HoverTooltip>
