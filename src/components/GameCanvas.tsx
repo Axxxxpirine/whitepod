@@ -27,6 +27,7 @@ import {
   saveWorldSession,
   writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
+import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
 import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures, loadTerrainDecalTextures } from '@/game/renderer/TileSprite';
@@ -35,11 +36,14 @@ import { getBuildingType } from '@/game/data/buildingCatalog';
 import { finalizePendingScenarioInstall } from '@/game/scenarios/applyScenario';
 import { createDevScenarioApi, hasPendingScenarioInstall } from '@/game/scenarios/devScenarios';
 import { worldToScreen, screenToWorld } from '@/game/engine/CoordinateTransform';
+import { createBotSession } from '@/game/bot/botSession';
 import {
   handleBuildingPlaced,
   handleEnergyLinkClick,
   selectedToolsEqual,
 } from './energyLinkHandlers';
+import { MinimapRenderer } from '@/game/renderer/MinimapRenderer';
+import { KeyboardHandler } from '@/game/input/KeyboardHandler';
 
 const WORLD_SAVE_DELAY_MS = 150;
 const VIEW_SAVE_DELAY_MS = 100;
@@ -91,6 +95,7 @@ export function GameCanvas() {
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const selectedToolKind = useGameStore((s) => s.selectedTool.kind);
   const setSimulationTime = useGameStore((s) => s.setSimulationTime);
+  const setSeedInput = useGameStore((s) => s.setSeedInput);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -112,6 +117,8 @@ export function GameCanvas() {
     let energyLinkRenderer: EnergyLinkRenderer | null = null;
     let fogOfWarRenderer: FogOfWarRenderer | null = null;
     let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
+    let minimapRenderer: MinimapRenderer | null = null;
+    let keyboardHandler: KeyboardHandler | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -127,9 +134,11 @@ export function GameCanvas() {
     let resizeObserver: ResizeObserver | null = null;
     let unsubscribeEngine: (() => void) | null = null;
     let unsubscribeTool: (() => void) | null = null;
+    let unsubscribeActions: (() => void) | null = null;
     let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let currentEngine: GameEngine | null = null;
+    let botSession: ReturnType<typeof createBotSession> | null = null;
 
     const init = async () => {
       app = new Application();
@@ -165,9 +174,13 @@ export function GameCanvas() {
       const sessionId = loadedSession?.sessionId ?? createSessionId();
       const selectedTool = loadedSession?.selectedTool ?? { kind: 'select' as const };
       const sidecar = loadedSession?.idleSidecar ?? null;
+      const currentState = useGameStore.getState();
+      const initialBotProfileId = loadedSession?.selectedBotProfileId ?? currentState.selectedBotProfileId;
+      const initialSeedInput = loadedSession?.seedInput ?? currentState.seedInput;
+      const mapSeed = Number.parseInt(initialSeedInput.trim(), 10);
 
       if (!loadedSession) {
-        engine.generateMap(DEFAULT_MAP_SEED);
+        engine.generateMap(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED);
       }
 
       const nowAtMount = Date.now();
@@ -190,6 +203,7 @@ export function GameCanvas() {
       state.setIdleSummary(initialIdleSummary.appliedSeconds > 0 ? initialIdleSummary : null);
       setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
+      setSeedInput(String(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED));
       setEngine(engine);
       finalizePendingScenarioInstall();
 
@@ -197,9 +211,12 @@ export function GameCanvas() {
         saveWorldSession(engine, sessionId);
       }, WORLD_SAVE_DELAY_MS);
       viewSaver = createDebouncedTask(() => {
+        const viewState = useGameStore.getState();
         saveViewSession({
           engine,
-          selectedTool: useGameStore.getState().selectedTool,
+          selectedTool: viewState.selectedTool,
+          selectedBotProfileId: viewState.selectedBotProfileId,
+          seedInput: viewState.seedInput,
           sessionId,
         });
       }, VIEW_SAVE_DELAY_MS);
@@ -217,6 +234,16 @@ export function GameCanvas() {
         writeIdleSidecar(sessionId, pausedAtWallClockMs);
       }
 
+      // Initialize action logger for LLM training data collection
+      const actionLogger = new ActionLogger(sessionId);
+      actionLogger.bindAutoSave();
+      useGameStore.getState().setActionLogger(actionLogger);
+      
+      // Register action logger with engine to capture all actions
+      unsubscribeActions = engine.setActionListener((action) => {
+        actionLogger.log(action.kind as ActionKind, action.payload);
+      });
+
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
           worldSaver?.schedule();
@@ -231,6 +258,8 @@ export function GameCanvas() {
         devEngine.scenarios = createDevScenarioApi(engine);
         (window as unknown as { engine: DevEngine }).engine = devEngine;
       }
+
+      botSession = createBotSession({ engine, initialProfileId: initialBotProfileId });
 
       const MIN_IDLE_MS = 1000;
 
@@ -278,20 +307,37 @@ export function GameCanvas() {
         return { selectedTool, hoverTile };
       });
       dayNightOverlayRenderer = new DayNightOverlayRenderer(app, engine);
+      // Screen-space haze first so the minimap HUD stays above it.
       ambientHazeRenderer = new AmbientHazeRenderer(app);
+      minimapRenderer = new MinimapRenderer(app, engine, () => {
+        const { selectedTool, hoverTile } = useGameStore.getState();
+        return { selectedTool, hoverTile };
+      });
 
       const currentInputHandler = new InputHandler(
         engine,
         () => useGameStore.getState().selectedTool,
         () => useGameStore.getState().currentBuildingRotation,
       );
+      
+      keyboardHandler = new KeyboardHandler(engine);
+      keyboardHandler.initialize();
+
       const currentBeltToolController = new BeltToolController(
         engine,
         () => useGameStore.getState().selectedTool,
         useGameStore.getState().setBeltPreview,
       );
       unsubscribeTool = useGameStore.subscribe((nextState, previousState) => {
-        if (!selectedToolsEqual(nextState.selectedTool, previousState.selectedTool)) {
+        const selectedToolChanged = !selectedToolsEqual(nextState.selectedTool, previousState.selectedTool);
+        const profileChanged = nextState.selectedBotProfileId !== previousState.selectedBotProfileId;
+        const seedChanged = nextState.seedInput !== previousState.seedInput;
+
+        if (profileChanged || seedChanged) {
+          viewSaver?.schedule();
+        }
+
+        if (selectedToolChanged) {
           viewSaver?.schedule();
           if (previousState.selectedTool.kind === 'belt' && nextState.selectedTool.kind !== 'belt') {
             currentBeltToolController.clearPendingPlacement();
@@ -343,6 +389,8 @@ export function GameCanvas() {
 
       const canvas = app.canvas;
       handlePointerDown = (e) => {
+        // The minimap handles its own clicks; don't build or select underneath it.
+        if (minimapRenderer?.containsScreenPoint(e.offsetX, e.offsetY)) return;
         currentInputHandler.onPointerDown(e.offsetX, e.offsetY, e.button);
         currentBeltToolController.onPointerDown(e.offsetX, e.offsetY, e.button);
       };
@@ -367,7 +415,7 @@ export function GameCanvas() {
       };
       handleWheel = (e) => {
         e.preventDefault();
-        currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode);
+        currentInputHandler.onWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY, e.ctrlKey, e.deltaMode, e.shiftKey);
       };
       handleKeyDown = (e) => {
         const target = e.target;
@@ -537,6 +585,7 @@ export function GameCanvas() {
         fogOfWarRenderer!.render();
         dayNightOverlayRenderer!.render();
         ambientHazeRenderer!.render();
+        minimapRenderer!.render();
         engine.grid.clearDirty();
       });
     };
@@ -551,10 +600,12 @@ export function GameCanvas() {
           worldSaver?.flush();
           viewSaver?.flush();
         }
+        botSession?.destroy();
         worldSaver?.cancel();
         viewSaver?.cancel();
         unsubscribeTool?.();
         unsubscribeEngine?.();
+        unsubscribeActions?.();
         resizeObserver?.disconnect();
         if (app?.canvas && handlePointerDown) app.canvas.removeEventListener('pointerdown', handlePointerDown);
         if (app?.canvas && handlePointerMove) app.canvas.removeEventListener('pointermove', handlePointerMove);
@@ -574,6 +625,8 @@ export function GameCanvas() {
         energyLinkRenderer?.destroy();
         fogOfWarRenderer?.destroy();
         dayNightOverlayRenderer?.destroy();
+        minimapRenderer?.destroy();
+        keyboardHandler?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
@@ -583,7 +636,13 @@ export function GameCanvas() {
         app?.destroy(true);
       }
     };
-  }, [sessionEpoch, setEngine, setSelectedTool, setSimulationTime]);
+  }, [
+    sessionEpoch,
+    setEngine,
+    setSelectedTool,
+    setSimulationTime,
+    setSeedInput,
+  ]);
 
   return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
 }

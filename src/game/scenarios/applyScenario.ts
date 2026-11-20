@@ -9,14 +9,17 @@ import type { PreparedScenarioResult } from './types';
 
 function applyPreparedScenarioToLiveSession(result: PreparedScenarioResult, logMessage: string): void {
   markPendingScenarioInstall();
+  const state = useGameStore.getState();
   installPersistedSession({
     engine: result.engine,
     selectedTool: result.selectedTool,
+    selectedBotProfileId: state.selectedBotProfileId,
+    seedInput: state.seedInput,
     sessionId: createSessionId(),
     viewport: result.viewport,
   });
 
-  useGameStore.getState().activateScenarioSession({
+  state.activateScenarioSession({
     engine: result.engine,
     selectedTool: result.selectedTool,
     simulationTime: result.engine.simulationTime,

@@ -7,8 +7,12 @@ import {
   loadPersistedSettings,
   savePersistedSettings,
 } from '@/game/persistence/settingsStorage';
+import type { ActionLogger } from '@/game/persistence/actionLogger';
 import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
 import { Direction, type BuildingId, type SelectedTool, type TileCoord } from '@/game/types';
+import { DEFAULT_MAP_SEED } from '@/game/constants';
+import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
+import type { BotProfileId } from '@/game/bot/botTypes';
 
 interface ScreenPoint {
   x: number;
@@ -34,6 +38,15 @@ interface GameState {
   pendingEnergyLinkSource: BuildingId | null;
   linkSolarOnPlacement: boolean;
   idleSummary: IdleCatchupResult | null;
+  selectedBotProfileId: BotProfileId;
+  seedInput: string;
+  actionLogger: ActionLogger | null;
+  bot: {
+    active: boolean;
+    phase: string;
+    target: string | null;
+  };
+  botControls: { start: () => void; stop: () => void } | null;
   setEngine: (engine: GameEngine | null) => void;
   initEngine: (engine: GameEngine) => void;
   setSimulationTime: (value: number) => void;
@@ -54,6 +67,11 @@ interface GameState {
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
   setIdleSummary: (summary: IdleCatchupResult | null) => void;
+  setSelectedBotProfileId: (profileId: BotProfileId) => void;
+  setSeedInput: (value: string) => void;
+  setActionLogger: (logger: ActionLogger | null) => void;
+  setBotControls: (controls: GameState['botControls']) => void;
+  setBot: (bot: Partial<GameState['bot']>) => void;
   activateScenarioSession: (args: {
     engine: GameEngine;
     selectedTool: SelectedTool;
@@ -83,6 +101,15 @@ export const useGameStore = create<GameState>((set) => ({
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
   idleSummary: null,
+  selectedBotProfileId: DEFAULT_BOT_PROFILE_ID,
+  seedInput: String(DEFAULT_MAP_SEED),
+  actionLogger: null,
+  bot: {
+    active: false,
+    phase: 'idle',
+    target: null,
+  },
+  botControls: null,
   setEngine: (engine) => set({ engine }),
   initEngine: (engine) => set({ engine }),
   setSimulationTime: (value) => set({ simulationTime: value }),
@@ -132,6 +159,12 @@ export const useGameStore = create<GameState>((set) => ({
       beltPreview: null,
       currentBuildingRotation: Direction.North,
       idleSummary: null,
+      botControls: null,
+      bot: {
+        active: false,
+        phase: 'idle',
+        target: null,
+      },
       sessionEpoch: state.sessionEpoch + 1,
     }));
   },
@@ -139,6 +172,14 @@ export const useGameStore = create<GameState>((set) => ({
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
   setLinkSolarOnPlacement: (value) => set({ linkSolarOnPlacement: value }),
   setIdleSummary: (summary) => set({ idleSummary: summary }),
+  setSelectedBotProfileId: (profileId) => set({ selectedBotProfileId: profileId }),
+  setSeedInput: (value) => set({ seedInput: value }),
+  setBotControls: (controls) => set({ botControls: controls }),
+  setBot: (bot) =>
+    set((state) => ({
+      bot: { ...state.bot, ...bot },
+    })),
+  setActionLogger: (logger) => set({ actionLogger: logger }),
   activateScenarioSession: (args) =>
     set((state) => ({
       engine: args.engine,
@@ -154,5 +195,11 @@ export const useGameStore = create<GameState>((set) => ({
       sessionEpoch: state.sessionEpoch + 1,
       pendingEnergyLinkSource: null,
       idleSummary: null,
+      botControls: null,
+      bot: {
+        active: false,
+        phase: 'idle',
+        target: null,
+      },
     })),
 }));

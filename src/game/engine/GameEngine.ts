@@ -171,6 +171,7 @@ export class GameEngine {
   readonly processorReservations = new Map<BuildingId, readonly ProcessorReservation[]>();
   private readonly listeners = new Set<(kind: GameEngineChangeKind) => void>();
   private readonly sfxListeners = new Set<GameSfxListener>();
+  private readonly actionListeners = new Set<(action: { kind: string; payload: Record<string, unknown> }) => void>();
   private notificationSuspendDepth = 0;
   private hasPendingWorldNotification = false;
   private hasPendingViewportNotification = false;
@@ -194,6 +195,17 @@ export class GameEngine {
 
   setSimulationTime(value: number): void {
     this.simulationTime = ((value % 1) + 1) % 1;
+  }
+
+  setActionListener(listener: (action: { kind: string; payload: Record<string, unknown> }) => void): () => void {
+    this.actionListeners.add(listener);
+    return () => this.actionListeners.delete(listener);
+  }
+
+  private emitAction(kind: string, payload: Record<string, unknown>): void {
+    for (const listener of this.actionListeners) {
+      listener({ kind, payload });
+    }
   }
 
   update(dt: number): void {
@@ -306,6 +318,7 @@ export class GameEngine {
     state.cycleProgress = 0;
     this.processorReservations.delete(buildingId);
     this.notify('world');
+    this.emitAction('set_processor_recipe', { buildingId, recipeId });
     return true;
   }
 
@@ -488,6 +501,7 @@ export class GameEngine {
         this.grid.revealCircle(cx, cy, WATCHTOWER_REVEAL_RADIUS);
       }
       this.notify('world');
+      this.emitAction('place_building', { typeId, origin, rotation });
       if (emitSfx) {
         this.publishSfx({ type: 'building_place_success', buildingType: typeId });
       }
@@ -502,7 +516,12 @@ export class GameEngine {
   }
 
   removeBuilding(id: BuildingId, options: RemoveBuildingOptions = {}): boolean {
-    return this.removeBuildingInternal(id, true, options.emitSfx ?? true);
+    const building = this.buildings.get(id);
+    const result = this.removeBuildingInternal(id, true, options.emitSfx ?? true);
+    if (result && building) {
+      this.emitAction('remove_building', { typeId: building.typeId });
+    }
+    return result;
   }
 
   private removeBuildingInternal(id: BuildingId, cascadeBelts: boolean, emitSfx = false): boolean {
@@ -559,6 +578,7 @@ export class GameEngine {
     if (connected) {
       this.syncPoweredExtractors();
       this.notify('world');
+      this.emitAction('connect_buildings', { a, b });
       this.publishSfx({ type: 'energy_link_connect' });
     } else {
       this.publishSfx({ type: 'energy_link_fail', action: 'connect' });
@@ -575,6 +595,7 @@ export class GameEngine {
     if (disconnected) {
       this.syncPoweredExtractors(false);
       this.notify('world');
+      this.emitAction('disconnect_buildings', { a, b });
       this.publishSfx({ type: 'energy_link_disconnect' });
     } else {
       this.publishSfx({ type: 'energy_link_fail', action: 'disconnect' });
@@ -864,11 +885,19 @@ export class GameEngine {
     }
 
     this.publishSfx({ type: 'belt_place_success', segmentCount: placedSegmentIds.length });
-    return {
+    const result: PlaceBeltResult = {
       ok: true,
       segmentIds: placedSegmentIds,
       plan: planned.plan,
     };
+    
+    this.emitAction('place_belt', {
+      from: { building: from.building, port: from.port },
+      to: { building: to.building, port: to.port },
+      segmentCount: placedSegmentIds.length,
+    });
+    
+    return result;
   }
 
   removeBelt(segmentId: BuildingId): boolean {
@@ -991,12 +1020,14 @@ export class GameEngine {
     const tile = this.grid.getType(x, y);
     if (tile === TileTypeConst.Water || tile === TileTypeConst.Empty) return false;
     this.grid.setResource(x, y, resource);
+    this.emitAction('place_resource', { x, y, resource });
     return true;
   }
 
   removeResource(x: number, y: number): boolean {
     if (!isInBounds(x, y)) return false;
     this.grid.setResource(x, y, ResourceType.None);
+    this.emitAction('remove_resource', { x, y });
     return true;
   }
 
@@ -1013,6 +1044,7 @@ export class GameEngine {
     );
     this.mapSeed = seed;
     this.notify('world');
+    this.emitAction('generate_map', { seed });
   }
 
   getVisibleTiles(): VisibleTileRange {

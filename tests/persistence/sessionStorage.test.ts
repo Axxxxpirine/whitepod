@@ -42,6 +42,8 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
+      selectedBotProfileId: 'master',
+      seedInput: '99',
       sessionId: 'session-a',
     });
 
@@ -64,6 +66,8 @@ describe('persistent storage', () => {
     saveViewSession({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'master',
+      seedInput: '42',
       sessionId: 'session-a',
     });
 
@@ -78,10 +82,12 @@ describe('persistent storage', () => {
     window.localStorage.setItem(
       VIEW_STORAGE_KEY,
       JSON.stringify({
-        version: 2,
+        version: 3,
         sessionId: 'session-b',
         viewport: { centerX: 10, centerY: 20, zoom: 2 },
         selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
+        selectedBotProfileId: 'master',
+        seedInput: '42',
       }),
     );
 
@@ -125,6 +131,8 @@ describe('persistent storage', () => {
     const payloads = buildPersistedSessionPayloads({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'master',
+      seedInput: '77',
       sessionId: 'session-shared',
     });
 
@@ -135,12 +143,16 @@ describe('persistent storage', () => {
     installPersistedSession({
       engine,
       selectedTool: { kind: 'belt' },
+      selectedBotProfileId: 'master',
+      seedInput: '77',
       sessionId: 'session-shared',
     });
 
     const loaded = loadPersistedSession(640, 480);
     expect(loaded?.sessionId).toBe('session-shared');
     expect(loaded?.selectedTool).toEqual({ kind: 'belt' });
+    expect(loaded?.selectedBotProfileId).toBe('master');
+    expect(loaded?.seedInput).toBe('77');
     expect(loaded?.engine.getViewportSnapshot()).toEqual(engine.getViewportSnapshot());
   });
 

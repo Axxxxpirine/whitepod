@@ -1,18 +1,20 @@
 import { GRID_SIZE } from '@/game/constants';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
+import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
+import type { BotProfileId } from '@/game/bot/botTypes';
 import type { ViewportSnapshot } from '@/game/engine/Viewport';
 import { Direction, type SelectedTool } from '@/game/types';
 import { getLocalStorage } from './browserStorage';
 
 export const WORLD_STORAGE_KEY = 'whitepod:session:world:v3';
-export const VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
+export const VIEW_STORAGE_KEY = 'whitepod:session:view:v3';
 export const LEGACY_WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
 export const LEGACY_VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
 export const IDLE_SIDECAR_KEY = 'whitepod:idle-sidecar:v1';
 
 const WORLD_STORAGE_VERSION = 3;
 const WORLD_IDLE_VERSION = 1;
-const VIEW_STORAGE_VERSION = 2;
+const VIEW_STORAGE_VERSION = 3;
 const IDLE_SIDECAR_VERSION = 1;
 const GRID_MIN_BYTE_LENGTH = GRID_SIZE * 3;
 
@@ -34,7 +36,20 @@ export interface PersistedWorldStateV3 {
   readonly processorReservations?: SerializedGameWorld['processorReservations'];
 }
 
-export interface PersistedViewState {
+export interface PersistedViewStateV3 {
+  readonly version: number;
+  readonly sessionId: string;
+  readonly viewport: {
+    readonly centerX: number;
+    readonly centerY: number;
+    readonly zoom: number;
+  };
+  readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
+}
+
+export interface PersistedViewStateV2 {
   readonly version: number;
   readonly sessionId: string;
   readonly viewport: {
@@ -54,13 +69,15 @@ export interface IdleSidecar {
 interface LoadedSession {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
   readonly sessionId: string;
   readonly idleSidecar: IdleSidecar | null;
 }
 
 export interface PersistedSessionPayloads {
   readonly world: PersistedWorldStateV3;
-  readonly view: PersistedViewState;
+  readonly view: PersistedViewStateV3;
 }
 
 function getWorldStorage(): Storage | null {
@@ -173,8 +190,31 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
   );
 }
 
-function isPersistedViewState(value: unknown): value is PersistedViewState {
+function isPersistedViewStateV3(value: unknown): value is PersistedViewStateV3 {
   if (!isRecord(value) || value.version !== VIEW_STORAGE_VERSION) return false;
+  if (typeof value.sessionId !== 'string' || value.sessionId.length === 0) return false;
+  if (!isRecord(value.viewport)) return false;
+  return (
+    isFiniteNumber(value.viewport.centerX) &&
+    isFiniteNumber(value.viewport.centerY) &&
+    isFiniteNumber(value.viewport.zoom) &&
+    isSelectedTool(value.selectedTool) &&
+      typeof value.selectedBotProfileId === 'string' &&
+      (value.selectedBotProfileId === 'master' ||
+        value.selectedBotProfileId === 'connector' ||
+        value.selectedBotProfileId === 'greedy' ||
+        value.selectedBotProfileId === 'fractal' ||
+        value.selectedBotProfileId === 'explorer' ||
+        value.selectedBotProfileId === 'balanced' ||
+        value.selectedBotProfileId === 'logistics' ||
+        value.selectedBotProfileId === 'speedrun' ||
+        value.selectedBotProfileId === 'circuit') &&
+    typeof value.seedInput === 'string'
+  );
+}
+
+function isPersistedViewStateV2(value: unknown): value is PersistedViewStateV2 {
+  if (!isRecord(value) || value.version !== 2) return false;
   if (typeof value.sessionId !== 'string' || value.sessionId.length === 0) return false;
   if (!isRecord(value.viewport)) return false;
   return (
@@ -198,9 +238,7 @@ function isIdleSidecar(value: unknown): value is IdleSidecar {
 function removeViewSession(): void {
   const storage = getViewStorage();
   storage?.removeItem(VIEW_STORAGE_KEY);
-  if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
-    storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
-  }
+  storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
 }
 
 function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
@@ -220,20 +258,18 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
   };
 }
 
-function readViewState(): PersistedViewState | null {
+function readViewState(): PersistedViewStateV3 | PersistedViewStateV2 | null {
   const storage = getViewStorage();
   if (!storage) return null;
 
-  const keys = VIEW_STORAGE_KEY === LEGACY_VIEW_STORAGE_KEY
-    ? [VIEW_STORAGE_KEY]
-    : [VIEW_STORAGE_KEY, LEGACY_VIEW_STORAGE_KEY];
+  const keys = [VIEW_STORAGE_KEY, LEGACY_VIEW_STORAGE_KEY];
 
   for (const key of keys) {
     const raw = storage.getItem(key);
     if (!raw) continue;
     try {
       const parsed: unknown = JSON.parse(raw);
-      if (isPersistedViewState(parsed)) {
+      if (isPersistedViewStateV3(parsed) || isPersistedViewStateV2(parsed)) {
         return parsed;
       }
       storage.removeItem(key);
@@ -256,7 +292,7 @@ function writeWorldState(payload: PersistedWorldStateV3): void {
   }
 }
 
-function writeViewState(payload: PersistedViewState): void {
+function writeViewState(payload: PersistedViewStateV3): void {
   const storage = getViewStorage();
   if (!storage) return;
 
@@ -335,9 +371,7 @@ export function clearPersistedSession(): void {
   storage?.removeItem(WORLD_STORAGE_KEY);
   storage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
   storage?.removeItem(VIEW_STORAGE_KEY);
-  if (LEGACY_VIEW_STORAGE_KEY !== VIEW_STORAGE_KEY) {
-    storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
-  }
+  storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
 
   clearIdleSidecar();
 }
@@ -370,20 +404,26 @@ export function saveWorldSession(engine: GameEngine, sessionId: string): void {
 export function buildPersistedViewState(args: {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
   readonly sessionId: string;
   readonly viewport?: ViewportSnapshot;
-}): PersistedViewState {
+}): PersistedViewStateV3 {
   return {
     version: VIEW_STORAGE_VERSION,
     sessionId: args.sessionId,
     viewport: args.viewport ?? args.engine.getViewportSnapshot(),
     selectedTool: args.selectedTool,
+    selectedBotProfileId: args.selectedBotProfileId,
+    seedInput: args.seedInput,
   };
 }
 
 export function saveViewSession(args: {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
   readonly sessionId: string;
   readonly viewport?: ViewportSnapshot;
 }): void {
@@ -393,6 +433,8 @@ export function saveViewSession(args: {
 export function buildPersistedSessionPayloads(args: {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
   readonly sessionId: string;
   readonly viewport?: ViewportSnapshot;
 }): PersistedSessionPayloads {
@@ -405,6 +447,8 @@ export function buildPersistedSessionPayloads(args: {
 export function installPersistedSession(args: {
   readonly engine: GameEngine;
   readonly selectedTool: SelectedTool;
+  readonly selectedBotProfileId: BotProfileId;
+  readonly seedInput: string;
   readonly sessionId: string;
   readonly viewport?: ViewportSnapshot;
 }): void {
@@ -475,9 +519,26 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
         ? viewState.selectedTool
         : { kind: 'select' as const };
 
+    const selectedBotProfileId =
+      viewState && viewState.sessionId === worldState.sessionId && 'selectedBotProfileId' in viewState
+        ? viewState.selectedBotProfileId
+        : DEFAULT_BOT_PROFILE_ID;
+
+    const seedInput =
+      viewState && viewState.sessionId === worldState.sessionId && 'seedInput' in viewState
+        ? viewState.seedInput
+        : String(worldState.mapSeed);
+
+    if (worldState.version === 2) {
+      saveWorldSession(engine, worldState.sessionId);
+      worldStorage.removeItem(LEGACY_WORLD_STORAGE_KEY);
+    }
+
     return {
       engine,
       selectedTool,
+      selectedBotProfileId,
+      seedInput,
       sessionId: worldState.sessionId,
       idleSidecar,
     };

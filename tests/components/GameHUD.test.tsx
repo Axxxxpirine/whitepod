@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
 import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
@@ -52,6 +52,14 @@ describe('GameHUD', () => {
       pendingEnergyLinkSource: null,
       linkSolarOnPlacement: true,
       idleSummary: null,
+      selectedBotProfileId: 'master',
+      seedInput: '42',
+      botControls: null,
+      bot: {
+        active: false,
+        phase: 'idle',
+        target: null,
+      },
     });
     const local = window.localStorage as unknown;
     if (
@@ -329,8 +337,41 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
     expect(useGameStore.getState().beltPreview).toBeNull();
     expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
+    expect(useGameStore.getState().selectedBotProfileId).toBe('master');
+    expect(useGameStore.getState().seedInput).toBe('42');
     expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+  });
+
+  it('starts and stops the selected bot manually', () => {
+    const start = vi.fn();
+    const stop = vi.fn();
+    useGameStore.setState({ botControls: { start, stop } });
+
+    render(<GameHUD />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(start).toHaveBeenCalled();
+
+    act(() => {
+      useGameStore.setState({ bot: { active: true, phase: 'mining', target: 'scan' } });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(stop).toHaveBeenCalled();
+  });
+
+  it('updates the bot profile and seed before reset', () => {
+    useGameStore.setState({ selectedBotProfileId: 'master', seedInput: '42' });
+
+    render(<GameHUD />);
+
+    fireEvent.change(screen.getByLabelText('Bot profile'), { target: { value: 'connector' } });
+    fireEvent.change(screen.getByLabelText('Seed input'), { target: { value: '77' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
+
+    expect(useGameStore.getState().selectedBotProfileId).toBe('connector');
+    expect(useGameStore.getState().seedInput).toBe('77');
+    expect(useGameStore.getState().sessionEpoch).toBe(1);
   });
 
   it('updates SFX volume from the settings popover', () => {

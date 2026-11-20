@@ -5,6 +5,7 @@ import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScena
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
+import { BotControlsPanel } from './hud/bot/BotControlsPanel';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { SelectedResourceTooltip } from './hud/SelectedResourceTooltip';
 import { BuildingPicker } from './hud/BuildingPicker';
@@ -413,6 +414,9 @@ export function GameHUD() {
           <div className="flex min-w-0 items-end justify-self-start">
             <div className="pointer-events-auto flex flex-col items-start gap-2">
               <ToolModeIndicator />
+              <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+                Zoom: Shift+Wheel | Pan: Wheel/WASD/Arrows
+              </div>
               {hoverTile && (
                 <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
                   {hoverTile.x}, {hoverTile.y}
@@ -428,7 +432,9 @@ export function GameHUD() {
             </Panel>
           </div>
 
-          <div className="flex min-w-0 items-end justify-self-end">
+          <div className="flex min-w-0 flex-col items-end gap-2 justify-self-end">
+            <BotControlsPanel />
+
             <Panel className="pointer-events-auto flex items-center gap-2 px-2 py-2 text-ink">
               {energyLinkSelected && (
                 <div className="flex items-center gap-2 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-ink-muted">
@@ -443,7 +449,7 @@ export function GameHUD() {
                   aria-expanded={settingsOpen}
                   aria-label="Paramètres"
                   title="Paramètres"
-                  className={`cursor-pointer rounded-md px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                  className={`cursor-pointer rounded-sm px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
                 >
                   <Icon icon={Settings} className="h-4 w-4" />
                 </button>
@@ -521,6 +527,30 @@ export function GameHUD() {
                     </button>
 
                     <div className="my-1.5 border-t border-border" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const logger = useGameStore.getState().actionLogger;
+                        if (!logger) return;
+
+                        const blob = new Blob([logger.exportToJson()], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `whitepod-actions-${Date.now()}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        engine?.emitSfx({ type: 'ui_confirm', context: 'export_actions' });
+                      }}
+                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                    >
+                      <span>Export actions</span>
+                      <span className="tabular-nums text-[11px] text-ink-muted">
+                        {useGameStore.getState().actionLogger?.getActions().length ?? 0}
+                      </span>
+                    </button>
 
                     <button
                       type="button"
