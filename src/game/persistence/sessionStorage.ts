@@ -36,6 +36,7 @@ export interface PersistedWorldStateV3 {
   readonly storageInventories?: SerializedGameWorld['storageInventories'];
   readonly producerOutputBuffers?: SerializedGameWorld['producerOutputBuffers'];
   readonly processorReservations?: SerializedGameWorld['processorReservations'];
+  readonly completedMilestones?: SerializedGameWorld['completedMilestones'];
 }
 
 export interface PersistedViewStateV3 {
@@ -171,6 +172,10 @@ function areBatteryChargesValid(value: unknown): boolean {
   );
 }
 
+function areCompletedMilestonesValid(value: unknown): boolean {
+  return value === undefined || (Array.isArray(value) && value.every((id) => typeof id === 'string'));
+}
+
 function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3 {
   if (!isRecord(value)) return false;
   const simulationTimeValid = value.simulationTime === undefined || isFiniteNumber(value.simulationTime);
@@ -183,6 +188,7 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     value.sessionId.length > 0 &&
     isFiniteNumber(value.mapSeed) &&
     (value.gameMode === undefined || isGameMode(value.gameMode)) &&
+    areCompletedMilestonesValid(value.completedMilestones) &&
     typeof value.gridBase64 === 'string' &&
     value.gridBase64.length > 0 &&
     isSerializedBuildingRegistry(value.buildings) &&
@@ -259,6 +265,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
     storageInventories: value.storageInventories,
     producerOutputBuffers: value.producerOutputBuffers,
     processorReservations: value.processorReservations,
+    completedMilestones: value.completedMilestones,
   };
 }
 
@@ -399,6 +406,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     storageInventories: snapshot.storageInventories,
     producerOutputBuffers: snapshot.producerOutputBuffers,
     processorReservations: snapshot.processorReservations,
+    completedMilestones: snapshot.completedMilestones,
   };
 }
 

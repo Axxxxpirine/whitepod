@@ -23,6 +23,13 @@ import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
 import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
 import { ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
+import {
+  computeMilestoneProgress,
+  consumeMilestoneRequirements,
+  findActiveMilestone,
+  type MilestoneProgress,
+} from '../campaign/progression';
+import { MILESTONES, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
 import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
 import { canAfford, mergeCosts, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
@@ -137,7 +144,11 @@ export interface SerializedGameWorld {
   readonly storageInventories?: readonly { readonly id: BuildingId; readonly inventory: ResourceInventory }[];
   readonly producerOutputBuffers?: readonly { readonly id: BuildingId; readonly buffer: ProducerOutputBuffer }[];
   readonly processorReservations?: readonly { readonly id: BuildingId; readonly reservations: readonly ProcessorReservation[] }[];
+  /** Completed campaign milestones; absent in saves written before milestones existed. */
+  readonly completedMilestones?: readonly MilestoneId[];
 }
+
+export type MilestoneCompletedListener = (milestone: Milestone) => void;
 
 interface GameEngineOptions {
   readonly grid?: TileGrid;
@@ -191,6 +202,8 @@ export class GameEngine {
   private readonly poweredExtractors = new Set<BuildingId>();
   private readonly poweredConsumers = new Set<BuildingId>();
   private hubIdCache: BuildingId | null = null;
+  private readonly completedMilestones = new Set<MilestoneId>();
+  private readonly milestoneListeners = new Set<MilestoneCompletedListener>();
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -1115,6 +1128,47 @@ export class GameEngine {
     if (target) refund(target, cost);
   }
 
+  /** Completed milestones in completion order (empty in sandbox). */
+  getCompletedMilestoneIds(): readonly MilestoneId[] {
+    return [...this.completedMilestones];
+  }
+
+  /** The milestone the hub currently requests, or null in sandbox and once the campaign is done. */
+  getActiveMilestone(): Milestone | null {
+    if (this.gameMode !== GameModes.Campaign) return null;
+    return findActiveMilestone(MILESTONES, this.completedMilestones);
+  }
+
+  /** Progress of the active milestone against the hub inventory, or null when there is none. */
+  getMilestoneProgress(): MilestoneProgress | null {
+    const milestone = this.getActiveMilestone();
+    const hubId = this.getHubId();
+    if (!milestone || hubId === null) return null;
+    return computeMilestoneProgress(milestone, this.storageInventories.get(hubId)!);
+  }
+
+  /**
+   * Player confirmation: consumes the active milestone requirements from the
+   * hub and marks it completed. Returns false (nothing changes) when it is not
+   * ready, so the player keeps the choice between building now or completing.
+   */
+  completeActiveMilestone(): boolean {
+    const milestone = this.getActiveMilestone();
+    const hubId = this.getHubId();
+    if (!milestone || hubId === null) return false;
+    if (!consumeMilestoneRequirements(milestone, this.storageInventories.get(hubId)!)) return false;
+    this.completedMilestones.add(milestone.id);
+    this.notify('world');
+    this.emitAction('complete_milestone', { id: milestone.id });
+    for (const listener of this.milestoneListeners) listener(milestone);
+    return true;
+  }
+
+  onMilestoneCompleted(listener: MilestoneCompletedListener): () => void {
+    this.milestoneListeners.add(listener);
+    return () => this.milestoneListeners.delete(listener);
+  }
+
   /** The campaign hub, or null in sandbox worlds. */
   getHubId(): BuildingId | null {
     // The hub is permanent and placed once, so a found id never goes stale.
@@ -1272,6 +1326,7 @@ export class GameEngine {
       storageInventories,
       producerOutputBuffers,
       processorReservations,
+      completedMilestones: [...this.completedMilestones],
     };
   }
 
@@ -1359,6 +1414,11 @@ export class GameEngine {
       if (engine.processorStates.has(entry.id)) {
         engine.processorReservations.set(entry.id, entry.reservations.map((reservation) => ({ ...reservation })));
       }
+    }
+
+    // Ids no longer in the catalog are dropped rather than failing the load.
+    for (const id of snapshot.completedMilestones ?? []) {
+      if (getMilestone(id)) engine.completedMilestones.add(id);
     }
 
     // Backward compatibility: old saves have no fog data — reveal default area
