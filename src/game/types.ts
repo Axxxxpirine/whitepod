@@ -72,6 +72,12 @@ export interface Port {
   readonly side: Direction;
 }
 
+/** An amount of one resource, e.g. one line of a construction cost. */
+export interface ResourceCost {
+  readonly resourceType: ResourceType;
+  readonly amount: number;
+}
+
 export interface BuildingType {
   readonly id: BuildingTypeId;
   readonly name: string;
@@ -91,6 +97,11 @@ export interface BuildingType {
   readonly systemPlaced?: boolean;
   /** Cannot be removed once placed. */
   readonly permanent?: boolean;
+  /**
+   * Construction cost, paid in campaign mode from the global stock (hub +
+   * storages) and fully refunded on removal. Belts: cost per segment.
+   */
+  readonly cost?: readonly ResourceCost[];
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
@@ -119,7 +130,8 @@ export type PlacementFailure =
   | 'unknown_type'
   | 'id_overflow'
   | 'tile_fogged'
-  | 'system_placed';
+  | 'system_placed'
+  | 'insufficient_resources';
 
 export type PlacementResult =
   | { readonly ok: true }
@@ -181,7 +193,8 @@ export type BeltFailure =
   | 'unknown_port'
   | 'self_connection'
   | 'id_overflow'
-  | 'tiles_blocked';
+  | 'tiles_blocked'
+  | 'insufficient_resources';
 
 export type BeltResult =
   | { readonly ok: true; readonly plan: BeltPlan }
