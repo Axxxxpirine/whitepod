@@ -6,10 +6,15 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   getBuildingType,
+  MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
+import { generateSimpleScenario } from '@/game/scenarios/generators/generateSimpleScenario';
+import { generateMediumScenario } from '@/game/scenarios/generators/generateMediumScenario';
+import { generateComplexScenario } from '@/game/scenarios/generators/generateComplexScenario';
+import { generateBuildAllScenario } from '@/game/scenarios/generators/generateBuildAllScenario';
 
 const EXTRACTION_INTERVAL_SECONDS = 60 / EXTRACTOR_RATE_PER_MIN;
 const FULL_DAY_NIGHT_CYCLE_SECONDS = 120;
@@ -112,6 +117,36 @@ describe('GameEngine energy networks', () => {
       consumption: 4,
       remaining: 6,
     });
+  });
+
+  it('refuses energy links from conveyors, mergers and storage (issue #46)', () => {
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y: 1 })!;
+    engine.placeResource(2, 1, ResourceType.Regolith);
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y: 1 })!;
+    const storageId = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 8, y: 0 })!;
+    const mergerId = engine.placeBuilding(MERGER_BASIC_BUILDING_TYPE_ID, { x: 5, y: 5 })!;
+    const belt = engine.placeBelt(
+      { building: extractorId, port: 'out_east' },
+      { building: storageId, port: 'in_west' },
+    );
+    expect(belt.ok).toBe(true);
+    const beltId = belt.ok ? belt.segmentIds[0]! : -1;
+
+    for (const id of [beltId, mergerId, storageId]) {
+      expect(engine.connectBuildings(solarId, id)).toBe(false);
+      expect(engine.connectBuildings(id, extractorId)).toBe(false);
+    }
+    expect(engine.energyNetwork.getNeighbors(solarId)).toEqual([]);
+  });
+
+  it('generates scenarios whose energy links only join energy buildings (issue #46)', () => {
+    for (const generate of [generateSimpleScenario, generateMediumScenario, generateComplexScenario, generateBuildAllScenario]) {
+      const generated = generate(640, 480).engine;
+      for (const [id, building] of generated.getBuildings()) {
+        if (generated.energyNetwork.getNeighbors(id).length === 0) continue;
+        expect(getBuildingType(building.typeId)?.energy, building.typeId).toBeTruthy();
+      }
+    }
   });
 
   it('merges networks when linking through an existing connected building', () => {
