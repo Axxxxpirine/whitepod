@@ -45,3 +45,25 @@ export function footprintDiamond(
     center: { x: center.wx, y: center.wy },
   };
 }
+
+/**
+ * Iso-world point where HUD panels attach below a w*h footprint: horizontally
+ * centered on the footprint, vertically on its south (lowest on-screen) vertex.
+ */
+export function footprintBottomAnchor(
+  originX: number,
+  originY: number,
+  w: number,
+  h: number,
+): { readonly x: number; readonly y: number } {
+  const diamond = footprintDiamond(originX, originY, w, h);
+  return { x: diamond.center.x, y: diamond.south.y };
+}
+
+/**
+ * Iso-world point where tooltips attach above a single tile: the north
+ * (highest on-screen) vertex of its diamond.
+ */
+export function tileTopAnchor(x: number, y: number): { readonly x: number; readonly y: number } {
+  return footprintDiamond(x, y, 1, 1).north;
+}
