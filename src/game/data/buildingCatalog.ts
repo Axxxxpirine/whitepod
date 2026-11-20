@@ -25,6 +25,15 @@ export function isProcessorTypeId(typeId: BuildingTypeId): boolean {
   return typeId === CONVERTER_BUILDING_TYPE_ID || typeId === SYNTHESIZER_BUILDING_TYPE_ID;
 }
 
+/**
+ * True when the building type accepts and stores resources (storage
+ * inventory, belt sink). Driven by the catalog `storage` capability so a new
+ * storage-like type only needs its catalog entry.
+ */
+export function isStorageTypeId(typeId: BuildingTypeId): boolean {
+  return catalog.get(typeId)?.storage === true;
+}
+
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return (
     typeId === BELT_STRAIGHT_BUILDING_TYPE_ID ||
@@ -53,6 +62,7 @@ const entries: readonly BuildingType[] = [
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
+    storage: true,
     ports: [
       { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
       { id: 'in_north', kind: PortKind.Input, offset: { x: 1, y: 0 }, side: Direction.North },

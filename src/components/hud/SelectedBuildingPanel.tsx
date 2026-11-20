@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { STORAGE_BUILDING_TYPE_ID, getBuildingType, isBeltTypeId, isProcessorTypeId } from '@/game/data/buildingCatalog';
+import { getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
 import { Panel, PanelHeading, Icon } from '../ui';
@@ -30,7 +30,7 @@ export function SelectedBuildingPanel() {
   if (!type) return null;
   const panelWidthClass = isProcessorTypeId(building.typeId)
     ? 'w-[280px]'
-    : building.typeId === STORAGE_BUILDING_TYPE_ID
+    : isStorageTypeId(building.typeId)
       ? 'w-[240px]'
       : 'w-[200px]';
 

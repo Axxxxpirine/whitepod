@@ -1,9 +1,9 @@
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
   isBeltTypeId,
   isProcessorTypeId,
+  isStorageTypeId,
 } from '@/game/data/buildingCatalog';
 import { getRecipe } from '@/game/data/recipeCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
@@ -105,7 +105,7 @@ export function resolveDownstreamTerminalFromOutput(
     const building = engine.getBuildings().get(currentBuildingId);
     if (!building) return null;
 
-    if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+    if (isStorageTypeId(building.typeId)) {
       return { kind: 'storage', buildingId: currentBuildingId, portId: currentPortId };
     }
 
