@@ -2,8 +2,8 @@ import { Activity } from 'lucide-react';
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
-import type { Building, ResourceType as ResourceTypeT } from '@/game/types';
-import { assetUrl, RESOURCE_SPRITE_PATHS } from '@/game/ui/spritePaths';
+import { getResourceSprite } from '@/game/ui/resourcePresentation';
+import { type Building, type ResourceType as ResourceTypeT } from '@/game/types';
 import { Icon } from './ui';
 
 interface BeltFlowStatsProps {
@@ -37,14 +37,14 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
 }
 
 function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT; ratePerMinute: number }) {
-  const sprite = RESOURCE_SPRITE_PATHS.get(resourceType);
+  const sprite = getResourceSprite(resourceType);
   const label = resourceTypeLabel(resourceType);
   const rateText = `${ratePerMinute}/min`;
 
   return (
     <div className="flex items-center gap-1.5">
       {sprite ? (
-        <img src={assetUrl(sprite)} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
+        <img src={sprite} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
       ) : (
         <Icon icon={Activity} size={11} className="text-ink-muted" />
       )}

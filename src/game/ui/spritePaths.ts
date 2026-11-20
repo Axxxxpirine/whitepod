@@ -171,7 +171,3 @@ function terrainSpec(name: string): SpriteAssetSpec {
     kind: 'generated',
   };
 }
-
-export function assetUrl(path: string): string {
-  return `/${path}`;
-}
