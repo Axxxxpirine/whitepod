@@ -177,6 +177,7 @@ export class GameEngine {
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
   private readonly poweredExtractors = new Set<BuildingId>();
+  private readonly poweredConsumers = new Set<BuildingId>();
 
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
@@ -231,7 +232,11 @@ export class GameEngine {
     // Battery charge/discharge
     this.updateBatteries(dt);
 
-    this.syncPoweredExtractors();
+    // Power can change with time alone (night, empty batteries): views such as
+    // the belt flow animation only refresh on world notifications.
+    if (this.syncPowerState()) {
+      this.notify('world');
+    }
   }
 
   private processExtraction(): void {
@@ -554,7 +559,7 @@ export class GameEngine {
     this.processorReservations.delete(id);
     const removed = this.buildings.unregister(id, type.footprint);
     if (removed) {
-      this.syncPoweredExtractors(false);
+      this.syncPowerState(false);
       this.notify('world');
       if (emitSfx) {
         this.publishSfx({ type: 'building_remove_success', buildingType: building.typeId });
@@ -576,7 +581,7 @@ export class GameEngine {
     }
     const connected = this.energyNetwork.connect(a, b);
     if (connected) {
-      this.syncPoweredExtractors();
+      this.syncPowerState();
       this.notify('world');
       this.emitAction('connect_buildings', { a, b });
       this.publishSfx({ type: 'energy_link_connect' });
@@ -593,7 +598,7 @@ export class GameEngine {
     }
     const disconnected = this.energyNetwork.disconnect(a, b);
     if (disconnected) {
-      this.syncPoweredExtractors(false);
+      this.syncPowerState(false);
       this.notify('world');
       this.emitAction('disconnect_buildings', { a, b });
       this.publishSfx({ type: 'energy_link_disconnect' });
@@ -1245,7 +1250,7 @@ export class GameEngine {
       );
     }
 
-    engine.syncPoweredExtractors(false);
+    engine.syncPowerState(false);
 
     return engine;
   }
@@ -1394,21 +1399,39 @@ export class GameEngine {
     return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
 
-  private syncPoweredExtractors(emitSfx = true): void {
-    const nextPowered = new Set<BuildingId>();
+  /**
+   * Refresh which consumers are powered. Returns true when any consumer gained
+   * or lost power since the last sync, so time-driven changes (nightfall, a
+   * battery running dry) can be reported to the views.
+   */
+  private syncPowerState(emitSfx = true): boolean {
+    const nextExtractors = new Set<BuildingId>();
+    const nextConsumers = new Set<BuildingId>();
     for (const [id, building] of this.buildings.getAll().entries()) {
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
-      nextPowered.add(id);
+      nextConsumers.add(id);
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      nextExtractors.add(id);
       if (emitSfx && !this.poweredExtractors.has(id)) {
         this.publishSfx({ type: 'extractor_on' });
       }
     }
 
-    this.poweredExtractors.clear();
-    for (const id of nextPowered) {
-      this.poweredExtractors.add(id);
+    let changed = nextConsumers.size !== this.poweredConsumers.size;
+    if (!changed) {
+      for (const id of nextConsumers) {
+        if (!this.poweredConsumers.has(id)) {
+          changed = true;
+          break;
+        }
+      }
     }
+
+    this.poweredExtractors.clear();
+    for (const id of nextExtractors) this.poweredExtractors.add(id);
+    this.poweredConsumers.clear();
+    for (const id of nextConsumers) this.poweredConsumers.add(id);
+    return changed;
   }
 
   private notify(kind: GameEngineChangeKind): void {
