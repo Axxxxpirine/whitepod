@@ -82,6 +82,7 @@ Every world has a fixed `engine.gameMode` (`'campaign' | 'sandbox'`, see `src/ga
 Campaign rules in place:
 
 - **Hub**: `generateMap(seed)` on a campaign world places one `hub_lander` near the map center, inside the initial reveal, on plain ground with a free ring around it and no deposit (deterministic per seed). It is never placed twice. `engine.getHubId()` and `engine.getHubInventory()` return `null` in sandbox worlds.
+- **Construction costs**: each player building has a `cost` in the catalog (belts: per segment). In campaign, it is paid from the **global stock** (decision D2: hub first, then storages by ascending id) and fully refunded into the hub on removal. `canPlaceBuilding` returns `insufficient_resources` when the stock cannot pay; `canPlaceBelt` / `placeBelt` return `insufficient_resources` when the whole route cannot be paid, and place nothing. A removed storage loses its inventory. Read costs with `engine.getBuildingCost(typeId)` (empty in sandbox), `engine.getBeltRouteCost(segments)` and `engine.canAfford(cost)`.
 
 The mode is set at creation (`new GameEngine(w, h, { gameMode })`), saved with the world and restored on reload. Saves written before game modes existed load as `sandbox`. Bots refuse to start in a campaign world.
 

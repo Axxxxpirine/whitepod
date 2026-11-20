@@ -141,6 +141,9 @@ engine.gameMode                        // 'sandbox' (default) | 'campaign', fixe
 
 engine.getHubId()                      // Campaign hub (lander) id, or null in sandbox
 engine.getHubInventory()               // Hub inventory, or null in sandbox
+engine.getBuildingCost('storage_basic') // Campaign construction cost ([] in sandbox)
+engine.canAfford(cost)                 // Payable from the global stock (hub + storages)?
+engine.getBeltRouteCost(plan.segments) // Total cost of a planned belt route
 ```
 
 ### Simulation
