@@ -201,6 +201,19 @@ export type BeltResult =
   | { readonly ok: true; readonly plan: BeltPlan }
   | { readonly ok: false; readonly reason: BeltFailure };
 
+/**
+ * A planned belt route with its price, before affordability is checked: what
+ * previews show while the player drags. `missing` is empty when affordable.
+ */
+export type BeltRouteQuote =
+  | {
+      readonly ok: true;
+      readonly plan: BeltPlan;
+      readonly cost: readonly ResourceCost[];
+      readonly missing: readonly ResourceCost[];
+    }
+  | { readonly ok: false; readonly reason: BeltFailure };
+
 export type PlaceBeltResult =
   | {
       readonly ok: true;

@@ -17,6 +17,7 @@ interface PendingFrom {
 }
 
 const BELT_PREVIEW_TINT = PIXI.ok;
+const BELT_PREVIEW_INVALID_TINT = PIXI.error;
 
 export class BeltToolController {
   private readonly engine: GameEngine;
@@ -75,18 +76,24 @@ export class BeltToolController {
       return;
     }
 
-    const result = this.engine.canPlaceBelt(this.pendingFrom.from, target);
-    if (!result.ok) {
+    const quote = this.engine.quoteBelt(this.pendingFrom.from, target);
+    if (!quote.ok) {
       this.setPreview(null);
       return;
     }
 
+    // An unaffordable route stays visible, tinted invalid, so the player sees
+    // its cost and what is missing instead of a preview that vanishes.
+    const affordable = quote.missing.length === 0;
     this.setPreview({
       kind: 'belt',
-      isValid: true,
-      tiles: result.plan.segments.map((segment) => ({
+      isValid: affordable,
+      ...(affordable ? {} : { reason: 'insufficient_resources' as const }),
+      cost: quote.cost,
+      missing: quote.missing,
+      tiles: quote.plan.segments.map((segment) => ({
         coord: segment.coord,
-        tint: BELT_PREVIEW_TINT,
+        tint: affordable ? BELT_PREVIEW_TINT : BELT_PREVIEW_INVALID_TINT,
       })),
     });
   }

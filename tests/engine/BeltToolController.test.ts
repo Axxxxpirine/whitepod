@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BeltToolController } from '@/game/engine/BeltToolController';
+import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
+import { GameMode } from '@/game/data/gameMode';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { gridToWorld, worldToScreen } from '@/game/engine/CoordinateTransform';
 import {
@@ -9,6 +11,7 @@ import {
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, TileType, type SelectedTool } from '@/game/types';
 import { TILE_SIZE } from '@/game/constants';
+import { PIXI } from '@/design/tokens';
 
 function makeEngine() {
   const engine = new GameEngine(800, 600);
@@ -84,6 +87,37 @@ describe('BeltToolController', () => {
     const storageConnections = engine.getConnectionsOf(storage);
     expect(storageConnections).toHaveLength(1);
     expect(storageConnections[0].to).toEqual({ building: storage, port: 'in_east' });
+  });
+
+  it('keeps an unaffordable route visible, tinted invalid, with its cost and what is missing', () => {
+    const engine = new GameEngine(800, 600, { gameMode: GameMode.Campaign });
+    engine.generateMap(42);
+    engine.grid.fill(TileType.Ground);
+    engine.grid.revealAll();
+    const hub = engine.storageInventories.get(engine.getHubId()!)!;
+    hub.regolith = 1000;
+    placeExtractor(engine, 5, 13);
+    engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 10, y: 10 });
+    hub.regolith = 1;
+
+    const selectedTool: SelectedTool = { kind: 'belt' };
+    let preview: BeltPlacementPreviewModel | null = null;
+    const controller = new BeltToolController(engine, () => selectedTool, (next) => {
+      preview = next;
+    });
+    const sourcePoint = screenPointForTile(engine, 5, 13);
+    const eastSidePoint = screenPointForTile(engine, 12, 11);
+
+    controller.onPointerDown(sourcePoint.sx, sourcePoint.sy, 0);
+    controller.onPointerMove(eastSidePoint.sx, eastSidePoint.sy);
+
+    const shown = preview as BeltPlacementPreviewModel | null;
+    expect(shown).not.toBeNull();
+    expect(shown!.isValid).toBe(false);
+    expect(shown!.reason).toBe('insufficient_resources');
+    expect(shown!.cost).toEqual([{ resourceType: ResourceType.Regolith, amount: shown!.tiles.length }]);
+    expect(shown!.missing).toEqual([{ resourceType: ResourceType.Regolith, amount: shown!.tiles.length - 1 }]);
+    for (const tile of shown!.tiles) expect(tile.tint).toBe(PIXI.error);
   });
 
   it('clears the pending source when leaving the belt tool', () => {
