@@ -164,7 +164,9 @@ export function GameCanvas() {
       }
 
       const loadedSession = loadPersistedSession(app.screen.width, app.screen.height);
-      const engine = loadedSession?.engine ?? new GameEngine(app.screen.width, app.screen.height);
+      const engine =
+        loadedSession?.engine ??
+        new GameEngine(app.screen.width, app.screen.height, { gameMode: useGameStore.getState().newGameMode });
       currentEngine = engine;
       const sessionId = loadedSession?.sessionId ?? createSessionId();
       const selectedTool = loadedSession?.selectedTool ?? { kind: 'select' as const };

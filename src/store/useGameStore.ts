@@ -12,6 +12,8 @@ import type { BeltPlacementPreviewModel } from '@/game/renderer/placementPreview
 import { Direction, type BuildingId, type SelectedTool, type TileCoord } from '@/game/types';
 import { DEFAULT_MAP_SEED } from '@/game/constants';
 import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
+import { DEFAULT_GAME_MODE, type GameMode } from '@/game/data/gameMode';
+import { applySeedAndResetSession } from '@/game/session/seedSession';
 import type { BotProfileId } from '@/game/bot/botTypes';
 
 interface ScreenPoint {
@@ -35,6 +37,12 @@ interface GameState {
   currentBuildingRotation: Direction;
   sessionEpoch: number;
   worldVersion: number;
+  /** The start screen is shown: at boot, and when the player opens the main menu. */
+  startScreenOpen: boolean;
+  /** A game is mounted (canvas + HUD); false until the player leaves the boot start screen. */
+  sessionStarted: boolean;
+  /** Mode of the next world created from scratch (new game, reset). */
+  newGameMode: GameMode;
   pendingEnergyLinkSource: BuildingId | null;
   linkSolarOnPlacement: boolean;
   idleSummary: IdleCatchupResult | null;
@@ -63,6 +71,15 @@ interface GameState {
   setCurrentBuildingRotation: (rotation: Direction) => void;
   rotateBuildingRotation: () => void;
   resetSession: () => void;
+  /** Opens the start screen over the running game. */
+  openStartScreen: () => void;
+  /** Leaves the start screen into the saved or running game. */
+  resumeSession: () => void;
+  /**
+   * Clears the saved game and starts a new world in `gameMode` with `seedInput`.
+   * Returns false, changing nothing, when the seed is not a number.
+   */
+  startNewGame: (gameMode: GameMode, seedInput: string) => boolean;
   bumpWorldVersion: () => void;
   setPendingEnergyLinkSource: (source: BuildingId | null) => void;
   setLinkSolarOnPlacement: (value: boolean) => void;
@@ -82,7 +99,7 @@ interface GameState {
 const loadedSettings = loadPersistedSettings();
 const defaultSettings = getDefaultSettings();
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   engine: null,
   simulationTime: 0,
   simulationSpeed: 1,
@@ -98,6 +115,9 @@ export const useGameStore = create<GameState>((set) => ({
   currentBuildingRotation: Direction.North,
   sessionEpoch: 0,
   worldVersion: 0,
+  startScreenOpen: true,
+  sessionStarted: false,
+  newGameMode: DEFAULT_GAME_MODE,
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
   idleSummary: null,
@@ -167,6 +187,20 @@ export const useGameStore = create<GameState>((set) => ({
       },
       sessionEpoch: state.sessionEpoch + 1,
     }));
+  },
+  openStartScreen: () => set({ startScreenOpen: true }),
+  resumeSession: () => set({ startScreenOpen: false, sessionStarted: true }),
+  startNewGame: (gameMode, seedInput) => {
+    const started = applySeedAndResetSession({
+      seedInput,
+      setSeedInput: get().setSeedInput,
+      resetSession: () => {
+        set({ newGameMode: gameMode });
+        get().resetSession();
+      },
+    });
+    if (started) get().resumeSession();
+    return started;
   },
   bumpWorldVersion: () => set((state) => ({ worldVersion: state.worldVersion + 1 })),
   setPendingEnergyLinkSource: (source) => set({ pendingEnergyLinkSource: source }),
