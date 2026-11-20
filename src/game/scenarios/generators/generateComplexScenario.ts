@@ -30,7 +30,7 @@ import {
   STORAGE_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
-import { ResourceType, type TileCoord } from '@/game/types';
+import { Direction, ResourceType, type TileCoord } from '@/game/types';
 import { mulberry32 } from '@/game/data/SeededRNG';
 import type { PreparedScenarioResult } from '../types';
 import {
@@ -40,6 +40,7 @@ import {
   createScenarioSeed,
   makeViewport,
   mustConnect,
+  rotationFacingX,
   mustPlaceBuilding,
   prepareEngine,
   tryBelt,
@@ -49,6 +50,10 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
   const scenarioSeed = createScenarioSeed();
   const rng = mulberry32(scenarioSeed);
   const { engine, baseAnchor, mirrorX, mirrorY } = prepareEngine(screenWidth, screenHeight, rng, scenarioSeed);
+
+  // The wings reach 15 tiles from the anchor, past the initial fog reveal once
+  // the anchor is offset: fogged deposits cannot take an extractor.
+  engine.grid.revealCircle(baseAnchor.x, baseAnchor.y, 20);
 
   const toWorld = (dx: number, dy: number): TileCoord =>
     clampTile({ x: baseAnchor.x + dx * mirrorX, y: baseAnchor.y + dy * mirrorY });
@@ -109,7 +114,18 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
 
   // Merger A — placed between extractor column (x=-13) and storage (x=-2)
   // Use x=-7 (midpoint) and y=-2 (aligned with top extractors).
-  const mergerA = mustPlaceBuilding(engine, MERGER_BASIC_BUILDING_TYPE_ID, toWorld(-7, -2), 2, rng);
+  // Outputs face East at rotation North; mirrored layouts must turn them toward
+  // their target, otherwise the merger output points away from storage.
+  const storageAOrigin = toWorld(-2, 1);
+  const mergerAOrigin = toWorld(-7, -2);
+  const mergerA = mustPlaceBuilding(
+    engine,
+    MERGER_BASIC_BUILDING_TYPE_ID,
+    mergerAOrigin,
+    2,
+    rng,
+    rotationFacingX(mergerAOrigin.x, storageAOrigin.x),
+  );
 
   // Solar farm A — north of the wing
   const wingASolarOffsets: [number, number][] = [
@@ -126,11 +142,12 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
 
   // Extractors A
   const wingAExtractorIds = wingAExtractorDeposits.map((d) =>
-    mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, d.coord, 0, rng),
+    mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, d.coord, 0, rng, rotationFacingX(d.coord.x, storageAOrigin.x)),
   );
 
   // ---------- WING B buildings ----------
-  const storageB = mustPlaceBuilding(engine, STORAGE_BUILDING_TYPE_ID, toWorld(7, 1), 3, rng);
+  const storageBOrigin = toWorld(7, 1);
+  const storageB = mustPlaceBuilding(engine, STORAGE_BUILDING_TYPE_ID, storageBOrigin, 3, rng);
 
   const wingBSolarOffsets: [number, number][] = [
     [10, -5], [12, -5], [14, -5],
@@ -142,7 +159,7 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
   const batteryB = mustPlaceBuilding(engine, BATTERY_BASIC_BUILDING_TYPE_ID, toWorld(11, -2), 3, rng);
 
   const wingBExtractorIds = wingBExtractorDeposits.map((d) =>
-    mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, d.coord, 0, rng),
+    mustPlaceBuilding(engine, EXTRACTOR_BUILDING_TYPE_ID, d.coord, 0, rng, rotationFacingX(d.coord.x, storageBOrigin.x)),
   );
 
   // ---------- Watchtower (center, extends fog reveal) ----------
@@ -174,15 +191,21 @@ export function generateComplexScenario(screenWidth: number, screenHeight: numbe
   // ============================================================
   const storageInputPorts = ['in_west', 'in_north', 'in_south', 'in_east'] as const;
 
-  // Wing A: route 2 top extractors through merger, 2 bottom directly to storage
-  // extractor(-13,-3) → mergerA.in_west (straight East along y=-3 then turn South)
-  // extractor(-13, 0) → mergerA.in_south (route South-East, enter from below)
-  const mergerInputAttempts: readonly (readonly string[])[] = [
-    ['in_west', 'in_north', 'in_south'], // first feeder prefers West (straight horizontal)
-    ['in_south', 'in_west', 'in_north'], // second feeder prefers South
-  ];
+  // Wing A: route 2 top extractors through merger, 2 bottom directly to storage.
+  // The first feeder enters the merger input facing the extractor column; the
+  // second one enters from its own vertical side. Ports are named for rotation
+  // North, so pick them from the physical side: after mirroring, feeding the
+  // "south" input from above wraps the belt around the merger and blocks its
+  // output to storage.
+  const mergerRotation = rotationFacingX(mergerAOrigin.x, storageAOrigin.x);
+  const southInput = mergerRotation === Direction.North ? 'in_south' : 'in_north';
+  const northInput = mergerRotation === Direction.North ? 'in_north' : 'in_south';
+  const mergerY = engine.getBuildings().get(mergerA)!.origin.y;
   for (let index = 0; index < 2 && index < wingAExtractorIds.length; index++) {
-    const ports = mergerInputAttempts[index]!;
+    const extractorY = engine.getBuildings().get(wingAExtractorIds[index]!)!.origin.y;
+    const sideInput = extractorY > mergerY ? southInput : northInput;
+    const otherSide = sideInput === southInput ? northInput : southInput;
+    const ports = index === 0 ? ['in_west', sideInput, otherSide] : [sideInput, 'in_west', otherSide];
     for (const port of ports) {
       if (tryBelt(engine, { building: wingAExtractorIds[index]!, port: 'out_east' }, { building: mergerA, port })) {
         break;
