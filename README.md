@@ -144,6 +144,8 @@ engine.getHubInventory()               // Hub inventory, or null in sandbox
 engine.getBuildingCost('storage_basic') // Campaign construction cost ([] in sandbox)
 engine.canAfford(cost)                 // Payable from the global stock (hub + storages)?
 engine.getBeltRouteCost(plan.segments) // Total cost of a planned belt route
+engine.getMissingResources(cost)       // What the global stock lacks for it ([] when affordable)
+engine.quoteBelt(from, to)             // Planned route + cost + missing, even when unaffordable (previews)
 engine.getActiveMilestone()            // Milestone the hub requests (null in sandbox or when done)
 engine.getMilestoneProgress()          // { milestone, requirements: [{ resourceType, required, available }], ready }
 engine.completeActiveMilestone()       // Consume the requirements from the hub; false if not ready
