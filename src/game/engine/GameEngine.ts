@@ -12,11 +12,11 @@ import {
   getBuildingType,
   isBeltTypeId,
   isProcessorTypeId,
+  isStorageTypeId,
   validateCatalog,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   CONVERTER_BUILDING_TYPE_ID,
-  STORAGE_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { Viewport } from './Viewport';
@@ -491,7 +491,7 @@ export class GameEngine {
       if (type.energy?.battery) {
         this.batteryCharges.set(id, 0);
       }
-      if (typeId === STORAGE_BUILDING_TYPE_ID) {
+      if (isStorageTypeId(typeId)) {
         this.storageInventories.set(id, GameEngine.EMPTY_RESOURCE_STOCK());
       }
       if (typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(typeId)) {
@@ -1182,7 +1182,7 @@ export class GameEngine {
         if (type?.energy?.battery) {
           engine.batteryCharges.set(buildingId, 0);
         }
-        if (building.typeId === STORAGE_BUILDING_TYPE_ID) {
+        if (isStorageTypeId(building.typeId)) {
           engine.storageInventories.set(buildingId, GameEngine.EMPTY_RESOURCE_STOCK());
         }
         if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
@@ -1355,7 +1355,7 @@ export class GameEngine {
         providers.push(currentId);
         continue;
       }
-      if (building.typeId === STORAGE_BUILDING_TYPE_ID) continue;
+      if (isStorageTypeId(building.typeId)) continue;
       for (const connection of this.getConnectionsOf(currentId)) {
         if (connection.to.building !== currentId) continue;
         queue.push(connection.from.building);

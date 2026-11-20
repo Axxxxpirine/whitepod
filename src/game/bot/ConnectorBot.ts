@@ -1,4 +1,4 @@
-import { getBuildingType, isProcessorTypeId } from '@/game/data/buildingCatalog';
+import { getBuildingType, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
 import { type BuildingId } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import type { BotLifecycle, BotStatus } from './botTypes';
@@ -251,8 +251,7 @@ export class ConnectorBot implements BotLifecycle {
     const storage: Array<{ id: BuildingId; distance: number }> = [];
 
     for (const [id, building] of this.engine.getBuildings()) {
-      const type = getBuildingType(building.typeId);
-      if (type?.id !== 'storage_basic') continue;
+      if (!isStorageTypeId(building.typeId)) continue;
 
       const distance = Math.abs(building.origin.x - origin.x) + Math.abs(building.origin.y - origin.y);
       storage.push({ id, distance });
