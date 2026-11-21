@@ -38,6 +38,7 @@ npm run dev   # → http://localhost:5173
 | `npm run lint` | Run ESLint checks |
 | `npm run test` | Run test suite with Vitest |
 | `npm run test:ui` | Run tests with Vitest UI (browser interface) |
+| `BALANCE_REPORT=1 npx vitest run tests/balance` | Play chapters 1–2 with a scripted player and print the milestone timings |
 
 ## Browser console (dev only)
 
@@ -237,5 +238,5 @@ src/
 ├── lib/              # Shared utilities
 ├── store/            # Zustand game store
 └── test/             # Test setup
-tests/                # Vitest test suites (engine, components, data, renderer, persistence, audio)
+tests/                # Vitest test suites (engine, components, data, renderer, persistence, audio, balance)
 ```
