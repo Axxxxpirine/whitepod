@@ -22,7 +22,7 @@ import {
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
 import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
-import { ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
+import { CAMPAIGN_START_TIME, ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
 import {
   computeMilestoneProgress,
   consumeMilestoneRequirements,
@@ -1252,6 +1252,7 @@ export class GameEngine {
     }
     ensureStartingDeposits(this.grid, origin, footprint, isOccupied);
     refund(this.storageInventories.get(hubId)!, STARTING_KIT);
+    this.setSimulationTime(CAMPAIGN_START_TIME);
   }
 
   getResourceAt(x: number, y: number): ResourceTypeT {
