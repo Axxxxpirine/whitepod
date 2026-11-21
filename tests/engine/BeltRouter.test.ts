@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { planBelt } from '@/game/engine/BeltRouter';
+import { toIndex } from '@/game/data/coords';
 import { Direction, TileType, type BeltPlan } from '@/game/types';
 import {
   BELT_CORNER_CCW_BUILDING_TYPE_ID,
@@ -152,6 +153,19 @@ describe('BeltRouter', () => {
     // And must have taken a detour (at least 2 corners).
     const corners = plan.segments.filter((s) => cornerTypeIds.includes(s.typeId));
     expect(corners.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('6b. never routes through fogged tiles, where nothing can be built', () => {
+    const { a, b } = placeEndpoints(engine, 5, 10, 5);
+    engine.grid.flags[toIndex(7, 5)] = 0;
+    engine.grid.flags[toIndex(8, 5)] = 0;
+    const plan = okPlan(
+      planBelt(engine, { building: a, port: 'out_east' }, { building: b, port: 'in_west' }),
+    );
+    for (const seg of plan.segments) {
+      expect(engine.grid.isRevealed(seg.coord.x, seg.coord.y)).toBe(true);
+    }
+    expect(engine.placeBelt({ building: a, port: 'out_east' }, { building: b, port: 'in_west' }).ok).toBe(true);
   });
 
   it('7. refuses if the source port is already connected', () => {

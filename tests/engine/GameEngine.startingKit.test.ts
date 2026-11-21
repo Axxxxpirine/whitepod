@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CAMPAIGN_START_TIME,
   STARTING_DEPOSITS,
   STARTING_DEPOSIT_RADIUS,
   STARTING_KIT,
@@ -19,6 +20,7 @@ import { toIndex } from '@/game/data/coords';
 import { GameMode } from '@/game/data/gameMode';
 import { TileGrid } from '@/game/data/TileGrid';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { getDaylightFactor } from '@/game/renderer/DayNightOverlayRenderer';
 import { Direction, ResourceType, TileType, type TileCoord } from '@/game/types';
 
 const HUB_FOOTPRINT = getBuildingType(HUB_BUILDING_TYPE_ID)!.footprint;
@@ -83,6 +85,17 @@ describe('starting kit', () => {
 
     engine.generateMap(43);
     expect(engine.getHubInventory()).toEqual(stock);
+  });
+
+  it('starts campaigns in the morning, with panels already producing; sandbox keeps midnight', () => {
+    const campaign = new GameEngine(800, 600, { gameMode: GameMode.Campaign });
+    campaign.generateMap(42);
+    expect(campaign.simulationTime).toBeCloseTo(CAMPAIGN_START_TIME);
+    expect(getDaylightFactor(campaign.simulationTime)).toBeGreaterThan(0.5);
+
+    const sandbox = new GameEngine(800, 600);
+    sandbox.generateMap(42);
+    expect(sandbox.simulationTime).toBe(0);
   });
 
   it('is not credited in sandbox', () => {

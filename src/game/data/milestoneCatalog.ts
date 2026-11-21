@@ -51,8 +51,12 @@ export const STARTING_UNLOCKS: MilestoneUnlocks = {
 
 /**
  * Campaign milestones in play order: the active milestone is always the first
- * one not completed yet. First-pass numbers, tuned with the chapter 1-2
- * content (#71). Gameplay numbers live here, never in systems.
+ * one not completed yet. Gameplay numbers live here, never in systems.
+ *
+ * Pacing (#71), checked by tests/balance/campaignPacing.test.ts: first
+ * milestone within 3 minutes, chapter 1 in ~15, chapter 2 done around 40.
+ * Each unlock arrives with the milestone whose next step needs it: the
+ * merger with aluminium (2 regolith per cycle), the synthesizer with ceramic.
  */
 export const MILESTONES: readonly Milestone[] = [
   // Chapter 1 · Landing
@@ -60,7 +64,8 @@ export const MILESTONES: readonly Milestone[] = [
     id: 'landing_first_extraction',
     chapter: 1,
     title: 'Premières extractions',
-    requirements: [{ resourceType: ResourceType.Regolith, amount: 50 }],
+    // Oxygen, never in the starting kit: the first line must actually deliver.
+    requirements: [{ resourceType: ResourceType.Oxygen, amount: 20 }],
     unlocks: { buildings: [BATTERY_BASIC_BUILDING_TYPE_ID], recipes: [] },
   },
   {
@@ -68,8 +73,8 @@ export const MILESTONES: readonly Milestone[] = [
     chapter: 1,
     title: 'Air respirable',
     requirements: [
-      { resourceType: ResourceType.Regolith, amount: 100 },
-      { resourceType: ResourceType.Oxygen, amount: 50 },
+      { resourceType: ResourceType.Regolith, amount: 120 },
+      { resourceType: ResourceType.Oxygen, amount: 60 },
     ],
     unlocks: { buildings: [WATCHTOWER_BUILDING_TYPE_ID], recipes: [] },
   },
@@ -78,28 +83,28 @@ export const MILESTONES: readonly Milestone[] = [
     chapter: 1,
     title: 'Raffinerie',
     requirements: [
-      { resourceType: ResourceType.Regolith, amount: 150 },
-      { resourceType: ResourceType.Oxygen, amount: 100 },
+      { resourceType: ResourceType.Regolith, amount: 200 },
+      { resourceType: ResourceType.Oxygen, amount: 120 },
     ],
-    unlocks: { buildings: [CONVERTER_BUILDING_TYPE_ID], recipes: ['iron_oxide', 'aluminum_oxide'] },
+    unlocks: { buildings: [CONVERTER_BUILDING_TYPE_ID], recipes: ['iron_oxide'] },
   },
   // Chapter 2 · Refining
   {
     id: 'refining_iron',
     chapter: 2,
     title: 'Oxyde de fer',
-    requirements: [{ resourceType: ResourceType.IronOxide, amount: 40 }],
-    unlocks: { buildings: [MERGER_BASIC_BUILDING_TYPE_ID], recipes: ['silicon_dioxide'] },
+    requirements: [{ resourceType: ResourceType.IronOxide, amount: 60 }],
+    unlocks: { buildings: [MERGER_BASIC_BUILDING_TYPE_ID], recipes: ['aluminum_oxide'] },
   },
   {
     id: 'refining_light_alloys',
     chapter: 2,
     title: 'Alliages légers',
     requirements: [
-      { resourceType: ResourceType.IronOxide, amount: 60 },
-      { resourceType: ResourceType.AluminumOxide, amount: 30 },
+      { resourceType: ResourceType.IronOxide, amount: 80 },
+      { resourceType: ResourceType.AluminumOxide, amount: 40 },
     ],
-    unlocks: { buildings: [SYNTHESIZER_BUILDING_TYPE_ID], recipes: ['ceramic_plates'] },
+    unlocks: { buildings: [SYNTHESIZER_BUILDING_TYPE_ID], recipes: ['ceramic_plates', 'silicon_dioxide'] },
   },
   {
     id: 'refining_silicon',
@@ -107,7 +112,7 @@ export const MILESTONES: readonly Milestone[] = [
     title: 'Silicium',
     requirements: [
       { resourceType: ResourceType.SiliconDioxide, amount: 30 },
-      { resourceType: ResourceType.CeramicPlates, amount: 10 },
+      { resourceType: ResourceType.CeramicPlates, amount: 15 },
     ],
     unlocks: { buildings: [], recipes: ['nitrogen_gas', 'water'] },
   },

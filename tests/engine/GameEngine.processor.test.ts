@@ -122,6 +122,45 @@ describe('connected processor logistics', () => {
     expect(engine.getResourceCounts().hydrogen).toBe(0);
   });
 
+  it('delivers the unit held while unbelted once a belt reaches a storage, then keeps extracting', () => {
+    const engine = makeEngine();
+    const extractor = placeExtractor(engine, 3, 30, ResourceType.Oxygen);
+    powerBuilding(engine, extractor, 1, 3, 27);
+    simulate(engine, 4.1);
+    expect(engine.getProducerOutputBuffer(extractor)).not.toBeNull();
+
+    const storage = placeStorage(engine, 7, 29);
+    belt(engine, { building: extractor, port: 'out_east' }, { building: storage, port: 'in_west' });
+    simulate(engine, 6.1);
+
+    expect(engine.getStorageInventory(storage)?.oxygen).toBeGreaterThanOrEqual(3);
+  });
+
+  it('delivers a processor output finished while its output belt was removed, once rebuilt', () => {
+    const engine = makeEngine();
+    const extractor = placeExtractor(engine, 2, 80, ResourceType.Regolith);
+    powerBuilding(engine, extractor, 1, 2, 77);
+    const converter = placeConverter(engine, 8, 79, 'iron_oxide');
+    belt(engine, { building: extractor, port: 'out_east' }, { building: converter, port: 'in' });
+    const storage = placeStorage(engine, 14, 79);
+    const output = engine.placeBelt({ building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    expect(output.ok).toBe(true);
+
+    // Remove the output belt mid-cycle: the cycle finishes into the converter's buffer.
+    simulate(engine, 3);
+    expect(engine.getProcessorState(converter)?.cycleProgress).toBeGreaterThan(0);
+    engine.removeBelt(output.ok ? output.segmentIds[0]! : 0);
+    simulate(engine, 2);
+    expect(engine.getProducerOutputBuffer(converter)).not.toBeNull();
+    const delivered = engine.getStorageInventory(storage)!.ironOxide;
+
+    belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    simulate(engine, 6.1);
+
+    expect(engine.getProducerOutputBuffer(converter)).toBeNull();
+    expect(engine.getStorageInventory(storage)!.ironOxide).toBeGreaterThanOrEqual(delivered + 2);
+  });
+
   it('holds extractor output for a downstream processor until the processor can pull it', () => {
     const engine = makeEngine();
     const extractor = placeExtractor(engine, 2, 10, ResourceType.Regolith);

@@ -12,8 +12,16 @@ import { HUB_CLEARANCE, type TileBlocker } from './hubPlacement';
 /**
  * Stock credited to the hub when a campaign starts. Sized for a first line:
  * ~4 extractors, ~6 solar panels, a storage and the belts to the hub.
+ * Regolith only, so the first milestone (oxygen) can never be met by the kit.
  */
 export const STARTING_KIT: readonly ResourceCost[] = [{ resourceType: ResourceType.Regolith, amount: 180 }];
+
+/**
+ * Time of day a campaign starts at (0 = midnight, 0.5 = noon): early morning,
+ * so solar panels work from the first minute and the first night comes once
+ * the first line runs.
+ */
+export const CAMPAIGN_START_TIME = 0.32;
 
 export interface StartingDepositRequirement {
   readonly resourceType: ResourceType;
