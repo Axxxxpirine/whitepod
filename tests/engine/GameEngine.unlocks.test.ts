@@ -128,7 +128,7 @@ describe('campaign unlocks in the engine', () => {
     expect(engine.setProcessorRecipe(converter, 'iron_oxide')).toBe(true);
     expect(engine.setProcessorRecipe(converter, null)).toBe(true);
 
-    completeThrough(engine, 'refining_iron');
+    completeThrough(engine, 'refining_light_alloys');
     expect(engine.setProcessorRecipe(converter, 'silicon_dioxide')).toBe(true);
   });
 
