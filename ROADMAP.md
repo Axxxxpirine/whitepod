@@ -96,7 +96,7 @@ Each phase ends with a **playtest among the team** and a short written debrief. 
 - **Finite deposits** with much larger amounts, richer veins hidden in the fog to reward exploration.
 - **Lunar night tuning**: night long enough to require batteries or fuel cells.
 - New buildings: splitter, fuel cell, extractor mk2.
-- **Recipe review** for coherence and interesting graphs (today every synthesizer recipe is Hydrogen + Oxygen; ammonia needs nitrogen, CO₂ needs carbon).
+- **Recipe review** for coherence and interesting graphs: nitrogen and carbon now come out of regolith through the converter, and methane, CO₂ and ammonia are built on them (#93).
 - Chapter 3 content.
 - Bots updated to play with costs and unlocks (needed for balancing in 0.6).
 
