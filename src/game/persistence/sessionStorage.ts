@@ -37,6 +37,7 @@ export interface PersistedWorldStateV3 {
   readonly simulationRemainder?: number;
   readonly extractionAccumulator?: number;
   readonly dayNightCycleSeconds?: number;
+  readonly beltTokens?: SerializedGameWorld['beltTokens'];
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
   readonly processorStates?: SerializedGameWorld['processorStates'];
   readonly storageInventories?: SerializedGameWorld['storageInventories'];
@@ -155,6 +156,14 @@ function areEnergyLinksValid(value: unknown): boolean {
   );
 }
 
+function areBeltTokensValid(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every((entry) => isRecord(entry) && isFiniteNumber(entry.id) && isFiniteNumber(entry.tokens)))
+  );
+}
+
 function areBatteryChargesValid(value: unknown): boolean {
   return (
     value === undefined ||
@@ -192,7 +201,8 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     simulationTimeValid &&
     (value.simulationRemainder === undefined || isFiniteNumber(value.simulationRemainder)) &&
     (value.extractionAccumulator === undefined || isFiniteNumber(value.extractionAccumulator)) &&
-    (value.dayNightCycleSeconds === undefined || isFiniteNumber(value.dayNightCycleSeconds))
+    (value.dayNightCycleSeconds === undefined || isFiniteNumber(value.dayNightCycleSeconds)) &&
+    areBeltTokensValid(value.beltTokens)
   );
 }
 
@@ -265,6 +275,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
     producerOutputBuffers: value.producerOutputBuffers,
     processorReservations: value.processorReservations,
     completedMilestones: value.completedMilestones,
+    beltTokens: value.beltTokens,
   };
 }
 
@@ -405,6 +416,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     producerOutputBuffers: snapshot.producerOutputBuffers,
     processorReservations: snapshot.processorReservations,
     completedMilestones: snapshot.completedMilestones,
+    beltTokens: snapshot.beltTokens,
   };
 }
 

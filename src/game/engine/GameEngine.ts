@@ -73,6 +73,7 @@ import { EnergyNetwork } from '../systems/EnergyNetwork';
 import { getDaylightFactor } from '../renderer/DayNightOverlayRenderer';
 import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../data/buildingCatalog';
 import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
+import { BeltThroughput, type BeltRunStats } from '@/game/flow/beltThroughput';
 import {
   resolveDownstreamTerminalFromOutput,
   resolveProcessorLogisticsStatus,
@@ -152,6 +153,8 @@ export interface SerializedGameWorld {
   readonly storageInventories?: readonly { readonly id: BuildingId; readonly inventory: ResourceInventory }[];
   readonly producerOutputBuffers?: readonly { readonly id: BuildingId; readonly buffer: ProducerOutputBuffer }[];
   readonly processorReservations?: readonly { readonly id: BuildingId; readonly reservations: readonly ProcessorReservation[] }[];
+  /** Belt run token buckets (flow/beltThroughput.ts), by tail segment id. */
+  readonly beltTokens?: readonly { readonly id: BuildingId; readonly tokens: number }[];
   /** Completed campaign milestones; absent in saves written before milestones existed. */
   readonly completedMilestones?: readonly MilestoneId[];
 }
@@ -218,6 +221,7 @@ export class GameEngine {
   private hasPendingWorldNotification = false;
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
+  private readonly beltThroughput: BeltThroughput;
   private energyTopologyVersion = -1;
   private simulationNetworks: SimulationNetwork[] = [];
   private logisticsVersion = -1;
@@ -243,6 +247,15 @@ export class GameEngine {
     this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
     this.buildings = options.buildings ?? new BuildingRegistry();
     this.connections = options.connections ?? new ConnectionRegistry();
+    const connections = this.connections;
+    this.beltThroughput = new BeltThroughput({
+      get connectionsVersion() {
+        return connections.version;
+      },
+      getBuilding: (id) => this.buildings.get(id) ?? undefined,
+      getBuildings: () => this.buildings.getAll(),
+      getConnectionsOf: (id) => this.getConnectionsOf(id),
+    });
     this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
     this.gameMode = options.gameMode ?? DEFAULT_GAME_MODE;
@@ -287,6 +300,7 @@ export class GameEngine {
     this.simulationRemainder = 0;
     for (let tick = 0; tick < ticks; tick++) {
       this.stepTime = ((this.stepTime + step / this.dayNightCycleSeconds) % 1 + 1) % 1;
+      this.beltThroughput.refill(step);
       let powerChanged = this.syncPowerState(emitSfx);
       // Advance work already supplied during this interval before the next extraction arrives.
       this.processProcessors(step);
@@ -306,7 +320,8 @@ export class GameEngine {
 
   private processExtraction(): void {
     let changed = false;
-    for (const id of this.poweredExtractors) {
+    // By id, so which extractor a saturated belt lets through never depends on insertion order.
+    for (const id of [...this.poweredExtractors].sort((a, b) => a - b)) {
       if (!this.releaseHeldOutput(id)) continue;
       const { x, y } = this.buildings.get(id)!.origin;
       const idx = toIndex(x, y);
@@ -856,15 +871,17 @@ export class GameEngine {
 
   getResourceRates(): ResourceStock {
     const rates = GameEngine.EMPTY_RESOURCE_STOCK();
+    // What each source would send, then what the belts let through.
+    const nominal = new Map<BuildingId, number>();
+    const output = new Map<BuildingId, ResourceTypeT>();
 
     // Extractors: add production rate for base resources
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       if (!this.hasValidDownstream(id)) continue;
-      const resource = this.grid.getResource(building.origin.x, building.origin.y);
-      const key = RESOURCE_STOCK_KEY[resource];
-      if (key) rates[key] += EXTRACTOR_RATE_PER_MIN;
+      nominal.set(id, EXTRACTOR_RATE_PER_MIN);
+      output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
     }
 
     // Processors: add output rate, subtract input rates (net flow)
@@ -876,15 +893,19 @@ export class GameEngine {
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
 
-      // Output rate
-      const outKey = RESOURCE_STOCK_KEY[recipe.output.resourceType];
-      if (outKey) rates[outKey] += (recipe.output.amount / recipe.cycleSeconds) * 60;
+      nominal.set(id, (recipe.output.amount / recipe.cycleSeconds) * 60);
+      output.set(id, recipe.output.resourceType);
 
       // Input consumption rates (negative)
       for (const input of recipe.inputs) {
         const inKey = RESOURCE_STOCK_KEY[input.resourceType];
         if (inKey) rates[inKey] -= (input.amount / recipe.cycleSeconds) * 60;
       }
+    }
+
+    for (const [id, perMinute] of this.beltThroughput.cappedRates(nominal)) {
+      const key = RESOURCE_STOCK_KEY[output.get(id)!];
+      if (key) rates[key] += perMinute;
     }
 
     return rates;
@@ -1032,6 +1053,16 @@ export class GameEngine {
       this.notify('world');
     }
     return disconnected;
+  }
+
+  /** Capacity and saturation of the belt run `segmentId` belongs to, or null for a non-belt. */
+  getBeltRunStats(segmentId: BuildingId): BeltRunStats | null {
+    return this.beltThroughput.statsFor(segmentId);
+  }
+
+  /** Belt segments on runs that refused a unit in the last few seconds. */
+  getSaturatedBeltSegments(): readonly BuildingId[] {
+    return this.beltThroughput.saturatedSegments();
   }
 
   getConnectionsOf(buildingId: BuildingId): readonly Connection[] {
@@ -1416,6 +1447,7 @@ export class GameEngine {
       producerOutputBuffers,
       processorReservations,
       completedMilestones: [...this.completedMilestones],
+      beltTokens: this.beltThroughput.serialize(),
     };
   }
 
@@ -1517,6 +1549,7 @@ export class GameEngine {
       if (getMilestone(id)) engine.completedMilestones.add(id);
     }
     engine.unlockCache = null;
+    engine.beltThroughput.restore(snapshot.beltTokens);
 
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
@@ -1583,6 +1616,7 @@ export class GameEngine {
     const inventory = this.storageInventories.get(terminal.buildingId);
     const key = RESOURCE_STOCK_KEY[buffer.resourceType];
     if (!inventory || !key) return false;
+    if (!this.beltThroughput.tryPass([buildingId])) return false;
 
     inventory[key] += buffer.amount;
     this.producerOutputBuffers.set(buildingId, null);
@@ -1624,6 +1658,8 @@ export class GameEngine {
       }
     }
 
+    // The belts between the providers and this processor must have room for every unit.
+    if (!this.beltThroughput.tryPass(reservations.map((reservation) => reservation.providerId))) return null;
     // Commit only once all inputs are available. An empty second port must leave the first intact.
     for (const { providerId } of reservations) this.producerOutputBuffers.set(providerId, null);
     return reservations;
