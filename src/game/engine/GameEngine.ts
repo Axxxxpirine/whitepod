@@ -9,8 +9,12 @@ import {
   worldTileOf,
 } from '../data/ConnectionRegistry';
 import {
+  beltTierOf,
+  beltTypeId,
+  beltTypeIdInTier,
   getBuildingType,
   isBeltTypeId,
+  type BeltTier,
   isProcessorTypeId,
   isStorageTypeId,
   validateCatalog,
@@ -32,7 +36,7 @@ import {
 import { MILESTONES, STARTING_UNLOCKS, getMilestone, type Milestone, type MilestoneId } from '../data/milestoneCatalog';
 import { computeUnlocks, findUnlockingMilestone, type UnlockKind, type UnlockState } from '../campaign/unlocks';
 import { RESOURCE_STOCK_KEY } from '../data/resourceStock';
-import { canAfford, mergeCosts, missingFor, refund, spend } from '../economy/wallet';
+import { canAfford, costDifference, mergeCosts, missingFor, refund, spend } from '../economy/wallet';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -52,6 +56,7 @@ import {
   type BeltFailure,
   type BeltResult,
   type BeltRouteQuote,
+  type BeltUpgradeQuote,
   type PlacementResult,
   type PlaceBeltResult,
   type PowerState,
@@ -222,6 +227,8 @@ export class GameEngine {
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
   private readonly beltThroughput: BeltThroughput;
+  /** Bumped when belts change type in place, which keeps the connections. */
+  private beltTypeRevision = 0;
   private energyTopologyVersion = -1;
   private simulationNetworks: SimulationNetwork[] = [];
   private logisticsVersion = -1;
@@ -247,11 +254,8 @@ export class GameEngine {
     this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
     this.buildings = options.buildings ?? new BuildingRegistry();
     this.connections = options.connections ?? new ConnectionRegistry();
-    const connections = this.connections;
     this.beltThroughput = new BeltThroughput({
-      get connectionsVersion() {
-        return connections.version;
-      },
+      topologyKey: () => `${this.connections.version}:${this.beltTypeRevision}`,
       getBuilding: (id) => this.buildings.get(id) ?? undefined,
       getBuildings: () => this.buildings.getAll(),
       getConnectionsOf: (id) => this.getConnectionsOf(id),
@@ -945,8 +949,8 @@ export class GameEngine {
     return id;
   }
 
-  canPlaceBelt(from: PortEndpoint, to: PortEndpoint): BeltResult {
-    const quote = this.quoteBelt(from, to);
+  canPlaceBelt(from: PortEndpoint, to: PortEndpoint, tier: BeltTier = 'basic'): BeltResult {
+    const quote = this.quoteBelt(from, to, tier);
     if (!quote.ok) return quote;
     if (quote.missing.length > 0) return { ok: false, reason: 'insufficient_resources' };
     return { ok: true, plan: quote.plan };
@@ -956,11 +960,51 @@ export class GameEngine {
    * Plans a belt route and prices it without refusing it for cost, so the
    * preview can show an unaffordable route and what it lacks.
    */
-  quoteBelt(from: PortEndpoint, to: PortEndpoint): BeltRouteQuote {
-    const planned = planBelt(this, from, to);
+  quoteBelt(from: PortEndpoint, to: PortEndpoint, tier: BeltTier = 'basic'): BeltRouteQuote {
+    if (!this.isBuildingUnlocked(beltTypeId(tier, 'straight'))) return { ok: false, reason: 'locked' };
+    const planned = planBelt(this, from, to, tier);
     if (!planned.ok) return planned;
     const cost = this.getBeltRouteCost(planned.plan.segments);
     return { ok: true, plan: planned.plan, cost, missing: this.getMissingResources(cost) };
+  }
+
+  /**
+   * Prices turning the belt route of `segmentId` (every segment `removeBelt`
+   * would remove) into `tier`: the player pays the difference with the
+   * segments it replaces, which are refunded.
+   */
+  quoteBeltUpgrade(segmentId: BuildingId, tier: BeltTier): BeltUpgradeQuote {
+    const building = this.buildings.get(segmentId);
+    if (!building || !isBeltTypeId(building.typeId)) return { ok: false, reason: 'unknown_building' };
+    if (!this.isBuildingUnlocked(beltTypeId(tier, 'straight'))) return { ok: false, reason: 'locked' };
+    const segments = this.collectConnectedBeltComponent(segmentId).filter(
+      (id) => beltTierOf(this.buildings.get(id)!.typeId) !== tier,
+    );
+    if (segments.length === 0) return { ok: false, reason: 'already_tier' };
+    const pay = mergeCosts(segments.map((id) => this.getBuildingCost(beltTypeIdInTier(this.buildings.get(id)!.typeId, tier)!)));
+    const refund = mergeCosts(segments.map((id) => this.getBuildingCost(this.buildings.get(id)!.typeId)));
+    const net = costDifference(pay, refund);
+    return { ok: true, segments, net, refund: costDifference(refund, pay), missing: this.getMissingResources(net) };
+  }
+
+  /** Upgrades the belt route of `segmentId` to `tier` in place: same ids, same connections. */
+  upgradeBelt(segmentId: BuildingId, tier: BeltTier): boolean {
+    const quote = this.quoteBeltUpgrade(segmentId, tier);
+    if (!quote.ok || quote.missing.length > 0) {
+      const reason = quote.ok ? 'insufficient_resources' : quote.reason;
+      if (reason === 'insufficient_resources' || reason === 'locked') this.publishSfx({ type: 'belt_place_fail', reason });
+      return false;
+    }
+    this.spendFromWallet(quote.net);
+    this.refundToWallet(quote.refund);
+    for (const id of quote.segments) {
+      this.buildings.retype(id, beltTypeIdInTier(this.buildings.get(id)!.typeId, tier)!);
+    }
+    this.beltTypeRevision++;
+    this.notify('world');
+    this.emitAction('upgrade_belt', { segmentId, tier, segmentCount: quote.segments.length });
+    this.publishSfx({ type: 'belt_place_success', segmentCount: quote.segments.length });
+    return true;
   }
 
   /** Total cost of a planned belt route (one segment cost per tile). */
@@ -968,8 +1012,8 @@ export class GameEngine {
     return mergeCosts(segments.map((segment) => this.getBuildingCost(segment.typeId)));
   }
 
-  placeBelt(from: PortEndpoint, to: PortEndpoint): PlaceBeltResult {
-    const planned = this.canPlaceBelt(from, to);
+  placeBelt(from: PortEndpoint, to: PortEndpoint, tier: BeltTier = 'basic'): PlaceBeltResult {
+    const planned = this.canPlaceBelt(from, to, tier);
     const fail = (reason: BeltFailure): PlaceBeltResult => {
       this.publishSfx({ type: 'belt_place_fail', reason });
       return { ok: false, reason };

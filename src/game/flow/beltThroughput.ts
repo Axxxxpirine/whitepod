@@ -23,7 +23,8 @@ export const BELT_BURST_SECONDS = 2;
 const SATURATED_FOR_SECONDS = 4;
 
 export interface ThroughputView {
-  readonly connectionsVersion: number;
+  /** Changes whenever connections or belt types change (an upgrade keeps the connections). */
+  topologyKey(): string;
   getBuilding(id: BuildingId): Building | undefined;
   getBuildings(): ReadonlyMap<BuildingId, Building>;
   getConnectionsOf(id: BuildingId): readonly Connection[];
@@ -38,7 +39,7 @@ export interface BeltRunStats {
 }
 
 export class BeltThroughput {
-  private topologyVersion = -1;
+  private topologyKey: string | null = null;
   private readonly runOf = new Map<BuildingId, BuildingId>();
   /** Items per second, by run id. */
   private readonly ratePerSecond = new Map<BuildingId, number>();
@@ -176,8 +177,9 @@ export class BeltThroughput {
 
   /** Rebuilds runs and paths after a connection change, keeping the tokens of runs that still exist. */
   private sync(): void {
-    if (this.topologyVersion === this.view.connectionsVersion) return;
-    this.topologyVersion = this.view.connectionsVersion;
+    const key = this.view.topologyKey();
+    if (this.topologyKey === key) return;
+    this.topologyKey = key;
     this.runOf.clear();
     this.paths.clear();
     const rates = new Map<BuildingId, number>();
