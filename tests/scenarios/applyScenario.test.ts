@@ -21,7 +21,7 @@ describe('applyScenarioToLiveSession', () => {
       selectedTool: { kind: 'belt' },
       selectedBuildingId: 42,
       selectedBuildingAnchor: { x: 10, y: 20 },
-      beltPreview: { kind: 'belt', isValid: true, tiles: [] },
+      beltPreview: { kind: 'belt', isValid: true, tiles: [], cost: [], missing: [] },
       currentBuildingRotation: Direction.South,
       sessionEpoch: 0,
       worldVersion: 0,

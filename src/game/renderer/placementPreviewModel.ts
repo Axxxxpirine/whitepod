@@ -5,6 +5,8 @@ import type {
   BuildingTypeId,
   Direction,
   Footprint,
+  PlacementFailure,
+  ResourceCost,
   SelectedTool,
   TileCoord,
 } from '../types';
@@ -14,6 +16,8 @@ export interface BuildingPlacementPreviewModel {
   readonly origin: TileCoord;
   readonly footprint: Footprint;
   readonly isValid: boolean;
+  /** Why the building cannot be placed here, when it cannot. */
+  readonly reason?: PlacementFailure;
   readonly buildingTypeId: BuildingTypeId;
   readonly rotation: Direction;
 }
@@ -28,6 +32,9 @@ export interface BeltPlacementPreviewModel {
   readonly tiles: readonly BeltPreviewTile[];
   readonly isValid: boolean;
   readonly reason?: BeltFailure;
+  /** Total route cost (empty in sandbox) and what the global stock lacks for it. */
+  readonly cost: readonly ResourceCost[];
+  readonly missing: readonly ResourceCost[];
 }
 
 export type PlacementPreviewModel = BuildingPlacementPreviewModel | BeltPlacementPreviewModel;
@@ -45,11 +52,13 @@ export function getPlacementPreviewModel(
   const buildingType = getBuildingType(selectedTool.buildingType);
   if (!buildingType) return null;
 
+  const placement = engine.canPlaceBuilding(selectedTool.buildingType, hoverTile, buildingRotation);
   return {
     kind: 'building',
     origin: hoverTile,
     footprint: buildingType.footprint,
-    isValid: engine.canPlaceBuilding(selectedTool.buildingType, hoverTile, buildingRotation).ok,
+    isValid: placement.ok,
+    ...(placement.ok ? {} : { reason: placement.reason }),
     buildingTypeId: selectedTool.buildingType,
     rotation: buildingRotation,
   };

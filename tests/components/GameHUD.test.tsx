@@ -320,7 +320,7 @@ describe('GameHUD', () => {
       selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
       selectedBuildingId: 12,
       selectedBuildingAnchor: { x: 120, y: 160 },
-      beltPreview: { kind: 'belt', isValid: true, tiles: [] },
+      beltPreview: { kind: 'belt', isValid: true, tiles: [], cost: [], missing: [] },
       currentBuildingRotation: Direction.South,
     });
 
