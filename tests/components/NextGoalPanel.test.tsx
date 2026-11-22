@@ -6,6 +6,7 @@ import { MILESTONES, getChapterTitle } from '@/game/data/milestoneCatalog';
 import { resourceStockKey } from '@/game/data/resourceStock';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { chapterLabel, unlockLabels } from '@/game/ui/milestonePresentation';
+import { beltTypeIds } from '@/game/data/buildingCatalog';
 import { useGameStore } from '@/store/useGameStore';
 
 const FIRST = MILESTONES[0]!;
@@ -137,5 +138,12 @@ describe('milestone presentation', () => {
 
     expect(labels).toHaveLength(refinery.unlocks.buildings.length + refinery.unlocks.recipes.length);
     expect(labels.some((label) => label.includes('_'))).toBe(false);
+  });
+
+  it('names a belt tier once, not each of its pieces', () => {
+    expect(unlockLabels({ buildings: [...beltTypeIds('fast')], recipes: ['carbon_dioxide'] })).toEqual([
+      'Convoyeur rapide',
+      'Synthèse de CO₂',
+    ]);
   });
 });
