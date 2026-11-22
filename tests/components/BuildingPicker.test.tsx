@@ -4,6 +4,7 @@ import { BuildingPicker } from '@/components/hud/BuildingPicker';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   BELT_STRAIGHT_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
@@ -175,6 +176,26 @@ describe('BuildingPicker shared slots', () => {
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'building', buildingType: SPLITTER_BASIC_BUILDING_TYPE_ID });
     expect(screen.getByRole('button', { name: 'Répartiteur' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.keyDown(window, { key: '6' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+  });
+
+  it('cycles extractor, extractor mk2, then selection on key 1 in sandbox, and skips the locked mk2 in campaign', () => {
+    const engine = new GameEngine(800, 600);
+    engine.generateMap(42);
+    useGameStore.setState({ engine });
+    const { unmount } = render(<BuildingPicker />);
+
+    fireEvent.keyDown(window, { key: '1' });
+    fireEvent.keyDown(window, { key: '1' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'building', buildingType: EXTRACTOR_MK2_BUILDING_TYPE_ID });
+    fireEvent.keyDown(window, { key: '1' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+    unmount();
+
+    useGameStore.setState({ engine: campaign() });
+    render(<BuildingPicker />);
+    fireEvent.keyDown(window, { key: '1' });
+    fireEvent.keyDown(window, { key: '1' });
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
   });
 });

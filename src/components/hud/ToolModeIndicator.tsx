@@ -56,11 +56,12 @@ function usePlacementReadout(): PlacementReadout | null {
       };
     }
     if (selectedTool.kind !== 'building') return null;
-    const cost = engine.getBuildingCost(selectedTool.buildingType);
     const preview = getPlacementPreviewModel(engine, selectedTool, hoverTile, null, rotation);
+    const upgrade = preview?.kind === 'building' ? preview.upgradeCost : undefined;
+    const cost = upgrade ?? engine.getBuildingCost(selectedTool.buildingType);
     const reason = preview?.kind === 'building' ? (preview.reason ?? null) : null;
     if (cost.length === 0 && reason === null) return null;
-    return { costLabel: 'Coût', lines: costLines(cost, engine.getMissingResources(cost)), reason };
+    return { costLabel: upgrade ? 'Amélioration' : 'Coût', lines: costLines(cost, engine.getMissingResources(cost)), reason };
   }, [engine, selectedTool, hoverTile, rotation, beltPreview, worldVersion]);
 }
 

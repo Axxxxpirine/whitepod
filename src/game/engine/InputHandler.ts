@@ -117,6 +117,13 @@ export class InputHandler {
     }
 
     if (selectedTool.kind === 'building') {
+      // Clicking a building the tool upgrades (e.g. an extractor with the mk2) upgrades it in place.
+      const upgradable = this.engine.upgradableBuildingAt(coord, selectedTool.buildingType);
+      if (upgradable !== null) {
+        if (this.engine.upgradeBuilding(upgradable, selectedTool.buildingType)) this.onBuildingPlaced?.(upgradable);
+        else this.onInvalidPlacement?.(coord, selectedTool.buildingType);
+        return;
+      }
       const buildingId = this.engine.placeBuilding(
         selectedTool.buildingType,
         coord,
