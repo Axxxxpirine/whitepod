@@ -1,15 +1,16 @@
-"""Re-cut RTS sprites whose art was sliced at the edge of the file.
+"""Re-cut RTS sprites whose art was sliced when it was taken from its sheet.
 
 The sprites in public/sprites/rts/ were cut from the chroma-key sheets in
 public/sprites/rts/sources/ on a fixed grid, so objects wider than their grid
-cell lost a slice. This script finds each such sprite's object in its sheet
+cell lost a slice: either at the edge of the file, or inside it, where the cut
+shows as a flat top or bottom (the hub/storage box lost its lower corner). This script finds each such sprite's object in its sheet
 (objects are separated by background gaps; SHEET_ORDER names them), keys the
 background out, and redraws it at the sprite's current scale and ground line,
 centred horizontally. An object too wide for the file is shrunk to fit: the
 script reports the factor, to compensate with `displayHeightTiles`.
 
 Usage (Pillow only):  python3 scripts/sprites/recut_sprites.py [--check] [name ...]
-  --check   list the sprites whose opaque pixels touch the file edge, write nothing
+  --check   list the sprites cut at the file edge or flat inside it, write nothing
   name      re-cut only these sprites (e.g. buildings/synthesizer); default: every cut sprite
 """
 
@@ -43,6 +44,10 @@ SHEET_ORDER = {
 OPAQUE = 16  # alpha above which a pixel counts as art
 GAP = 24  # background run (sheet pixels) separating two objects
 EDGE_MARGIN = 2  # keep re-cut art this far from the file edge
+# A top or bottom whose two outermost rows span this share of the art width on
+# average is a straight cut, not a drawn edge (intact sprites stay under 0.28;
+# keep in sync with tests/assets/spriteEdges.test.ts).
+FLAT_CUT_SHARE = 0.3
 
 
 def keyness(rgb: tuple[int, int, int], key: str) -> int:
@@ -111,6 +116,26 @@ def touches_edge(img: Image.Image) -> bool:
     return l == 0 or t == 0 or r == w or b == h
 
 
+def flat_cut_side(img: Image.Image) -> str | None:
+    """'top' or 'bottom' when the art ends in a straight cut inside the file, else None."""
+    alpha = img.getchannel("A").point(lambda v: 255 if v > OPAQUE else 0)
+    l, t, r, b = alpha.getbbox()
+    span = r - l
+
+    def share(rows: tuple[int, int]) -> float:
+        return sum(alpha.crop((l, y, r, y + 1)).histogram()[255] for y in rows) / (2 * span)
+
+    if share((b - 1, b - 2)) > FLAT_CUT_SHARE:
+        return "bottom"
+    if share((t, t + 1)) > FLAT_CUT_SHARE:
+        return "top"
+    return None
+
+
+def is_cut(img: Image.Image) -> bool:
+    return touches_edge(img) or flat_cut_side(img) is not None
+
+
 def match_colours(art: Image.Image, reference: Image.Image) -> Image.Image:
     """Maps each channel of `art` to the mean and spread of `reference` where both are opaque.
 
@@ -143,12 +168,17 @@ def recut(sprite_path: Path, keyed: Image.Image, boxes: list[tuple[int, int, int
 
     l, t, r, b = opaque_box(sprite)
     w, h = sprite.size
-    # Current scale from an intact dimension; ground line from the sprite's bottom.
-    scale = (b - t) / obj.height if t > 0 and b < h else (r - l) / obj.width
+    flat = flat_cut_side(sprite)
+    # Current scale from an intact dimension; ground line from the sprite's bottom,
+    # or from its top when the bottom is the cut (the art keeps its place and grows down).
+    scale = (b - t) / obj.height if t > 0 and b < h and not flat else (r - l) / obj.width
     fit = min(1.0, (w - 2 * EDGE_MARGIN) / (obj.width * scale), (h - 2 * EDGE_MARGIN) / (obj.height * scale))
     scale *= fit
     art = obj.resize((round(obj.width * scale), round(obj.height * scale)), Image.LANCZOS)
-    bottom = min(b, h - EDGE_MARGIN) if b < h else h - EDGE_MARGIN
+    if flat == "bottom":
+        bottom = min(t + art.height, h - EDGE_MARGIN)
+    else:
+        bottom = min(b, h - EDGE_MARGIN) if b < h else h - EDGE_MARGIN
     out = Image.new("RGBA", sprite.size)
     out.alpha_composite(art, ((w - art.width) // 2, max(EDGE_MARGIN, bottom - art.height)))
     out = match_colours(out, sprite)
@@ -161,7 +191,7 @@ def main(argv: list[str]) -> int:
     check = "--check" in argv
     names = [a for a in argv if not a.startswith("--")]
     sprites = sorted(p for folder in SHEETS for p in (ROOT / folder).glob("*.png"))
-    cut = [p for p in sprites if touches_edge(Image.open(p).convert("RGBA"))]
+    cut = [p for p in sprites if is_cut(Image.open(p).convert("RGBA"))]
     if check:
         for p in cut:
             print(p.relative_to(ROOT))
