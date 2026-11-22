@@ -1,3 +1,4 @@
+import { DAY_NIGHT_CYCLE_SECONDS } from '@/game/constants';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { ResourceType, TileType } from '@/game/types';
@@ -17,7 +18,7 @@ import { generateComplexScenario } from '@/game/scenarios/generators/generateCom
 import { generateBuildAllScenario } from '@/game/scenarios/generators/generateBuildAllScenario';
 
 const EXTRACTION_INTERVAL_SECONDS = 60 / EXTRACTOR_RATE_PER_MIN;
-const FULL_DAY_NIGHT_CYCLE_SECONDS = 120;
+const FULL_DAY_NIGHT_CYCLE_SECONDS = DAY_NIGHT_CYCLE_SECONDS;
 const HALF_NIGHT_SECONDS = FULL_DAY_NIGHT_CYCLE_SECONDS / 2;
 
 function groundEverywhere(engine: GameEngine) {
@@ -428,7 +429,7 @@ describe('GameEngine energy networks', () => {
     const battery = getBuildingType(BATTERY_BASIC_BUILDING_TYPE_ID)!.energy!.battery!;
     engine.batteryCharges.set(batteryId, battery.capacity);
 
-    engine.update(120);
+    engine.update(FULL_DAY_NIGHT_CYCLE_SECONDS);
     expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(battery.capacity - extractorCons, 5);
     expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
   });
@@ -448,7 +449,7 @@ describe('GameEngine energy networks', () => {
     simulate(engine, HALF_NIGHT_SECONDS, EXTRACTION_INTERVAL_SECONDS);
 
     expect(engine.getBuildingPowerState(extractorId)).toBe('powered');
-    expect(engine.getResourceCounts().hydrogen).toBe(EXTRACTOR_RATE_PER_MIN);
+    expect(engine.getResourceCounts().hydrogen).toBe((EXTRACTOR_RATE_PER_MIN * HALF_NIGHT_SECONDS) / 60);
     expect(engine.batteryCharges.get(batteryId)).toBeCloseTo(
       battery.capacity - extractorConsumption * (HALF_NIGHT_SECONDS / FULL_DAY_NIGHT_CYCLE_SECONDS),
       5,

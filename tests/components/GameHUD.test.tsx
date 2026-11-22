@@ -1,3 +1,4 @@
+import { DAY_NIGHT_CYCLE_SECONDS } from '@/game/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
@@ -424,7 +425,8 @@ describe('GameHUD', () => {
     render(<GameHUD />);
     expect(screen.getByText('Prod. 0 kW')).toBeInTheDocument();
     act(() => {
-      for (let i = 0; i < 1800; i++) engine.update(1 / 60);
+      // Dawn to noon: a quarter of a cycle, frame by frame.
+      for (let i = 0; i < (DAY_NIGHT_CYCLE_SECONDS / 4) * 60; i++) engine.update(1 / 60);
       useGameStore.getState().setSimulationTime(engine.simulationTime);
     });
     expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();

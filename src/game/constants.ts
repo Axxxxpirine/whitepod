@@ -5,6 +5,12 @@ export const GRID_SIZE = GRID_WIDTH * GRID_HEIGHT;
 export const MAP_CENTER = { x: Math.floor(GRID_WIDTH / 2), y: Math.floor(GRID_HEIGHT / 2) } as const;
 export const TILE_SIZE = 32;
 export const DEFAULT_MAP_SEED = 42;
+/**
+ * Length of a day-night cycle in seconds, half of it night (#92): long enough
+ * that a line without batteries or fuel cells visibly stops for two minutes.
+ * One cycle is one simulated hour for energy (battery kWh scale with it).
+ */
+export const DAY_NIGHT_CYCLE_SECONDS = 240;
 /** Default amount of a deposit tile (placed by hand or by campaign start); generated maps vary it, see data/depositAmounts.ts. */
 export const RESOURCE_DEPOSIT_AMOUNT = 1500;
 export const INITIAL_FOG_REVEAL_RADIUS = 20;

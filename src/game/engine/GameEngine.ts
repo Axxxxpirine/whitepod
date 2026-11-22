@@ -71,7 +71,7 @@ import {
   type TileCoord,
   type TileType,
 } from '../types';
-import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
+import { DAY_NIGHT_CYCLE_SECONDS, DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { isInBounds, toCoord, toIndex } from '../data/coords';
 import { depositAmountAt } from '../data/depositAmounts';
 import { screenToGrid } from './CoordinateTransform';
@@ -295,7 +295,7 @@ export class GameEngine {
     this.dayNightCycleSeconds =
       typeof options.dayNightCycleSeconds === 'number' && Number.isFinite(options.dayNightCycleSeconds) && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
-        : 120;
+        : DAY_NIGHT_CYCLE_SECONDS;
   }
 
   get simulationTime(): number {
