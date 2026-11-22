@@ -199,6 +199,7 @@ engine.screenToTile(screenX, screenY)               // → { x, y }
 ## Session persistence
 
 - The world state is saved automatically in `localStorage` and restored when you reopen the game, including buildings, connections, stocks, simulation clock, and batteries.
+- Campaign worlds also save their game mode and completed milestones (unlocks are derived from them, the hub is a saved building and its stock a saved inventory). Both fields are optional in the v3 world format: a save without them (written before campaigns) loads as a sandbox world. `tests/persistence/campaignSave.test.ts` checks that a campaign in progress reloads identically and keeps running the same, live and through the offline catch-up.
 - Offline progression (IDLE) is applied only on a real pause→resume: when the tab transitions from hidden to visible, and on cross-session reopen via a small `localStorage` sidecar holding the pause timestamp.
 - The catch-up is exact (replays simulation updates) and capped to 8 hours per batch.
 - Camera position and selected tool are also persisted locally, so reopening the game resumes the same view.
