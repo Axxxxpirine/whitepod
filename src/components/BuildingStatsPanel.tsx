@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Battery, GitMerge, Layers, Lock, Pickaxe, Sun, Zap } from 'lucide-react';
+import { Activity, Battery, Flame, GitMerge, Layers, Lock, Pickaxe, Sun, Zap } from 'lucide-react';
 import { RESOURCE_ENTRIES, getResourceSprite } from '@/game/ui/resourcePresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
 import {
@@ -8,6 +8,7 @@ import {
   CONVERTER_BUILDING_TYPE_ID,
   extractorRatePerMinute,
   isExtractorTypeId,
+  isFuelCellTypeId,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -158,6 +159,30 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
       <>
         <StatRow icon={GitMerge} label={isSplitter ? 'Sorties' : 'Entrees'} value={`${connectedSide}/${totalSide}`} />
         <StatRow icon={Activity} label="Ressources" value={resourceList} />
+      </>
+    );
+  } else if (isFuelCellTypeId(building.typeId)) {
+    const fuel = getBuildingType(building.typeId)!.fuel!;
+    const burning = (engine.getFuelBurnRemaining(building.id) ?? 0) > 0;
+    const perMinute = (60 / fuel.burnSeconds).toLocaleString('fr-CH', { maximumFractionDigits: 1 });
+    const fuelList = fuel.inputs.map((input) => resourceTypeLabel(input.resourceType)).join(', ');
+
+    rows = (
+      <>
+        <StatRow
+          icon={Zap}
+          label="Puissance"
+          value={`${burning ? fuel.powerKw : 0} kW`}
+          valueClass={burning ? 'text-ok' : 'text-ink-muted'}
+        />
+        {/* DESIGN.md: amber means "not enough". */}
+        <StatRow
+          icon={Flame}
+          label="Combustible"
+          value={burning ? 'En marche' : 'À court'}
+          valueClass={burning ? 'text-ink' : 'text-accent-warm'}
+        />
+        <StatRow icon={Activity} label="Consomme" value={`${fuelList} · ${perMinute}/min`} />
       </>
     );
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {

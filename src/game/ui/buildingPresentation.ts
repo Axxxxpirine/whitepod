@@ -5,6 +5,7 @@ import {
   beltTypeIds,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_MK2_BUILDING_TYPE_ID,
+  FUEL_CELL_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
@@ -107,9 +108,10 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
     typeId: BATTERY_BASIC_BUILDING_TYPE_ID,
+    alternates: [FUEL_CELL_BUILDING_TYPE_ID],
     shortcut: '5',
     activeClass: 'bg-accent-warm',
-    highlightFamily: [BATTERY_BASIC_BUILDING_TYPE_ID],
+    highlightFamily: [BATTERY_BASIC_BUILDING_TYPE_ID, FUEL_CELL_BUILDING_TYPE_ID],
     highlightColor: PIXI.accentWarm,
   },
   {
