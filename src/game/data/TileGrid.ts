@@ -52,11 +52,11 @@ export class TileGrid {
     return this.resourceType[toIndex(x, y)] as ResourceTypeT;
   }
 
-  setResource(x: number, y: number, resource: ResourceTypeT): void {
+  setResource(x: number, y: number, resource: ResourceTypeT, amount: number = RESOURCE_DEPOSIT_AMOUNT): void {
     if (!isInBounds(x, y)) return;
     const idx = toIndex(x, y);
     this.resourceType[idx] = resource;
-    this.resourceAmount[idx] = resource === ResourceType.None ? 0 : RESOURCE_DEPOSIT_AMOUNT;
+    this.resourceAmount[idx] = resource === ResourceType.None ? 0 : amount;
     this.markDirty(x, y);
     this.onChange?.();
   }
@@ -177,9 +177,6 @@ export class TileGrid {
       for (let i = 0; i < GRID_SIZE; i++) {
         grid.resourceAmount[i] = grid.resourceType[i] !== ResourceType.None ? RESOURCE_DEPOSIT_AMOUNT : 0;
       }
-    }
-    for (let i = 0; i < GRID_SIZE; i++) {
-      grid.resourceAmount[i] = grid.resourceType[i] !== ResourceType.None ? RESOURCE_DEPOSIT_AMOUNT : 0;
     }
     return grid;
   }
