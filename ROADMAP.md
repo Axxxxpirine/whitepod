@@ -97,7 +97,7 @@ Each phase ends with a **playtest among the team** and a short written debrief. 
 - **Lunar night tuning**: night long enough to require batteries or fuel cells.
 - New buildings: splitter, fuel cell, extractor mk2.
 - **Recipe review** for coherence and interesting graphs: nitrogen and carbon now come out of regolith through the converter, and methane, CO₂ and ammonia are built on them (#93).
-- Chapter 3 content.
+- **Chapter 3 content** (#94): water, then methane, then ammonia. Unlocks: fuel cell, carbon and methane recipes after water; extractor mk2, nitrogen and ammonia after methane; fast belt and CO₂ after ammonia. The scripted player finishes chapter 3 around 50 min (about 1 h 45 for a human), with the oldest deposits at about a third.
 - Bots updated to play with costs and unlocks (needed for balancing in 0.6).
 
 ### 0.3 — Readability and quality of life
