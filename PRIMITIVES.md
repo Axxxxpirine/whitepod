@@ -271,9 +271,10 @@ The currently supported building type ids are:
 - `placeholder_3x3`
 - `placeholder_node_1x1`
 - `placeholder_node_3x3`
-- `belt_straight`
-- `belt_corner_cw`
-- `belt_corner_ccw`
+- `belt_straight`, `belt_corner_cw`, `belt_corner_ccw`: basic belt, 60 items/min, 1 regolith per segment
+- `belt_fast_straight`, `belt_fast_corner_cw`, `belt_fast_corner_ccw`: fast belt, 120 items/min, 1 regolith + 1 iron oxide per segment; locked in campaign until its chapter 3 milestone (#94)
+
+Both tiers have the same shapes and ports, so a route changes tier in place. Catalog helpers: `beltTypeId(tier, shape)`, `beltTypeIds(tier)`, `beltTierOf(typeId)`, `beltTypeIdInTier(typeId, tier)`.
 
 ### Gameplay-relevant definitions
 
@@ -378,9 +379,10 @@ These are useful for deterministic testing and topology experiments:
 
 These are not usually placed manually by the player. They are produced by belt routing:
 
-- `belt_straight`
-- `belt_corner_cw`
-- `belt_corner_ccw`
+- `belt_straight`, `belt_corner_cw`, `belt_corner_ccw`: basic belt, 60 items/min, 1 regolith per segment
+- `belt_fast_straight`, `belt_fast_corner_cw`, `belt_fast_corner_ccw`: fast belt, 120 items/min, 1 regolith + 1 iron oxide per segment; locked in campaign until its chapter 3 milestone (#94)
+
+Both tiers have the same shapes and ports, so a route changes tier in place. Catalog helpers: `beltTypeId(tier, shape)`, `beltTypeIds(tier)`, `beltTierOf(typeId)`, `beltTypeIdInTier(typeId, tier)`.
 
 ## Port Connection Primitives
 
@@ -464,6 +466,16 @@ Current belt failure reasons:
 Effects of `removeBelt`:
 
 - removes the entire connected belt component containing the specified segment
+
+### Tiers and upgrades
+
+```ts
+engine.placeBelt(from, to, tier = 'basic')        // also canPlaceBelt / quoteBelt; a locked tier fails with 'locked'
+engine.quoteBeltUpgrade(segmentId, tier)          // { ok, segments, net, refund, missing } or { ok: false, reason }
+engine.upgradeBelt(segmentId, tier) => boolean
+```
+
+An upgrade turns every segment `removeBelt` would remove (the connected belt route) into `tier`, keeping ids, tiles and connections. The player pays the new segments minus the refund of the old ones (`net`, per resource); a resource the new tier needs less of comes back (`refund`). Failure reasons: `unknown_building`, `locked`, `already_tier`, or `missing` not empty. In the HUD, selecting the belt entry (key 3) again switches to the fast belt once it is unlocked, then back to selection; with the fast tool, hovering a slower route previews the upgrade and its price, and clicking it upgrades.
 
 ### Throughput
 
