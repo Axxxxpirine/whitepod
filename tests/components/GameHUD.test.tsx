@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
-import { VIEW_STORAGE_KEY, WORLD_STORAGE_KEY } from '@/game/persistence/sessionStorage';
 import { useGameStore } from '@/store/useGameStore';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
@@ -312,35 +311,16 @@ describe('GameHUD', () => {
     expect(screen.getByPlaceholderText('engine.placeResource(10, 10, 1)')).toBeInTheDocument();
   });
 
-  it('resets the session from the settings popover', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
-    window.localStorage.setItem(WORLD_STORAGE_KEY, 'world');
-    window.localStorage.setItem(VIEW_STORAGE_KEY, 'view');
-    useGameStore.setState({
-      selectedTool: { kind: 'building', buildingType: EXTRACTOR_BUILDING_TYPE_ID },
-      selectedBuildingId: 12,
-      selectedBuildingAnchor: { x: 120, y: 160 },
-      beltPreview: { kind: 'belt', isValid: true, tiles: [], cost: [], missing: [] },
-      currentBuildingRotation: Direction.South,
-    });
-
+  it('opens the main menu from the settings popover', () => {
+    useGameStore.setState({ startScreenOpen: false, sessionStarted: true });
     render(<GameHUD />);
 
-    // Open settings popover, then click Reset session
     fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
-    fireEvent.click(screen.getByRole('button', { name: /Reset session/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu principal' }));
 
-    expect(confirm).toHaveBeenCalled();
-    expect(useGameStore.getState().sessionEpoch).toBe(1);
-    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
-    expect(useGameStore.getState().selectedBuildingId).toBeNull();
-    expect(useGameStore.getState().selectedBuildingAnchor).toBeNull();
-    expect(useGameStore.getState().beltPreview).toBeNull();
-    expect(useGameStore.getState().currentBuildingRotation).toBe(Direction.North);
-    expect(useGameStore.getState().selectedBotProfileId).toBe('master');
-    expect(useGameStore.getState().seedInput).toBe('42');
-    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBeNull();
-    expect(window.localStorage.getItem(VIEW_STORAGE_KEY)).toBeNull();
+    expect(useGameStore.getState().startScreenOpen).toBe(true);
+    // Opening the menu loses nothing: the game keeps running behind it.
+    expect(useGameStore.getState().sessionEpoch).toBe(0);
   });
 
   it('starts and stops the selected bot manually', () => {

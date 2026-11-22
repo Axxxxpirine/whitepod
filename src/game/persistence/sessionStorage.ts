@@ -1,5 +1,5 @@
 import { GRID_SIZE } from '@/game/constants';
-import { isGameMode } from '@/game/data/gameMode';
+import { isGameMode, resolveGameMode, type GameMode } from '@/game/data/gameMode';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
 import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
 import type { BotProfileId } from '@/game/bot/botTypes';
@@ -469,6 +469,35 @@ export function installPersistedSession(args: {
   writeWorldState(payloads.world);
   writeViewState(payloads.view);
   clearIdleSidecar();
+}
+
+/** What the start screen tells about the saved game, without rebuilding the world. */
+export interface SavedSessionSummary {
+  readonly gameMode: GameMode;
+  readonly mapSeed: number;
+  readonly completedMilestones: number;
+}
+
+/**
+ * Summary of the saved world, or null when there is none or it would not load
+ * (malformed or older format). Read-only: unlike loadPersistedSession, it
+ * never clears a bad save.
+ */
+export function readSavedSessionSummary(): SavedSessionSummary | null {
+  const raw = getWorldStorage()?.getItem(WORLD_STORAGE_KEY);
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!isPersistedWorldStateV3(parsed)) return null;
+  return {
+    gameMode: resolveGameMode(parsed.gameMode),
+    mapSeed: parsed.mapSeed,
+    completedMilestones: parsed.completedMilestones?.length ?? 0,
+  };
 }
 
 export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {

@@ -10,11 +10,14 @@ import {
   installPersistedSession,
   loadPersistedSession,
   readIdleSidecar,
+  readSavedSessionSummary,
   saveViewSession,
   saveWorldSession,
   writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { GameMode } from '@/game/data/gameMode';
+import { resourceStockKey } from '@/game/data/resourceStock';
 import { ResourceType, TileType } from '@/game/types';
 
 function makeEngine() {
@@ -198,5 +201,42 @@ describe('idle sidecar', () => {
 
     expect(loaded?.idleSidecar).not.toBeNull();
     expect(loaded?.idleSidecar?.pausedAtWallClockMs).toBe(12_345);
+  });
+});
+
+describe('saved session summary', () => {
+  beforeEach(() => {
+    clearPersistedSession();
+    window.localStorage.clear();
+  });
+
+  it('is null without a save', () => {
+    expect(readSavedSessionSummary()).toBeNull();
+  });
+
+  it('reads the mode, the seed and the completed milestones of a campaign', () => {
+    const engine = new GameEngine(640, 480, { gameMode: GameMode.Campaign });
+    engine.generateMap(7);
+    const hub = engine.storageInventories.get(engine.getHubId()!)!;
+    for (const { resourceType, amount } of engine.getActiveMilestone()!.requirements) {
+      hub[resourceStockKey(resourceType)!] += amount;
+    }
+    engine.completeActiveMilestone();
+    saveWorldSession(engine, 'session-summary');
+
+    expect(readSavedSessionSummary()).toEqual({ gameMode: GameMode.Campaign, mapSeed: 7, completedMilestones: 1 });
+  });
+
+  it('reads a sandbox save', () => {
+    saveWorldSession(makeEngine(), 'session-sandbox');
+
+    expect(readSavedSessionSummary()).toEqual({ gameMode: GameMode.Sandbox, mapSeed: 99, completedMilestones: 0 });
+  });
+
+  it('is null for a save that would not load, and leaves it in place', () => {
+    window.localStorage.setItem(WORLD_STORAGE_KEY, '{"version":3}');
+
+    expect(readSavedSessionSummary()).toBeNull();
+    expect(window.localStorage.getItem(WORLD_STORAGE_KEY)).toBe('{"version":3}');
   });
 });

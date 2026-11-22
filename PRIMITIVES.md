@@ -12,7 +12,7 @@ Its goal is to serve as a stable reference for:
 For now, these primitives are accessible in two practical ways:
 
 - directly from TypeScript by instantiating and driving `GameEngine`
-- from the browser console in development via `window.engine`
+- from the browser console in development via `window.engine` (after leaving the start screen)
 
 This is not yet a formal scenario DSL. It is the operational contract of the current engine API.
 
