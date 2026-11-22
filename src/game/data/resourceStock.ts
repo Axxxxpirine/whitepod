@@ -10,6 +10,7 @@ export const RESOURCE_STOCK_KEY: Readonly<Record<number, keyof ResourceStock>> =
   [ResourceType.AluminumOxide]: 'aluminumOxide',
   [ResourceType.SiliconDioxide]: 'siliconDioxide',
   [ResourceType.NitrogenGas]: 'nitrogenGas',
+  [ResourceType.Carbon]: 'carbon',
   [ResourceType.Water]: 'water',
   [ResourceType.Methane]: 'methane',
   [ResourceType.CarbonDioxide]: 'carbonDioxide',

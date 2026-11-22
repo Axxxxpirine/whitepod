@@ -91,6 +91,7 @@ describe('connected processor logistics', () => {
       carbonDioxide: 0,
       ammonia: 0,
       ceramicPlates: 0,
+      carbon: 0,
     });
   });
 
@@ -261,21 +262,28 @@ describe('connected processor logistics', () => {
 
   it('keeps every input buffered until a complete batch can be reserved', () => {
     const engine = makeEngine();
-    const hydrogen = placeExtractor(engine, 2, 36, ResourceType.Hydrogen);
+    // Water takes 2 hydrogen per batch: one unit from each of two extractors.
+    const hydrogen = placeExtractor(engine, 2, 34, ResourceType.Hydrogen);
+    const hydrogenB = placeExtractor(engine, 2, 38, ResourceType.Hydrogen);
     const oxygen = placeExtractor(engine, 2, 44, ResourceType.Oxygen);
-    powerBuilding(engine, hydrogen, 1, 2, 33);
-    const synth = placeSynth(engine, 14, 38, 'carbon_dioxide');
+    powerBuilding(engine, hydrogen, 1, 2, 31);
+    powerBuilding(engine, hydrogenB, 1, 4, 41);
+    const hydrogenMerger = placeMerger(engine, 8, 36);
+    const synth = placeSynth(engine, 14, 38, 'water');
     const storage = placeStorage(engine, 22, 39);
-    belt(engine, { building: hydrogen, port: 'out_east' }, { building: synth, port: 'in_1' });
+    belt(engine, { building: hydrogen, port: 'out_east' }, { building: hydrogenMerger, port: 'in_north' });
+    belt(engine, { building: hydrogenB, port: 'out_east' }, { building: hydrogenMerger, port: 'in_south' });
+    belt(engine, { building: hydrogenMerger, port: 'out_east' }, { building: synth, port: 'in_1' });
     belt(engine, { building: oxygen, port: 'out_east' }, { building: synth, port: 'in_2' });
     belt(engine, { building: synth, port: 'out' }, { building: storage, port: 'in_west' });
 
     simulate(engine, 3);
     expect(engine.getProducerOutputBuffer(hydrogen)).toEqual({ resourceType: ResourceType.Hydrogen, amount: 1 });
+    expect(engine.getProducerOutputBuffer(hydrogenB)).toEqual({ resourceType: ResourceType.Hydrogen, amount: 1 });
     expect(engine.processorReservations.has(synth)).toBe(false);
     powerBuilding(engine, oxygen, 1, 4, 33);
     simulate(engine, 7);
-    expect(engine.getStorageInventory(storage)?.carbonDioxide).toBeGreaterThan(0);
+    expect(engine.getStorageInventory(storage)?.water).toBeGreaterThan(0);
   });
 
   it('accepts a recipe change after the last unit is delivered and input is disconnected', () => {

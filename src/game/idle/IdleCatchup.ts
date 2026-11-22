@@ -79,6 +79,7 @@ export function buildIdleSummary(
       carbonDioxide: after.carbonDioxide - before.carbonDioxide,
       ammonia: after.ammonia - before.ammonia,
       ceramicPlates: after.ceramicPlates - before.ceramicPlates,
+      carbon: after.carbon - before.carbon,
     },
   };
 }

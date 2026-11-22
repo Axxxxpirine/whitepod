@@ -32,6 +32,19 @@ import {
 } from '../generatorUtils';
 
 type OutputEndpoint = { readonly building: BuildingId; readonly port: PortId };
+type ConverterRecipeId = 'iron_oxide' | 'aluminum_oxide' | 'silicon_dioxide' | 'nitrogen_gas' | 'carbon';
+
+/**
+ * A synthesizer input line: extractors of `resourceType`, optionally refined by a converter on the way.
+ * A batch draws one unit per provider, so `count` must cover the recipe amount at that stage.
+ */
+interface SynthInput {
+  readonly resourceType: ResourceType;
+  readonly count: number;
+  readonly x: number;
+  readonly centerDy: number;
+  readonly viaConverter?: ConverterRecipeId;
+}
 
 function providerOffsets(count: number): readonly number[] {
   switch (count) {
@@ -128,7 +141,7 @@ export function generateBuildAllScenario(screenWidth: number, screenHeight: numb
 
   const placeConverterChain = (
     label: string,
-    recipeId: 'iron_oxide' | 'aluminum_oxide' | 'silicon_dioxide' | 'nitrogen_gas',
+    recipeId: ConverterRecipeId,
     resourceType: ResourceType,
     providerCount: number,
     rowDy: number,
@@ -150,38 +163,45 @@ export function generateBuildAllScenario(screenWidth: number, screenHeight: numb
     return { extractors, converter, storage, mergers };
   };
 
+  /** Feeds `target` from one input line; returns the buildings it placed. */
+  const feedSynthInput = (label: string, input: SynthInput, target: OutputEndpoint, mergerDx: number, mergerDy: number) => {
+    const extractors = placeExtractors(input.resourceType, input.count, input.x, input.centerDy);
+    const providers = extractors.map((building) => ({ building, port: 'out_east' as PortId }));
+    if (!input.viaConverter) {
+      return { extractors, converters: [] as BuildingId[], mergers: connectProviders(label, providers, target, mergerDx, mergerDy) };
+    }
+    // Extractors, then a merger 6 tiles east, then the converter 6 further (its input sits level with the merger).
+    const converter = mustPlaceBuilding(engine, CONVERTER_BUILDING_TYPE_ID, toWorld(input.x + 12, input.centerDy - 1), 0, rng);
+    const mergers = connectProviders(`${label} converter feed`, providers, { building: converter, port: 'in' }, input.x + 6, input.centerDy);
+    mustRoute(`${label} converter output`, { building: converter, port: 'out' }, target);
+    if (!engine.setProcessorRecipe(converter, input.viaConverter)) {
+      throw new Error(`Failed to set recipe ${input.viaConverter}`);
+    }
+    return { extractors, converters: [converter], mergers };
+  };
+
   const placeSynthChain = (
     label: string,
     recipeId: 'water' | 'methane' | 'carbon_dioxide' | 'ammonia',
-    inputA: { readonly resourceType: ResourceType; readonly count: number; readonly x: number; readonly centerDy: number },
-    inputB: { readonly resourceType: ResourceType; readonly count: number; readonly x: number; readonly centerDy: number },
+    inputA: SynthInput,
+    inputB: SynthInput,
     rowDy: number,
   ) => {
-    const extractorsA = placeExtractors(inputA.resourceType, inputA.count, inputA.x, inputA.centerDy);
-    const extractorsB = placeExtractors(inputB.resourceType, inputB.count, inputB.x, inputB.centerDy);
     const synthesizer = mustPlaceBuilding(engine, SYNTHESIZER_BUILDING_TYPE_ID, toWorld(22, rowDy - 2), 0, rng);
     const storage = mustPlaceBuilding(engine, STORAGE_BUILDING_TYPE_ID, toWorld(36, rowDy - 1), 0, rng);
-    const mergers = [
-      ...connectProviders(
-        `${label} input 1`,
-        extractorsA.map((building) => ({ building, port: 'out_east' as const })),
-        { building: synthesizer, port: 'in_1' },
-        8,
-        rowDy - 4,
-      ),
-      ...connectProviders(
-        `${label} input 2`,
-        extractorsB.map((building) => ({ building, port: 'out_east' as const })),
-        { building: synthesizer, port: 'in_2' },
-        14,
-        rowDy + 4,
-      ),
-    ];
+    const a = feedSynthInput(`${label} input 1`, inputA, { building: synthesizer, port: 'in_1' }, 8, rowDy - 4);
+    const b = feedSynthInput(`${label} input 2`, inputB, { building: synthesizer, port: 'in_2' }, 14, rowDy + 4);
     mustRoute(`${label} storage`, { building: synthesizer, port: 'out' }, { building: storage, port: 'in_west' });
     if (!engine.setProcessorRecipe(synthesizer, recipeId)) {
       throw new Error(`Failed to set recipe ${recipeId}`);
     }
-    return { extractors: [...extractorsA, ...extractorsB], synthesizer, storage, mergers };
+    return {
+      extractors: [...a.extractors, ...b.extractors],
+      converters: [...a.converters, ...b.converters],
+      synthesizer,
+      storage,
+      mergers: [...a.mergers, ...b.mergers],
+    };
   };
 
   const placeCeramicChain = (rowDy: number) => {
@@ -245,7 +265,8 @@ export function generateBuildAllScenario(screenWidth: number, screenHeight: numb
     placeConverterChain('iron-oxide', 'iron_oxide', ResourceType.Regolith, 1, 0),
     placeConverterChain('aluminum-oxide', 'aluminum_oxide', ResourceType.Regolith, 2, 16),
     placeConverterChain('silicon-dioxide', 'silicon_dioxide', ResourceType.Regolith, 4, 32),
-    placeConverterChain('nitrogen-gas', 'nitrogen_gas', ResourceType.Oxygen, 3, 48),
+    placeConverterChain('nitrogen-gas', 'nitrogen_gas', ResourceType.Regolith, 3, 48),
+    placeConverterChain('carbon', 'carbon', ResourceType.Regolith, 3, 64),
   ];
   registerPowered(
     ...converterChains.flatMap((chain) => chain.extractors),
@@ -263,27 +284,28 @@ export function generateBuildAllScenario(screenWidth: number, screenHeight: numb
     placeSynthChain(
       'methane',
       'methane',
-      { resourceType: ResourceType.Hydrogen, count: 4, x: -12, centerDy: -24 },
-      { resourceType: ResourceType.Oxygen, count: 1, x: -4, centerDy: -16 },
+      { resourceType: ResourceType.Regolith, count: 3, x: -22, centerDy: -24, viaConverter: 'carbon' },
+      { resourceType: ResourceType.Hydrogen, count: 2, x: -4, centerDy: -16 },
       -20,
     ),
     placeSynthChain(
       'carbon-dioxide',
       'carbon_dioxide',
-      { resourceType: ResourceType.Hydrogen, count: 1, x: -12, centerDy: -4 },
+      { resourceType: ResourceType.Regolith, count: 3, x: -22, centerDy: -4, viaConverter: 'carbon' },
       { resourceType: ResourceType.Oxygen, count: 1, x: -4, centerDy: 4 },
       0,
     ),
     placeSynthChain(
       'ammonia',
       'ammonia',
-      { resourceType: ResourceType.Hydrogen, count: 3, x: -12, centerDy: 16 },
-      { resourceType: ResourceType.Oxygen, count: 2, x: -4, centerDy: 24 },
+      { resourceType: ResourceType.Regolith, count: 3, x: -22, centerDy: 16, viaConverter: 'nitrogen_gas' },
+      { resourceType: ResourceType.Hydrogen, count: 2, x: -4, centerDy: 24 },
       20,
     ),
   ];
   registerPowered(
     ...synthChains.flatMap((chain) => chain.extractors),
+    ...synthChains.flatMap((chain) => chain.converters),
     ...synthChains.map((chain) => chain.synthesizer),
   );
 

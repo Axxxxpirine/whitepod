@@ -14,6 +14,7 @@ export interface ResourceRates {
   carbonDioxide: number;
   ammonia: number;
   ceramicPlates: number;
+  carbon: number;
 }
 
 export function getNetProductionRates(engine: GameEngine): Map<ResourceTypeT, number> {
@@ -32,6 +33,7 @@ export function getNetProductionRates(engine: GameEngine): Map<ResourceTypeT, nu
   rateMap.set(ResourceType.CarbonDioxide, rates.carbonDioxide ?? 0);
   rateMap.set(ResourceType.Ammonia, rates.ammonia ?? 0);
   rateMap.set(ResourceType.CeramicPlates, rates.ceramicPlates ?? 0);
+  rateMap.set(ResourceType.Carbon, rates.carbon ?? 0);
 
   return rateMap;
 }

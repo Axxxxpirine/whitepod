@@ -51,7 +51,7 @@ For a fuller reference of executable game primitives and failure modes, see [PRI
 ```js
 engine.placeResource(x, y, resourceType)
 // ResourceType — base (extractable):   0=None  1=Regolith  2=Hydrogen  3=Oxygen
-// ResourceType — tier-1 refined:       10=IronOxide  11=AluminumOxide  12=SiliconDioxide  13=NitrogenGas
+// ResourceType — tier-1 refined:       10=IronOxide  11=AluminumOxide  12=SiliconDioxide  13=NitrogenGas  18=Carbon
 // ResourceType — tier-1/2 synthesized: 14=Water  15=Methane  16=CarbonDioxide  17=Ammonia  20=CeramicPlates
 
 engine.removeResource(x, y)

@@ -48,6 +48,7 @@ ResourceType — tier-1 refined (converter outputs):
 11 = AluminumOxide
 12 = SiliconDioxide
 13 = NitrogenGas
+18 = Carbon
 
 ResourceType — tier-1 synthesized (synthesizer outputs):
 14 = Water
@@ -399,7 +400,8 @@ Flow routing (`src/game/flow/processorLogistics.ts`, `resolveRoutesFromOutput`):
   - `iron_oxide`: 1 Regolith → 1 IronOxide, 2 s/cycle
   - `aluminum_oxide`: 2 Regolith → 1 AluminumOxide, 3 s/cycle
   - `silicon_dioxide`: 4 Regolith → 1 SiliconDioxide, 5 s/cycle
-  - `nitrogen_gas`: 3 Oxygen → 1 NitrogenGas, 4 s/cycle
+  - `nitrogen_gas`: 3 Regolith → 1 NitrogenGas, 4 s/cycle (volatiles implanted by the solar wind)
+  - `carbon`: 3 Regolith → 1 Carbon, 4 s/cycle (pyrolysis)
 
 #### `synthesizer_basic`
 
@@ -410,10 +412,12 @@ Flow routing (`src/game/flow/processorLogistics.ts`, `resolveRoutesFromOutput`):
 - energy: consumes `10`
 - recipes (2 inputs → 1 output, see recipe catalog):
   - `water`: 2 H₂ + 1 O₂ → 1 Water, 4 s/cycle
-  - `methane`: 4 H₂ + 1 O₂ → 1 Methane, 5 s/cycle
-  - `carbon_dioxide`: 1 H₂ + 1 O₂ → 1 CO₂, 4 s/cycle
-  - `ammonia`: 3 H₂ + 2 O₂ → 1 Ammonia, 6 s/cycle
+  - `methane`: 1 Carbon + 2 H₂ → 1 Methane, 5 s/cycle
+  - `carbon_dioxide`: 1 Carbon + 1 O₂ → 1 CO₂, 4 s/cycle
+  - `ammonia`: 1 NitrogenGas + 2 H₂ → 1 Ammonia, 6 s/cycle
   - `ceramic_plates`: 1 AluminumOxide + 1 IronOxide → 1 CeramicPlates, 6 s/cycle
+- a batch takes one unit from each provider on the port: an input of amount N needs N providers (extractors or machines) merged onto it
+- every resource is reachable from the three deposits (Regolith, Hydrogen, Oxygen), checked by `tests/data/recipeCatalog.test.ts`
 
 #### `watchtower`
 
@@ -636,7 +640,7 @@ engine.getResourceRates() => ResourceStock
 ```ts
 {
   regolith, hydrogen, oxygen,
-  ironOxide, aluminumOxide, siliconDioxide, nitrogenGas,
+  ironOxide, aluminumOxide, siliconDioxide, nitrogenGas, carbon,
   water, methane, carbonDioxide, ammonia,
   ceramicPlates,
 }

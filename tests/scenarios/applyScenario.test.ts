@@ -33,7 +33,7 @@ describe('applyScenarioToLiveSession', () => {
         resourceDelta: {
           regolith: 1, hydrogen: 2, oxygen: 3,
           ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
-          water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+          water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0, carbon: 0,
         },
         capped: false,
       },

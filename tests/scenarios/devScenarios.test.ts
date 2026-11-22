@@ -72,7 +72,7 @@ describe('dev scenario api', () => {
       hydrogen: 6,
       oxygen: 0,
       ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
-      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0,
+      water: 0, methane: 0, carbonDioxide: 0, ammonia: 0, ceramicPlates: 0, carbon: 0,
     });
     expect(loaded?.engine.getViewportSnapshot()).toEqual({
       centerX: 384,
