@@ -9,6 +9,7 @@ import { BotControlsPanel } from './hud/bot/BotControlsPanel';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { SelectedResourceTooltip } from './hud/SelectedResourceTooltip';
 import { BuildingPicker } from './hud/BuildingPicker';
+import { NextGoalPanel } from './hud/NextGoalPanel';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
 import { Chip, HoverTooltip, Icon, Panel, PanelHeading } from './ui';
 
@@ -370,6 +371,7 @@ export function GameHUD() {
         </div>
       )}
 
+      <NextGoalPanel />
       <SelectedBuildingPanel />
       <SelectedResourceTooltip />
 

@@ -18,6 +18,10 @@ export interface MinimapLayout {
   readonly gridHeight: number;
 }
 
+/** On-screen size and inset of the minimap, pinned to the top-right corner. */
+export const MINIMAP_WIDTH = 180;
+export const MINIMAP_MARGIN = 20;
+
 export interface MinimapPoint {
   readonly x: number;
   readonly y: number;
@@ -87,3 +91,9 @@ export function viewportOutline(layout: MinimapLayout, viewport: Viewport): Mini
 export function minimapCircleRadius(layout: MinimapLayout, radius: number): number {
   return radius * layout.scale;
 }
+
+/**
+ * Screen y just below the minimap, for HUD panels stacked under it in the
+ * top-right zone.
+ */
+export const MINIMAP_SCREEN_BOTTOM = MINIMAP_MARGIN + createMinimapLayout(MINIMAP_WIDTH).height;
