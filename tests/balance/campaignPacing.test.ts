@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEPOSIT_BASE_AMOUNT } from '@/game/data/depositAmounts';
 import { MILESTONES } from '@/game/data/milestoneCatalog';
 import { ResourceType } from '@/game/types';
 import { ScriptedCampaignPlayer, type MilestoneTiming } from './scriptedCampaignPlayer';
@@ -9,6 +10,7 @@ import { ScriptedCampaignPlayer, type MilestoneTiming } from './scriptedCampaign
  * numbers in the catalogs move:
  * - the campaign never soft-locks: everything is reachable from the starting
  *   kit and the deposits in sight, with the unlocks in milestone order;
+ * - no deposit runs dry before the end of chapter 2 (finite deposits, #89);
  * - the pacing stays under the targets of #71 (first milestone within 3
  *   minutes, chapter 1 in ~15, chapter 2 around 40). The scripted player is
  *   faster than a human, so its budgets are about half of those targets.
@@ -60,24 +62,38 @@ function at(timings: readonly MilestoneTiming[], id: string): number {
   return timings.find((timing) => timing.id === id)!.seconds;
 }
 
-function report(seed: number, timings: readonly MilestoneTiming[]): void {
+/** What is left in the most used deposit under the player's extractors. */
+function lowestDeposit(player: ScriptedCampaignPlayer): number {
+  let lowest = Infinity;
+  for (const id of player.engine.getBuildings().keys()) {
+    const remaining = player.engine.getDepositRemaining(id);
+    if (remaining !== null) lowest = Math.min(lowest, remaining);
+  }
+  return lowest;
+}
+
+function report(seed: number, timings: readonly MilestoneTiming[], lowest: number): void {
   if (!process.env.BALANCE_REPORT) return;
   const lines = timings.map(({ id, chapter, seconds }) => {
     const minutes = `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
     return `  ch${chapter} ${id.padEnd(26)} ${minutes}`;
   });
-  console.info(`seed ${seed}\n${lines.join('\n')}`);
+  console.info(`seed ${seed}\n${lines.join('\n')}\n  lowest deposit left       ${lowest}`);
 }
 
 describe('campaign pacing, chapters 1-2', () => {
   it.each(SEEDS)('seed %i: reaches the end of chapter 2 within the pacing budgets', (seed) => {
-    const { timings } = playChapters1And2(seed);
-    report(seed, timings);
+    const player = playChapters1And2(seed);
+    const { timings } = player;
+    const lowest = lowestDeposit(player);
+    report(seed, timings, lowest);
 
     const chapter2 = MILESTONES.filter((milestone) => milestone.chapter <= 2).map((milestone) => milestone.id);
     expect(timings.map((timing) => timing.id)).toEqual(chapter2);
     expect(at(timings, 'landing_first_extraction')).toBeLessThanOrEqual(BUDGET.firstMilestone);
     expect(at(timings, 'landing_refinery')).toBeLessThanOrEqual(BUDGET.chapter1);
     expect(at(timings, 'refining_silicon')).toBeLessThanOrEqual(BUDGET.chapter2);
+    // Finite deposits (#89): chapters 1–2 never run a deposit dry, with room to spare.
+    expect(lowest).toBeGreaterThan(DEPOSIT_BASE_AMOUNT / 3);
   });
 });
