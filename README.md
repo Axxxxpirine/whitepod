@@ -73,6 +73,7 @@ engine.grid.fillRect(x0, y0, width, height, tileType)
 
 ```js
 engine.placeBuilding('extractor_basic', { x, y })          // Returns BuildingId or null
+engine.upgradeBuilding(extractorId, 'extractor_mk2')        // In place, paying the difference (60/min)
 engine.placeBuilding('solar_panel', { x, y })
 engine.placeBuilding('storage_basic', { x, y })             // 3x3 footprint
 engine.placeBuilding('battery_basic', { x, y })             // 2x2 footprint

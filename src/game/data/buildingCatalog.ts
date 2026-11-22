@@ -11,6 +11,9 @@ import {
 
 export const EXTRACTOR_BUILDING_TYPE_ID = 'extractor_basic' as const;
 export const EXTRACTOR_RATE_PER_MIN = 30;
+/** Extractor mk2 (chapter 3): twice the rate, twice the power, drains its deposit twice as fast. */
+export const EXTRACTOR_MK2_BUILDING_TYPE_ID = 'extractor_mk2' as const;
+export const EXTRACTOR_MK2_RATE_PER_MIN = 60;
 export const STORAGE_BUILDING_TYPE_ID = 'storage_basic' as const;
 export const BELT_STRAIGHT_BUILDING_TYPE_ID = 'belt_straight' as const;
 export const BELT_CORNER_CW_BUILDING_TYPE_ID = 'belt_corner_cw' as const;
@@ -26,6 +29,15 @@ export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
 export const CONVERTER_BUILDING_TYPE_ID = 'converter_basic' as const;
 export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
 export const HUB_BUILDING_TYPE_ID = 'hub_lander' as const;
+
+/** True for every extractor tier: driven by the catalog `extractionRatePerMinute` capability. */
+export function isExtractorTypeId(typeId: BuildingTypeId): boolean {
+  return (catalog.get(typeId)?.extractionRatePerMinute ?? 0) > 0;
+}
+
+export function extractorRatePerMinute(typeId: BuildingTypeId): number {
+  return catalog.get(typeId)?.extractionRatePerMinute ?? 0;
+}
 
 export function isProcessorTypeId(typeId: BuildingTypeId): boolean {
   return typeId === CONVERTER_BUILDING_TYPE_ID || typeId === SYNTHESIZER_BUILDING_TYPE_ID;
@@ -106,6 +118,8 @@ const entries: readonly BuildingType[] = [
     id: EXTRACTOR_BUILDING_TYPE_ID,
     name: 'Extracteur',
     cost: [{ resourceType: ResourceType.Regolith, amount: 10 }],
+    extractionRatePerMinute: EXTRACTOR_RATE_PER_MIN,
+    upgradesTo: EXTRACTOR_MK2_BUILDING_TYPE_ID,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     requiresResourceDeposit: true,
@@ -114,6 +128,24 @@ const entries: readonly BuildingType[] = [
     ],
     energy: {
       consumption: 4,
+    },
+  },
+  {
+    id: EXTRACTOR_MK2_BUILDING_TYPE_ID,
+    name: 'Extracteur mk2',
+    cost: [
+      { resourceType: ResourceType.Regolith, amount: 20 },
+      { resourceType: ResourceType.IronOxide, amount: 10 },
+    ],
+    extractionRatePerMinute: EXTRACTOR_MK2_RATE_PER_MIN,
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    requiresResourceDeposit: true,
+    ports: [
+      { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
+    energy: {
+      consumption: 8,
     },
   },
   {
@@ -419,6 +451,16 @@ export function resourceTypeLabel(type: ResourceTypeT): string {
 
 export function validateCatalog(): void {
   for (const t of catalog.values()) {
+    if (t.upgradesTo !== undefined) {
+      // An upgrade swaps the type in place: tiles, ids and connections must stay valid.
+      const target = catalog.get(t.upgradesTo);
+      const samePorts = (port: BuildingType['ports'][number]) =>
+        target?.ports.some((p) => p.id === port.id && p.kind === port.kind && p.side === port.side && p.offset.x === port.offset.x && p.offset.y === port.offset.y);
+      if (!target || target.footprint.w !== t.footprint.w || target.footprint.h !== t.footprint.h ||
+          target.ports.length !== t.ports.length || !t.ports.every(samePorts)) {
+        throw new Error(`Invalid catalog entry '${t.id}': upgrade '${t.upgradesTo}' must share its footprint and ports`);
+      }
+    }
     if (t.footprint.w <= 0 || t.footprint.h <= 0) {
       throw new Error(
         `Invalid catalog entry '${t.id}': footprint must be > 0 (got ${t.footprint.w}x${t.footprint.h})`,

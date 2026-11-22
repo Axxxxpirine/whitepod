@@ -107,6 +107,13 @@ export interface BuildingType {
   readonly cost?: readonly ResourceCost[];
   /** Belts only: items per minute a run of this belt carries (a mixed run takes its slowest segment). */
   readonly beltCapacityPerMinute?: number;
+  /** Extractors only: units per minute taken from the deposit under it. Read through `isExtractorTypeId`. */
+  readonly extractionRatePerMinute?: number;
+  /**
+   * The building this one can be upgraded into in place (same footprint and
+   * ports), paying the difference; see GameEngine.upgradeBuilding.
+   */
+  readonly upgradesTo?: BuildingTypeId;
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
@@ -236,6 +243,15 @@ export type BeltUpgradeQuote =
       readonly missing: readonly ResourceCost[];
     }
   | { readonly ok: false; readonly reason: BeltUpgradeFailure };
+
+export type BuildingUpgradeQuote =
+  | {
+      readonly ok: true;
+      readonly net: readonly ResourceCost[];
+      readonly refund: readonly ResourceCost[];
+      readonly missing: readonly ResourceCost[];
+    }
+  | { readonly ok: false; readonly reason: 'unknown_building' | 'not_upgradable' | 'locked' };
 
 export type PlaceBeltResult =
   | {

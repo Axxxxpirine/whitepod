@@ -18,8 +18,9 @@ import {
   isProcessorTypeId,
   isStorageTypeId,
   validateCatalog,
-  EXTRACTOR_BUILDING_TYPE_ID,
-  EXTRACTOR_RATE_PER_MIN,
+  EXTRACTOR_MK2_RATE_PER_MIN,
+  extractorRatePerMinute,
+  isExtractorTypeId,
   CONVERTER_BUILDING_TYPE_ID,
   HUB_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
@@ -57,6 +58,7 @@ import {
   type BeltResult,
   type BeltRouteQuote,
   type BeltUpgradeQuote,
+  type BuildingUpgradeQuote,
   type PlacementResult,
   type PlaceBeltResult,
   type PowerState,
@@ -168,6 +170,8 @@ export interface SerializedGameWorld {
    * deposits were endless (every tile 100), which get generated amounts on load.
    */
   readonly depositModel?: number;
+  /** Extraction beats elapsed, so each extractor tier keeps its cadence across a reload. */
+  readonly extractionBeat?: number;
   /** Completed campaign milestones; absent in saves written before milestones existed. */
   readonly completedMilestones?: readonly MilestoneId[];
 }
@@ -206,7 +210,11 @@ interface BatteryBuildingRef {
 export class GameEngine {
   // The clock, production and battery integration use identical quanta at any frame rate.
   private static readonly STEP_SECONDS = 0.1;
-  private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_RATE_PER_MIN;
+  /**
+   * Extraction beat: the fastest extractor makes a unit every beat, slower
+   * ones every few beats (60 / rate seconds), all on the same clock.
+   */
+  private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_MK2_RATE_PER_MIN;
   private static readonly EMPTY_RESOURCE_STOCK = (): ResourceStock => ({
     regolith: 0, hydrogen: 0, oxygen: 0,
     ironOxide: 0, aluminumOxide: 0, siliconDioxide: 0, nitrogenGas: 0,
@@ -236,6 +244,8 @@ export class GameEngine {
   private hasPendingWorldNotification = false;
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
+  /** Extraction beats since the world began, so each tier keeps its cadence. */
+  private extractionBeat = 0;
   private readonly beltThroughput: BeltThroughput;
   /** Bumped when belts change type in place, which keeps the connections. */
   private beltTypeRevision = 0;
@@ -324,6 +334,7 @@ export class GameEngine {
       this.extractionAccumulator += step;
       if (this.extractionAccumulator + 1e-10 >= GameEngine.EXTRACTION_INTERVAL_S) {
         this.extractionAccumulator = Math.max(0, this.extractionAccumulator - GameEngine.EXTRACTION_INTERVAL_S);
+        this.extractionBeat++;
         this.processExtraction();
       }
       if (this.batteryCharges.size > 0) {
@@ -346,6 +357,9 @@ export class GameEngine {
       if (resourceType === ResourceType.None) continue;
       // An exhausted deposit stops its extractor; sandbox deposits never run out.
       if (this.grid.resourceAmount[idx] === 0) continue;
+      // Slower tiers make a unit every few beats (a held unit above is still released every beat).
+      const beatsPerUnit = Math.max(1, Math.round(60 / extractorRatePerMinute(this.buildings.get(id)!.typeId) / GameEngine.EXTRACTION_INTERVAL_S));
+      if (this.extractionBeat % beatsPerUnit !== 0) continue;
       if (this.depletesDeposits) this.grid.resourceAmount[idx] -= 1;
       this.producerOutputBuffers.set(id, { resourceType, amount: 1 });
       changed = this.flushProducerOutput(id) || changed;
@@ -610,7 +624,7 @@ export class GameEngine {
       if (isStorageTypeId(typeId)) {
         this.storageInventories.set(id, GameEngine.EMPTY_RESOURCE_STOCK());
       }
-      if (typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(typeId)) {
+      if (isExtractorTypeId(typeId) || isProcessorTypeId(typeId)) {
         this.producerOutputBuffers.set(id, null);
       }
       if (isProcessorTypeId(typeId)) {
@@ -866,7 +880,7 @@ export class GameEngine {
   getProducerResourceType(buildingId: BuildingId): ResourceTypeT | null {
     const building = this.buildings.get(buildingId);
     if (!building) return null;
-    if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+    if (isExtractorTypeId(building.typeId)) {
       const resource = this.grid.getResource(building.origin.x, building.origin.y);
       return resource === ResourceType.None ? null : resource;
     }
@@ -898,11 +912,11 @@ export class GameEngine {
 
     // Extractors: add production rate for base resources
     for (const [id, building] of this.buildings.getAll().entries()) {
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      if (!isExtractorTypeId(building.typeId)) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       if (!this.hasValidDownstream(id)) continue;
       if (this.getDepositRemaining(id) === 0) continue;
-      nominal.set(id, EXTRACTOR_RATE_PER_MIN);
+      nominal.set(id, extractorRatePerMinute(building.typeId));
       output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
     }
 
@@ -1009,6 +1023,48 @@ export class GameEngine {
     const refund = mergeCosts(segments.map((id) => this.getBuildingCost(this.buildings.get(id)!.typeId)));
     const net = costDifference(pay, refund);
     return { ok: true, segments, net, refund: costDifference(refund, pay), missing: this.getMissingResources(net) };
+  }
+
+  /** The building on `tile` that can be upgraded into `typeId` (its catalog `upgradesTo`), if any. */
+  upgradableBuildingAt(tile: TileCoord, typeId: BuildingTypeId): BuildingId | null {
+    const building = this.getBuildingAt(tile.x, tile.y);
+    return building && getBuildingType(building.typeId)?.upgradesTo === typeId ? building.id : null;
+  }
+
+  /**
+   * Prices upgrading `buildingId` into `typeId` in place: the player pays the
+   * new building minus the refund of the old one (`net`), and gets back what
+   * the new one needs less of (`refund`).
+   */
+  quoteBuildingUpgrade(buildingId: BuildingId, typeId: BuildingTypeId): BuildingUpgradeQuote {
+    const building = this.buildings.get(buildingId);
+    if (!building) return { ok: false, reason: 'unknown_building' };
+    if (getBuildingType(building.typeId)?.upgradesTo !== typeId) return { ok: false, reason: 'not_upgradable' };
+    if (!this.isBuildingUnlocked(typeId)) return { ok: false, reason: 'locked' };
+    const pay = this.getBuildingCost(typeId);
+    const refund = this.getBuildingCost(building.typeId);
+    const net = costDifference(pay, refund);
+    return { ok: true, net, refund: costDifference(refund, pay), missing: this.getMissingResources(net) };
+  }
+
+  /** Upgrades a building in place: same id, tile, belts and power links; only its type and cost change. */
+  upgradeBuilding(buildingId: BuildingId, typeId: BuildingTypeId): boolean {
+    const quote = this.quoteBuildingUpgrade(buildingId, typeId);
+    if (!quote.ok || quote.missing.length > 0) {
+      const reason = quote.ok ? 'insufficient_resources' : quote.reason === 'locked' ? 'locked' : null;
+      if (reason) this.publishSfx({ type: 'building_place_fail', buildingType: typeId, reason });
+      return false;
+    }
+    this.spendFromWallet(quote.net);
+    this.refundToWallet(quote.refund);
+    this.buildings.retype(buildingId, typeId);
+    // Power demand changed with the type: rebuild the cached networks.
+    this.energyTopologyVersion = -1;
+    this.syncPowerState(false);
+    this.notify('world');
+    this.emitAction('upgrade_building', { buildingId, typeId });
+    this.publishSfx({ type: 'building_place_success', buildingType: typeId });
+    return true;
   }
 
   /** Upgrades the belt route of `segmentId` to `tier` in place: same ids, same connections. */
@@ -1257,7 +1313,7 @@ export class GameEngine {
   /** Units left in the deposit under an extractor, or null for another building. */
   getDepositRemaining(buildingId: BuildingId): number | null {
     const building = this.buildings.get(buildingId);
-    if (!building || building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) return null;
+    if (!building || !isExtractorTypeId(building.typeId)) return null;
     return this.grid.getResourceAmount(building.origin.x, building.origin.y);
   }
 
@@ -1530,6 +1586,7 @@ export class GameEngine {
       beltTokens: this.beltThroughput.serialize(),
       splitterTurns: [...this.splitterTurns].map(([id, turn]) => ({ id, turn })),
       depositModel: DEPOSIT_MODEL,
+      extractionBeat: this.extractionBeat,
     };
   }
 
@@ -1564,7 +1621,7 @@ export class GameEngine {
         if (isStorageTypeId(building.typeId)) {
           engine.storageInventories.set(buildingId, GameEngine.EMPTY_RESOURCE_STOCK());
         }
-        if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
+        if (isExtractorTypeId(building.typeId) || isProcessorTypeId(building.typeId)) {
           engine.producerOutputBuffers.set(buildingId, null);
         }
         if (isProcessorTypeId(building.typeId)) {
@@ -1632,6 +1689,7 @@ export class GameEngine {
     }
     engine.unlockCache = null;
     engine.beltThroughput.restore(snapshot.beltTokens);
+    if (Number.isInteger(snapshot.extractionBeat) && snapshot.extractionBeat! >= 0) engine.extractionBeat = snapshot.extractionBeat!;
     if (snapshot.depositModel !== DEPOSIT_MODEL) {
       // Saved while deposits were endless: give every remaining deposit its generated amount.
       const { grid } = engine;
@@ -1912,7 +1970,7 @@ export class GameEngine {
         changed = true;
         if (powered) {
           this.poweredConsumers.add(id);
-          if (this.buildings.get(id)?.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+          if (isExtractorTypeId(this.buildings.get(id)?.typeId ?? '')) {
             this.poweredExtractors.add(id);
             if (emitSfx) this.publishSfx({ type: 'extractor_on' });
           }

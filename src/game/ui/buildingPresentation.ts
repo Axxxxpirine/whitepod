@@ -4,6 +4,7 @@ import {
   beltTypeId,
   beltTypeIds,
   EXTRACTOR_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
@@ -72,9 +73,10 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
     typeId: EXTRACTOR_BUILDING_TYPE_ID,
+    alternates: [EXTRACTOR_MK2_BUILDING_TYPE_ID],
     shortcut: '1',
     activeClass: 'bg-accent-warm',
-    highlightFamily: [EXTRACTOR_BUILDING_TYPE_ID],
+    highlightFamily: [EXTRACTOR_BUILDING_TYPE_ID, EXTRACTOR_MK2_BUILDING_TYPE_ID],
     highlightColor: PIXI.accentWarm,
   },
   {
@@ -182,7 +184,7 @@ export function nextBuildingTool(entry: BuildingToolbarEntry, current: SelectedT
   const variants = entryVariants(entry);
   const index = current.kind === 'building' ? variants.indexOf(current.buildingType) : -1;
   if (index === -1) return { kind: 'building', buildingType: entry.typeId };
-  const next = variants.slice(index + 1).find((typeId) => engine?.isBuildingUnlocked(typeId) ?? true);
+  const next = variants.slice(index + 1).find((typeId) => engine?.isBuildingUnlocked(typeId) ?? false);
   return next ? { kind: 'building', buildingType: next } : { kind: 'select' };
 }
 

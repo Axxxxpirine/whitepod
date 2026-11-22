@@ -297,6 +297,27 @@ Both tiers have the same shapes and ports, so a route changes tier in place. Cat
 - ports: `out_east`
 - energy: consumes `4`
 - production rate: `30 items/min` when powered
+- upgrades to `extractor_mk2` (`upgradesTo`)
+
+#### `extractor_mk2`
+
+- same footprint, deposit rule and port as the basic extractor; cost 20 regolith + 10 iron oxide
+- energy: consumes `8`
+- production rate: `60 items/min` when powered, draining its deposit twice as fast (campaign)
+- locked in campaign until its chapter 3 milestone (#94); no art of its own yet: the extractor sprite tinted in the accent colour
+- toolbar: shares key 1 with the extractor (extractor, then mk2 once unlocked, then selection)
+
+Extraction runs on a 1-second beat shared by every extractor: a tier makes a unit every `60 / extractionRatePerMinute` seconds of beats (catalog capability, read through `isExtractorTypeId` / `extractorRatePerMinute`). The beat count is saved (`extractionBeat`) so each tier keeps its cadence across reloads.
+
+#### Upgrading a building in place
+
+```ts
+engine.upgradableBuildingAt(tile, typeId) => BuildingId | null
+engine.quoteBuildingUpgrade(buildingId, typeId) // { ok, net, refund, missing } or { ok: false, reason }
+engine.upgradeBuilding(buildingId, typeId) => boolean
+```
+
+A catalog entry's `upgradesTo` names the building it can become in place; `validateCatalog` checks both share footprint and ports, so the id, tiles, belts and power links stay valid. The player pays the new cost minus the refund of the old one (`net`); reasons: `unknown_building`, `not_upgradable`, `locked`. In the HUD, with a building tool selected, clicking a building that upgrades into it upgrades it (the preview shows "Amélioration" and its price). Belts upgrade a whole route with `upgradeBelt` instead.
 
 #### `storage_basic`
 

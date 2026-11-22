@@ -40,6 +40,7 @@ export interface PersistedWorldStateV3 {
   readonly beltTokens?: SerializedGameWorld['beltTokens'];
   readonly splitterTurns?: SerializedGameWorld['splitterTurns'];
   readonly depositModel?: number;
+  readonly extractionBeat?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
   readonly processorStates?: SerializedGameWorld['processorStates'];
   readonly storageInventories?: SerializedGameWorld['storageInventories'];
@@ -214,7 +215,8 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     (value.dayNightCycleSeconds === undefined || isFiniteNumber(value.dayNightCycleSeconds)) &&
     areBeltTokensValid(value.beltTokens) &&
     areSplitterTurnsValid(value.splitterTurns) &&
-    (value.depositModel === undefined || isFiniteNumber(value.depositModel))
+    (value.depositModel === undefined || isFiniteNumber(value.depositModel)) &&
+    (value.extractionBeat === undefined || isFiniteNumber(value.extractionBeat))
   );
 }
 
@@ -290,6 +292,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
     beltTokens: value.beltTokens,
     splitterTurns: value.splitterTurns,
     depositModel: value.depositModel,
+    extractionBeat: value.extractionBeat,
   };
 }
 
@@ -433,6 +436,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     beltTokens: snapshot.beltTokens,
     splitterTurns: snapshot.splitterTurns,
     depositModel: snapshot.depositModel,
+    extractionBeat: snapshot.extractionBeat,
   };
 }
 

@@ -9,8 +9,10 @@ import {
   STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
+  isExtractorTypeId,
 } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
 import type { Building, PowerState } from '../types';
@@ -50,6 +52,14 @@ export function getPowerIndicatorColor(state: PowerState): number | null {
   if (state === 'neutral') return null;
   return POWER_INDICATOR_COLORS[state];
 }
+
+/**
+ * Tints over a shared sprite, for tiers without art of their own yet (sprite
+ * pass in 0.4): the extractor mk2 reads as the extractor, in the accent colour.
+ */
+const SPRITE_TINTS: Readonly<Record<string, number>> = {
+  [EXTRACTOR_MK2_BUILDING_TYPE_ID]: PIXI.accent,
+};
 
 export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean, exhausted = false): number | null {
   if (hasBadInput) return PIXI.error;
@@ -160,9 +170,9 @@ export class BuildingRenderer {
         sprite.height = type.footprint.h * TILE_SIZE - BUILDING_INSET * 2;
       }
       sprite.zIndex = zIndex;
-      sprite.tint = buildingTexture ? 0xffffff : (BUILDING_TINTS[building.typeId] ?? PIXI.ink);
+      sprite.tint = buildingTexture ? (SPRITE_TINTS[building.typeId] ?? 0xffffff) : (BUILDING_TINTS[building.typeId] ?? PIXI.ink);
       sprite.alpha =
-        building.typeId === EXTRACTOR_BUILDING_TYPE_ID ? EXTRACTOR_BUILDING_ALPHA : DEFAULT_BUILDING_ALPHA;
+        isExtractorTypeId(building.typeId) ? EXTRACTOR_BUILDING_ALPHA : DEFAULT_BUILDING_ALPHA;
       sprite.visible = true;
       this.renderShadow(building.id, building, zIndex);
 

@@ -20,6 +20,8 @@ export interface BuildingPlacementPreviewModel {
   readonly reason?: PlacementFailure;
   readonly buildingTypeId: BuildingTypeId;
   readonly rotation: Direction;
+  /** Hovering a building the tool upgrades in place: what the upgrade costs on top of the refund. */
+  readonly upgradeCost?: readonly ResourceCost[];
 }
 
 export interface BeltPreviewTile {
@@ -53,6 +55,23 @@ export function getPlacementPreviewModel(
 
   const buildingType = getBuildingType(selectedTool.buildingType);
   if (!buildingType) return null;
+
+  const upgradable = engine.upgradableBuildingAt(hoverTile, selectedTool.buildingType);
+  if (upgradable !== null) {
+    const building = engine.getBuildings().get(upgradable)!;
+    const quote = engine.quoteBuildingUpgrade(upgradable, selectedTool.buildingType);
+    const affordable = quote.ok && quote.missing.length === 0;
+    return {
+      kind: 'building',
+      origin: building.origin,
+      footprint: buildingType.footprint,
+      isValid: affordable,
+      ...(affordable ? {} : { reason: quote.ok ? ('insufficient_resources' as const) : ('locked' as const) }),
+      buildingTypeId: selectedTool.buildingType,
+      rotation: building.rotation,
+      upgradeCost: quote.ok ? quote.net : [],
+    };
+  }
 
   const placement = engine.canPlaceBuilding(selectedTool.buildingType, hoverTile, buildingRotation);
   return {

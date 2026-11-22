@@ -2,6 +2,7 @@ import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
   HUB_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
@@ -32,6 +33,17 @@ export interface SpriteAssetSpec {
 export const BUILDING_SPRITE_SPECS: ReadonlyMap<BuildingTypeId, SpriteAssetSpec> = new Map([
   [
     EXTRACTOR_BUILDING_TYPE_ID,
+    {
+      path: 'sprites/rts/buildings/extractor.png',
+      footprint: { w: 1, h: 1 },
+      displayHeightTiles: 1.7,
+      anchor: 'bottom-center',
+      kind: 'generated',
+    },
+  ],
+  [
+    // Same art as the extractor, tinted by the renderer until its own sprite (0.4).
+    EXTRACTOR_MK2_BUILDING_TYPE_ID,
     {
       path: 'sprites/rts/buildings/extractor.png',
       footprint: { w: 1, h: 1 },
