@@ -465,6 +465,23 @@ Effects of `removeBelt`:
 
 - removes the entire connected belt component containing the specified segment
 
+### Throughput
+
+A **belt run** is a chain of belt segments between two non-belt nodes (merger, storage, machine). Each run carries at most `beltCapacityPerMinute` items per minute (catalog field on belt types, `BELT_CAPACITY_PER_MIN` = 60, two extractors); a run mixing belt types takes its slowest segment. Implemented in `src/game/flow/beltThroughput.ts`:
+
+- Units still move instantly from producer to destination. Each run has a token bucket refilled at its rate, holding up to `BELT_BURST_SECONDS` (2 s) of capacity so batched extraction ticks are not clipped.
+- A transfer passes when every run on the unit's path (from the producer to the first storage or machine) has at least one token, then takes one per unit. A machine pulling several units at once (e.g. silicon dioxide, 4 regolith) may leave a run in debt, so the average stays the capacity.
+- A refused unit stays with its producer and is retried: nothing is lost. Extractors on a saturated run are served by increasing id, independent of insertion order.
+- Merged lines share the run after the merger. Direct port-to-port links (no belt) are not capped.
+- Bucket levels are saved with the world (`beltTokens`), so a reloaded world and the offline catch-up run identically.
+
+```ts
+engine.getBeltRunStats(segmentId) => { runId, capacityPerMinute, saturated } | null
+engine.getSaturatedBeltSegments() => readonly BuildingId[] // runs that refused a unit in the last 4 s
+```
+
+`getResourceRates()` reports what the belts let through (each run's capacity shared pro rata among its sources). The belt panel shows demand against capacity, in amber with "Saturé" when the run is full; saturated runs are amber on the map.
+
 ## Energy Primitives
 
 Energy links are separate from port connections and belts. They define electrical networks between buildings.
