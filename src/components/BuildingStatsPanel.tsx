@@ -9,6 +9,7 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
   MERGER_BASIC_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
@@ -104,11 +105,16 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
         </>
       );
     }
-  } else if (building.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
+  } else if (building.typeId === MERGER_BASIC_BUILDING_TYPE_ID || building.typeId === SPLITTER_BASIC_BUILDING_TYPE_ID) {
+    // Junctions: a merger counts its inputs, a splitter its outputs.
+    const isSplitter = building.typeId === SPLITTER_BASIC_BUILDING_TYPE_ID;
+    const sideKind = isSplitter ? PortKind.Output : PortKind.Input;
     const buildingType = getBuildingType(building.typeId);
-    const totalInputs = buildingType?.ports.filter((p) => p.kind === PortKind.Input).length ?? 3;
+    const totalSide = buildingType?.ports.filter((p) => p.kind === sideKind).length ?? 3;
     const connections = engine.getConnectionsOf(building.id);
-    const connectedInputs = connections.filter((c) => c.to.building === building.id).length;
+    const connectedSide = connections.filter((c) =>
+      isSplitter ? c.from.building === building.id : c.to.building === building.id,
+    ).length;
 
     // Collect resource types from powered extractors upstream of each connected input.
     const resourceSet = new Set<string>();
@@ -139,7 +145,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
     rows = (
       <>
-        <StatRow icon={GitMerge} label="Entrees" value={`${connectedInputs}/${totalInputs}`} />
+        <StatRow icon={GitMerge} label={isSplitter ? 'Sorties' : 'Entrees'} value={`${connectedSide}/${totalSide}`} />
         <StatRow icon={Activity} label="Ressources" value={resourceList} />
       </>
     );

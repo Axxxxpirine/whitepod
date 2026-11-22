@@ -4,6 +4,8 @@ import { BuildingPicker } from '@/components/hud/BuildingPicker';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   BELT_STRAIGHT_BUILDING_TYPE_ID,
+  MERGER_BASIC_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
 } from '@/game/data/buildingCatalog';
@@ -152,6 +154,27 @@ describe('BuildingPicker belt tiers', () => {
     fireEvent.keyDown(window, { key: '3' });
     fireEvent.keyDown(window, { key: '3' });
 
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+  });
+});
+
+describe('BuildingPicker shared slots', () => {
+  beforeEach(() => {
+    useGameStore.setState({ engine: null, selectedTool: { kind: 'select' }, worldVersion: 0 });
+  });
+
+  it('cycles merger, splitter, then selection on key 6', () => {
+    const engine = new GameEngine(800, 600);
+    engine.generateMap(42);
+    useGameStore.setState({ engine });
+    render(<BuildingPicker />);
+
+    fireEvent.keyDown(window, { key: '6' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'building', buildingType: MERGER_BASIC_BUILDING_TYPE_ID });
+    fireEvent.keyDown(window, { key: '6' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'building', buildingType: SPLITTER_BASIC_BUILDING_TYPE_ID });
+    expect(screen.getByRole('button', { name: 'Répartiteur' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.keyDown(window, { key: '6' });
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
   });
 });

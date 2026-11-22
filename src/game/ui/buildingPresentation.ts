@@ -6,6 +6,7 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
@@ -38,6 +39,11 @@ export interface BuildingToolbarEntry {
   readonly highlightFamily: readonly BuildingTypeId[];
   /** Pulse color (hex), matches the visual accent of activeClass. */
   readonly highlightColor: number;
+  /**
+   * Other buildings sharing this slot: selecting the entry again moves to the
+   * next unlocked one, then back to selection (the digits 1–0 are all taken).
+   */
+  readonly alternates?: readonly BuildingTypeId[];
 }
 
 export interface VirtualToolbarEntry {
@@ -107,9 +113,10 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
   {
     kind: 'building',
     typeId: MERGER_BASIC_BUILDING_TYPE_ID,
+    alternates: [SPLITTER_BASIC_BUILDING_TYPE_ID],
     shortcut: '6',
     activeClass: 'bg-ink-muted',
-    highlightFamily: [MERGER_BASIC_BUILDING_TYPE_ID],
+    highlightFamily: [MERGER_BASIC_BUILDING_TYPE_ID, SPLITTER_BASIC_BUILDING_TYPE_ID],
     highlightColor: PIXI.inkMuted,
   },
   {
@@ -162,12 +169,29 @@ export function nextBeltTool(current: SelectedTool, engine: GameEngine | null): 
   return current.tier !== 'fast' && fastUnlocked ? { kind: 'belt', tier: 'fast' } : { kind: 'select' };
 }
 
+/** Buildings a toolbar entry stands for: its own type, then its alternates. */
+export function entryVariants(entry: BuildingToolbarEntry): readonly BuildingTypeId[] {
+  return [entry.typeId, ...(entry.alternates ?? [])];
+}
+
+/**
+ * Selecting a building entry: its first variant, then each unlocked
+ * alternate in turn, then back to selection.
+ */
+export function nextBuildingTool(entry: BuildingToolbarEntry, current: SelectedTool, engine: GameEngine | null): SelectedTool {
+  const variants = entryVariants(entry);
+  const index = current.kind === 'building' ? variants.indexOf(current.buildingType) : -1;
+  if (index === -1) return { kind: 'building', buildingType: entry.typeId };
+  const next = variants.slice(index + 1).find((typeId) => engine?.isBuildingUnlocked(typeId) ?? true);
+  return next ? { kind: 'building', buildingType: next } : { kind: 'select' };
+}
+
 function findEntryForTool(tool: SelectedTool): ToolbarEntry | null {
   if (tool.kind === 'select') return null;
   if (tool.kind === 'building') {
     return (
       toolbarEntries.find(
-        (e) => e.kind === 'building' && e.typeId === tool.buildingType,
+        (e) => e.kind === 'building' && entryVariants(e).includes(tool.buildingType),
       ) ?? null
     );
   }
