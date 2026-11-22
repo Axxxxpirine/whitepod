@@ -23,6 +23,7 @@ export const RESOURCE_ENTRIES: readonly ResourceMeta[] = [
   { type: ResourceType.AluminumOxide, key: 'aluminumOxide', sprite: resourceSprite(ResourceType.AluminumOxide), tier: 1 },
   { type: ResourceType.SiliconDioxide, key: 'siliconDioxide', sprite: resourceSprite(ResourceType.SiliconDioxide), tier: 1 },
   { type: ResourceType.NitrogenGas, key: 'nitrogenGas', sprite: resourceSprite(ResourceType.NitrogenGas), tier: 1 },
+  { type: ResourceType.Carbon, key: 'carbon', sprite: resourceSprite(ResourceType.Carbon), tier: 1 },
   // Tier 1 — synthesizer outputs
   { type: ResourceType.Water, key: 'water', sprite: resourceSprite(ResourceType.Water), tier: 1 },
   { type: ResourceType.Methane, key: 'methane', sprite: resourceSprite(ResourceType.Methane), tier: 1 },

@@ -27,7 +27,8 @@ export const ResourceType = {
   AluminumOxide: 11,
   SiliconDioxide: 12,
   NitrogenGas: 13,
-  // --- Tier 1 : Synthesizer (2→1, from tier 0) ---
+  Carbon: 18,
+  // --- Tier 1 : Synthesizer (2→1, from tier 0 and converter outputs) ---
   Water: 14,
   Methane: 15,
   CarbonDioxide: 16,

@@ -472,6 +472,8 @@ export function resourceTypeLabel(type: ResourceTypeT): string {
       return 'Dioxyde de silicium';
     case ResourceType.NitrogenGas:
       return 'Azote';
+    case ResourceType.Carbon:
+      return 'Carbone';
     case ResourceType.Water:
       return 'Eau';
     case ResourceType.Methane:

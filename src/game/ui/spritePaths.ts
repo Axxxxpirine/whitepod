@@ -176,6 +176,8 @@ export const RESOURCE_SPRITE_SPECS: ReadonlyMap<ResourceTypeValue, SpriteAssetSp
   [ResourceType.CarbonDioxide, resourceSpec('carbon_dioxide')],
   [ResourceType.Ammonia, resourceSpec('ammonia')],
   [ResourceType.CeramicPlates, resourceSpec('ceramic_plates')],
+  // Interim art (0.4 sprite pass): the regolith pile turned to graphite.
+  [ResourceType.Carbon, resourceSpec('carbon')],
 ]);
 
 export const RESOURCE_SPRITE_PATHS: ReadonlyMap<ResourceTypeValue, string> = new Map(
