@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STARTING_KIT } from '@/game/campaign/campaignStart';
 import { clearHubSite, findHubOrigin, HUB_CLEARANCE, isHubSiteClear } from '@/game/campaign/hubPlacement';
 import { INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG } from '@/game/constants';
 import {
@@ -93,11 +94,12 @@ describe('campaign hub placement', () => {
     expect(countHubs(engine)).toBe(1);
   });
 
-  it('starts with an empty hub inventory', () => {
+  it('holds only the starting kit at campaign start', () => {
     const inventory = campaignEngine().getHubInventory();
 
     expect(inventory).not.toBeNull();
-    expect(Object.values(inventory!).every((amount) => amount === 0)).toBe(true);
+    const kitTotal = STARTING_KIT.reduce((sum, line) => sum + line.amount, 0);
+    expect(Object.values(inventory!).reduce((sum, amount) => sum + amount, 0)).toBe(kitTotal);
   });
 
   it('places no hub in sandbox worlds', () => {
