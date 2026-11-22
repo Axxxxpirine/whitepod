@@ -21,6 +21,7 @@ Jeu de gestion et d'optimisation industrielle sur grille. Le joueur incarne l'ar
 - [`PRIMITIVES.md`](./PRIMITIVES.md) — contrat operationnel des primitives de jeu (scenarios, tests de regression, solveurs).
 - [`DESIGN.md`](./DESIGN.md) — source de verite du design system "Architect's Drawing Board" (tokens, typographie, espacement, decisions log).
 - [`CHANGELOG.md`](./CHANGELOG.md) — historique des versions.
+- [`ROADMAP.md`](./ROADMAP.md) — vision et phases jusqu'a la 1.0 (boucle de jeu, campagne, decisions ouvertes).
 
 ## Priorites fondamentales
 
