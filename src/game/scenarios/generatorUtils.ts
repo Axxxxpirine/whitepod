@@ -1,5 +1,6 @@
 import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { GameMode } from '@/game/data/gameMode';
 import { Direction, ResourceType, TileType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
 
 export interface PreparedEngine {
@@ -171,7 +172,7 @@ export function prepareBuildZone(engine: GameEngine, cx: number, cy: number, rad
 }
 
 export function prepareEngine(screenWidth: number, screenHeight: number, rng: () => number, scenarioSeed: number): PreparedEngine {
-  const engine = new GameEngine(screenWidth, screenHeight);
+  const engine = new GameEngine(screenWidth, screenHeight, { gameMode: GameMode.Sandbox });
   engine.generateMap(scenarioSeed);
 
   const baseAnchor = clampTile({

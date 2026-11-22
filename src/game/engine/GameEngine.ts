@@ -19,6 +19,7 @@ import {
   CONVERTER_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
+import { DEFAULT_GAME_MODE, resolveGameMode, type GameMode } from '../data/gameMode';
 import { Viewport } from './Viewport';
 import type { ViewportSnapshot, VisibleTileRange } from './Viewport';
 import {
@@ -118,6 +119,8 @@ export interface ProcessorReservation {
 export interface SerializedGameWorld {
   readonly version: number;
   readonly mapSeed: number;
+  /** Absent in saves written before game modes existed: restored as the default mode. */
+  readonly gameMode?: GameMode;
   readonly grid: ArrayBuffer;
   readonly buildings: ReturnType<BuildingRegistry['serialize']>;
   readonly connections: SerializedConnectionRegistry;
@@ -136,6 +139,7 @@ interface GameEngineOptions {
   readonly connections?: ConnectionRegistry;
   readonly mapSeed?: number;
   readonly dayNightCycleSeconds?: number;
+  readonly gameMode?: GameMode;
 }
 
 const SERIALIZE_VERSION = 3;
@@ -164,6 +168,8 @@ export class GameEngine {
   readonly dayNightCycleSeconds: number;
   simulationTime = 0;
   mapSeed: number;
+  /** Fixed for the lifetime of the world. */
+  readonly gameMode: GameMode;
   readonly batteryCharges = new Map<BuildingId, number>();
   readonly processorStates = new Map<BuildingId, ProcessorState>();
   readonly storageInventories = new Map<BuildingId, ResourceInventory>();
@@ -188,6 +194,7 @@ export class GameEngine {
     this.connections = options.connections ?? new ConnectionRegistry();
     this.energyNetwork = new EnergyNetwork();
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
+    this.gameMode = options.gameMode ?? DEFAULT_GAME_MODE;
     this.dayNightCycleSeconds =
       options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
@@ -1143,6 +1150,7 @@ export class GameEngine {
     return {
       version: SERIALIZE_VERSION,
       mapSeed: this.mapSeed,
+      gameMode: this.gameMode,
       grid: this.grid.serialize(),
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
@@ -1166,6 +1174,7 @@ export class GameEngine {
       buildings: BuildingRegistry.deserialize(snapshot.buildings, (typeId) => getBuildingType(typeId)?.footprint),
       connections: ConnectionRegistry.deserialize(snapshot.connections),
       mapSeed: snapshot.mapSeed,
+      gameMode: resolveGameMode(snapshot.gameMode),
     });
 
     for (const connection of engine.connections.getAll().values()) {
