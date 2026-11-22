@@ -45,10 +45,13 @@ export interface TileCoord {
 export type BuildingId = number;
 export type BuildingTypeId = string;
 
+/** Belt speed tiers: same shapes and ports, different capacity and cost (see buildingCatalog). */
+export type BeltTier = 'basic' | 'fast';
+
 export type SelectedTool =
   | { readonly kind: 'select' }
   | { readonly kind: 'building'; readonly buildingType: BuildingTypeId }
-  | { readonly kind: 'belt' }
+  | { readonly kind: 'belt'; readonly tier?: BeltTier }
   | { readonly kind: 'energy_link' };
 
 export interface Footprint {
@@ -197,7 +200,8 @@ export type BeltFailure =
   | 'self_connection'
   | 'id_overflow'
   | 'tiles_blocked'
-  | 'insufficient_resources';
+  | 'insufficient_resources'
+  | 'locked';
 
 export type BeltResult =
   | { readonly ok: true; readonly plan: BeltPlan }
@@ -215,6 +219,23 @@ export type BeltRouteQuote =
       readonly missing: readonly ResourceCost[];
     }
   | { readonly ok: false; readonly reason: BeltFailure };
+
+export type BeltUpgradeFailure = 'unknown_building' | 'locked' | 'already_tier';
+
+/**
+ * Turning a belt route into another tier: `net` is what the player pays on
+ * top of the refund of the replaced segments, `refund` what comes back when
+ * the new tier is cheaper in some resource.
+ */
+export type BeltUpgradeQuote =
+  | {
+      readonly ok: true;
+      readonly segments: readonly BuildingId[];
+      readonly net: readonly ResourceCost[];
+      readonly refund: readonly ResourceCost[];
+      readonly missing: readonly ResourceCost[];
+    }
+  | { readonly ok: false; readonly reason: BeltUpgradeFailure };
 
 export type PlaceBeltResult =
   | {
