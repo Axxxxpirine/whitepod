@@ -4,9 +4,11 @@ import { getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog'
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import type { ScenarioGeneratorListEntry } from '@/game/scenarios/types';
+import { nightWarning } from '@/game/ui/nightPresentation';
 import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
+import { cn } from '@/lib/utils';
 import { BotControlsPanel } from './hud/bot/BotControlsPanel';
 import { SelectedBuildingPanel } from './hud/SelectedBuildingPanel';
 import { SelectedResourceTooltip } from './hud/SelectedResourceTooltip';
@@ -81,6 +83,11 @@ export function GameHUD() {
     return engine ? engine.getEnergyStorageTotals() : null;
   }, [engine, energyVersion, worldTick, simulationTime]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
+  const nightAlert = useMemo(() => {
+    void simulationTime;
+    void worldTick;
+    return engine ? nightWarning(engine.getNightOutlook()) : null;
+  }, [engine, simulationTime, worldTick]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
   const simulationPhase =
@@ -267,6 +274,11 @@ export function GameHUD() {
 
             <div className="mt-2 border-t border-border pt-1.5 text-xs text-ink-muted">
               <span className="tabular-nums">{simulationClockLabel}</span> ({isDaylight ? 'Jour' : 'Nuit'})
+              {nightAlert && (
+                <span role="status" className={cn('ml-2 tabular-nums', nightAlert.short ? 'text-accent-warm' : 'text-ink-muted')}>
+                  {nightAlert.text}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() =>
