@@ -155,7 +155,7 @@ Each phase ends with a **playtest among the team** and a short written debrief. 
 |---|---|---|
 | D1 | Final goal and name of the campaign | Habitat Dome, "make the outpost self-sufficient" |
 | D2 | Where construction is paid from: hub only, or every storage | **Decided 2026-11-20: global stock (hub + every storage)**, already aggregated by `getResourceCounts` |
-| D3 | Deposit size once finite | Measured on bot runs; order of thousands per tile, rich veins in the fog |
+| D3 | Deposit size once finite | **Decided 2026-11-22 (#89):** 1 500 units per tile near the centre (50 min of one extractor), growing with distance (doubles at 64 tiles); beyond 24 tiles, 1 in 5 tiles is a rich vein (×4). Campaign only, sandbox deposits stay endless. Measured on the scripted playthrough: the most used deposit still holds ~970 units at the end of chapter 2. Numbers in `src/game/data/depositAmounts.ts` |
 | D4 | Target campaign length | 4–6 h, measured by the balancing bench |
 | D5 | Release platform | Decide during 0.5 |
 | D6 | Playtest telemetry (milestone times, session length) | Opt-in, local first, decide in 0.3 |

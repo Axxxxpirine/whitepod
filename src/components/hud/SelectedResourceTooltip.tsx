@@ -1,7 +1,22 @@
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
-import { ResourceType } from '@/game/types';
+import { isRichVein } from '@/game/data/depositAmounts';
+import type { GameEngine } from '@/game/engine/GameEngine';
+import { formatAmount } from '@/game/ui/depositPresentation';
+import { ResourceType, type TileCoord } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { TooltipBubble } from '../ui';
+
+/**
+ * "Régolithe · 1 520 unités", with "filon riche" for a rich vein. Sandbox
+ * deposits never run out, so it shows the resource alone there.
+ */
+function depositLabel(engine: GameEngine, tile: TileCoord): string {
+  const label = resourceTypeLabel(engine.getResourceAt(tile.x, tile.y));
+  if (!engine.depletesDeposits) return label;
+  const parts = [label, `${formatAmount(engine.grid.getResourceAmount(tile.x, tile.y))} unités`];
+  if (isRichVein(tile.x, tile.y, engine.mapSeed)) parts.push('filon riche');
+  return parts.join(' · ');
+}
 
 export function SelectedResourceTooltip() {
   const engine = useGameStore((s) => s.engine);
@@ -32,7 +47,7 @@ export function SelectedResourceTooltip() {
         transform: 'translate(-50%, calc(-100% - 8px))',
       }}
     >
-      <TooltipBubble content={resourceTypeLabel(resource)} className="opacity-100" />
+      <TooltipBubble content={depositLabel(engine, selectedResourceTile)} className="opacity-100" />
     </div>
   );
 }

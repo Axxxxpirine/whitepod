@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Battery, GitMerge, Lock, Pickaxe, Sun, Zap } from 'lucide-react';
+import { Activity, Battery, GitMerge, Layers, Lock, Pickaxe, Sun, Zap } from 'lucide-react';
 import { RESOURCE_ENTRIES, getResourceSprite } from '@/game/ui/resourcePresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
 import {
@@ -22,6 +22,7 @@ import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { cn } from '@/lib/utils';
 import { useGameStore } from '@/store/useGameStore';
+import { formatAmount } from '@/game/ui/depositPresentation';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -48,11 +49,21 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const isPowered = powerState === 'powered';
     const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
     const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
-    const rate = isPowered ? EXTRACTOR_RATE_PER_MIN : 0;
+    const remaining = engine.getDepositRemaining(building.id) ?? 0;
+    const exhausted = remaining === 0;
+    const rate = isPowered && !exhausted ? EXTRACTOR_RATE_PER_MIN : 0;
+    // DESIGN.md: amber means "not enough".
+    const depositValue = exhausted ? 'Épuisé' : engine.depletesDeposits ? formatAmount(remaining) : 'Illimité';
 
     rows = (
       <>
         <StatRow icon={Pickaxe} label="Ressource" value={resourceTypeLabel(resource)} />
+        <StatRow
+          icon={Layers}
+          label="Gisement"
+          value={depositValue}
+          valueClass={exhausted ? 'text-accent-warm' : 'text-ink'}
+        />
         <StatRow icon={Zap} label="Energie" value={powerLabel} valueClass={powerClass} />
         <StatRow
           icon={Activity}

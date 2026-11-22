@@ -51,8 +51,10 @@ export function getPowerIndicatorColor(state: PowerState): number | null {
   return POWER_INDICATOR_COLORS[state];
 }
 
-export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean): number | null {
+export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean, exhausted = false): number | null {
   if (hasBadInput) return PIXI.error;
+  // An extractor on an exhausted deposit: amber, "not enough" (DESIGN.md).
+  if (exhausted) return PIXI.accentWarm;
   return getPowerIndicatorColor(state);
 }
 
@@ -179,7 +181,7 @@ export class BuildingRenderer {
 
       const powerState = this.engine.getBuildingPowerState(building.id);
       const hasBadInput = !!this.engine.getProcessorLogisticsStatus(building.id)?.badInput;
-      const indicatorColor = getBuildingIndicatorColor(powerState, hasBadInput);
+      const indicatorColor = getBuildingIndicatorColor(powerState, hasBadInput, this.engine.getDepositRemaining(building.id) === 0);
       if (indicatorColor === null) {
         this.releaseIndicator(building.id);
       } else {

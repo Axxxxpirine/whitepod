@@ -2,6 +2,7 @@ import { GRID_WIDTH, GRID_HEIGHT, RESOURCE_DEPOSIT_AMOUNT } from '../constants';
 import { ResourceType, TileType } from '../types';
 import type { TileGrid } from './TileGrid';
 import { mulberry32 } from './SeededRNG';
+import { depositAmountAt } from './depositAmounts';
 import { isInBounds, toCoord, toIndex } from './coords';
 
 interface ResourceConfig {
@@ -129,6 +130,13 @@ export function generateResources(grid: TileGrid, seed: number): void {
         }
       }
     }
+  }
+
+  // Finite deposits: each tile gets its amount from its position (data/depositAmounts.ts).
+  for (let index = 0; index < grid.resourceType.length; index++) {
+    if (grid.resourceType[index] === ResourceType.None) continue;
+    const { x, y } = toCoord(index);
+    grid.resourceAmount[index] = depositAmountAt(x, y, seed);
   }
 
   grid.markDirty(0, 0);

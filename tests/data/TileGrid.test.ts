@@ -97,16 +97,25 @@ describe('TileGrid', () => {
       expect(restored.flags[100]).toBe(7);
     });
 
-    it('normalizes restored resource amounts for existing deposits', () => {
+    it('keeps what is left in each deposit, including an exhausted one', () => {
       const grid = new TileGrid();
       grid.fill(TileType.Ground);
       grid.setResource(1, 0, ResourceType.Regolith);
+      grid.setResource(2, 0, ResourceType.Oxygen);
       grid.resourceAmount[1] = 0;
+      grid.resourceAmount[2] = 1234;
 
       const restored = TileGrid.deserialize(grid.serialize());
 
       expect(restored.getResource(1, 0)).toBe(ResourceType.Regolith);
-      expect(restored.getResourceAmount(1, 0)).toBe(RESOURCE_DEPOSIT_AMOUNT);
+      expect(restored.getResourceAmount(1, 0)).toBe(0);
+      expect(restored.getResourceAmount(2, 0)).toBe(1234);
+    });
+
+    it('places hand-made deposits with the default amount', () => {
+      const grid = new TileGrid();
+      grid.setResource(3, 0, ResourceType.Hydrogen);
+      expect(grid.getResourceAmount(3, 0)).toBe(RESOURCE_DEPOSIT_AMOUNT);
     });
   });
 });
