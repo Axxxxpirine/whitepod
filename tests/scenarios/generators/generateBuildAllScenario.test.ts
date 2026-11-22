@@ -20,17 +20,17 @@ describe('generateBuildAllScenario', () => {
     const synthesizers = buildings.filter((b) => b.typeId === SYNTHESIZER_BUILDING_TYPE_ID);
     const storages     = buildings.filter((b) => b.typeId === STORAGE_BUILDING_TYPE_ID);
 
-    expect(extractors.length).toBe(31);   // Dedicated providers for every storage and processor chain
-    expect(converters.length).toBe(6);    // 4 stored tier-1 outputs + 2 dedicated ceramic feeders
+    expect(extractors.length).toBe(36);   // Dedicated providers for every storage and processor chain
+    expect(converters.length).toBe(10);   // 5 stored tier-1 outputs + 3 synthesizer feeders + 2 ceramic feeders
     expect(synthesizers.length).toBe(5);  // Ceramic, Water, Methane, CO2, Ammonia
-    expect(storages.length).toBe(12);     // 3 base + 4 converter + 5 synthesizer
+    expect(storages.length).toBe(13);     // 3 base + 5 converter + 5 synthesizer
   });
 
   it('all energy consumers are in a single connected network', () => {
     const result = generateBuildAllScenario(640, 480);
     const networks = result.engine.getEnergyNetworkBalances();
-    // 31 extractors × 4 kW + 6 converters × 6 kW + 5 synthesizers × 10 kW = 210 kW total demand.
-    const mainNetwork = networks.find((n) => n.consumption === 210);
+    // 36 extractors × 4 kW + 10 converters × 6 kW + 5 synthesizers × 10 kW = 254 kW total demand.
+    const mainNetwork = networks.find((n) => n.consumption === 254);
     expect(mainNetwork).toBeDefined();
   });
 
@@ -39,7 +39,7 @@ describe('generateBuildAllScenario', () => {
     const buildings = [...result.engine.getBuildings().values()];
     const processors = buildings.filter((b) => isProcessorTypeId(b.typeId));
 
-    expect(processors.length).toBe(11);
+    expect(processors.length).toBe(15);
     for (const processor of processors) {
       const state = result.engine.getProcessorState(processor.id);
       expect(state).toBeDefined();
@@ -47,7 +47,7 @@ describe('generateBuildAllScenario', () => {
     }
   });
 
-  it('produces all 12 resource types after simulation', () => {
+  it('produces all 13 resource types after simulation', () => {
     const result = generateBuildAllScenario(640, 480);
     const counts = result.engine.getResourceCounts();
 
@@ -61,6 +61,7 @@ describe('generateBuildAllScenario', () => {
     expect(counts.aluminumOxide).toBeGreaterThan(0);
     expect(counts.siliconDioxide).toBeGreaterThan(0);
     expect(counts.nitrogenGas).toBeGreaterThan(0);
+    expect(counts.carbon).toBeGreaterThan(0);
 
     // Synthesizer outputs (tier 1 + tier 2)
     expect(counts.water).toBeGreaterThan(0);

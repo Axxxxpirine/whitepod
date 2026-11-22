@@ -42,11 +42,21 @@ const recipes: readonly Recipe[] = [
     cycleSeconds: 5,
     building: 'converter',
   },
+  // Lunar regolith holds the volatiles the solar wind implanted (#93): the
+  // converter drives out nitrogen and carbon, no extra deposit needed.
   {
     id: 'nitrogen_gas',
-    name: "Synthèse d'azote",
-    inputs: [{ resourceType: ResourceType.Oxygen, amount: 3 }],
+    name: "Désorption d'azote",
+    inputs: [{ resourceType: ResourceType.Regolith, amount: 3 }],
     output: { resourceType: ResourceType.NitrogenGas, amount: 1 },
+    cycleSeconds: 4,
+    building: 'converter',
+  },
+  {
+    id: 'carbon',
+    name: 'Pyrolyse (carbone)',
+    inputs: [{ resourceType: ResourceType.Regolith, amount: 3 }],
+    output: { resourceType: ResourceType.Carbon, amount: 1 },
     cycleSeconds: 4,
     building: 'converter',
   },
@@ -65,9 +75,10 @@ const recipes: readonly Recipe[] = [
   {
     id: 'methane',
     name: 'Synthèse de méthane',
+    // Gameplay stoichiometry: 2 hydrogen (2 providers) rather than 4, to keep merger counts low.
     inputs: [
-      { resourceType: ResourceType.Hydrogen, amount: 4 },
-      { resourceType: ResourceType.Oxygen, amount: 1 },
+      { resourceType: ResourceType.Carbon, amount: 1 },
+      { resourceType: ResourceType.Hydrogen, amount: 2 },
     ],
     output: { resourceType: ResourceType.Methane, amount: 1 },
     cycleSeconds: 5,
@@ -77,7 +88,7 @@ const recipes: readonly Recipe[] = [
     id: 'carbon_dioxide',
     name: 'Synthèse de CO₂',
     inputs: [
-      { resourceType: ResourceType.Hydrogen, amount: 1 },
+      { resourceType: ResourceType.Carbon, amount: 1 },
       { resourceType: ResourceType.Oxygen, amount: 1 },
     ],
     output: { resourceType: ResourceType.CarbonDioxide, amount: 1 },
@@ -87,9 +98,10 @@ const recipes: readonly Recipe[] = [
   {
     id: 'ammonia',
     name: "Synthèse d'ammoniac",
+    // Gameplay stoichiometry: 2 hydrogen rather than 3, as for methane.
     inputs: [
-      { resourceType: ResourceType.Hydrogen, amount: 3 },
-      { resourceType: ResourceType.Oxygen, amount: 2 },
+      { resourceType: ResourceType.NitrogenGas, amount: 1 },
+      { resourceType: ResourceType.Hydrogen, amount: 2 },
     ],
     output: { resourceType: ResourceType.Ammonia, amount: 1 },
     cycleSeconds: 6,

@@ -24,8 +24,9 @@ describe('BuildingStatsPanel', () => {
     );
 
     expect(container.querySelector('.grid.grid-cols-3.gap-1')).not.toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(screen.getAllByRole('button')).toHaveLength(5);
     expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recette Carbone' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Oxyde de fer' })).toBeInTheDocument();
     expect(screen.getByText('1x Régolithe')).toBeInTheDocument();
     expect(screen.queryByText('Oxydation (fer)')).not.toBeInTheDocument();
