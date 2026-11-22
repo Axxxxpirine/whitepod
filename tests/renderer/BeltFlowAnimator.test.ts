@@ -117,7 +117,7 @@ describe('BeltFlowAnimator', () => {
     animator.destroy();
   });
 
-  it('keeps belt sprite animation running when a save restores a zero resource amount', () => {
+  it('stops animating a belt once its extractor has exhausted its deposit', () => {
     const engine = makeEngine();
     engine.placeResource(2, 1, ResourceType.Regolith);
 
@@ -141,7 +141,7 @@ describe('BeltFlowAnimator', () => {
 
     engine.grid.resourceAmount.fill(0);
 
-    expect(resolveResources(engine, firstSegmentId)).toEqual([ResourceType.Regolith]);
+    expect(resolveResources(engine, firstSegmentId)).toEqual([]);
 
     animator.destroy();
   });

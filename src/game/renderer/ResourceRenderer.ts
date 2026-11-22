@@ -4,9 +4,11 @@ import { TILE_SIZE, GRID_WIDTH } from '../constants';
 import { ResourceType } from '../types';
 import type { ResourceType as ResourceTypeT } from '../types';
 import { getResourceTexture } from './TileSprite';
+import { isRichVein } from '../data/depositAmounts';
 
 const RESOURCE_SPRITE_SIZE = TILE_SIZE - 2;
-const RESOURCE_OFFSET = (TILE_SIZE - RESOURCE_SPRITE_SIZE) / 2;
+/** Rich veins read a size larger than ordinary deposits, so exploring finds them. */
+const RICH_VEIN_SPRITE_SIZE = Math.round(TILE_SIZE * 1.25);
 
 export class ResourceRenderer {
   private readonly resourceContainer: Container;
@@ -55,15 +57,14 @@ export class ResourceRenderer {
           const index = ty * GRID_WIDTH + tx;
           if (this.activeSprites.has(index)) continue;
 
-          const resourceType = grid.resourceType[index] as ResourceTypeT;
+          const resourceType = this.visibleResource(index);
           if (resourceType === ResourceType.None) continue;
 
           const texture = getResourceTexture(resourceType);
           if (!texture) continue;
 
           const sprite = this.acquireSprite(resourceType);
-          sprite.x = tx * TILE_SIZE + RESOURCE_OFFSET;
-          sprite.y = ty * TILE_SIZE + RESOURCE_OFFSET;
+          this.placeSprite(sprite, tx, ty);
           this.resourceContainer.addChild(sprite);
           this.activeSprites.set(index, sprite);
         }
@@ -83,7 +84,7 @@ export class ResourceRenderer {
       for (let ty = dy0; ty <= dy1; ty++) {
         for (let tx = dx0; tx <= dx1; tx++) {
           const index = ty * GRID_WIDTH + tx;
-          const resourceType = grid.resourceType[index] as ResourceTypeT;
+          const resourceType = this.visibleResource(index);
           const existing = this.activeSprites.get(index);
 
           if (resourceType === ResourceType.None) {
@@ -104,8 +105,7 @@ export class ResourceRenderer {
             } else {
               // Add new sprite
               const sprite = this.acquireSprite(resourceType);
-              sprite.x = tx * TILE_SIZE + RESOURCE_OFFSET;
-              sprite.y = ty * TILE_SIZE + RESOURCE_OFFSET;
+              this.placeSprite(sprite, tx, ty);
               this.resourceContainer.addChild(sprite);
               this.activeSprites.set(index, sprite);
             }
@@ -115,12 +115,26 @@ export class ResourceRenderer {
     }
   }
 
+  /** The deposit drawn on a tile: none once it is exhausted. */
+  private visibleResource(index: number): ResourceTypeT {
+    const { grid } = this.engine;
+    return grid.resourceAmount[index] === 0 ? ResourceType.None : (grid.resourceType[index] as ResourceTypeT);
+  }
+
+  private placeSprite(sprite: Sprite, tx: number, ty: number): void {
+    // Amounts only matter where deposits run out (campaign).
+    const rich = this.engine.depletesDeposits && isRichVein(tx, ty, this.engine.mapSeed);
+    const size = rich ? RICH_VEIN_SPRITE_SIZE : RESOURCE_SPRITE_SIZE;
+    sprite.width = size;
+    sprite.height = size;
+    sprite.x = tx * TILE_SIZE + (TILE_SIZE - size) / 2;
+    sprite.y = ty * TILE_SIZE + (TILE_SIZE - size) / 2;
+  }
+
   private acquireSprite(resourceType: ResourceTypeT): Sprite {
     const sprite = this.spritePool.pop() ?? new Sprite();
     const texture = getResourceTexture(resourceType);
     if (texture) sprite.texture = texture;
-    sprite.width = RESOURCE_SPRITE_SIZE;
-    sprite.height = RESOURCE_SPRITE_SIZE;
     sprite.visible = true;
     return sprite;
   }

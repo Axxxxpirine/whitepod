@@ -21,19 +21,18 @@ type ResourceRendererTestApi = {
 };
 
 describe('ResourceRenderer', () => {
-  it('renders a resource sprite even when an old save restored a zero resource amount', () => {
+  it('draws a stocked deposit and hides an exhausted one', () => {
     const engine = makeEngine();
-    const x = 128;
-    const y = 128;
-    engine.placeResource(x, y, ResourceType.Regolith);
-    engine.grid.resourceAmount[y * GRID_WIDTH + x] = 0;
-    engine.grid.markDirty(x, y);
+    engine.placeResource(128, 128, ResourceType.Regolith);
+    engine.placeResource(130, 128, ResourceType.Oxygen);
+    engine.grid.resourceAmount[128 * GRID_WIDTH + 130] = 0;
+    engine.grid.markDirty(130, 128);
 
     const renderer = new ResourceRenderer({ stage: new Container() } as unknown as Application, engine);
-
     renderer.render();
 
-    expect((renderer as unknown as ResourceRendererTestApi).activeSprites.size).toBe(1);
+    const sprites = (renderer as unknown as ResourceRendererTestApi).activeSprites;
+    expect([...sprites.keys()]).toEqual([128 * GRID_WIDTH + 128]);
 
     renderer.destroy();
   });

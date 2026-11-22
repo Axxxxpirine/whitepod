@@ -41,6 +41,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
 
       if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
         if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
+        if (engine.getDepositRemaining(upstream.id) === 0) continue;
         const resource = engine.getResourceAt(upstream.origin.x, upstream.origin.y);
         if (resource === ResourceType.None) continue;
         let entry = byResource.get(resource);
