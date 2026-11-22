@@ -102,6 +102,8 @@ export interface BuildingType {
    * storages) and fully refunded on removal. Belts: cost per segment.
    */
   readonly cost?: readonly ResourceCost[];
+  /** Belts only: items per minute a run of this belt carries (a mixed run takes its slowest segment). */
+  readonly beltCapacityPerMinute?: number;
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
