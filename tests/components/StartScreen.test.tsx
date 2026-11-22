@@ -4,6 +4,7 @@ import App from '@/App';
 import { StartScreen } from '@/components/StartScreen';
 import { GameMode } from '@/game/data/gameMode';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { MILESTONES } from '@/game/data/milestoneCatalog';
 import {
   VIEW_STORAGE_KEY,
   WORLD_STORAGE_KEY,
@@ -58,7 +59,7 @@ describe('StartScreen at boot', () => {
     saveCampaign(7);
     render(<StartScreen />);
 
-    expect(screen.getByRole('button', { name: /^Continuer/ })).toHaveTextContent('Campagne · graine 7 · 0 / 6 paliers');
+    expect(screen.getByRole('button', { name: /^Continuer/ })).toHaveTextContent(`Campagne · graine 7 · 0 / ${MILESTONES.length} paliers`);
   });
 
   it('continues the saved game without touching it', () => {
