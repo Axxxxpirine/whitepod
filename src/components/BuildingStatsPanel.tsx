@@ -6,8 +6,8 @@ import { lockedHint } from '@/game/ui/unlockPresentation';
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
-  EXTRACTOR_BUILDING_TYPE_ID,
-  EXTRACTOR_RATE_PER_MIN,
+  extractorRatePerMinute,
+  isExtractorTypeId,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -43,7 +43,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
   let rows: React.ReactNode = null;
 
-  if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+  if (isExtractorTypeId(building.typeId)) {
     const resource = engine.getResourceAt(building.origin.x, building.origin.y);
     const powerState = engine.getBuildingPowerState(building.id);
     const isPowered = powerState === 'powered';
@@ -51,7 +51,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
     const remaining = engine.getDepositRemaining(building.id) ?? 0;
     const exhausted = remaining === 0;
-    const rate = isPowered && !exhausted ? EXTRACTOR_RATE_PER_MIN : 0;
+    const rate = isPowered && !exhausted ? extractorRatePerMinute(building.typeId) : 0;
     // DESIGN.md: amber means "not enough".
     const depositValue = exhausted ? 'Épuisé' : engine.depletesDeposits ? formatAmount(remaining) : 'Illimité';
 
@@ -140,7 +140,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
         visited.add(current);
         const upstream = engine.getBuildings().get(current);
         if (!upstream) continue;
-        if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+        if (isExtractorTypeId(upstream.typeId)) {
           if (engine.getBuildingPowerState(upstream.id) === 'powered') {
             resourceSet.add(resourceTypeLabel(engine.getResourceAt(upstream.origin.x, upstream.origin.y)));
           }

@@ -1,6 +1,6 @@
 import {
-  EXTRACTOR_BUILDING_TYPE_ID,
-  EXTRACTOR_RATE_PER_MIN,
+  extractorRatePerMinute,
+  isExtractorTypeId,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   carriesFlowThrough,
   isProcessorTypeId,
@@ -39,7 +39,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
       const upstream = engine.getBuildings().get(connection.from.building);
       if (!upstream) continue;
 
-      if (upstream.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+      if (isExtractorTypeId(upstream.typeId)) {
         if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
         if (engine.getDepositRemaining(upstream.id) === 0) continue;
         const resource = engine.getResourceAt(upstream.origin.x, upstream.origin.y);
@@ -51,7 +51,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         }
         if (!entry.sources.has(upstream.id)) {
           entry.sources.add(upstream.id);
-          entry.rate += EXTRACTOR_RATE_PER_MIN * share;
+          entry.rate += extractorRatePerMinute(upstream.typeId) * share;
         }
         continue;
       }

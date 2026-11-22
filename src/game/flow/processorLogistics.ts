@@ -1,8 +1,8 @@
 import {
-  EXTRACTOR_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   carriesFlowThrough,
   getBuildingType,
+  isExtractorTypeId,
   isProcessorTypeId,
   isStorageTypeId,
 } from '@/game/data/buildingCatalog';
@@ -62,7 +62,7 @@ export function resolveUpstreamProvidersForInputPort(
     const building = engine.getBuildings().get(currentId);
     if (!building) continue;
 
-    if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
+    if (isExtractorTypeId(building.typeId) || isProcessorTypeId(building.typeId)) {
       const resourceType = engine.getProducerResourceType(currentId);
       if (resourceType === null) continue;
       reachableProviders.push(currentId);
