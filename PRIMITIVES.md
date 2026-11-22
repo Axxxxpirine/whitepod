@@ -330,6 +330,19 @@ Both tiers have the same shapes and ports, so a route changes tier in place. Cat
 - inputs `in_west`, `in_north`, `in_south`
 - output `out_east`
 
+#### `splitter_basic`
+
+- footprint: `1x1`, cost 5 regolith; unlocked in campaign with the merger (milestone `refining_iron`)
+- allowed tiles: `Ground`
+- forbids resource deposit: yes
+- ports:
+- input `in_west`
+- outputs `out_east`, `out_north`, `out_south`
+- behaviour: hands units to its outputs **in turn** (catalog port order), skipping an output that cannot take one now: no connection, a storage whose belts are full, or a machine not ready to pull (no recipe, unpowered, mid-cycle, output held). A unit routed to a machine waits with its producer until the machine pulls it; a unit routed to a storage is pushed. The turn moves past the output used and is saved with the world (`splitterTurns`).
+- toolbar: shares key 6 with the merger (merger, then splitter, then selection); no dedicated sprite yet, it uses the merger's.
+
+Flow routing (`src/game/flow/processorLogistics.ts`, `resolveRoutesFromOutput`): a producer's output has one route per way to a storage or a machine, branching at each splitter output; each route lists the belts, mergers and splitters it crosses (used by belt throughput) and the splitter outputs it takes. Without splitters there is at most one route, as before.
+
 #### `converter_basic`
 
 - footprint: `3x3`
