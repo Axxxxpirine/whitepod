@@ -194,7 +194,18 @@ engine.removeResource(x, y) => boolean
 
 ```ts
 engine.getResourceAt(x, y) => ResourceType
+engine.grid.getResourceAmount(x, y) => number      // units left on the tile
+engine.getDepositRemaining(extractorId) => number | null
+engine.depletesDeposits                             // true in campaign
 ```
+
+### Finite deposits
+
+- **Amounts** (`src/game/data/depositAmounts.ts`, decision D3): generated maps give each deposit tile `depositAmountAt(x, y, seed)`: 1 500 units near the map centre, growing with distance (doubling at 64 tiles); beyond 24 tiles (outside the initial reveal) one tile in five is a **rich vein** (×4, `isRichVein`). Hand-placed deposits (`placeResource`, campaign start deposits) hold `RESOURCE_DEPOSIT_AMOUNT` (1 500).
+- **Depletion** (campaign only): each unit an extractor makes takes one from its tile. An exhausted tile (amount 0) stops its extractor, is no longer drawn, and refuses a new extractor (`resource_required`). Sandbox deposits never run out.
+- **Display**: the extractor panel shows what is left ("Gisement", amber "Épuisé" at 0; "Illimité" in sandbox), an exhausted extractor gets an amber indicator on the map, the deposit tooltip shows the amount and "filon riche"; rich veins are drawn larger (campaign).
+- **Saves** keep each tile's amount. Saves from before finite deposits (no `depositModel`) get the generated amounts on load.
+- The scripted playthrough (`tests/balance`) checks no deposit falls below a third of the base amount before the end of chapter 2.
 
 ## Building Primitives
 
