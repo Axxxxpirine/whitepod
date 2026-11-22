@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  HUB_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getAllBuildingTypes,
   isStorageTypeId,
@@ -10,8 +11,13 @@ describe('isStorageTypeId', () => {
     expect(isStorageTypeId(STORAGE_BUILDING_TYPE_ID)).toBe(true);
   });
 
+  it('is true for the campaign hub', () => {
+    expect(isStorageTypeId(HUB_BUILDING_TYPE_ID)).toBe(true);
+  });
+
   it('is false for every other catalog entry', () => {
-    const others = getAllBuildingTypes().filter((type) => type.id !== STORAGE_BUILDING_TYPE_ID);
+    const storageIds = new Set<string>([STORAGE_BUILDING_TYPE_ID, HUB_BUILDING_TYPE_ID]);
+    const others = getAllBuildingTypes().filter((type) => !storageIds.has(type.id));
     expect(others.length).toBeGreaterThan(0);
     for (const type of others) {
       expect(isStorageTypeId(type.id), type.id).toBe(false);

@@ -84,6 +84,13 @@ export interface BuildingType {
    * them in a per-building inventory. Read through `isStorageTypeId`.
    */
   readonly storage?: boolean;
+  /**
+   * Placed by the engine only (e.g. the campaign hub): `canPlaceBuilding`
+   * refuses it with `system_placed`, so players and tools cannot build it.
+   */
+  readonly systemPlaced?: boolean;
+  /** Cannot be removed once placed. */
+  readonly permanent?: boolean;
   readonly ports: readonly Port[];
   readonly energy?: {
     readonly production?: number;
@@ -111,7 +118,8 @@ export type PlacementFailure =
   | 'resource_forbidden'
   | 'unknown_type'
   | 'id_overflow'
-  | 'tile_fogged';
+  | 'tile_fogged'
+  | 'system_placed';
 
 export type PlacementResult =
   | { readonly ok: true }

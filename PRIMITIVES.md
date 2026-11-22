@@ -79,6 +79,10 @@ Every world has a fixed `engine.gameMode` (`'campaign' | 'sandbox'`, see `src/ga
 - `sandbox` (default): everything unlocked, building is free. Dev scenarios, scenario generators and bots always run in sandbox, so the primitives below behave as documented regardless of campaign rules.
 - `campaign`: progression mode (hub, construction costs, milestones, unlocks, see `ROADMAP.md`). Campaign rules are added by later systems and must be documented here as they land.
 
+Campaign rules in place:
+
+- **Hub**: `generateMap(seed)` on a campaign world places one `hub_lander` near the map center, inside the initial reveal, on plain ground with a free ring around it and no deposit (deterministic per seed). It is never placed twice. `engine.getHubId()` and `engine.getHubInventory()` return `null` in sandbox worlds.
+
 The mode is set at creation (`new GameEngine(w, h, { gameMode })`), saved with the world and restored on reload. Saves written before game modes existed load as `sandbox`. Bots refuse to start in a campaign world.
 
 ## Tool-Level Primitives
@@ -283,6 +287,16 @@ The currently supported building type ids are:
 - allowed tiles: `Ground`
 - forbids resource deposit: yes
 - ports: `in_west`, `in_north`, `in_east`, `in_south`
+
+#### `hub_lander` (campaign hub)
+
+- footprint: `5x5`
+- allowed tiles: `Ground`
+- forbids resource deposit: yes
+- ports: `in_west_1`, `in_west_2`, `in_north_1`, `in_north_2`, `in_east_1`, `in_east_2`, `in_south_1`, `in_south_2` (all inputs)
+- storage-like (`storage: true`): stores deliveries in its own inventory, counted by `getResourceCounts()`
+- `systemPlaced`: placed by the engine only; `canPlaceBuilding` returns `system_placed`
+- `permanent`: `removeBuilding` returns `false`
 
 #### `solar_panel`
 
