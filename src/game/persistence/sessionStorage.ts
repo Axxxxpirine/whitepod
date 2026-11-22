@@ -105,7 +105,7 @@ function isValidDirection(value: unknown): value is number {
 function isSelectedTool(value: unknown): value is SelectedTool {
   if (!isRecord(value) || typeof value.kind !== 'string') return false;
   if (value.kind === 'select') return true;
-  if (value.kind === 'belt') return true;
+  if (value.kind === 'belt') return value.tier === undefined || value.tier === 'basic' || value.tier === 'fast';
   if (value.kind === 'building') return typeof value.buildingType === 'string';
   if (value.kind === 'energy_link') return true;
   return false;

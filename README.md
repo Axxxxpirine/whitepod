@@ -108,7 +108,8 @@ Belt segments (`belt_straight`, `belt_corner_cw`, `belt_corner_ccw`) are placed 
 
 ```js
 engine.canPlaceBelt(from, to)          // Plan a belt route between two port endpoints
-engine.placeBelt(from, to)             // Place belt segments + auto-connect
+engine.placeBelt(from, to, tier)       // Place belt segments + auto-connect ('basic' default, or 'fast')
+engine.upgradeBelt(segmentId, 'fast')  // Turn the whole route into fast belt in place, paying the difference
 engine.removeBelt(segmentId)           // Remove entire connected belt chain
 engine.getBeltRunStats(segmentId)      // { runId, capacityPerMinute, saturated } of the segment's run
 engine.getSaturatedBeltSegments()      // Segments of runs at capacity (amber on the map)

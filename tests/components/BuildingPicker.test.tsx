@@ -124,3 +124,34 @@ describe('BuildingPicker costs', () => {
     expect(screen.queryAllByRole('group', { name: /^Coût/ })).toHaveLength(0);
   });
 });
+
+describe('BuildingPicker belt tiers', () => {
+  beforeEach(() => {
+    useGameStore.setState({ engine: null, selectedTool: { kind: 'select' }, worldVersion: 0 });
+  });
+
+  it('cycles basic belt, fast belt, then selection on the same shortcut in sandbox', () => {
+    const engine = new GameEngine(800, 600);
+    engine.generateMap(42);
+    useGameStore.setState({ engine });
+    render(<BuildingPicker />);
+
+    fireEvent.keyDown(window, { key: '3' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'belt' });
+    fireEvent.keyDown(window, { key: '3' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'belt', tier: 'fast' });
+    expect(screen.getByRole('button', { name: 'Convoyeur rapide' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.keyDown(window, { key: '3' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+  });
+
+  it('skips the fast belt while it is locked in campaign', () => {
+    useGameStore.setState({ engine: campaign() });
+    render(<BuildingPicker />);
+
+    fireEvent.keyDown(window, { key: '3' });
+    fireEvent.keyDown(window, { key: '3' });
+
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+  });
+});

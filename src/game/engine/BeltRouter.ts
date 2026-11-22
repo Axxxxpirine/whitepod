@@ -43,10 +43,10 @@ import {
   type TileCoord,
 } from '../types';
 import {
-  BELT_CORNER_CCW_BUILDING_TYPE_ID,
-  BELT_CORNER_CW_BUILDING_TYPE_ID,
   BELT_STRAIGHT_BUILDING_TYPE_ID,
+  beltTypeId,
   getBuildingType,
+  type BeltTier,
 } from '../data/buildingCatalog';
 import {
   oppositeSide,
@@ -85,6 +85,7 @@ export function planBelt(
   view: BeltRouterView,
   from: PortEndpoint,
   to: PortEndpoint,
+  tier: BeltTier = 'basic',
 ): BeltResult {
   // 1. Reject self-connection up front (same building on both ends).
   if (from.building === to.building) return fail('self_connection');
@@ -121,7 +122,7 @@ export function planBelt(
   if (!path) return fail('no_path');
 
   // 7. Segment the path into belt building placements.
-  const segments = segmentPath(path, fromSide, toSide);
+  const segments = segmentPath(path, fromSide, toSide, tier);
   if (!segments) return fail('no_path'); // U-turn impossible on shortest 4-connex path
 
   // 8. Build the connection list: from-building → seg₀ → … → seg_last → to-building.
@@ -198,13 +199,14 @@ function segmentPath(
   path: readonly TileCoord[],
   fromSide: Direction,
   toSide: Direction,
+  tier: BeltTier,
 ): BeltSegment[] | null {
   const last = path.length - 1;
   const segments: BeltSegment[] = [];
   for (let i = 0; i <= last; i++) {
     const moveInDir = i === 0 ? fromSide : stepDir(path[i - 1], path[i]);
     const moveOutDir = i === last ? oppositeSide(toSide) : stepDir(path[i], path[i + 1]);
-    const seg = chooseSegment(path[i], moveInDir, moveOutDir);
+    const seg = chooseSegment(path[i], moveInDir, moveOutDir, tier);
     if (!seg) return null;
     segments.push(seg);
   }
@@ -215,19 +217,20 @@ function chooseSegment(
   coord: TileCoord,
   moveInDir: Direction,
   moveOutDir: Direction,
+  tier: BeltTier,
 ): BeltSegment | null {
   const turn = (moveOutDir - moveInDir + 4) % 4;
   const rotation = ((moveInDir + 3) % 4) as Direction;
   let typeId: BuildingTypeId;
   switch (turn) {
     case 0:
-      typeId = BELT_STRAIGHT_BUILDING_TYPE_ID;
+      typeId = beltTypeId(tier, 'straight');
       break;
     case 1:
-      typeId = BELT_CORNER_CW_BUILDING_TYPE_ID;
+      typeId = beltTypeId(tier, 'cw');
       break;
     case 3:
-      typeId = BELT_CORNER_CCW_BUILDING_TYPE_ID;
+      typeId = beltTypeId(tier, 'ccw');
       break;
     default:
       // turn === 2: U-turn, impossible on a 4-connex shortest path.

@@ -21,6 +21,14 @@ export function mergeCosts(costs: Iterable<readonly ResourceCost[]>): ResourceCo
   return [...totals].filter(([, amount]) => amount > 0).map(([resourceType, amount]) => ({ resourceType, amount }));
 }
 
+/** What `a` costs beyond `b`, per resource (never negative): e.g. an upgrade's price minus the refund. */
+export function costDifference(a: readonly ResourceCost[], b: readonly ResourceCost[]): ResourceCost[] {
+  const totals = new Map<ResourceCost['resourceType'], number>();
+  for (const { resourceType, amount } of mergeCosts([a])) totals.set(resourceType, amount);
+  for (const { resourceType, amount } of mergeCosts([b])) totals.set(resourceType, (totals.get(resourceType) ?? 0) - amount);
+  return [...totals].filter(([, amount]) => amount > 0).map(([resourceType, amount]) => ({ resourceType, amount }));
+}
+
 /** What is still missing to pay `cost` from `inventories` (empty when affordable). */
 export function missingFor(inventories: readonly ResourceInventory[], cost: readonly ResourceCost[]): ResourceCost[] {
   const missing: ResourceCost[] = [];

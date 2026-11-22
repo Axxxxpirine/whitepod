@@ -1,9 +1,8 @@
 import {
   BATTERY_BASIC_BUILDING_TYPE_ID,
-  BELT_CORNER_CCW_BUILDING_TYPE_ID,
-  BELT_CORNER_CW_BUILDING_TYPE_ID,
-  BELT_STRAIGHT_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
+  beltTypeId,
+  beltTypeIds,
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
@@ -12,7 +11,7 @@ import {
   WATCHTOWER_BUILDING_TYPE_ID,
   getBuildingType,
 } from '../data/buildingCatalog';
-import type { BuildingId, BuildingTypeId, SelectedTool } from '../types';
+import type { BeltTier, BuildingId, BuildingTypeId, SelectedTool } from '../types';
 import type { GameEngine } from '../engine/GameEngine';
 import { PIXI } from '@/design/tokens';
 
@@ -86,11 +85,7 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     label: 'Convoyeur',
     shortcut: '3',
     activeClass: 'bg-ink',
-    highlightFamily: [
-      BELT_STRAIGHT_BUILDING_TYPE_ID,
-      BELT_CORNER_CW_BUILDING_TYPE_ID,
-      BELT_CORNER_CCW_BUILDING_TYPE_ID,
-    ],
+    highlightFamily: [...beltTypeIds('basic'), ...beltTypeIds('fast')],
     highlightColor: PIXI.ink,
   },
   {
@@ -152,6 +147,20 @@ export const toolbarEntries: readonly ToolbarEntry[] = [
     highlightColor: PIXI.accentWarm,
   },
 ];
+
+export function beltToolLabel(tier: BeltTier = 'basic'): string {
+  return tier === 'fast' ? 'Convoyeur rapide' : 'Convoyeur';
+}
+
+/**
+ * Selecting the belt entry again moves to the fast belt once it is unlocked,
+ * then back to selection: one toolbar slot for both tiers.
+ */
+export function nextBeltTool(current: SelectedTool, engine: GameEngine | null): SelectedTool {
+  if (current.kind !== 'belt') return { kind: 'belt' };
+  const fastUnlocked = engine?.isBuildingUnlocked(beltTypeId('fast', 'straight')) ?? false;
+  return current.tier !== 'fast' && fastUnlocked ? { kind: 'belt', tier: 'fast' } : { kind: 'select' };
+}
 
 function findEntryForTool(tool: SelectedTool): ToolbarEntry | null {
   if (tool.kind === 'select') return null;

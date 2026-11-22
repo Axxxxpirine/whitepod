@@ -153,9 +153,7 @@ describe('belt throughput', () => {
     belt(engine, source, 'out_east', converter, 'in');
     belt(engine, converter, 'out', storage, 'in_west');
     const throughput = new BeltThroughput({
-      get connectionsVersion() {
-        return engine.connections.version;
-      },
+      topologyKey: () => String(engine.connections.version),
       getBuilding: (id) => engine.getBuildings().get(id),
       getBuildings: () => engine.getBuildings(),
       getConnectionsOf: (id) => engine.getConnectionsOf(id),

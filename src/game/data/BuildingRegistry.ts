@@ -67,6 +67,14 @@ export class BuildingRegistry {
     return true;
   }
 
+  /** Swaps a building's type in place (same footprint, e.g. a belt upgrade): id and tiles stay. */
+  retype(id: BuildingId, typeId: Building['typeId']): boolean {
+    const building = this.instances.get(id);
+    if (!building) return false;
+    this.instances.set(id, { ...building, typeId });
+    return true;
+  }
+
   getAt(x: number, y: number): Building | null {
     if (!isInBounds(x, y)) return null;
     const id = this.occupancy[toIndex(x, y)];

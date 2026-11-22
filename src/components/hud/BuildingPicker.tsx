@@ -1,12 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { Lock } from 'lucide-react';
-import { BELT_STRAIGHT_BUILDING_TYPE_ID, getBuildingType } from '@/game/data/buildingCatalog';
+import { beltTypeId, getBuildingType } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import { toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentation';
+import { beltToolLabel, nextBeltTool, toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentation';
 import { costLines, type CostLine } from '@/game/ui/costPresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
 import { getToolbarIcon } from '@/game/ui/toolbarIcons';
-import type { SelectedTool } from '@/game/types';
+import type { BeltTier, SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
 import { HoverTooltip, Icon } from '@/components/ui';
 import { CostList } from './CostList';
@@ -18,13 +18,22 @@ function isEntryActive(entry: ToolbarEntry, tool: SelectedTool): boolean {
   return tool.kind === entry.tool;
 }
 
-function toolForEntry(entry: ToolbarEntry, active: boolean): SelectedTool {
-  if (active) return { kind: 'select' };
+function toolForEntry(entry: ToolbarEntry, current: SelectedTool, engine: GameEngine | null): SelectedTool {
+  if (entry.kind === 'tool' && entry.tool === 'belt') return nextBeltTool(current, engine);
+  if (isEntryActive(entry, current)) return { kind: 'select' };
   if (entry.kind === 'building') return { kind: 'building', buildingType: entry.typeId };
   return { kind: entry.tool };
 }
 
-function entryLabel(entry: ToolbarEntry): string {
+/** Belt tier the entry stands for right now: the active tool's, basic otherwise. */
+function beltTierFor(entry: ToolbarEntry, tool: SelectedTool): BeltTier | null {
+  if (entry.kind !== 'tool' || entry.tool !== 'belt') return null;
+  return tool.kind === 'belt' ? (tool.tier ?? 'basic') : 'basic';
+}
+
+function entryLabel(entry: ToolbarEntry, tool: SelectedTool): string {
+  const tier = beltTierFor(entry, tool);
+  if (tier !== null) return beltToolLabel(tier);
   if (entry.kind === 'tool') return entry.label;
   return entry.label ?? getBuildingType(entry.typeId)?.name ?? entry.typeId;
 }
@@ -41,9 +50,10 @@ interface EntryCost {
 }
 
 /** What one use of an entry costs from the global stock (empty in sandbox). */
-function entryCost(entry: ToolbarEntry, engine: GameEngine | null): EntryCost {
+function entryCost(entry: ToolbarEntry, tool: SelectedTool, engine: GameEngine | null): EntryCost {
   if (!engine) return { lines: [], perSegment: false };
-  const typeId = entry.kind === 'building' ? entry.typeId : entry.tool === 'belt' ? BELT_STRAIGHT_BUILDING_TYPE_ID : null;
+  const tier = beltTierFor(entry, tool);
+  const typeId = entry.kind === 'building' ? entry.typeId : tier !== null ? beltTypeId(tier, 'straight') : null;
   if (typeId === null) return { lines: [], perSegment: false };
   const cost = engine.getBuildingCost(typeId);
   return { lines: costLines(cost, engine.getMissingResources(cost)), perSegment: entry.kind === 'tool' };
@@ -76,8 +86,8 @@ export function BuildingPicker() {
       setSelectedBuilding(null);
       setSelectedBuildingAnchor(null);
       setPendingEnergyLinkSource(null);
-      const active = isEntryActive(entry, useGameStore.getState().selectedTool);
-      const nextTool = toolForEntry(entry, active);
+      const state = useGameStore.getState();
+      const nextTool = toolForEntry(entry, state.selectedTool, state.engine);
       setSelectedTool(nextTool);
       useGameStore.getState().engine?.emitSfx({ type: 'tool_select', tool: nextTool.kind });
     },
@@ -112,10 +122,10 @@ export function BuildingPicker() {
       {toolbarEntries.map((entry) => {
         const active = isEntryActive(entry, selectedTool);
         const key = entry.kind === 'building' ? `building:${entry.typeId}` : `tool:${entry.tool}`;
-        const label = entryLabel(entry);
+        const label = entryLabel(entry, selectedTool);
         const lockHint = entryLockedHint(entry, engine);
         const locked = lockHint !== null;
-        const cost = locked ? null : entryCost(entry, engine);
+        const cost = locked ? null : entryCost(entry, selectedTool, engine);
         const short = cost?.lines.some((line) => line.missing > 0) ?? false;
         const tooltip = [
           `${label} (${entry.shortcut.toUpperCase()})`,

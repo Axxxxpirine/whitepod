@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
+  beltTypeIds,
   getAllBuildingTypes,
   getBuildingType,
   isBeltTypeId,
@@ -60,11 +61,13 @@ describe('construction cost catalog', () => {
     }
   });
 
-  it('charges belts per segment', () => {
-    const beltTypes = getAllBuildingTypes().filter((type) => isBeltTypeId(type.id));
-
-    expect(beltTypes.length).toBe(3);
-    for (const type of beltTypes) expect(type.cost, type.id).toEqual(beltTypes[0]!.cost);
+  it('charges belts per segment, every shape of a tier at the same price', () => {
+    for (const tier of ['basic', 'fast'] as const) {
+      const [first, ...others] = beltTypeIds(tier).map((id) => getBuildingType(id)!);
+      expect(first!.cost?.length, tier).toBeGreaterThan(0);
+      for (const type of others) expect(type.cost, type.id).toEqual(first!.cost);
+    }
+    expect(getAllBuildingTypes().filter((type) => isBeltTypeId(type.id))).toHaveLength(6);
   });
 });
 
