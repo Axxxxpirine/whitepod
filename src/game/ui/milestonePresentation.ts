@@ -1,4 +1,4 @@
-import { getBuildingType } from '../data/buildingCatalog';
+import { beltTierOf, beltTypeId, getBuildingType } from '../data/buildingCatalog';
 import { getChapterTitle, type MilestoneUnlocks } from '../data/milestoneCatalog';
 import { getRecipe } from '../data/recipeCatalog';
 
@@ -8,10 +8,12 @@ export function chapterLabel(chapter: number): string {
   return title ? `Chapitre ${chapter} · ${title}` : `Chapitre ${chapter}`;
 }
 
-/** Player-facing names of what a milestone unlocks: buildings first, then recipes. */
+/** Player-facing names of what a milestone unlocks: buildings first, then recipes. A belt tier shows once, by its straight piece. */
 export function unlockLabels(unlocks: MilestoneUnlocks): string[] {
-  return [
-    ...unlocks.buildings.map((id) => getBuildingType(id)?.name ?? id),
-    ...unlocks.recipes.map((id) => getRecipe(id)?.name ?? id),
-  ];
+  const buildings = unlocks.buildings.map((id) => {
+    const tier = beltTierOf(id);
+    const shown = tier ? beltTypeId(tier, 'straight') : id;
+    return getBuildingType(shown)?.name ?? shown;
+  });
+  return [...new Set(buildings), ...unlocks.recipes.map((id) => getRecipe(id)?.name ?? id)];
 }

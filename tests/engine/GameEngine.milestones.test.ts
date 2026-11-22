@@ -72,8 +72,8 @@ describe('milestone catalog', () => {
     expect(new Set(recipes).size).toBe(recipes.length);
   });
 
-  it('covers chapters 1 and 2', () => {
-    expect(new Set(MILESTONES.map((m) => m.chapter))).toEqual(new Set([1, 2]));
+  it('covers chapters 1 to 3', () => {
+    expect(new Set(MILESTONES.map((m) => m.chapter))).toEqual(new Set([1, 2, 3]));
   });
 });
 

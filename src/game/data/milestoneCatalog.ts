@@ -6,12 +6,15 @@ import {
   BELT_STRAIGHT_BUILDING_TYPE_ID,
   CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
+  FUEL_CELL_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
+  beltTypeIds,
 } from './buildingCatalog';
 import { ResourceType, type BuildingTypeId, type ResourceCost } from '../types';
 
@@ -54,8 +57,9 @@ export const STARTING_UNLOCKS: MilestoneUnlocks = {
  * Campaign milestones in play order: the active milestone is always the first
  * one not completed yet. Gameplay numbers live here, never in systems.
  *
- * Pacing (#71), checked by tests/balance/campaignPacing.test.ts: first
- * milestone within 3 minutes, chapter 1 in ~15, chapter 2 done around 40.
+ * Pacing (#71, #94), checked by tests/balance/campaignPacing.test.ts: first
+ * milestone within 3 minutes, chapter 1 in ~15, chapter 2 done around 40,
+ * chapter 3 around 2 hours.
  * Each unlock arrives with the milestone whose next step needs it: the
  * merger with aluminium (2 regolith per cycle), the splitter alongside it to
  * share a line between machines, the synthesizer with ceramic.
@@ -116,7 +120,38 @@ export const MILESTONES: readonly Milestone[] = [
       { resourceType: ResourceType.SiliconDioxide, amount: 30 },
       { resourceType: ResourceType.CeramicPlates, amount: 15 },
     ],
-    unlocks: { buildings: [], recipes: ['nitrogen_gas', 'water'] },
+    unlocks: { buildings: [], recipes: ['water'] },
+  },
+  // Chapter 3 · Chemistry: two-input recipes on gases, and power through the night.
+  {
+    id: 'chemistry_water',
+    chapter: 3,
+    title: 'Eau',
+    requirements: [{ resourceType: ResourceType.Water, amount: 120 }],
+    // Methane next: carbon out of regolith, hydrogen on top. The fuel cell burns the same gases at night.
+    unlocks: { buildings: [FUEL_CELL_BUILDING_TYPE_ID], recipes: ['carbon', 'methane'] },
+  },
+  {
+    id: 'chemistry_methane',
+    chapter: 3,
+    title: 'Méthane',
+    requirements: [
+      { resourceType: ResourceType.Methane, amount: 100 },
+      { resourceType: ResourceType.Water, amount: 40 },
+    ],
+    // Ammonia next takes nitrogen and more hydrogen: the mk2 doubles an extractor in place.
+    unlocks: { buildings: [EXTRACTOR_MK2_BUILDING_TYPE_ID], recipes: ['nitrogen_gas', 'ammonia'] },
+  },
+  {
+    id: 'chemistry_ammonia',
+    chapter: 3,
+    title: 'Ammoniac',
+    requirements: [
+      { resourceType: ResourceType.Ammonia, amount: 100 },
+      { resourceType: ResourceType.Methane, amount: 40 },
+    ],
+    // End of the chapter: twice the belt throughput for the bigger lines ahead, and CO₂ for chapter 4.
+    unlocks: { buildings: [...beltTypeIds('fast')], recipes: ['carbon_dioxide'] },
   },
 ];
 

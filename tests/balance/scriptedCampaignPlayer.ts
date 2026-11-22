@@ -54,6 +54,8 @@ const SITE_DIRECTIONS: readonly (readonly [number, number])[] = [
   [-1, -1],
   [1, 1],
 ];
+/** Extra distance of each further ring of workshop sites. */
+const RING_SPACING = 16;
 /** Converters feeding a synthesizer sit this far behind it, this far apart on either side. */
 const FEEDER_DISTANCE = 9;
 const FEEDER_SPREAD = 6;
@@ -81,11 +83,10 @@ export interface MilestoneTiming {
   readonly seconds: number;
 }
 
-export interface ConverterSpec {
-  readonly recipe: RecipeId;
-  /** Regolith extractors feeding it (through mergers when more than one). */
-  readonly extractors: number;
-}
+/** A synthesizer input: a converter on `recipe` fed by regolith extractors, or `resource` extractors belted straight in. */
+export type FeederSpec =
+  | { readonly recipe: RecipeId; readonly extractors: number }
+  | { readonly resource: ResourceType; readonly extractors: number };
 
 interface Endpoint {
   readonly building: BuildingId;
@@ -101,6 +102,8 @@ export class ScriptedCampaignPlayer {
   private energyRoot: BuildingId | null = null;
   private readonly usedHubPorts = new Set<PortId>();
   private readonly collectorInputs: Endpoint[] = [];
+  /** Extractors belted straight to the hub (`deliveryLine`), with the input each one took. */
+  private readonly deliveries: Endpoint[] = [];
   private sitesUsed = 0;
   private readonly hubId: BuildingId;
   private readonly hubCenter: TileCoord;
@@ -359,15 +362,36 @@ export class ScriptedCampaignPlayer {
       if (!placed) continue;
       this.take(placed.to);
       this.belt(placed.from, placed.to);
+      this.deliveries.push({ building: placed.from.building, port: placed.to.port });
       return;
     }
     throw this.fail(`No belt route from a ${resourceType} deposit to the hub`);
   }
 
-  /** Workshops get their own site around the hub, so lines do not wall each other off. */
+  /**
+   * Removes the raw delivery lines once no milestone asks for raw resources
+   * any more, freeing their hub inputs for products: removing an extractor
+   * takes its belt with it and refunds both.
+   */
+  retireDeliveryLines(): void {
+    for (const { building, port } of this.deliveries.splice(0)) {
+      if (!this.engine.removeBuilding(building, { emitSfx: false })) throw this.fail(`Cannot remove delivery extractor ${building}`);
+      this.usedHubPorts.delete(port);
+      this.advance(PLAYER_SECONDS_PER_ACTION);
+    }
+  }
+
+  /** Moves the next workshops out to a wider ring, where earlier lines have not spread their belts yet. */
+  nextRing(): void {
+    this.sitesUsed = Math.ceil(this.sitesUsed / SITE_DIRECTIONS.length) * SITE_DIRECTIONS.length;
+  }
+
+  /** Workshops get their own site around the hub, so lines do not wall each other off; a wider ring once the first is full. */
   private nextSite(): TileCoord {
+    const ring = Math.floor(this.sitesUsed / SITE_DIRECTIONS.length);
     const [dx, dy] = SITE_DIRECTIONS[this.sitesUsed++ % SITE_DIRECTIONS.length]!;
-    return { x: this.hubCenter.x + dx * SITE_DISTANCE, y: this.hubCenter.y + dy * SITE_DISTANCE };
+    const distance = SITE_DISTANCE + ring * RING_SPACING;
+    return { x: this.hubCenter.x + dx * distance, y: this.hubCenter.y + dy * distance };
   }
 
   /**
@@ -387,10 +411,10 @@ export class ScriptedCampaignPlayer {
     return this.engine.getBuildings().get(id)!.origin;
   }
 
-  /** Feeds `count` regolith extractors into `input`, chaining 3-input mergers. */
-  private feed(input: Endpoint, count: number, near: TileCoord): void {
+  /** Feeds `count` extractors of `resourceType` into `input`, chaining 3-input mergers. */
+  private feed(input: Endpoint, count: number, near: TileCoord, resourceType: ResourceType = ResourceType.Regolith): void {
     if (count === 1) {
-      this.belt(this.extractorToward(ResourceType.Regolith, [input], near).from, input);
+      this.belt(this.extractorToward(resourceType, [input], near).from, input);
       return;
     }
     const placed = this.placeFacingNear(MERGER_BASIC_BUILDING_TYPE_ID, near, WORKSHOP_MARGIN, 'out_east', [input]);
@@ -402,43 +426,63 @@ export class ScriptedCampaignPlayer {
     // Keep one merger input for the chain when more than three extractors are needed.
     const direct = count > MERGER_INPUTS.length ? MERGER_INPUTS.length - 1 : count;
     for (let i = 0; i < direct; i++) {
-      const { from, to } = this.extractorToward(ResourceType.Regolith, free, origin);
+      const { from, to } = this.extractorToward(resourceType, free, origin);
       free.splice(free.indexOf(to), 1);
       this.belt(from, to);
     }
-    if (count > direct) this.feed(free[0]!, count - direct, origin);
+    if (count > direct) this.feed(free[0]!, count - direct, origin, resourceType);
   }
 
   /**
    * A synthesizer set to `recipe` on a new site, delivering to the hub, fed
-   * by two converter lines set behind it. Every belt between
-   * workshops is laid before the extractors, which would otherwise box the
-   * synthesizer inputs in.
+   * by two inputs set behind it: converter lines, or extractors through a
+   * merger. Every belt between workshops is laid before the extractors,
+   * which would otherwise box the synthesizer inputs in.
    */
-  synthesizerLine(recipe: RecipeId, converters: readonly [ConverterSpec, ConverterSpec]): void {
+  synthesizerLine(recipe: RecipeId, feeders: readonly [FeederSpec, FeederSpec]): void {
     const synth = this.placeTowardHub(SYNTHESIZER_BUILDING_TYPE_ID, this.nextSite(), 'out');
     this.setRecipe(synth.building, recipe);
     this.deliver(synth);
-    // Belts cannot cross: the converters go behind the synthesizer, on the far side from the hub.
+    // Belts cannot cross: the feeders go behind the synthesizer, on the far side from the hub.
     const origin = this.origin(synth.building);
     const out = { x: Math.sign(origin.x - this.hubCenter.x), y: Math.sign(origin.y - this.hubCenter.y) };
     const across = { x: -out.y || 1, y: out.x || 1 };
-    const placed = converters.map((spec, index) => {
+    const inputs = feeders.map((spec, index) => {
       const into = { building: synth.building, port: index === 0 ? 'in_1' : 'in_2' };
       const offset = index === 0 ? FEEDER_SPREAD : -FEEDER_SPREAD;
       const site = {
         x: origin.x + out.x * FEEDER_DISTANCE + across.x * offset,
         y: origin.y + out.y * FEEDER_DISTANCE + across.y * offset,
       };
+      if ('resource' in spec) {
+        // Extractors straight in: a single one is belted later, several gather in a merger set now.
+        if (spec.extractors === 1) return { input: into, near: site, spec };
+        const merger = this.placeFacingNear(MERGER_BASIC_BUILDING_TYPE_ID, site, WORKSHOP_MARGIN, 'out_east', [into]);
+        if (!merger) throw this.fail(`No belt route from a merger near ${site.x},${site.y} to the synthesizer`);
+        this.belt(merger.from, into);
+        return { input: null, merger: merger.from.building, near: this.origin(merger.from.building), spec };
+      }
       const converter = this.placeFacingNear(CONVERTER_BUILDING_TYPE_ID, site, WORKSHOP_MARGIN, 'out', [into]);
       if (!converter) throw this.fail(`No belt route from a converter near ${site.x},${site.y} to the synthesizer`);
       this.setRecipe(converter.from.building, spec.recipe);
       this.belt(converter.from, into);
-      return converter.from.building;
+      return { input: { building: converter.from.building, port: 'in' }, near: this.origin(converter.from.building), spec };
     });
-    placed.forEach((converter, index) => {
-      this.feed({ building: converter, port: 'in' }, converters[index]!.extractors, this.origin(converter));
-    });
+    for (const placed of inputs) {
+      const resource = 'resource' in placed.spec ? placed.spec.resource : ResourceType.Regolith;
+      if (placed.input) {
+        this.feed(placed.input, placed.spec.extractors, placed.near, resource);
+        continue;
+      }
+      // Merger already belted to the synthesizer: fill its inputs (up to three extractors).
+      const free = MERGER_INPUTS.map((port) => ({ building: placed.merger!, port }));
+      if (placed.spec.extractors > free.length) throw this.fail(`More than ${free.length} extractors on one merger`);
+      for (let i = 0; i < placed.spec.extractors; i++) {
+        const { from, to } = this.extractorToward(resource, free, placed.near);
+        free.splice(free.indexOf(to), 1);
+        this.belt(from, to);
+      }
+    }
   }
 
   // --- Power ----------------------------------------------------------------
