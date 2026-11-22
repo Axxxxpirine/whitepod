@@ -70,7 +70,8 @@ import {
   type TileType,
 } from '../types';
 import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
-import { isInBounds, toIndex } from '../data/coords';
+import { isInBounds, toCoord, toIndex } from '../data/coords';
+import { depositAmountAt } from '../data/depositAmounts';
 import { screenToGrid } from './CoordinateTransform';
 import { generateResources } from '../data/ResourceGenerator';
 import { planBelt } from './BeltRouter';
@@ -162,6 +163,11 @@ export interface SerializedGameWorld {
   readonly beltTokens?: readonly { readonly id: BuildingId; readonly tokens: number }[];
   /** Output each splitter serves next, as an index in catalog port order. */
   readonly splitterTurns?: readonly { readonly id: BuildingId; readonly turn: number }[];
+  /**
+   * Deposit model the grid amounts follow: absent for saves made while
+   * deposits were endless (every tile 100), which get generated amounts on load.
+   */
+  readonly depositModel?: number;
   /** Completed campaign milestones; absent in saves written before milestones existed. */
   readonly completedMilestones?: readonly MilestoneId[];
 }
@@ -178,6 +184,8 @@ interface GameEngineOptions {
 }
 
 const SERIALIZE_VERSION = 3;
+/** Finite deposits with generated amounts (data/depositAmounts.ts). */
+const DEPOSIT_MODEL = 1;
 
 interface SimulationNetwork {
   readonly consumers: BuildingId[];
@@ -336,6 +344,9 @@ export class GameEngine {
       const idx = toIndex(x, y);
       const resourceType = this.grid.resourceType[idx] as ResourceTypeT;
       if (resourceType === ResourceType.None) continue;
+      // An exhausted deposit stops its extractor; sandbox deposits never run out.
+      if (this.grid.resourceAmount[idx] === 0) continue;
+      if (this.depletesDeposits) this.grid.resourceAmount[idx] -= 1;
       this.producerOutputBuffers.set(id, { resourceType, amount: 1 });
       changed = this.flushProducerOutput(id) || changed;
       this.grid.markDirty(x, y);
@@ -890,6 +901,7 @@ export class GameEngine {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
       if (!this.hasValidDownstream(id)) continue;
+      if (this.getDepositRemaining(id) === 0) continue;
       nominal.set(id, EXTRACTOR_RATE_PER_MIN);
       output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
     }
@@ -1237,6 +1249,18 @@ export class GameEngine {
     return this.gameMode === GameModes.Campaign;
   }
 
+  /** True when extraction uses up deposits (campaign); sandbox deposits are endless. */
+  get depletesDeposits(): boolean {
+    return this.gameMode === GameModes.Campaign;
+  }
+
+  /** Units left in the deposit under an extractor, or null for another building. */
+  getDepositRemaining(buildingId: BuildingId): number | null {
+    const building = this.buildings.get(buildingId);
+    if (!building || building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) return null;
+    return this.grid.getResourceAmount(building.origin.x, building.origin.y);
+  }
+
   /** Cost the player pays for one building of this type: empty in sandbox. */
   getBuildingCost(typeId: BuildingTypeId): readonly ResourceCost[] {
     if (!this.chargesConstruction) return [];
@@ -1505,6 +1529,7 @@ export class GameEngine {
       completedMilestones: [...this.completedMilestones],
       beltTokens: this.beltThroughput.serialize(),
       splitterTurns: [...this.splitterTurns].map(([id, turn]) => ({ id, turn })),
+      depositModel: DEPOSIT_MODEL,
     };
   }
 
@@ -1607,6 +1632,15 @@ export class GameEngine {
     }
     engine.unlockCache = null;
     engine.beltThroughput.restore(snapshot.beltTokens);
+    if (snapshot.depositModel !== DEPOSIT_MODEL) {
+      // Saved while deposits were endless: give every remaining deposit its generated amount.
+      const { grid } = engine;
+      for (let index = 0; index < grid.resourceType.length; index++) {
+        if (grid.resourceType[index] === ResourceType.None) continue;
+        const { x, y } = toCoord(index);
+        grid.resourceAmount[index] = depositAmountAt(x, y, engine.mapSeed);
+      }
+    }
     for (const { id, turn } of snapshot.splitterTurns ?? []) {
       const outputs = engine.splitterOutputs(id).length;
       if (outputs > 0 && Number.isInteger(turn) && turn >= 0 && turn < outputs) engine.splitterTurns.set(id, turn);
