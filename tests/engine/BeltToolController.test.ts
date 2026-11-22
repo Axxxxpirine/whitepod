@@ -36,6 +36,44 @@ function placeExtractor(engine: GameEngine, x: number, y: number) {
 }
 
 describe('BeltToolController', () => {
+  it('with the fast tool, previews then upgrades the hovered basic route in place', () => {
+    const engine = makeEngine();
+    const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
+    const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
+    const placed = engine.placeBelt({ building: source, port: 'out_east' }, { building: target, port: 'in_west' });
+    if (!placed.ok) throw new Error(placed.reason);
+    const previews: (BeltPlacementPreviewModel | null)[] = [];
+    const tool: SelectedTool = { kind: 'belt', tier: 'fast' };
+    const controller = new BeltToolController(engine, () => tool, (preview) => previews.push(preview));
+    const segment = engine.buildings.get(placed.segmentIds[1]!)!;
+    const point = screenPointForTile(engine, segment.origin.x, segment.origin.y);
+
+    controller.onPointerMove(point.sx, point.sy);
+    expect(previews.at(-1)).toMatchObject({ kind: 'belt', upgrade: true, isValid: true });
+    expect(previews.at(-1)?.tiles).toHaveLength(placed.segmentIds.length);
+
+    controller.onPointerDown(point.sx, point.sy, 0);
+    for (const id of placed.segmentIds) {
+      expect(engine.buildings.get(id)?.typeId.startsWith('belt_fast_')).toBe(true);
+    }
+    expect(controller.hasPending()).toBe(false);
+  });
+
+  it('with the basic tool, clicking a belt neither upgrades nor starts a route', () => {
+    const engine = makeEngine();
+    const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;
+    const target = engine.placeBuilding('placeholder_node_1x1', { x: 10, y: 5 })!;
+    const placed = engine.placeBelt({ building: source, port: 'out_east' }, { building: target, port: 'in_west' });
+    if (!placed.ok) throw new Error(placed.reason);
+    const controller = new BeltToolController(engine, () => ({ kind: 'belt' }), () => {});
+    const segment = engine.buildings.get(placed.segmentIds[1]!)!;
+    const point = screenPointForTile(engine, segment.origin.x, segment.origin.y);
+
+    controller.onPointerDown(point.sx, point.sy, 0);
+
+    expect(engine.buildings.get(segment.id)?.typeId).toBe(segment.typeId);
+  });
+
   it('does not remove a belt segment when clicking it with the belt tool', () => {
     const engine = makeEngine();
     const source = engine.placeBuilding('placeholder_node_1x1', { x: 5, y: 5 })!;

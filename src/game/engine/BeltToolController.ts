@@ -1,8 +1,8 @@
-import { getBuildingType } from '../data/buildingCatalog';
+import { beltTierOf, getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf, worldTileOf } from '../data/ConnectionRegistry';
 import { screenToWorld } from './CoordinateTransform';
 import type { GameEngine } from './GameEngine';
-import { PortKind, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
+import { PortKind, type BeltTier, type Building, type BuildingId, type Port, type PortId, type SelectedTool, type TileCoord } from '../types';
 import type { BeltPlacementPreviewModel } from '../renderer/placementPreviewModel';
 import { TILE_SIZE } from '../constants';
 import { PIXI } from '@/design/tokens';
@@ -35,11 +35,32 @@ export class BeltToolController {
     this.setPreview = setPreview;
   }
 
+  /** Tier of the active belt tool. */
+  private tier(): BeltTier {
+    const tool = this.getSelectedTool();
+    return tool.kind === 'belt' ? (tool.tier ?? 'basic') : 'basic';
+  }
+
+  /** An existing belt of a slower tier under the pointer, which the fast tool upgrades on click. */
+  private upgradableBeltAt(tile: TileCoord): BuildingId | null {
+    if (this.tier() === 'basic') return null;
+    const building = this.engine.getBuildingAt(tile.x, tile.y);
+    if (!building || !isBeltTypeId(building.typeId) || beltTierOf(building.typeId) === this.tier()) return null;
+    return building.id;
+  }
+
   onPointerDown(screenX: number, screenY: number, button: number): void {
     if (button !== 0 || this.getSelectedTool().kind !== 'belt') return;
 
     const tile = this.engine.screenToTile(screenX, screenY);
     const clickWorld = screenToWorld(this.engine.viewport, screenX, screenY);
+
+    const upgradable = this.pendingFrom ? null : this.upgradableBeltAt(tile);
+    if (upgradable !== null) {
+      this.engine.upgradeBelt(upgradable, this.tier());
+      this.setPreview(null);
+      return;
+    }
 
     if (!this.pendingFrom) {
       // First click: select the source output port
@@ -53,7 +74,7 @@ export class BeltToolController {
       const target = this.getEndpointAtScreen(tile, PortKind.Input, clickWorld, from);
       this.cancel();
       if (!target || target.building === from.building) return;
-      this.engine.placeBelt(from, target);
+      this.engine.placeBelt(from, target, this.tier());
     }
   }
 
@@ -62,7 +83,10 @@ export class BeltToolController {
       this.cancel();
       return;
     }
-    if (!this.pendingFrom) return;
+    if (!this.pendingFrom) {
+      this.previewUpgrade(this.engine.screenToTile(screenX, screenY));
+      return;
+    }
 
     const clickWorld = screenToWorld(this.engine.viewport, screenX, screenY);
     const target = this.getEndpointAtScreen(
@@ -76,7 +100,7 @@ export class BeltToolController {
       return;
     }
 
-    const quote = this.engine.quoteBelt(this.pendingFrom.from, target);
+    const quote = this.engine.quoteBelt(this.pendingFrom.from, target, this.tier());
     if (!quote.ok) {
       this.setPreview(null);
       return;
@@ -93,6 +117,29 @@ export class BeltToolController {
       missing: quote.missing,
       tiles: quote.plan.segments.map((segment) => ({
         coord: segment.coord,
+        tint: affordable ? BELT_PREVIEW_TINT : BELT_PREVIEW_INVALID_TINT,
+      })),
+    });
+  }
+
+  /** Hovering a slower belt with the fast tool previews the whole route's upgrade and its price. */
+  private previewUpgrade(tile: TileCoord): void {
+    const segmentId = this.upgradableBeltAt(tile);
+    const quote = segmentId === null ? null : this.engine.quoteBeltUpgrade(segmentId, this.tier());
+    if (!quote?.ok) {
+      this.setPreview(null);
+      return;
+    }
+    const affordable = quote.missing.length === 0;
+    this.setPreview({
+      kind: 'belt',
+      upgrade: true,
+      isValid: affordable,
+      ...(affordable ? {} : { reason: 'insufficient_resources' as const }),
+      cost: quote.net,
+      missing: quote.missing,
+      tiles: quote.segments.map((id) => ({
+        coord: this.engine.getBuildings().get(id)!.origin,
         tint: affordable ? BELT_PREVIEW_TINT : BELT_PREVIEW_INVALID_TINT,
       })),
     });

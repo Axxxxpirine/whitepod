@@ -35,6 +35,8 @@ export interface BeltPlacementPreviewModel {
   /** Total route cost (empty in sandbox) and what the global stock lacks for it. */
   readonly cost: readonly ResourceCost[];
   readonly missing: readonly ResourceCost[];
+  /** An existing route turned into a faster tier: `cost` is what the player pays on top of the refund. */
+  readonly upgrade?: boolean;
 }
 
 export type PlacementPreviewModel = BuildingPlacementPreviewModel | BeltPlacementPreviewModel;

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { getPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
+import { beltToolLabel } from '@/game/ui/buildingPresentation';
 import { costLines, placementFailureLabel, type CostLine } from '@/game/ui/costPresentation';
 import type { BeltFailure, PlacementFailure, SelectedTool } from '@/game/types';
 import { useGameStore } from '@/store/useGameStore';
@@ -14,7 +15,7 @@ function describeTool(tool: SelectedTool): string | null {
     case 'building':
       return getBuildingType(tool.buildingType)?.name ?? 'Bâtiment';
     case 'belt':
-      return 'Convoyeur';
+      return beltToolLabel(tool.tier);
     case 'energy_link':
       return 'Lien énergie';
   }
@@ -48,7 +49,7 @@ function usePlacementReadout(): PlacementReadout | null {
     if (selectedTool.kind === 'belt') {
       if (!beltPreview) return null;
       return {
-        costLabel: 'Tracé',
+        costLabel: beltPreview.upgrade ? 'Amélioration' : 'Tracé',
         segments: beltPreview.tiles.length,
         lines: costLines(beltPreview.cost, beltPreview.missing),
         reason: beltPreview.reason ?? null,
@@ -98,7 +99,7 @@ export function ToolModeIndicator() {
               {readout.segments !== undefined && (
                 <span className="tabular-nums text-ink-muted">{readout.segments} seg.</span>
               )}
-              <CostList lines={readout.lines} label={readout.segments !== undefined ? 'Coût du tracé' : 'Coût'} />
+              <CostList lines={readout.lines} label={readout.segments === undefined ? 'Coût' : readout.costLabel === 'Amélioration' ? "Coût de l'amélioration" : 'Coût du tracé'} />
             </span>
           )}
           {readout.reason && (

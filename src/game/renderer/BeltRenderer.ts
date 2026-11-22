@@ -1,6 +1,6 @@
 import { Container, Graphics, type Application } from 'pixi.js';
 import { TILE_SIZE } from '../constants';
-import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
+import { beltTierOf, getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
 import type { GameEngine } from '../engine/GameEngine';
 import { Direction, PortKind, type Building, type TileCoord } from '../types';
@@ -10,6 +10,8 @@ export const BELT_INSET = 0;
 const BELT_PATH = PIXI.border;
 const BELT_RAIL = PIXI.surface2;
 const BELT_DATA_LINE = PIXI.accent;
+/** Fast belts: the accent line instead of the neutral one, same geometry. */
+const BELT_FAST_PATH = PIXI.accent;
 /** A run at its capacity (DESIGN.md: amber means "not enough"). */
 const BELT_SATURATED = PIXI.accentWarm;
 
@@ -96,7 +98,11 @@ export class BeltRenderer {
       .moveTo(inPoint.x, inPoint.y)
       .lineTo(center.x, center.y)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: saturated ? BELT_SATURATED : BELT_PATH, width: 3, alpha: 0.86 });
+      .stroke({
+        color: saturated ? BELT_SATURATED : beltTierOf(building.typeId) === 'fast' ? BELT_FAST_PATH : BELT_PATH,
+        width: 3,
+        alpha: 0.86,
+      });
 
     this.graphics
       .moveTo(inPoint.x, inPoint.y)
