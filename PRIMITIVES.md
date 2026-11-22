@@ -319,6 +319,19 @@ engine.upgradeBuilding(buildingId, typeId) => boolean
 
 A catalog entry's `upgradesTo` names the building it can become in place; `validateCatalog` checks both share footprint and ports, so the id, tiles, belts and power links stay valid. The player pays the new cost minus the refund of the old one (`net`); reasons: `unknown_building`, `not_upgradable`, `locked`. In the HUD, with a building tool selected, clicking a building that upgrades into it upgrades it (the preview shows "Amélioration" and its price). Belts upgrade a whole route with `upgradeBelt` instead.
 
+#### `fuel_cell`
+
+- footprint: `2x2`, cost 30 regolith + 10 iron oxide; forbids resource deposits
+- ports: inputs `in_1`, `in_2` (west side), no output
+- fuel (catalog `fuel` capability, `isFuelCellTypeId`): pulls 1 hydrogen + 1 oxygen from the producers belted in, like a machine (one unit per provider), then burns them for 6 s giving **20 kW**, day and night; it pulls the next load as soon as one is burnt, so a supplied cell gives steady power (10 of each per minute). Out of fuel it gives nothing.
+- energy-linkable like a panel; its power counts in the network only while it burns (`getFuelBurnRemaining`), so batteries charge from it at night.
+- locked in campaign until its chapter 3 milestone (#94); no art yet: the battery sprite tinted green. Toolbar: shares key 5 with the battery.
+- panel: power, "En marche" or amber "À court", what it burns per minute. Burn state is saved (`fuelBurn`).
+
+`pullsInputs(typeId)` (machines and fuel cells) marks the buildings routes end at as pulling terminals.
+
+`getResourceRates()` reports **stock growth**: what reaches storages per minute. Units headed for a machine or a fuel cell never count; a machine counts by what it sends on to a storage.
+
 #### `storage_basic`
 
 - footprint: `3x3`

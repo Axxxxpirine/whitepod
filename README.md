@@ -77,6 +77,7 @@ engine.upgradeBuilding(extractorId, 'extractor_mk2')        // In place, paying 
 engine.placeBuilding('solar_panel', { x, y })
 engine.placeBuilding('storage_basic', { x, y })             // 3x3 footprint
 engine.placeBuilding('battery_basic', { x, y })             // 2x2 footprint
+engine.placeBuilding('fuel_cell', { x, y })                 // 2x2, burns hydrogen + oxygen for 20 kW, day and night
 engine.placeBuilding('merger_basic', { x, y })               // 3 inputs → 1 output
 engine.placeBuilding('splitter_basic', { x, y })             // 1 input → 3 outputs, served in turn
 engine.placeBuilding('watchtower', { x, y })                // 2x2, reveals fog in radius
