@@ -9,7 +9,8 @@ import {
   getBuildingType,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
-import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT, type TileCoord } from '@/game/types';
+import { GameMode } from '@/game/data/gameMode';
+import { Direction, PortKind, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT, type TileCoord } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import type { BotLifecycle, BotStatus } from './botTypes';
 import { routeExtractorToStorage } from './util/beltRouting';
@@ -18,6 +19,8 @@ import { calculateRequiredSolar, calculateRequiredBatteries } from './util/energ
 import { shouldThrottleExtractorPlacement } from './util/resourceAnalysis';
 
 const MAX_ACTIONS_PER_TICK = 12;
+/** Campaign: regolith kept in the hub before buying an extractor (its cost, a belt, a panel). */
+const CAMPAIGN_EXTRACTOR_RESERVE = 40;
 
 const RESOURCE_PRIORITY: Partial<Record<ResourceTypeT, number>> = {
   [ResourceType.None]: 0,
@@ -30,6 +33,8 @@ interface StorageCluster {
   id: BuildingId;
   extractorCount: number;
   center: TileCoord;
+  /** No free deposit left around it: a new cluster may open even below capacity. */
+  exhausted?: boolean;
 }
 
 export class MasterBot implements BotLifecycle {
@@ -40,6 +45,8 @@ export class MasterBot implements BotLifecycle {
   private running = false;
   private spiralStep = 0;
   private storageClusters: StorageCluster[] = [];
+  /** Campaign: rotations already tried on a deposit whose extractor could not be belted (by "x,y"). */
+  private readonly routingAttempts = new Map<string, number>();
   private currentClusterIndex = 0;
   private status: BotStatus = { active: false, phase: 'booting', target: null };
 
@@ -83,6 +90,17 @@ export class MasterBot implements BotLifecycle {
     let didAct = false;
 
     for (let actions = 0; actions < MAX_ACTIONS_PER_TICK; actions++) {
+      if (this.completeReadyMilestone()) {
+        didAct = true;
+        continue;
+      }
+
+      // Campaign: power what exists before buying more (construction is paid).
+      if (this.engine.gameMode === GameMode.Campaign && (this.connectEnergyNetwork() || this.ensureEnergySupply())) {
+        didAct = true;
+        continue;
+      }
+
       if (this.initializeStorageClusters()) {
         didAct = true;
         continue;
@@ -131,8 +149,34 @@ export class MasterBot implements BotLifecycle {
     return { didAct };
   }
 
+  /** Campaign: confirm the active milestone as soon as the hub holds what it asks, like a player watching the panel. */
+  private completeReadyMilestone(): boolean {
+    if (this.engine.gameMode !== GameMode.Campaign) return false;
+    const progress = this.engine.getMilestoneProgress();
+    if (!progress?.ready || !this.engine.completeActiveMilestone()) return false;
+    this.setStatus({ active: true, phase: 'milestone', target: progress.milestone.title });
+    return true;
+  }
+
+  /** Campaign: what the active milestone still needs in the hub, so extraction goes there first. */
+  private resourcesWanted(): ReadonlySet<ResourceTypeT> {
+    const wanted = new Set<ResourceTypeT>();
+    if (this.engine.gameMode !== GameMode.Campaign) return wanted;
+    for (const requirement of this.engine.getMilestoneProgress()?.requirements ?? []) {
+      if (requirement.available < requirement.required) wanted.add(requirement.resourceType);
+    }
+    return wanted;
+  }
+
   private initializeStorageClusters(): boolean {
     if (this.storageClusters.length > 0) return false;
+
+    // Campaign: the hub is the first cluster, so the first lines deliver what milestones count.
+    const hubId = this.engine.getHubId();
+    if (hubId !== null) {
+      this.storageClusters.push({ id: hubId, extractorCount: 0, center: this.engine.getBuildings().get(hubId)!.origin });
+      return false;
+    }
 
     for (const [id, building] of this.engine.getBuildings()) {
       const type = getBuildingType(building.typeId);
@@ -256,14 +300,34 @@ export class MasterBot implements BotLifecycle {
     return { x: frontierTiles[0]!.x, y: frontierTiles[0]!.y };
   }
 
+  /**
+   * Campaign: building is paid, so the bot finishes what it started (belts,
+   * power) before buying another extractor; otherwise the kit goes into
+   * extractors that never run.
+   */
+  private extractorsAwaitingSetup(): boolean {
+    if (this.engine.gameMode !== GameMode.Campaign) return false;
+    for (const [id, building] of this.engine.getBuildings()) {
+      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
+      if (this.engine.getConnectionsOf(id).length === 0) return true;
+      if (this.engine.getBuildingPowerState(id) === 'unpowered' && this.getPeakProduction() < this.engine.getEnergyGlobalStats().demandedConsumption) return true;
+    }
+    return false;
+  }
+
   private placeExtractorNearCluster(): boolean {
     if (this.storageClusters.length === 0) return false;
+    if (this.extractorsAwaitingSetup()) return false;
+    // Keep enough regolith for the extractor's belt and the panel it will need.
+    if (this.engine.gameMode === GameMode.Campaign && (this.engine.getHubInventory()?.regolith ?? 0) < CAMPAIGN_EXTRACTOR_RESERVE) return false;
 
     const currentCluster = this.storageClusters[this.currentClusterIndex];
     if (!currentCluster) return false;
 
     const candidates = this.collectVisibleDepositsNearPoint(currentCluster.center, 8);
     if (candidates.length === 0) {
+      // Campaign: nothing left to mine here, so let the next cluster open (sandbox keeps its 4-extractor rhythm).
+      if (this.engine.gameMode === GameMode.Campaign) currentCluster.exhausted = true;
       this.currentClusterIndex = (this.currentClusterIndex + 1) % this.storageClusters.length;
       return false;
     }
@@ -275,10 +339,12 @@ export class MasterBot implements BotLifecycle {
       return false;
     }
 
-    const placement = this.engine.canPlaceBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: target.x, y: target.y }, Direction.North);
+    // A deposit whose extractor could not be belted is retried facing another way.
+    const rotation = ([Direction.North, Direction.East, Direction.South, Direction.West] as const)[this.routingAttempts.get(`${target.x},${target.y}`) ?? 0]!;
+    const placement = this.engine.canPlaceBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: target.x, y: target.y }, rotation);
     if (!placement.ok) return false;
 
-    const placedId = this.engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: target.x, y: target.y }, Direction.North, {
+    const placedId = this.engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: target.x, y: target.y }, rotation, {
       emitSfx: false,
     });
     if (placedId === null) return false;
@@ -297,12 +363,15 @@ export class MasterBot implements BotLifecycle {
     const currentCluster = this.storageClusters[this.currentClusterIndex];
     if (!currentCluster) return false;
 
-    if (currentCluster.extractorCount < 4) return false;
+    if (currentCluster.extractorCount < this.clusterCapacity(currentCluster) && !currentCluster.exhausted) return false;
+    if (this.extractorsAwaitingSetup()) return false;
 
     const anchor = this.calculateSpiralAnchor();
     const target = { x: anchor.x, y: anchor.y };
 
-    if (!this.engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, target, Direction.North).ok) {
+    // Campaign: a storage costs regolith, so only open one where there is something to mine.
+    const worthIt = this.engine.gameMode !== GameMode.Campaign || this.collectVisibleDepositsNearPoint(target, 8).length > 0;
+    if (!worthIt || !this.engine.canPlaceBuilding(STORAGE_BUILDING_TYPE_ID, target, Direction.North).ok) {
       this.spiralStep += 5;
       return false;
     }
@@ -319,6 +388,12 @@ export class MasterBot implements BotLifecycle {
     return false;
   }
 
+  /** Extractors a cluster takes: one per input of its storage (8 on the hub, 4 on a storage). */
+  private clusterCapacity(cluster: StorageCluster): number {
+    const building = this.engine.getBuildings().get(cluster.id);
+    return building ? getBuildingType(building.typeId)?.ports.filter((port) => port.kind === PortKind.Input).length ?? 4 : 4;
+  }
+
   private routeExtractorsToStorage(): boolean {
     if (this.storageClusters.length === 0) return false;
 
@@ -331,9 +406,21 @@ export class MasterBot implements BotLifecycle {
       const nearestCluster = this.findNearestStorageCluster(building.origin);
       if (!nearestCluster) continue;
 
-      const result = routeExtractorToStorage(this.engine, id, nearestCluster.id);
+      const result = routeExtractorToStorage(this.engine, id, nearestCluster.id, {
+        tryAllInputs: this.engine.gameMode === GameMode.Campaign,
+      });
       if (result.success) {
         this.setStatus({ active: true, phase: 'logistics', target: `belt: extractor → storage` });
+        return true;
+      }
+      // Campaign: an extractor no belt can reach would hold the bot back for good.
+      // Take it back (refunded) and try the deposit facing another way, four times at most.
+      if (this.engine.gameMode === GameMode.Campaign && result.error === 'belt_path_blocked' && this.engine.getConnectionsOf(id).length === 0) {
+        const key = `${building.origin.x},${building.origin.y}`;
+        this.routingAttempts.set(key, (this.routingAttempts.get(key) ?? 0) + 1);
+        this.engine.removeBuilding(id, { emitSfx: false });
+        const cluster = this.storageClusters.find((entry) => entry.id === nearestCluster.id);
+        if (cluster) cluster.extractorCount = Math.max(0, cluster.extractorCount - 1);
         return true;
       }
     }
@@ -426,6 +513,7 @@ export class MasterBot implements BotLifecycle {
     const deposits: Array<{ x: number; y: number; resource: ResourceTypeT; score: number }> = [];
     const centerX = Math.floor(GRID_WIDTH / 2);
     const centerY = Math.floor(GRID_HEIGHT / 2);
+    const wanted = this.resourcesWanted();
 
     for (let y = Math.max(0, center.y - radius); y <= Math.min(GRID_HEIGHT - 1, center.y + radius); y++) {
       for (let x = Math.max(0, center.x - radius); x <= Math.min(GRID_WIDTH - 1, center.x + radius); x++) {
@@ -433,11 +521,18 @@ export class MasterBot implements BotLifecycle {
         if (resource === ResourceType.None) continue;
         if (!this.engine.grid.isRevealed(x, y)) continue;
         if (this.engine.getBuildingAt(x, y) !== null) continue;
+        // Exhausted deposits (campaign) take no extractor.
+        if (this.engine.grid.getResourceAmount(x, y) === 0) continue;
+        if ((this.routingAttempts.get(`${x},${y}`) ?? 0) >= 4) continue;
+        // Campaign: only what the active milestone asks, plus regolith to build with.
+        if (this.engine.gameMode === GameMode.Campaign && !wanted.has(resource) && resource !== ResourceType.Regolith) continue;
+        // What the active milestone asks comes before the usual priorities.
+        const priority = (wanted.has(resource) ? 10 : 0) + (RESOURCE_PRIORITY[resource] ?? 0);
         deposits.push({
           x,
           y,
           resource,
-          score: (RESOURCE_PRIORITY[resource] ?? 0) * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
+          score: priority * 1000 - (Math.abs(x - centerX) + Math.abs(y - centerY)),
         });
       }
     }

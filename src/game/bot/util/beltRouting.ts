@@ -90,26 +90,40 @@ export function routeExtractorToStorage(
   engine: GameEngine,
   extractorId: BuildingId,
   storageId: BuildingId,
+  { tryAllInputs = false }: { readonly tryAllInputs?: boolean } = {},
 ): BeltRouteResult {
   const extractor = engine.getBuildings().get(extractorId);
   if (!extractor) return { success: false, segmentsPlaced: 0, error: 'extractor_not_found' };
 
   const storage = engine.getBuildings().get(storageId);
   if (!storage) return { success: false, segmentsPlaced: 0, error: 'storage_not_found' };
+  const type = getBuildingType(storage.typeId);
+  if (!type) return { success: false, segmentsPlaced: 0, error: 'storage_not_found' };
 
-  const outputPort = 'out_east' as PortId;
+  const from = { building: extractorId, port: 'out_east' as PortId };
+  if (engine.getConnectionsOf(extractorId).some((connection) => connection.from.building === extractorId)) {
+    return { success: false, segmentsPlaced: 0, error: 'already_routed' };
+  }
+
+  // The input facing the extractor first; with `tryAllInputs` (campaign bots,
+  // where an unbelted extractor is wasted money), the other free inputs by
+  // route length when that one is taken or walled off.
   const approachDirection = calculateApproachDirection(extractor.origin, storage.origin);
-  const inputPort = findBestPortForApproach(storageId, approachDirection, engine);
+  const preferred = findBestPortForApproach(storageId, approachDirection, engine);
+  const quoteFor = (port: PortId) => ({ port, quote: engine.quoteBelt(from, { building: storageId, port }) });
+  let choice = preferred ? quoteFor(preferred) : null;
+  if (!choice?.quote.ok && tryAllInputs) {
+    choice = type.ports
+      .filter((port) => port.kind === PortKind.Input && port.id !== preferred && !engine.connections.isPortConnected(storageId, port.id))
+      .map((port) => quoteFor(port.id))
+      .filter((candidate) => candidate.quote.ok)
+      .sort((a, b) => (a.quote.ok && b.quote.ok ? a.quote.plan.segments.length - b.quote.plan.segments.length : 0))[0] ?? null;
+  }
 
-  if (!inputPort) return { success: false, segmentsPlaced: 0, error: 'no_input_port' };
+  if (!choice?.quote.ok) return { success: false, segmentsPlaced: 0, error: 'belt_path_blocked' };
+  if (choice.quote.missing.length > 0) return { success: false, segmentsPlaced: 0, error: 'insufficient_resources' };
 
-  const from = { building: extractorId, port: outputPort };
-  const to = { building: storageId, port: inputPort };
-
-  const canPlace = engine.canPlaceBelt(from, to);
-  if (!canPlace.ok) return { success: false, segmentsPlaced: 0, error: 'belt_path_blocked' };
-
-  const result = engine.placeBelt(from, to);
+  const result = engine.placeBelt(from, { building: storageId, port: choice.port });
   return { success: result.ok, segmentsPlaced: result.ok ? result.plan.segments.length : 0 };
 }
 
