@@ -29,6 +29,7 @@ export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
 export const CONVERTER_BUILDING_TYPE_ID = 'converter_basic' as const;
 export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
 export const HUB_BUILDING_TYPE_ID = 'hub_lander' as const;
+export const FUEL_CELL_BUILDING_TYPE_ID = 'fuel_cell' as const;
 
 /** True for every extractor tier: driven by the catalog `extractionRatePerMinute` capability. */
 export function isExtractorTypeId(typeId: BuildingTypeId): boolean {
@@ -37,6 +38,19 @@ export function isExtractorTypeId(typeId: BuildingTypeId): boolean {
 
 export function extractorRatePerMinute(typeId: BuildingTypeId): number {
   return catalog.get(typeId)?.extractionRatePerMinute ?? 0;
+}
+
+/** Fuel-burning power buildings (catalog `fuel` capability). */
+export function isFuelCellTypeId(typeId: BuildingTypeId): boolean {
+  return catalog.get(typeId)?.fuel !== undefined;
+}
+
+/**
+ * Buildings that pull their inputs from the producers upstream (machines and
+ * fuel cells): routes end at them, and they reserve one unit per provider.
+ */
+export function pullsInputs(typeId: BuildingTypeId): boolean {
+  return isProcessorTypeId(typeId) || isFuelCellTypeId(typeId);
 }
 
 export function isProcessorTypeId(typeId: BuildingTypeId): boolean {
@@ -270,6 +284,30 @@ const entries: readonly BuildingType[] = [
       { id: 'out', kind: PortKind.Output, offset: { x: 3, y: 2 }, side: Direction.East },
     ],
     energy: { consumption: 10 },
+  },
+  // Fuel cell (chapter 3): night power from hydrogen and oxygen belted in.
+  {
+    id: FUEL_CELL_BUILDING_TYPE_ID,
+    name: 'Pile à combustible',
+    cost: [
+      { resourceType: ResourceType.Regolith, amount: 30 },
+      { resourceType: ResourceType.IronOxide, amount: 10 },
+    ],
+    footprint: { w: 2, h: 2 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    fuel: {
+      inputs: [
+        { resourceType: ResourceType.Hydrogen, amount: 1 },
+        { resourceType: ResourceType.Oxygen, amount: 1 },
+      ],
+      burnSeconds: 6,
+      powerKw: 20,
+    },
+    ports: [
+      { id: 'in_1', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'in_2', kind: PortKind.Input, offset: { x: 0, y: 1 }, side: Direction.West },
+    ],
   },
   // Campaign hub (lander): placed once by the engine at campaign start,
   // receives deliveries on two inputs per side and stores them like a storage.

@@ -110,6 +110,16 @@ export interface BuildingType {
   /** Extractors only: units per minute taken from the deposit under it. Read through `isExtractorTypeId`. */
   readonly extractionRatePerMinute?: number;
   /**
+   * Fuel-burning power (fuel cell): pulls `inputs` from belts like a machine
+   * (one unit per provider), then produces `powerKw` for `burnSeconds`, day
+   * and night. `energy.production` stays unset: this power is dynamic.
+   */
+  readonly fuel?: {
+    readonly inputs: readonly ResourceCost[];
+    readonly burnSeconds: number;
+    readonly powerKw: number;
+  };
+  /**
    * The building this one can be upgraded into in place (same footprint and
    * ports), paying the difference; see GameEngine.upgradeBuilding.
    */

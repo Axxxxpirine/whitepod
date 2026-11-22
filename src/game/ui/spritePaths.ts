@@ -3,6 +3,7 @@ import {
   CONVERTER_BUILDING_TYPE_ID,
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_MK2_BUILDING_TYPE_ID,
+  FUEL_CELL_BUILDING_TYPE_ID,
   HUB_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
@@ -86,6 +87,17 @@ export const BUILDING_SPRITE_SPECS: ReadonlyMap<BuildingTypeId, SpriteAssetSpec>
   ],
   [
     BATTERY_BASIC_BUILDING_TYPE_ID,
+    {
+      path: 'sprites/rts/buildings/battery.png',
+      footprint: { w: 2, h: 2 },
+      displayHeightTiles: 2.25,
+      anchor: 'bottom-center',
+      kind: 'generated',
+    },
+  ],
+  [
+    // Same art as the battery, tinted by the renderer until its own sprite (0.4).
+    FUEL_CELL_BUILDING_TYPE_ID,
     {
       path: 'sprites/rts/buildings/battery.png',
       footprint: { w: 2, h: 2 },
