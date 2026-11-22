@@ -46,6 +46,8 @@ export function isBeltTypeId(typeId: BuildingTypeId): boolean {
 // First-pass construction costs (campaign only); tuned with the chapter 1-2
 // content (#71). Gameplay numbers stay in this catalog, never in systems.
 const BELT_SEGMENT_COST = [{ resourceType: ResourceType.Regolith, amount: 1 }] as const;
+/** Items per minute a basic belt run carries: two extractors (see flow/beltThroughput.ts). */
+export const BELT_CAPACITY_PER_MIN = 60;
 
 const entries: readonly BuildingType[] = [
   {
@@ -219,6 +221,7 @@ const entries: readonly BuildingType[] = [
     id: BELT_STRAIGHT_BUILDING_TYPE_ID,
     name: 'Convoyeur droit',
     cost: BELT_SEGMENT_COST,
+    beltCapacityPerMinute: BELT_CAPACITY_PER_MIN,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
@@ -232,6 +235,7 @@ const entries: readonly BuildingType[] = [
     id: BELT_CORNER_CW_BUILDING_TYPE_ID,
     name: 'Coin droite',
     cost: BELT_SEGMENT_COST,
+    beltCapacityPerMinute: BELT_CAPACITY_PER_MIN,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
@@ -245,6 +249,7 @@ const entries: readonly BuildingType[] = [
     id: BELT_CORNER_CCW_BUILDING_TYPE_ID,
     name: 'Coin gauche',
     cost: BELT_SEGMENT_COST,
+    beltCapacityPerMinute: BELT_CAPACITY_PER_MIN,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [

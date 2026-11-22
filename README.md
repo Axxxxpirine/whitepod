@@ -110,7 +110,11 @@ Belt segments (`belt_straight`, `belt_corner_cw`, `belt_corner_ccw`) are placed 
 engine.canPlaceBelt(from, to)          // Plan a belt route between two port endpoints
 engine.placeBelt(from, to)             // Place belt segments + auto-connect
 engine.removeBelt(segmentId)           // Remove entire connected belt chain
+engine.getBeltRunStats(segmentId)      // { runId, capacityPerMinute, saturated } of the segment's run
+engine.getSaturatedBeltSegments()      // Segments of runs at capacity (amber on the map)
 ```
+
+A belt run carries at most 60 items/min (two extractors); see PRIMITIVES.md, Belt Primitives → Throughput.
 
 ### Energy network
 

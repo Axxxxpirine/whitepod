@@ -10,6 +10,8 @@ export const BELT_INSET = 0;
 const BELT_PATH = PIXI.border;
 const BELT_RAIL = PIXI.surface2;
 const BELT_DATA_LINE = PIXI.accent;
+/** A run at its capacity (DESIGN.md: amber means "not enough"). */
+const BELT_SATURATED = PIXI.accentWarm;
 
 export class BeltRenderer {
   private readonly beltContainer: Container;
@@ -51,10 +53,12 @@ export class BeltRenderer {
 
     this.graphics.clear();
 
+    // Saturation is refreshed with the world notifications extraction sends every couple of seconds.
+    const saturated = new Set(this.engine.getSaturatedBeltSegments());
     for (const building of this.engine.getBuildings().values()) {
       if (!isBeltTypeId(building.typeId)) continue;
       if (!this.isVisible(building, visibleRange)) continue;
-      this.drawBelt(building);
+      this.drawBelt(building, saturated.has(building.id));
     }
   }
 
@@ -63,7 +67,7 @@ export class BeltRenderer {
     this.beltContainer.destroy({ children: true });
   }
 
-  private drawBelt(building: Building): void {
+  private drawBelt(building: Building, saturated: boolean): void {
     const type = getBuildingType(building.typeId);
     if (!type) return;
 
@@ -92,7 +96,7 @@ export class BeltRenderer {
       .moveTo(inPoint.x, inPoint.y)
       .lineTo(center.x, center.y)
       .lineTo(outPoint.x, outPoint.y)
-      .stroke({ color: BELT_PATH, width: 3, alpha: 0.86 });
+      .stroke({ color: saturated ? BELT_SATURATED : BELT_PATH, width: 3, alpha: 0.86 });
 
     this.graphics
       .moveTo(inPoint.x, inPoint.y)
