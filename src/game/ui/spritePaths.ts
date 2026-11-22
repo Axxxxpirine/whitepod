@@ -4,6 +4,7 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   HUB_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
@@ -83,6 +84,17 @@ export const BUILDING_SPRITE_SPECS: ReadonlyMap<BuildingTypeId, SpriteAssetSpec>
   ],
   [
     MERGER_BASIC_BUILDING_TYPE_ID,
+    {
+      path: 'sprites/rts/buildings/merger.png',
+      footprint: { w: 1, h: 1 },
+      displayHeightTiles: 1.35,
+      anchor: 'bottom-center',
+      kind: 'generated',
+    },
+  ],
+  [
+    // No dedicated art yet (sprite pass in 0.4): the merger's cross reads as a junction too.
+    SPLITTER_BASIC_BUILDING_TYPE_ID,
     {
       path: 'sprites/rts/buildings/merger.png',
       footprint: { w: 1, h: 1 },
