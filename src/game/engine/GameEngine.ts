@@ -22,7 +22,7 @@ import {
 import { getRecipe, type RecipeId } from '../data/recipeCatalog';
 import { DEFAULT_GAME_MODE, GameMode as GameModes, resolveGameMode, type GameMode } from '../data/gameMode';
 import { clearHubSite, findHubOrigin } from '../campaign/hubPlacement';
-import { ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
+import { CAMPAIGN_START_TIME, ensureStartingDeposits, STARTING_KIT } from '../campaign/campaignStart';
 import {
   computeMilestoneProgress,
   consumeMilestoneRequirements,
@@ -276,7 +276,7 @@ export class GameEngine {
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (this.producerOutputBuffers.get(id)) continue;
+      if (!this.releaseHeldOutput(id)) continue;
       const { x, y } = building.origin;
       const idx = toIndex(x, y);
       const resourceType = this.grid.resourceType[idx] as ResourceTypeT;
@@ -296,7 +296,7 @@ export class GameEngine {
     for (const [id, state] of this.processorStates) {
       if (!state.recipeId) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (this.producerOutputBuffers.get(id)) continue;
+      if (!this.releaseHeldOutput(id)) continue;
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
       const reservations = this.processorReservations.get(id) ?? [];
@@ -1252,6 +1252,7 @@ export class GameEngine {
     }
     ensureStartingDeposits(this.grid, origin, footprint, isOccupied);
     refund(this.storageInventories.get(hubId)!, STARTING_KIT);
+    this.setSimulationTime(CAMPAIGN_START_TIME);
   }
 
   getResourceAt(x: number, y: number): ResourceTypeT {
@@ -1496,6 +1497,18 @@ export class GameEngine {
     const outputPort = type?.ports.find((port) => port.kind === PortKind.Output);
     if (!outputPort) return false;
     return resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id) !== null;
+  }
+
+  /**
+   * True when the producer can make its next unit. A unit made while nothing
+   * led to a storage (belt not built yet, or removed) is delivered as soon as
+   * one does; one waiting for a processor stays put until the processor takes it.
+   */
+  private releaseHeldOutput(buildingId: BuildingId): boolean {
+    if (!this.producerOutputBuffers.get(buildingId)) return true;
+    if (!this.flushProducerOutput(buildingId)) return false;
+    this.notify('world');
+    return true;
   }
 
   private flushProducerOutput(buildingId: BuildingId): boolean {

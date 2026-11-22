@@ -102,7 +102,7 @@ describe('BuildingStatsPanel', () => {
     expect(screen.getByRole('button', { name: 'Recette Oxyde de fer' })).not.toHaveAttribute('aria-disabled');
     const silica = screen.getByRole('button', { name: 'Recette Dioxyde de silicium, verrouillée' });
     expect(silica).toHaveAttribute('aria-disabled', 'true');
-    expect(silica).toHaveTextContent('Débloqué par : Oxyde de fer');
+    expect(silica).toHaveTextContent('Débloqué par : Alliages légers');
     fireEvent.click(silica);
     expect(engine.getProcessorState(buildingId!)?.recipeId).toBeNull();
   });

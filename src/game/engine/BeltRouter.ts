@@ -54,6 +54,7 @@ import {
   worldSideOf,
   worldTileOf,
 } from '../data/ConnectionRegistry';
+import { REVEALED_FLAG } from '../constants';
 import { isInBounds, toIndex } from '../data/coords';
 import type { TileGrid } from '../data/TileGrid';
 import type { BuildingRegistry } from '../data/BuildingRegistry';
@@ -184,6 +185,8 @@ function isTraversable(view: BeltRouterView, tile: TileCoord): boolean {
   if (!isInBounds(tile.x, tile.y)) return false;
   const idx = toIndex(tile.x, tile.y);
   if (view.buildings.occupantIdAt(idx) !== 0) return false;
+  // Same rule as placement: nothing is built in the fog, so no route goes through it.
+  if (!(view.grid.flags[idx] & REVEALED_FLAG)) return false;
   // Belts require Ground — both allowed belt types declare allowedTiles=[Ground].
   const straight = getBuildingType(BELT_STRAIGHT_BUILDING_TYPE_ID)!;
   return straight.allowedTiles.includes(view.grid.getType(tile.x, tile.y));
