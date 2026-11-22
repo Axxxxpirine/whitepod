@@ -9,6 +9,7 @@ import {
   STORAGE_BUILDING_TYPE_ID,
 } from '@/game/data/buildingCatalog';
 import { BeltThroughput } from '@/game/flow/beltThroughput';
+import { resolveRoutesFromOutput } from '@/game/flow/processorLogistics';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { Direction, ResourceType, TileType, type BuildingId, type PortId } from '@/game/types';
 
@@ -150,20 +151,23 @@ describe('belt throughput', () => {
     const source = extractor(engine, 4, 10);
     const converter = engine.placeBuilding(CONVERTER_BUILDING_TYPE_ID, { x: 10, y: 9 })!;
     const storage = engine.placeBuilding(STORAGE_BUILDING_TYPE_ID, { x: 18, y: 9 })!;
-    belt(engine, source, 'out_east', converter, 'in');
-    belt(engine, converter, 'out', storage, 'in_west');
+    const input = belt(engine, source, 'out_east', converter, 'in');
+    const output = belt(engine, converter, 'out', storage, 'in_west');
     const throughput = new BeltThroughput({
       topologyKey: () => String(engine.connections.version),
       getBuilding: (id) => engine.getBuildings().get(id),
       getBuildings: () => engine.getBuildings(),
       getConnectionsOf: (id) => engine.getConnectionsOf(id),
     });
+    const [toConverter] = resolveRoutesFromOutput(engine, source, 'out_east');
+    const [toStorage] = resolveRoutesFromOutput(engine, converter, 'out');
 
+    expect(toConverter!.nodes).toEqual(input);
+    expect(toStorage!.nodes).toEqual(output);
     // Drain the input belt; the output belt keeps its full burst.
-    for (let i = 0; i < 4; i++) throughput.tryPass([source]);
-
-    expect(throughput.tryPass([converter])).toBe(true);
-    expect(throughput.tryPass([converter])).toBe(true);
+    for (let i = 0; i < 4; i++) throughput.tryPass([toConverter!.nodes]);
+    expect(throughput.tryPass([toStorage!.nodes])).toBe(true);
+    expect(throughput.tryPass([toStorage!.nodes])).toBe(true);
   });
 
   it('keeps the belt state through a save, so the reloaded world runs identically', () => {

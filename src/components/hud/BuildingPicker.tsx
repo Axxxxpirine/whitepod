@@ -2,7 +2,15 @@ import { useCallback, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { beltTypeId, getBuildingType } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
-import { beltToolLabel, nextBeltTool, toolbarEntries, type ToolbarEntry } from '@/game/ui/buildingPresentation';
+import {
+  beltToolLabel,
+  entryVariants,
+  nextBeltTool,
+  nextBuildingTool,
+  toolbarEntries,
+  type BuildingToolbarEntry,
+  type ToolbarEntry,
+} from '@/game/ui/buildingPresentation';
 import { costLines, type CostLine } from '@/game/ui/costPresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
 import { getToolbarIcon } from '@/game/ui/toolbarIcons';
@@ -13,15 +21,20 @@ import { CostList } from './CostList';
 
 function isEntryActive(entry: ToolbarEntry, tool: SelectedTool): boolean {
   if (entry.kind === 'building') {
-    return tool.kind === 'building' && tool.buildingType === entry.typeId;
+    return tool.kind === 'building' && entryVariants(entry).includes(tool.buildingType);
   }
   return tool.kind === entry.tool;
 }
 
+/** The building an entry stands for right now: the active variant, its own type otherwise. */
+function entryTypeId(entry: BuildingToolbarEntry, tool: SelectedTool): string {
+  return isEntryActive(entry, tool) && tool.kind === 'building' ? tool.buildingType : entry.typeId;
+}
+
 function toolForEntry(entry: ToolbarEntry, current: SelectedTool, engine: GameEngine | null): SelectedTool {
   if (entry.kind === 'tool' && entry.tool === 'belt') return nextBeltTool(current, engine);
+  if (entry.kind === 'building') return nextBuildingTool(entry, current, engine);
   if (isEntryActive(entry, current)) return { kind: 'select' };
-  if (entry.kind === 'building') return { kind: 'building', buildingType: entry.typeId };
   return { kind: entry.tool };
 }
 
@@ -35,7 +48,8 @@ function entryLabel(entry: ToolbarEntry, tool: SelectedTool): string {
   const tier = beltTierFor(entry, tool);
   if (tier !== null) return beltToolLabel(tier);
   if (entry.kind === 'tool') return entry.label;
-  return entry.label ?? getBuildingType(entry.typeId)?.name ?? entry.typeId;
+  const typeId = entryTypeId(entry, tool);
+  return (typeId === entry.typeId ? entry.label : undefined) ?? getBuildingType(typeId)?.name ?? typeId;
 }
 
 /** Lock hint of a building entry; tools (belt, energy link) are always available. */
@@ -53,7 +67,7 @@ interface EntryCost {
 function entryCost(entry: ToolbarEntry, tool: SelectedTool, engine: GameEngine | null): EntryCost {
   if (!engine) return { lines: [], perSegment: false };
   const tier = beltTierFor(entry, tool);
-  const typeId = entry.kind === 'building' ? entry.typeId : tier !== null ? beltTypeId(tier, 'straight') : null;
+  const typeId = entry.kind === 'building' ? entryTypeId(entry, tool) : tier !== null ? beltTypeId(tier, 'straight') : null;
   if (typeId === null) return { lines: [], perSegment: false };
   const cost = engine.getBuildingCost(typeId);
   return { lines: costLines(cost, engine.getMissingResources(cost)), perSegment: entry.kind === 'tool' };

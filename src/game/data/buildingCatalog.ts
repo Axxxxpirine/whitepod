@@ -21,6 +21,7 @@ export const BELT_FAST_CORNER_CCW_BUILDING_TYPE_ID = 'belt_fast_corner_ccw' as c
 export const SOLAR_PANEL_BUILDING_TYPE_ID = 'solar_panel' as const;
 export const BATTERY_BASIC_BUILDING_TYPE_ID = 'battery_basic' as const;
 export const MERGER_BASIC_BUILDING_TYPE_ID = 'merger_basic' as const;
+export const SPLITTER_BASIC_BUILDING_TYPE_ID = 'splitter_basic' as const;
 export const WATCHTOWER_BUILDING_TYPE_ID = 'watchtower' as const;
 export const CONVERTER_BUILDING_TYPE_ID = 'converter_basic' as const;
 export const SYNTHESIZER_BUILDING_TYPE_ID = 'synthesizer_basic' as const;
@@ -78,6 +79,14 @@ export function beltTypeIdInTier(typeId: BuildingTypeId, tier: BeltTier): Buildi
 
 export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   return beltSlot(typeId) !== null;
+}
+
+/**
+ * Nodes a unit travels through on its way from a producer to a storage or a
+ * machine: belts, mergers (many in, one out) and splitters (one in, many out).
+ */
+export function carriesFlowThrough(typeId: BuildingTypeId): boolean {
+  return isBeltTypeId(typeId) || typeId === MERGER_BASIC_BUILDING_TYPE_ID || typeId === SPLITTER_BASIC_BUILDING_TYPE_ID;
 }
 
 // First-pass construction costs (campaign only); tuned with the chapter 1-2
@@ -169,6 +178,23 @@ const entries: readonly BuildingType[] = [
       { id: 'in_north', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.North },
       { id: 'in_south', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.South },
       { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+    ],
+  },
+  // Splitter — 1 input (West) + 3 outputs (East, North, South), 1×1: the
+  // mirror of the merger. Hands units to its outputs in turn, skipping an
+  // output that cannot take one (flow/routing.ts).
+  {
+    id: SPLITTER_BASIC_BUILDING_TYPE_ID,
+    name: 'Répartiteur',
+    cost: [{ resourceType: ResourceType.Regolith, amount: 5 }],
+    footprint: { w: 1, h: 1 },
+    allowedTiles: [TileType.Ground],
+    forbidsResourceDeposit: true,
+    ports: [
+      { id: 'in_west', kind: PortKind.Input, offset: { x: 0, y: 0 }, side: Direction.West },
+      { id: 'out_east', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.East },
+      { id: 'out_north', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.North },
+      { id: 'out_south', kind: PortKind.Output, offset: { x: 0, y: 0 }, side: Direction.South },
     ],
   },
   {

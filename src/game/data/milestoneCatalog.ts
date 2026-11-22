@@ -8,6 +8,7 @@ import {
   EXTRACTOR_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
   SOLAR_PANEL_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
@@ -56,7 +57,8 @@ export const STARTING_UNLOCKS: MilestoneUnlocks = {
  * Pacing (#71), checked by tests/balance/campaignPacing.test.ts: first
  * milestone within 3 minutes, chapter 1 in ~15, chapter 2 done around 40.
  * Each unlock arrives with the milestone whose next step needs it: the
- * merger with aluminium (2 regolith per cycle), the synthesizer with ceramic.
+ * merger with aluminium (2 regolith per cycle), the splitter alongside it to
+ * share a line between machines, the synthesizer with ceramic.
  */
 export const MILESTONES: readonly Milestone[] = [
   // Chapter 1 · Landing
@@ -94,7 +96,7 @@ export const MILESTONES: readonly Milestone[] = [
     chapter: 2,
     title: 'Oxyde de fer',
     requirements: [{ resourceType: ResourceType.IronOxide, amount: 60 }],
-    unlocks: { buildings: [MERGER_BASIC_BUILDING_TYPE_ID], recipes: ['aluminum_oxide'] },
+    unlocks: { buildings: [MERGER_BASIC_BUILDING_TYPE_ID, SPLITTER_BASIC_BUILDING_TYPE_ID], recipes: ['aluminum_oxide'] },
   },
   {
     id: 'refining_light_alloys',

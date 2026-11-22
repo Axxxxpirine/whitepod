@@ -76,7 +76,8 @@ engine.placeBuilding('extractor_basic', { x, y })          // Returns BuildingId
 engine.placeBuilding('solar_panel', { x, y })
 engine.placeBuilding('storage_basic', { x, y })             // 3x3 footprint
 engine.placeBuilding('battery_basic', { x, y })             // 2x2 footprint
-engine.placeBuilding('merger_basic', { x, y })
+engine.placeBuilding('merger_basic', { x, y })               // 3 inputs → 1 output
+engine.placeBuilding('splitter_basic', { x, y })             // 1 input → 3 outputs, served in turn
 engine.placeBuilding('watchtower', { x, y })                // 2x2, reveals fog in radius
 engine.placeBuilding('converter_basic', { x, y })           // 3x3, transforms resources via recipe
 engine.placeBuilding('synthesizer_basic', { x, y })         // 4x4, combines 2 inputs via recipe
