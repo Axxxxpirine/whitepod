@@ -22,5 +22,7 @@ export interface BotProfileDefinition {
   readonly id: BotProfileId;
   readonly label: string;
   readonly description: string;
+  /** Plays by campaign rules (costs, unlocks, milestones); others run in sandbox only. */
+  readonly campaignReady?: boolean;
   create(args: BotFactoryArgs): BotLifecycle;
 }

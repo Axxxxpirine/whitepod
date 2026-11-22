@@ -185,6 +185,15 @@ Bots must use public engine APIs only. Do not access `engine.grid`, `engine.buil
 
 **Status:** Fully implemented with cluster-based storage, belt routing, processor configuration, resource rate monitoring, battery optimization, and frontier-based exploration at 10% density threshold.
 
+**In campaign (#95)**, behind the dev setting "Bot en campagne" in the bot panel (store `botsInCampaign`, not saved; only profiles with `campaignReady`, i.e. Master):
+- Placement goes through `canPlaceBuilding` / `placeBuilding`, so costs and unlocks apply: an unaffordable or locked building is simply retried later.
+- The hub is the first cluster (8 extractors, one per hub input), so the first lines deliver what milestones count; later clusters are storages (wallet only), opened when the current cluster is full or has no deposit left, and only where there is something to mine.
+- Extraction goes to what the active milestone still needs in the hub, plus regolith to build with; other resources and exhausted deposits are skipped.
+- Power first: wiring and panels before any new extractor, which also waits for the previous ones to be belted and powered, and keeps 40 regolith in the hub for its belt and panel.
+- An extractor no belt can reach (all hub or storage inputs tried) is taken back, refunded, and retried facing another way; after four rotations the deposit is skipped.
+- Confirms the active milestone as soon as the hub holds it.
+- Tested on fresh campaigns (`tests/bot/MasterBot.campaign.test.ts`): chapter 1 in 10 to 16 minutes of game time. It does not build converters yet, so chapter 2 is out of reach.
+
 ### Connector profile (`ConnectorBot`)
 
 **Goal:** Route existing buildings only - no building placement.

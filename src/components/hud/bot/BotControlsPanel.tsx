@@ -1,5 +1,6 @@
 import { Play, Square } from 'lucide-react';
 import { parseSeedInput } from '@/game/bot/seedInput';
+import { GameMode } from '@/game/data/gameMode';
 import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { Icon, Panel } from '@/components/ui';
@@ -16,6 +17,8 @@ export function BotControlsPanel() {
   const setSeedInput = useGameStore((s) => s.setSeedInput);
   const engine = useGameStore((s) => s.engine);
   const startNewGame = useGameStore((s) => s.startNewGame);
+  const botsInCampaign = useGameStore((s) => s.botsInCampaign);
+  const setBotsInCampaign = useGameStore((s) => s.setBotsInCampaign);
   const seed = parseSeedInput(seedInput);
   const canApplySeed = engine !== null && seed !== null && seed !== engine.mapSeed;
   const applySeed = () => {
@@ -58,6 +61,19 @@ export function BotControlsPanel() {
           onApply={applySeed}
         />
       </div>
+
+      {engine?.gameMode === GameMode.Campaign && (
+        // Dev setting: bots build by campaign rules (costs, unlocks), to measure the balance.
+        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-ink-muted">
+          <input
+            type="checkbox"
+            checked={botsInCampaign}
+            onChange={(event) => setBotsInCampaign(event.target.checked)}
+            className="accent-accent"
+          />
+          Bot en campagne (dev, profil Master)
+        </label>
+      )}
     </Panel>
   );
 }

@@ -9,21 +9,28 @@ export class BotController {
   private profileId: BotProfileId;
   private readonly engine: GameEngine;
   private readonly onStatusChange: (status: BotStatus) => void;
+  private readonly allowCampaign: () => boolean;
 
   constructor(
     engine: GameEngine,
     onStatusChange: (status: BotStatus) => void,
     profileId: BotProfileId,
+    allowCampaign: () => boolean = () => false,
   ) {
     this.engine = engine;
     this.onStatusChange = onStatusChange;
     this.profileId = profileId;
+    this.allowCampaign = allowCampaign;
     this.bot = this.createBot(profileId);
   }
 
-  /** Bots place buildings freely, so they only run in sandbox worlds until they learn campaign rules. */
+  /**
+   * Sandbox: always. Campaign: behind the dev setting, for profiles that play
+   * by campaign rules (MasterBot), as balancing tools (#95).
+   */
   get isAvailable(): boolean {
-    return this.engine.gameMode === GameMode.Sandbox;
+    if (this.engine.gameMode === GameMode.Sandbox) return true;
+    return this.allowCampaign() && getBotProfile(this.profileId).campaignReady === true;
   }
 
   start(): void {
@@ -43,8 +50,10 @@ export class BotController {
     this.bot.stop();
     this.profileId = profileId;
     this.bot = this.createBot(profileId);
-    if (wasActive) {
+    if (wasActive && this.isAvailable) {
       this.bot.start();
+    } else {
+      this.active = false;
     }
   }
 
