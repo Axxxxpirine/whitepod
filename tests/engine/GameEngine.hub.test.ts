@@ -148,9 +148,15 @@ describe('hub deliveries', () => {
     engine.grid.resourceAmount.fill(0);
   }
 
+  /** Construction is paid in campaign: give the hub enough to build the test lines. */
+  function fundHub(engine: GameEngine): void {
+    engine.storageInventories.get(engine.getHubId()!)!.regolith = 1000;
+  }
+
   it('accepts a belt on every input port', () => {
     const engine = campaignEngine();
     clearDeposits(engine);
+    fundHub(engine);
     const origin = hubOrigin(engine);
     const source = engine.placeBuilding('placeholder_node_1x1', { x: origin.x - 6, y: origin.y - 6 })!;
 
@@ -166,6 +172,7 @@ describe('hub deliveries', () => {
     const engine = campaignEngine();
     clearDeposits(engine);
     engine.setSimulationTime(0.5);
+    fundHub(engine);
     const origin = hubOrigin(engine);
     const hubId = engine.getHubId()!;
 
@@ -176,9 +183,10 @@ describe('hub deliveries', () => {
     engine.connectBuildings(solar, extractor);
     expect(engine.placeBelt({ building: extractor, port: 'out_east' }, { building: hubId, port: 'in_west_1' }).ok).toBe(true);
 
+    const regolithBefore = engine.getHubInventory()!.regolith;
     for (let elapsed = 0; elapsed < 6.1; elapsed += 0.1) engine.update(0.1);
 
-    expect(engine.getHubInventory()!.regolith).toBeGreaterThanOrEqual(3);
+    expect(engine.getHubInventory()!.regolith - regolithBefore).toBeGreaterThanOrEqual(3);
   });
 });
 

@@ -43,10 +43,15 @@ export function isBeltTypeId(typeId: BuildingTypeId): boolean {
   );
 }
 
+// First-pass construction costs (campaign only); tuned with the chapter 1-2
+// content (#71). Gameplay numbers stay in this catalog, never in systems.
+const BELT_SEGMENT_COST = [{ resourceType: ResourceType.Regolith, amount: 1 }] as const;
+
 const entries: readonly BuildingType[] = [
   {
     id: EXTRACTOR_BUILDING_TYPE_ID,
     name: 'Extracteur',
+    cost: [{ resourceType: ResourceType.Regolith, amount: 10 }],
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     requiresResourceDeposit: true,
@@ -60,6 +65,7 @@ const entries: readonly BuildingType[] = [
   {
     id: STORAGE_BUILDING_TYPE_ID,
     name: 'Stockage',
+    cost: [{ resourceType: ResourceType.Regolith, amount: 20 }],
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -74,6 +80,7 @@ const entries: readonly BuildingType[] = [
   {
     id: SOLAR_PANEL_BUILDING_TYPE_ID,
     name: 'Panneau solaire',
+    cost: [{ resourceType: ResourceType.Regolith, amount: 10 }],
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -85,6 +92,10 @@ const entries: readonly BuildingType[] = [
   {
     id: BATTERY_BASIC_BUILDING_TYPE_ID,
     name: 'Batterie',
+    cost: [
+      { resourceType: ResourceType.Regolith, amount: 15 },
+      { resourceType: ResourceType.Oxygen, amount: 5 },
+    ],
     footprint: { w: 2, h: 2 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -104,6 +115,7 @@ const entries: readonly BuildingType[] = [
   {
     id: MERGER_BASIC_BUILDING_TYPE_ID,
     name: 'Fusionneur',
+    cost: [{ resourceType: ResourceType.Regolith, amount: 5 }],
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -117,6 +129,7 @@ const entries: readonly BuildingType[] = [
   {
     id: WATCHTOWER_BUILDING_TYPE_ID,
     name: "Tour d'observation",
+    cost: [{ resourceType: ResourceType.Regolith, amount: 25 }],
     footprint: { w: 2, h: 2 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -125,6 +138,10 @@ const entries: readonly BuildingType[] = [
   {
     id: CONVERTER_BUILDING_TYPE_ID,
     name: 'Convertisseur',
+    cost: [
+      { resourceType: ResourceType.Regolith, amount: 30 },
+      { resourceType: ResourceType.Oxygen, amount: 10 },
+    ],
     footprint: { w: 3, h: 3 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -137,6 +154,10 @@ const entries: readonly BuildingType[] = [
   {
     id: SYNTHESIZER_BUILDING_TYPE_ID,
     name: 'Synthétiseur',
+    cost: [
+      { resourceType: ResourceType.Regolith, amount: 40 },
+      { resourceType: ResourceType.IronOxide, amount: 10 },
+    ],
     footprint: { w: 4, h: 4 },
     allowedTiles: [TileType.Ground],
     forbidsResourceDeposit: true,
@@ -197,6 +218,7 @@ const entries: readonly BuildingType[] = [
   {
     id: BELT_STRAIGHT_BUILDING_TYPE_ID,
     name: 'Convoyeur droit',
+    cost: BELT_SEGMENT_COST,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
@@ -209,6 +231,7 @@ const entries: readonly BuildingType[] = [
   {
     id: BELT_CORNER_CW_BUILDING_TYPE_ID,
     name: 'Coin droite',
+    cost: BELT_SEGMENT_COST,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
@@ -221,6 +244,7 @@ const entries: readonly BuildingType[] = [
   {
     id: BELT_CORNER_CCW_BUILDING_TYPE_ID,
     name: 'Coin gauche',
+    cost: BELT_SEGMENT_COST,
     footprint: { w: 1, h: 1 },
     allowedTiles: [TileType.Ground],
     ports: [
