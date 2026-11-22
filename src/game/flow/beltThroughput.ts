@@ -1,17 +1,15 @@
-import { MERGER_BASIC_BUILDING_TYPE_ID, getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
-import type { Building, BuildingId, BuildingTypeId, Connection } from '../types';
+import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
+import type { Building, BuildingId, Connection } from '../types';
 
-/** Nodes a unit travels through on its way to a storage or a machine. */
-function carriesThrough(typeId: BuildingTypeId): boolean {
-  return isBeltTypeId(typeId) || typeId === MERGER_BASIC_BUILDING_TYPE_ID;
-}
+/** The belts, mergers and splitters a unit crosses (a FlowRoute's `nodes`). */
+export type FlowPath = readonly BuildingId[];
 
 /**
  * Belt throughput: every belt run (a chain of belt segments between two
  * non-belt nodes) carries at most its capacity per minute. Units still move
- * instantly from producer to destination; the cap is a token bucket per run,
- * refilled at the run's rate. A transfer passes when every run on its path
- * has at least one token, then takes one token per unit from each run (a
+ * instantly from producer to destination along a route (flow/processorLogistics
+ * resolveRoutesFromOutput); the cap is a token bucket per run, refilled at the
+ * run's rate. A transfer passes when every run on its path has at least one token, then takes one token per unit from each run (a
  * processor pulling several units at once may leave a run in debt, so the
  * average rate stays the capacity). A refused transfer leaves the unit with
  * its producer, which retries later: nothing is lost.
@@ -44,7 +42,6 @@ export class BeltThroughput {
   /** Items per second, by run id. */
   private readonly ratePerSecond = new Map<BuildingId, number>();
   private readonly tokens = new Map<BuildingId, number>();
-  private readonly paths = new Map<BuildingId, readonly BuildingId[]>();
   private readonly blockedAt = new Map<BuildingId, number>();
   private clock = 0;
 
@@ -65,16 +62,11 @@ export class BeltThroughput {
   }
 
   /**
-   * Moves one unit from each of `producers` along its downstream path, if
-   * every run on the way has room. All or nothing: a refusal changes nothing
-   * but marks the full runs as saturated.
+   * Moves one unit along each of `paths` if every run on the way has room.
+   * All or nothing: a refusal changes nothing but marks the full runs as saturated.
    */
-  tryPass(producers: readonly BuildingId[]): boolean {
-    this.sync();
-    const load = new Map<BuildingId, number>();
-    for (const producer of producers) {
-      for (const runId of this.pathOf(producer)) load.set(runId, (load.get(runId) ?? 0) + 1);
-    }
+  tryPass(paths: readonly FlowPath[]): boolean {
+    const load = this.loadOf(paths);
     let blocked = false;
     for (const runId of load.keys()) {
       if (this.tokenCount(runId) >= 1 - 1e-9) continue;
@@ -86,28 +78,53 @@ export class BeltThroughput {
     return true;
   }
 
+  /** Whether `tryPass(paths)` would succeed now, without moving anything. */
+  canPass(paths: readonly FlowPath[]): boolean {
+    for (const runId of this.loadOf(paths).keys()) {
+      if (this.tokenCount(runId) < 1 - 1e-9) return false;
+    }
+    return true;
+  }
+
+  private loadOf(paths: readonly FlowPath[]): Map<BuildingId, number> {
+    this.sync();
+    const load = new Map<BuildingId, number>();
+    for (const path of paths) {
+      for (const runId of this.runsOn(path)) load.set(runId, (load.get(runId) ?? 0) + 1);
+    }
+    return load;
+  }
+
+  /** Capped runs a path crosses, each once. */
+  private runsOn(path: FlowPath): BuildingId[] {
+    const runs: BuildingId[] = [];
+    for (const node of path) {
+      const runId = this.runOf.get(node);
+      if (runId !== undefined && this.ratePerSecond.has(runId) && !runs.includes(runId)) runs.push(runId);
+    }
+    return runs;
+  }
+
   /**
    * Steady-state rates once belt caps apply, for display: each run shares its
-   * capacity among the producers sending through it, pro rata, and a producer
-   * keeps the share of its most loaded run.
+   * capacity among the flows crossing it, pro rata, and a flow keeps the share
+   * of its most loaded run. Returns the capped rate of each flow, in order.
    */
-  cappedRates(nominal: ReadonlyMap<BuildingId, number>): Map<BuildingId, number> {
+  cappedRates(flows: readonly { readonly path: FlowPath; readonly perMinute: number }[]): number[] {
     this.sync();
     const demand = new Map<BuildingId, number>();
-    for (const [producer, perMinute] of nominal) {
-      for (const runId of this.pathOf(producer)) demand.set(runId, (demand.get(runId) ?? 0) + perMinute);
+    for (const { path, perMinute } of flows) {
+      for (const runId of this.runsOn(path)) demand.set(runId, (demand.get(runId) ?? 0) + perMinute);
     }
-    const capped = new Map<BuildingId, number>();
-    for (const [producer, perMinute] of nominal) {
+    return flows.map(({ path, perMinute }) => {
       let factor = 1;
-      for (const runId of this.pathOf(producer)) {
+      for (const runId of this.runsOn(path)) {
         const load = demand.get(runId) ?? 0;
         const capacity = (this.ratePerSecond.get(runId) ?? 0) * 60;
         if (load > capacity) factor = Math.min(factor, capacity / load);
       }
-      capped.set(producer, perMinute * factor);
-    }
-    return capped;
+      return perMinute * factor;
+    });
   }
 
   statsFor(segmentId: BuildingId): BeltRunStats | null {
@@ -149,26 +166,6 @@ export class BeltThroughput {
     return this.tokens.get(runId) ?? (this.ratePerSecond.get(runId) ?? 0) * BELT_BURST_SECONDS;
   }
 
-  private pathOf(producer: BuildingId): readonly BuildingId[] {
-    let path = this.paths.get(producer);
-    if (path) return path;
-    const runs: BuildingId[] = [];
-    const visited = new Set<BuildingId>([producer]);
-    let current = this.next(producer);
-    while (current !== null && !visited.has(current)) {
-      visited.add(current);
-      const building = this.view.getBuilding(current);
-      // The unit stops at its destination (a storage or a machine): later belts are not on its way.
-      if (!building || !carriesThrough(building.typeId)) break;
-      const runId = this.runOf.get(current);
-      if (runId !== undefined && this.ratePerSecond.has(runId) && runs[runs.length - 1] !== runId) runs.push(runId);
-      current = this.next(current);
-    }
-    path = runs;
-    this.paths.set(producer, path);
-    return path;
-  }
-
   /** The single building fed by `id`'s outputs, or null at a dead end or a fork. */
   private next(id: BuildingId): BuildingId | null {
     const outgoing = this.view.getConnectionsOf(id).filter((connection) => connection.from.building === id);
@@ -181,7 +178,6 @@ export class BeltThroughput {
     if (this.topologyKey === key) return;
     this.topologyKey = key;
     this.runOf.clear();
-    this.paths.clear();
     const rates = new Map<BuildingId, number>();
 
     const belts = [...this.view.getBuildings().values()].filter((building) => isBeltTypeId(building.typeId));

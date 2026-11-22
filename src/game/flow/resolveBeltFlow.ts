@@ -1,8 +1,8 @@
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
   EXTRACTOR_RATE_PER_MIN,
-  MERGER_BASIC_BUILDING_TYPE_ID,
-  isBeltTypeId,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
+  carriesFlowThrough,
   isProcessorTypeId,
 } from '../data/buildingCatalog';
 import { getRecipe } from '../data/recipeCatalog';
@@ -16,18 +16,20 @@ export interface BeltFlowEntry {
 }
 
 /**
- * Walk upstream from a belt through belts + mergers, collect every powered
+ * Walk upstream from a belt through belts, mergers and splitters, collect every powered
  * extractor reachable, and aggregate their throughput per resource type.
  *
  * Returns entries in insertion order (deterministic) with deduplicated sources.
  */
 export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlowEntry[] {
   const visited = new Set<BuildingId>();
-  const queue: BuildingId[] = [beltId];
+  // Each entry carries the share of upstream flow reaching the belt: a splitter
+  // divides what passes through it evenly among its connected outputs.
+  const queue: { id: BuildingId; share: number }[] = [{ id: beltId, share: 1 }];
   const byResource = new Map<ResourceTypeT, { rate: number; sources: Set<BuildingId> }>();
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const { id: current, share } = queue.shift()!;
     if (visited.has(current)) continue;
     visited.add(current);
 
@@ -48,7 +50,7 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         }
         if (!entry.sources.has(upstream.id)) {
           entry.sources.add(upstream.id);
-          entry.rate += EXTRACTOR_RATE_PER_MIN;
+          entry.rate += EXTRACTOR_RATE_PER_MIN * share;
         }
         continue;
       }
@@ -71,13 +73,16 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
         }
         if (!entry.sources.has(upstream.id)) {
           entry.sources.add(upstream.id);
-          entry.rate += rate;
+          entry.rate += rate * share;
         }
         continue;
       }
 
-      if (isBeltTypeId(upstream.typeId) || upstream.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
-        queue.push(upstream.id);
+      if (upstream.typeId === SPLITTER_BASIC_BUILDING_TYPE_ID) {
+        const outputs = engine.getConnectionsOf(upstream.id).filter((c) => c.from.building === upstream.id).length;
+        queue.push({ id: upstream.id, share: share / Math.max(1, outputs) });
+      } else if (carriesFlowThrough(upstream.typeId)) {
+        queue.push({ id: upstream.id, share });
       }
     }
   }

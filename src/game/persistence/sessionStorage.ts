@@ -38,6 +38,7 @@ export interface PersistedWorldStateV3 {
   readonly extractionAccumulator?: number;
   readonly dayNightCycleSeconds?: number;
   readonly beltTokens?: SerializedGameWorld['beltTokens'];
+  readonly splitterTurns?: SerializedGameWorld['splitterTurns'];
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
   readonly processorStates?: SerializedGameWorld['processorStates'];
   readonly storageInventories?: SerializedGameWorld['storageInventories'];
@@ -156,6 +157,14 @@ function areEnergyLinksValid(value: unknown): boolean {
   );
 }
 
+function areSplitterTurnsValid(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every((entry) => isRecord(entry) && isFiniteNumber(entry.id) && isFiniteNumber(entry.turn)))
+  );
+}
+
 function areBeltTokensValid(value: unknown): boolean {
   return (
     value === undefined ||
@@ -202,7 +211,8 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     (value.simulationRemainder === undefined || isFiniteNumber(value.simulationRemainder)) &&
     (value.extractionAccumulator === undefined || isFiniteNumber(value.extractionAccumulator)) &&
     (value.dayNightCycleSeconds === undefined || isFiniteNumber(value.dayNightCycleSeconds)) &&
-    areBeltTokensValid(value.beltTokens)
+    areBeltTokensValid(value.beltTokens) &&
+    areSplitterTurnsValid(value.splitterTurns)
   );
 }
 
@@ -276,6 +286,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
     processorReservations: value.processorReservations,
     completedMilestones: value.completedMilestones,
     beltTokens: value.beltTokens,
+    splitterTurns: value.splitterTurns,
   };
 }
 
@@ -417,6 +428,7 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     processorReservations: snapshot.processorReservations,
     completedMilestones: snapshot.completedMilestones,
     beltTokens: snapshot.beltTokens,
+    splitterTurns: snapshot.splitterTurns,
   };
 }
 

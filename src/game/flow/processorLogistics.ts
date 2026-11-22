@@ -1,7 +1,8 @@
 import {
   EXTRACTOR_BUILDING_TYPE_ID,
-  MERGER_BASIC_BUILDING_TYPE_ID,
-  isBeltTypeId,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
+  carriesFlowThrough,
+  getBuildingType,
   isProcessorTypeId,
   isStorageTypeId,
 } from '@/game/data/buildingCatalog';
@@ -71,7 +72,7 @@ export function resolveUpstreamProvidersForInputPort(
       continue;
     }
 
-    if (isBeltTypeId(building.typeId) || building.typeId === MERGER_BASIC_BUILDING_TYPE_ID) {
+    if (carriesFlowThrough(building.typeId)) {
       for (const connection of engine.getConnectionsOf(currentId)) {
         if (connection.to.building !== currentId) continue;
         queue.push(connection.from.building);
@@ -83,49 +84,80 @@ export function resolveUpstreamProvidersForInputPort(
   return { portId, reachableProviders, reachableResourceTypes };
 }
 
+/** The output a splitter sends a unit to on a given route. */
+export interface SplitterChoice {
+  readonly splitter: BuildingId;
+  readonly port: PortId;
+}
+
+/**
+ * One way a unit can go from a producer's output to a storage or a machine.
+ * Without splitters a producer has at most one route; each splitter on the
+ * way branches it once per connected output.
+ */
+export interface FlowRoute {
+  readonly terminal: DownstreamTerminal;
+  /** Belts, mergers and splitters crossed on the way, in order. */
+  readonly nodes: readonly BuildingId[];
+  /** Splitter outputs taken on the way, in order. */
+  readonly choices: readonly SplitterChoice[];
+}
+
+/** Every route from `buildingId`'s `outputPortId`, splitter outputs in catalog port order. */
+export function resolveRoutesFromOutput(engine: GameEngine, buildingId: BuildingId, outputPortId: PortId): FlowRoute[] {
+  const routes: FlowRoute[] = [];
+
+  const walk = (
+    fromId: BuildingId,
+    fromPort: PortId,
+    nodes: readonly BuildingId[],
+    choices: readonly SplitterChoice[],
+    visited: ReadonlySet<BuildingId>,
+  ): void => {
+    for (const connection of engine.getConnectionsOf(fromId)) {
+      if (connection.from.building !== fromId || connection.from.port !== fromPort) continue;
+      const nextId = connection.to.building;
+      if (visited.has(nextId)) continue;
+      const building = engine.getBuildings().get(nextId);
+      if (!building) continue;
+      if (isStorageTypeId(building.typeId)) {
+        routes.push({ terminal: { kind: 'storage', buildingId: nextId, portId: connection.to.port }, nodes, choices });
+        continue;
+      }
+      if (isProcessorTypeId(building.typeId)) {
+        routes.push({ terminal: { kind: 'processor', buildingId: nextId, portId: connection.to.port }, nodes, choices });
+        continue;
+      }
+      if (!carriesFlowThrough(building.typeId)) continue;
+      const nextVisited = new Set(visited).add(nextId);
+      const isSplitter = building.typeId === SPLITTER_BASIC_BUILDING_TYPE_ID;
+      for (const port of getBuildingType(building.typeId)?.ports ?? []) {
+        if (port.kind !== PortKind.Output) continue;
+        walk(
+          nextId,
+          port.id,
+          [...nodes, nextId],
+          isSplitter ? [...choices, { splitter: nextId, port: port.id }] : choices,
+          nextVisited,
+        );
+      }
+    }
+  };
+
+  walk(buildingId, outputPortId, [], [], new Set([buildingId]));
+  return routes;
+}
+
+/**
+ * Where a unit from `buildingId`'s output ends up when it has a single way to
+ * go; with splitters, the first route (the engine picks among them in turn).
+ */
 export function resolveDownstreamTerminalFromOutput(
   engine: GameEngine,
   buildingId: BuildingId,
   outputPortId: PortId,
 ): DownstreamTerminal | null {
-  const startConnections = engine
-    .getConnectionsOf(buildingId)
-    .filter((connection) => connection.from.building === buildingId && connection.from.port === outputPortId);
-
-  if (startConnections.length !== 1) return null;
-
-  const visited = new Set<BuildingId>([buildingId]);
-  let currentBuildingId = startConnections[0]!.to.building;
-  let currentPortId = startConnections[0]!.to.port;
-
-  while (true) {
-    if (visited.has(currentBuildingId)) return null;
-    visited.add(currentBuildingId);
-
-    const building = engine.getBuildings().get(currentBuildingId);
-    if (!building) return null;
-
-    if (isStorageTypeId(building.typeId)) {
-      return { kind: 'storage', buildingId: currentBuildingId, portId: currentPortId };
-    }
-
-    if (isProcessorTypeId(building.typeId)) {
-      return { kind: 'processor', buildingId: currentBuildingId, portId: currentPortId };
-    }
-
-    if (!isBeltTypeId(building.typeId) && building.typeId !== MERGER_BASIC_BUILDING_TYPE_ID) {
-      return null;
-    }
-
-    const nextConnections = engine
-      .getConnectionsOf(currentBuildingId)
-      .filter((connection) => connection.from.building === currentBuildingId);
-
-    if (nextConnections.length !== 1) return null;
-
-    currentBuildingId = nextConnections[0]!.to.building;
-    currentPortId = nextConnections[0]!.to.port;
-  }
+  return resolveRoutesFromOutput(engine, buildingId, outputPortId)[0]?.terminal ?? null;
 }
 
 export function resolveProcessorLogisticsStatus(

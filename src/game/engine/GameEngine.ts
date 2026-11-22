@@ -80,10 +80,10 @@ import { SOLAR_PANEL_BUILDING_TYPE_ID, WATCHTOWER_BUILDING_TYPE_ID } from '../da
 import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
 import { BeltThroughput, type BeltRunStats } from '@/game/flow/beltThroughput';
 import {
-  resolveDownstreamTerminalFromOutput,
+  resolveRoutesFromOutput,
+  type FlowRoute,
   resolveProcessorLogisticsStatus,
   resolveUpstreamProvidersForInputPort,
-  type DownstreamTerminal,
   type ProcessorLogisticsStatus,
 } from '@/game/flow/processorLogistics';
 
@@ -160,6 +160,8 @@ export interface SerializedGameWorld {
   readonly processorReservations?: readonly { readonly id: BuildingId; readonly reservations: readonly ProcessorReservation[] }[];
   /** Belt run token buckets (flow/beltThroughput.ts), by tail segment id. */
   readonly beltTokens?: readonly { readonly id: BuildingId; readonly tokens: number }[];
+  /** Output each splitter serves next, as an index in catalog port order. */
+  readonly splitterTurns?: readonly { readonly id: BuildingId; readonly turn: number }[];
   /** Completed campaign milestones; absent in saves written before milestones existed. */
   readonly completedMilestones?: readonly MilestoneId[];
 }
@@ -232,7 +234,10 @@ export class GameEngine {
   private energyTopologyVersion = -1;
   private simulationNetworks: SimulationNetwork[] = [];
   private logisticsVersion = -1;
-  private readonly downstream = new Map<BuildingId, DownstreamTerminal | null>();
+  /** Routes from a building output, by `id:port` (flow/processorLogistics resolveRoutesFromOutput). */
+  private readonly routes = new Map<string, readonly FlowRoute[]>();
+  /** Index, in catalog port order, of the output each splitter serves next. */
+  private readonly splitterTurns = new Map<BuildingId, number>();
   private readonly providersByPort = new Map<BuildingId, Map<PortId, readonly BuildingId[]>>();
   private readonly logisticsByProcessor = new Map<BuildingId, ProcessorLogisticsStatus | null>();
   private readonly poweredExtractors = new Set<BuildingId>();
@@ -656,6 +661,7 @@ export class GameEngine {
     this.poweredConsumers.delete(id);
     this.poweredExtractors.delete(id);
     this.batteryCharges.delete(id);
+    this.splitterTurns.delete(id);
     this.storageInventories.delete(id);
     this.producerOutputBuffers.delete(id);
     this.processorStates.delete(id);
@@ -907,10 +913,16 @@ export class GameEngine {
       }
     }
 
-    for (const [id, perMinute] of this.beltThroughput.cappedRates(nominal)) {
-      const key = RESOURCE_STOCK_KEY[output.get(id)!];
-      if (key) rates[key] += perMinute;
+    // A producer behind splitters shares its output evenly among its routes.
+    const flows: { readonly producer: BuildingId; readonly path: readonly BuildingId[]; readonly perMinute: number }[] = [];
+    for (const [producer, perMinute] of nominal) {
+      const routes = this.producerRoutes(producer);
+      for (const route of routes) flows.push({ producer, path: route.nodes, perMinute: perMinute / routes.length });
     }
+    this.beltThroughput.cappedRates(flows).forEach((perMinute, index) => {
+      const key = RESOURCE_STOCK_KEY[output.get(flows[index]!.producer)!];
+      if (key) rates[key] += perMinute;
+    });
 
     return rates;
   }
@@ -1492,6 +1504,7 @@ export class GameEngine {
       processorReservations,
       completedMilestones: [...this.completedMilestones],
       beltTokens: this.beltThroughput.serialize(),
+      splitterTurns: [...this.splitterTurns].map(([id, turn]) => ({ id, turn })),
     };
   }
 
@@ -1594,6 +1607,10 @@ export class GameEngine {
     }
     engine.unlockCache = null;
     engine.beltThroughput.restore(snapshot.beltTokens);
+    for (const { id, turn } of snapshot.splitterTurns ?? []) {
+      const outputs = engine.splitterOutputs(id).length;
+      if (outputs > 0 && Number.isInteger(turn) && turn >= 0 && turn < outputs) engine.splitterTurns.set(id, turn);
+    }
 
     // Backward compatibility: old saves have no fog data — reveal default area
     if (!engine.grid.hasAnyRevealed()) {
@@ -1619,23 +1636,87 @@ export class GameEngine {
   private refreshLogisticsCache(): void {
     if (this.connections.version === this.logisticsVersion) return;
     this.logisticsVersion = this.connections.version;
-    this.downstream.clear();
+    this.routes.clear();
     this.providersByPort.clear();
     this.logisticsByProcessor.clear();
   }
 
-  private getOutputTerminal(buildingId: BuildingId): DownstreamTerminal | null {
+  private routesFrom(buildingId: BuildingId, portId: PortId): readonly FlowRoute[] {
     this.refreshLogisticsCache();
-    if (this.downstream.has(buildingId)) return this.downstream.get(buildingId) ?? null;
+    const key = `${buildingId}:${portId}`;
+    let routes = this.routes.get(key);
+    if (!routes) {
+      routes = resolveRoutesFromOutput(this, buildingId, portId);
+      this.routes.set(key, routes);
+    }
+    return routes;
+  }
+
+  /** Every way a unit from this producer can go, through any splitter output. */
+  private producerRoutes(buildingId: BuildingId): readonly FlowRoute[] {
     const building = this.buildings.get(buildingId);
     const outputPort = building && getBuildingType(building.typeId)?.ports.find((port) => port.kind === PortKind.Output);
-    const terminal = outputPort ? resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id) : null;
-    this.downstream.set(buildingId, terminal);
-    return terminal;
+    return outputPort ? this.routesFrom(buildingId, outputPort.id) : [];
   }
 
   private hasValidDownstream(buildingId: BuildingId): boolean {
-    return this.getOutputTerminal(buildingId) !== null;
+    return this.producerRoutes(buildingId).length > 0;
+  }
+
+  /**
+   * The route a producer's next unit takes: at each splitter, the output whose
+   * turn it is, skipping outputs that cannot take a unit now. Null when no
+   * output can (the unit waits with its producer).
+   */
+  private selectRoute(routes: readonly FlowRoute[]): FlowRoute | null {
+    if (routes.length <= 1) return routes[0] ?? null;
+    return routes.find((route) => route.choices.every((choice) => this.splitterTurnPort(choice.splitter) === choice.port)) ?? null;
+  }
+
+  private splitterOutputs(splitterId: BuildingId): readonly PortId[] {
+    const building = this.buildings.get(splitterId);
+    return (building ? getBuildingType(building.typeId)?.ports ?? [] : [])
+      .filter((port) => port.kind === PortKind.Output)
+      .map((port) => port.id);
+  }
+
+  /** The output a splitter serves now: its turn, or the next one able to take a unit. */
+  private splitterTurnPort(splitterId: BuildingId): PortId | null {
+    const outputs = this.splitterOutputs(splitterId);
+    const start = this.splitterTurns.get(splitterId) ?? 0;
+    for (let offset = 0; offset < outputs.length; offset++) {
+      const port = outputs[(start + offset) % outputs.length]!;
+      if (this.splitterOutputAccepts(splitterId, port)) return port;
+    }
+    return null;
+  }
+
+  /**
+   * An output takes a unit when one of its routes leads to a storage with room
+   * on the belts, or to a machine ready to pull its next inputs.
+   */
+  private splitterOutputAccepts(splitterId: BuildingId, portId: PortId): boolean {
+    return this.routesFrom(splitterId, portId).some((route) =>
+      route.terminal.kind === 'storage'
+        ? this.beltThroughput.canPass([route.nodes])
+        : this.processorReadyForInputs(route.terminal.buildingId),
+    );
+  }
+
+  private processorReadyForInputs(buildingId: BuildingId): boolean {
+    return (
+      !!this.processorStates.get(buildingId)?.recipeId &&
+      this.poweredConsumers.has(buildingId) &&
+      this.isProcessorIdle(buildingId)
+    );
+  }
+
+  /** After a unit went through, each splitter on its route moves its turn past the output used. */
+  private advanceSplitters(route: FlowRoute): void {
+    for (const { splitter, port } of route.choices) {
+      const outputs = this.splitterOutputs(splitter);
+      this.splitterTurns.set(splitter, (outputs.indexOf(port) + 1) % outputs.length);
+    }
   }
 
   /**
@@ -1654,16 +1735,18 @@ export class GameEngine {
     const buffer = this.producerOutputBuffers.get(buildingId);
     if (!buffer) return false;
 
-    const terminal = this.getOutputTerminal(buildingId);
-    if (!terminal || terminal.kind !== 'storage') return false;
+    // A unit routed to a machine waits for the machine to pull it.
+    const route = this.selectRoute(this.producerRoutes(buildingId));
+    if (!route || route.terminal.kind !== 'storage') return false;
 
-    const inventory = this.storageInventories.get(terminal.buildingId);
+    const inventory = this.storageInventories.get(route.terminal.buildingId);
     const key = RESOURCE_STOCK_KEY[buffer.resourceType];
     if (!inventory || !key) return false;
-    if (!this.beltThroughput.tryPass([buildingId])) return false;
+    if (!this.beltThroughput.tryPass([route.nodes])) return false;
 
     inventory[key] += buffer.amount;
     this.producerOutputBuffers.set(buildingId, null);
+    this.advanceSplitters(route);
     return true;
   }
 
@@ -1677,7 +1760,15 @@ export class GameEngine {
     }
 
     const reservations: ProcessorReservation[] = [];
+    const routes: FlowRoute[] = [];
     const usedProviders = new Set<BuildingId>();
+    // A provider behind a splitter serves this input only when the splitter's turn routes it here.
+    const routeHere = (providerId: BuildingId, portId: PortId): FlowRoute | null => {
+      const route = this.selectRoute(this.producerRoutes(providerId));
+      return route?.terminal.kind === 'processor' && route.terminal.buildingId === buildingId && route.terminal.portId === portId
+        ? route
+        : null;
+    };
 
     for (const assignment of logistics.assignments) {
       const input = inputs.find((entry) => entry.resourceType === assignment.requiredResourceType);
@@ -1685,7 +1776,8 @@ export class GameEngine {
 
       const providers = this.resolveReachableProviders(buildingId, assignment.portId)
         .filter((providerId) => !usedProviders.has(providerId))
-        .filter((providerId) => this.getProducerOutputBuffer(providerId)?.resourceType === assignment.requiredResourceType);
+        .filter((providerId) => this.getProducerOutputBuffer(providerId)?.resourceType === assignment.requiredResourceType)
+        .filter((providerId) => routeHere(providerId, assignment.portId) !== null);
 
       if (providers.length < input.amount) return null;
 
@@ -1694,6 +1786,7 @@ export class GameEngine {
         const buffer = this.producerOutputBuffers.get(providerId);
         if (!buffer || buffer.amount <= 0) return null;
         usedProviders.add(providerId);
+        routes.push(routeHere(providerId, assignment.portId)!);
         reservations.push({
           resourceType: assignment.requiredResourceType,
           providerId,
@@ -1703,9 +1796,10 @@ export class GameEngine {
     }
 
     // The belts between the providers and this processor must have room for every unit.
-    if (!this.beltThroughput.tryPass(reservations.map((reservation) => reservation.providerId))) return null;
+    if (!this.beltThroughput.tryPass(routes.map((route) => route.nodes))) return null;
     // Commit only once all inputs are available. An empty second port must leave the first intact.
     for (const { providerId } of reservations) this.producerOutputBuffers.set(providerId, null);
+    for (const route of routes) this.advanceSplitters(route);
     return reservations;
   }
 
