@@ -14,6 +14,7 @@ interface BotSession {
 }
 
 export function createBotSession({ engine, initialProfileId = DEFAULT_BOT_PROFILE_ID }: BotSessionArgs): BotSession {
+  useGameStore.getState().setSelectedBotProfileId(initialProfileId);
   const setBot = useGameStore.getState().setBot;
   const setBotControls = useGameStore.getState().setBotControls;
   const controller = new BotController(engine, setBot, initialProfileId);

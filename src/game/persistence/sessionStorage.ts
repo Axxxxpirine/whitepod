@@ -1,17 +1,20 @@
 import { GRID_SIZE } from '@/game/constants';
 import { isGameMode, resolveGameMode, type GameMode } from '@/game/data/gameMode';
 import { GameEngine, type SerializedGameWorld } from '@/game/engine/GameEngine';
-import { DEFAULT_BOT_PROFILE_ID } from '@/game/bot/botProfiles';
+import { DEFAULT_BOT_PROFILE_ID, getBotProfile } from '@/game/bot/botProfiles';
 import type { BotProfileId } from '@/game/bot/botTypes';
 import type { ViewportSnapshot } from '@/game/engine/Viewport';
 import { Direction, type SelectedTool } from '@/game/types';
 import { getLocalStorage } from './browserStorage';
+import {
+  claimSaveSlot, currentSaveGeneration, getActiveSaveStorage, replaceSaveSlot, SAVE_HANDOFF_LOCK,
+  WORLD_STORAGE_KEY, VIEW_STORAGE_KEY, IDLE_SIDECAR_KEY, type SaveStorage,
+} from './sessionSlots';
+export { createSessionId, WORLD_STORAGE_KEY, VIEW_STORAGE_KEY, IDLE_SIDECAR_KEY, SESSION_WRITER_KEY } from './sessionSlots';
 
-export const WORLD_STORAGE_KEY = 'whitepod:session:world:v3';
-export const VIEW_STORAGE_KEY = 'whitepod:session:view:v3';
 export const LEGACY_WORLD_STORAGE_KEY = 'whitepod:session:world:v2';
 export const LEGACY_VIEW_STORAGE_KEY = 'whitepod:session:view:v2';
-export const IDLE_SIDECAR_KEY = 'whitepod:idle-sidecar:v1';
+
 
 const WORLD_STORAGE_VERSION = 3;
 const WORLD_IDLE_VERSION = 1;
@@ -31,6 +34,9 @@ export interface PersistedWorldStateV3 {
   readonly connections: SerializedGameWorld['connections'];
   readonly energyLinks?: readonly { readonly a: number; readonly b: number }[];
   readonly simulationTime?: number;
+  readonly simulationRemainder?: number;
+  readonly extractionAccumulator?: number;
+  readonly dayNightCycleSeconds?: number;
   readonly batteryCharges?: readonly { readonly id: number; readonly charge: number }[];
   readonly processorStates?: SerializedGameWorld['processorStates'];
   readonly storageInventories?: SerializedGameWorld['storageInventories'];
@@ -81,18 +87,6 @@ interface LoadedSession {
 export interface PersistedSessionPayloads {
   readonly world: PersistedWorldStateV3;
   readonly view: PersistedViewStateV3;
-}
-
-function getWorldStorage(): Storage | null {
-  return getLocalStorage();
-}
-
-function getViewStorage(): Storage | null {
-  return getLocalStorage();
-}
-
-function getSidecarStorage(): Storage | null {
-  return getLocalStorage();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -195,7 +189,10 @@ function isPersistedWorldStateV3(value: unknown): value is PersistedWorldStateV3
     isSerializedConnectionRegistry(value.connections) &&
     areEnergyLinksValid(value.energyLinks) &&
     areBatteryChargesValid(value.batteryCharges) &&
-    simulationTimeValid
+    simulationTimeValid &&
+    (value.simulationRemainder === undefined || isFiniteNumber(value.simulationRemainder)) &&
+    (value.extractionAccumulator === undefined || isFiniteNumber(value.extractionAccumulator)) &&
+    (value.dayNightCycleSeconds === undefined || isFiniteNumber(value.dayNightCycleSeconds))
   );
 }
 
@@ -244,8 +241,7 @@ function isIdleSidecar(value: unknown): value is IdleSidecar {
   );
 }
 
-function removeViewSession(): void {
-  const storage = getViewStorage();
+function removeViewSession(storage: SaveStorage | null): void {
   storage?.removeItem(VIEW_STORAGE_KEY);
   storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
 }
@@ -260,6 +256,9 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
     connections: value.connections,
     energyLinks: value.energyLinks,
     simulationTime: value.simulationTime,
+    simulationRemainder: value.simulationRemainder,
+    extractionAccumulator: value.extractionAccumulator,
+    dayNightCycleSeconds: value.dayNightCycleSeconds,
     batteryCharges: value.batteryCharges,
     processorStates: value.processorStates,
     storageInventories: value.storageInventories,
@@ -269,8 +268,7 @@ function toSnapshotInput(value: PersistedWorldStateV3): SerializedGameWorld {
   };
 }
 
-function readViewState(): PersistedViewStateV3 | PersistedViewStateV2 | null {
-  const storage = getViewStorage();
+function readViewState(storage: SaveStorage | null): PersistedViewStateV3 | PersistedViewStateV2 | null {
   if (!storage) return null;
 
   const keys = [VIEW_STORAGE_KEY, LEGACY_VIEW_STORAGE_KEY];
@@ -292,19 +290,18 @@ function readViewState(): PersistedViewStateV3 | PersistedViewStateV2 | null {
   return null;
 }
 
-function writeWorldState(payload: PersistedWorldStateV3): void {
-  const storage = getWorldStorage();
-  if (!storage) return;
+function writeWorldState(payload: PersistedWorldStateV3, storage = getActiveSaveStorage()): boolean {
+  if (!storage) return false;
 
   try {
     storage.setItem(WORLD_STORAGE_KEY, JSON.stringify(payload));
+    return true;
   } catch {
-    // quota / private mode — drop the save, engine state stays in memory
+    return false;
   }
 }
 
-function writeViewState(payload: PersistedViewStateV3): void {
-  const storage = getViewStorage();
+function writeViewState(payload: PersistedViewStateV3, storage = getActiveSaveStorage()): void {
   if (!storage) return;
 
   try {
@@ -314,8 +311,7 @@ function writeViewState(payload: PersistedViewStateV3): void {
   }
 }
 
-export function readIdleSidecar(): IdleSidecar | null {
-  const storage = getSidecarStorage();
+export function readIdleSidecar(storage = getActiveSaveStorage()): IdleSidecar | null {
   if (!storage) return null;
   const raw = storage.getItem(IDLE_SIDECAR_KEY);
   if (!raw) return null;
@@ -329,8 +325,7 @@ export function readIdleSidecar(): IdleSidecar | null {
   return null;
 }
 
-export function writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number): void {
-  const storage = getSidecarStorage();
+export function writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number, storage = getActiveSaveStorage()): void {
   if (!storage) return;
   if (!Number.isFinite(pausedAtWallClockMs)) return;
   const payload: IdleSidecar = {
@@ -345,8 +340,8 @@ export function writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number)
   }
 }
 
-export function clearIdleSidecar(): void {
-  getSidecarStorage()?.removeItem(IDLE_SIDECAR_KEY);
+export function clearIdleSidecar(storage = getActiveSaveStorage()): void {
+  storage?.removeItem(IDLE_SIDECAR_KEY);
 }
 
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -373,18 +368,18 @@ export function base64ToArrayBuffer(value: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-export function createSessionId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+export function clearPersistedSession(): void {
+  replaceSaveSlot();
+  clearSessionData(getLocalStorage());
 }
 
-export function clearPersistedSession(): void {
-  const storage = getLocalStorage();
+function clearSessionData(storage: SaveStorage | null): void {
   storage?.removeItem(WORLD_STORAGE_KEY);
   storage?.removeItem(LEGACY_WORLD_STORAGE_KEY);
   storage?.removeItem(VIEW_STORAGE_KEY);
   storage?.removeItem(LEGACY_VIEW_STORAGE_KEY);
 
-  clearIdleSidecar();
+  clearIdleSidecar(storage);
 }
 
 export function buildPersistedWorldState(engine: GameEngine, sessionId: string): PersistedWorldStateV3 {
@@ -401,6 +396,9 @@ export function buildPersistedWorldState(engine: GameEngine, sessionId: string):
     connections: snapshot.connections,
     energyLinks: snapshot.energyLinks,
     simulationTime: snapshot.simulationTime,
+    simulationRemainder: snapshot.simulationRemainder,
+    extractionAccumulator: snapshot.extractionAccumulator,
+    dayNightCycleSeconds: snapshot.dayNightCycleSeconds,
     batteryCharges: snapshot.batteryCharges,
     processorStates: snapshot.processorStates,
     storageInventories: snapshot.storageInventories,
@@ -464,11 +462,51 @@ export function installPersistedSession(args: {
   readonly seedInput: string;
   readonly sessionId: string;
   readonly viewport?: ViewportSnapshot;
-}): void {
+}): boolean {
   const payloads = buildPersistedSessionPayloads(args);
-  writeWorldState(payloads.world);
-  writeViewState(payloads.view);
-  clearIdleSidecar();
+  const installed = replaceSaveSlot({
+    world: JSON.stringify(payloads.world),
+    view: JSON.stringify(payloads.view),
+  });
+  if (installed) clearSessionData(getLocalStorage());
+  return installed;
+}
+
+/**
+ * A fresh token belongs to one mounted engine, including when two tabs resume
+ * the same session id. Recheck it on unload as storage events may be delayed
+ * while a tab is suspended.
+ */
+export function claimSessionWriter() {
+  const slot = claimSaveSlot();
+  return {
+    ...slot,
+    saveWorldSession(engine: GameEngine, sessionId: string) {
+      return slot.isCurrent() && writeWorldState(buildPersistedWorldState(engine, sessionId), slot.storage) && slot.isCurrent();
+    },
+    saveViewSession(args: Parameters<typeof saveViewSession>[0]) {
+      if (slot.isCurrent()) writeViewState(buildPersistedViewState(args), slot.storage);
+    },
+    writeIdleSidecar(sessionId: string, pausedAtWallClockMs: number) {
+      writeIdleSidecar(sessionId, pausedAtWallClockMs, slot.storage);
+    },
+    clearIdleSidecar() {
+      clearIdleSidecar(slot.storage);
+    },
+  };
+}
+
+/** Serialize just the pointer handoff, never the gameplay or unload writes. */
+export async function acquireSessionWriter(cancelled: () => boolean) {
+  const generation = currentSaveGeneration();
+  const claim = () => cancelled() || currentSaveGeneration() !== generation ? null : claimSessionWriter();
+  if (!navigator.locks) return claim();
+  try {
+    return await navigator.locks.request(SAVE_HANDOFF_LOCK, claim);
+  } catch {
+    // Some embedded browsers expose the API but deny lock acquisition.
+    return claim();
+  }
 }
 
 /** What the start screen tells about the saved game, without rebuilding the world. */
@@ -484,7 +522,7 @@ export interface SavedSessionSummary {
  * never clears a bad save.
  */
 export function readSavedSessionSummary(): SavedSessionSummary | null {
-  const raw = getWorldStorage()?.getItem(WORLD_STORAGE_KEY);
+  const raw = getActiveSaveStorage()?.getItem(WORLD_STORAGE_KEY);
   if (!raw) return null;
   let parsed: unknown;
   try {
@@ -500,8 +538,7 @@ export function readSavedSessionSummary(): SavedSessionSummary | null {
   };
 }
 
-export function loadPersistedSession(screenWidth: number, screenHeight: number): LoadedSession | null {
-  const worldStorage = getWorldStorage();
+export function loadPersistedSession(screenWidth: number, screenHeight: number, worldStorage = getActiveSaveStorage()): LoadedSession | null {
   if (!worldStorage) return null;
 
   const rawWorldV3 = worldStorage.getItem(WORLD_STORAGE_KEY);
@@ -514,17 +551,17 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
       if (isPersistedWorldStateV3(parsed)) {
         worldState = parsed;
       } else {
-        clearPersistedSession();
+        clearSessionData(worldStorage);
         return null;
       }
     } catch {
-      clearPersistedSession();
+      clearSessionData(worldStorage);
       return null;
     }
   } else {
     const rawLegacy = worldStorage.getItem(LEGACY_WORLD_STORAGE_KEY);
     if (rawLegacy) {
-      clearPersistedSession();
+      clearSessionData(worldStorage);
     }
     return null;
   }
@@ -532,7 +569,7 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
   try {
     const grid = base64ToArrayBuffer(worldState.gridBase64);
     if (grid.byteLength < GRID_MIN_BYTE_LENGTH) {
-      clearPersistedSession();
+      clearSessionData(worldStorage);
       return null;
     }
 
@@ -542,18 +579,18 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
       screenHeight,
     );
 
-    const viewState = readViewState();
+    const viewState = readViewState(worldStorage);
 
     if (viewState && viewState.sessionId === worldState.sessionId) {
       engine.viewport.restore(viewState.viewport);
     } else if (viewState && viewState.sessionId !== worldState.sessionId) {
-      removeViewSession();
+      removeViewSession(worldStorage);
     }
 
-    const sidecar = readIdleSidecar();
+    const sidecar = readIdleSidecar(worldStorage);
     const idleSidecar = sidecar && sidecar.sessionId === worldState.sessionId ? sidecar : null;
     if (sidecar && !idleSidecar) {
-      clearIdleSidecar();
+      clearIdleSidecar(worldStorage);
     }
 
     const selectedTool =
@@ -563,18 +600,13 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
 
     const selectedBotProfileId =
       viewState && viewState.sessionId === worldState.sessionId && 'selectedBotProfileId' in viewState
-        ? viewState.selectedBotProfileId
+        ? getBotProfile(viewState.selectedBotProfileId).id
         : DEFAULT_BOT_PROFILE_ID;
 
     const seedInput =
       viewState && viewState.sessionId === worldState.sessionId && 'seedInput' in viewState
         ? viewState.seedInput
         : String(worldState.mapSeed);
-
-    if (worldState.version === 2) {
-      saveWorldSession(engine, worldState.sessionId);
-      worldStorage.removeItem(LEGACY_WORLD_STORAGE_KEY);
-    }
 
     return {
       engine,
@@ -585,7 +617,7 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number):
       idleSidecar,
     };
   } catch {
-    clearPersistedSession();
+    clearSessionData(worldStorage);
     return null;
   }
 }

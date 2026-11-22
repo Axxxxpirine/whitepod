@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Application } from 'pixi.js';
 import { DEFAULT_MAP_SEED, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
@@ -17,15 +17,12 @@ import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
 import {
-  clearIdleSidecar,
+  acquireSessionWriter,
   createSessionId,
   loadPersistedSession,
-  saveViewSession,
-  saveWorldSession,
-  writeIdleSidecar,
 } from '@/game/persistence/sessionStorage';
 import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
-import { applyIdleCatchup } from '@/game/idle/IdleCatchup';
+import { OfflineSession } from '@/game/idle/OfflineSession';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures, loadTerrainDecalTextures } from '@/game/renderer/TileSprite';
 import { ResourceType, type SelectedTool } from '@/game/types';
@@ -86,6 +83,8 @@ type DevEngine = GameEngine & {
 };
 
 export function GameCanvas() {
+  const [saveFailed, setSaveFailed] = useState(false);
+  const replayDialog = useRef<HTMLDialogElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionEpoch = useGameStore((s) => s.sessionEpoch);
   const setEngine = useGameStore((s) => s.setEngine);
@@ -114,6 +113,7 @@ export function GameCanvas() {
     let dayNightOverlayRenderer: DayNightOverlayRenderer | null = null;
     let minimapRenderer: MinimapRenderer | null = null;
     let keyboardHandler: KeyboardHandler | null = null;
+    let inputHandler: InputHandler | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -124,11 +124,13 @@ export function GameCanvas() {
     let handleVisibilityChange: (() => void) | null = null;
     let handleBeforeUnload: (() => void) | null = null;
     let handlePageHide: (() => void) | null = null;
-    let simState: 'ACTIVE' | 'PAUSED' = 'ACTIVE';
-    let pausedAtWallClockMs: number | null = null;
+    let offline: OfflineSession | null = null;
+    let restartBot = false;
     let resizeObserver: ResizeObserver | null = null;
     let unsubscribeEngine: (() => void) | null = null;
     let unsubscribeTool: (() => void) | null = null;
+    let unsubscribeTakeover: (() => void) | null = null;
+    let unbindLogAutoSave: (() => void) | null = null;
     let unsubscribeActions: (() => void) | null = null;
     let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
     let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
@@ -136,6 +138,20 @@ export function GameCanvas() {
     let botSession: ReturnType<typeof createBotSession> | null = null;
 
     const init = async () => {
+      const writer = await acquireSessionWriter(() => destroyed);
+      if (destroyed) return;
+      if (!writer) {
+        useGameStore.getState().leaveSupersededSession();
+        return;
+      }
+      const { saveViewSession, writeIdleSidecar, clearIdleSidecar } = writer;
+      const saveWorldSession = (engine: GameEngine, sessionId: string) => {
+        const saved = writer.saveWorldSession(engine, sessionId);
+        if (!destroyed && !writer.isSuperseded()) setSaveFailed(!saved);
+        return saved;
+      };
+      unsubscribeTakeover = writer.onTakeover(() => useGameStore.getState().leaveSupersededSession());
+
       app = new Application();
       await app.init({
         resizeTo: container,
@@ -158,12 +174,9 @@ export function GameCanvas() {
       await loadTerrainDecalTextures();
       await loadBuildingTextures();
 
-      if (destroyed) {
-        app.destroy(true);
-        return;
-      }
-
-      const loadedSession = loadPersistedSession(app.screen.width, app.screen.height);
+      // Cleanup owns the initialized Pixi app while texture loading is in flight.
+      if (destroyed || writer.isSuperseded()) return;
+      const loadedSession = loadPersistedSession(app.screen.width, app.screen.height, writer.storage);
       const engine =
         loadedSession?.engine ??
         new GameEngine(app.screen.width, app.screen.height, { gameMode: useGameStore.getState().newGameMode });
@@ -180,24 +193,12 @@ export function GameCanvas() {
         engine.generateMap(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED);
       }
 
-      const nowAtMount = Date.now();
-      const crossSessionElapsedMs =
-        sidecar !== null ? Math.max(0, nowAtMount - sidecar.pausedAtWallClockMs) : 0;
-      const initialIdleSummary =
-        crossSessionElapsedMs > 0
-          ? applyIdleCatchup(engine, crossSessionElapsedMs)
-          : applyIdleCatchup(engine, 0);
-
-      if (sidecar !== null) {
-        clearIdleSidecar();
-      }
-
       const state = useGameStore.getState();
       state.setSelectedBuilding(null);
       state.setSelectedBuildingAnchor(null);
       state.setBeltPreview(null);
       state.setPendingEnergyLinkSource(null);
-      state.setIdleSummary(initialIdleSummary.appliedSeconds > 0 ? initialIdleSummary : null);
+      state.setIdleSummary(null);
       setSimulationTime(engine.simulationTime);
       setSelectedTool(selectedTool);
       setSeedInput(String(Number.isFinite(mapSeed) ? mapSeed : engine.mapSeed ?? DEFAULT_MAP_SEED));
@@ -221,19 +222,11 @@ export function GameCanvas() {
       if (!loadedSession) {
         worldSaver.flush();
         viewSaver.flush();
-      } else if (initialIdleSummary.appliedSeconds > 0) {
-        worldSaver.flush();
-      }
-
-      if (typeof document !== 'undefined' && document.hidden) {
-        simState = 'PAUSED';
-        pausedAtWallClockMs = Date.now();
-        writeIdleSidecar(sessionId, pausedAtWallClockMs);
       }
 
       // Initialize action logger for LLM training data collection
-      const actionLogger = new ActionLogger(sessionId);
-      actionLogger.bindAutoSave();
+      const actionLogger = new ActionLogger(sessionId, writer.isCurrent, writer.storage);
+      unbindLogAutoSave = actionLogger.bindAutoSave();
       useGameStore.getState().setActionLogger(actionLogger);
       
       // Register action logger with engine to capture all actions
@@ -243,6 +236,7 @@ export function GameCanvas() {
 
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
+          if (offline && !offline.active) return;
           worldSaver?.schedule();
           useGameStore.getState().bumpWorldVersion();
           return;
@@ -258,16 +252,38 @@ export function GameCanvas() {
 
       botSession = createBotSession({ engine, initialProfileId: initialBotProfileId });
 
-      const MIN_IDLE_MS = 1000;
-
-      const applyIdleBatchCatchup = (elapsedMs: number) => {
-        if (elapsedMs < MIN_IDLE_MS) return;
-        const idleSummary = applyIdleCatchup(engine, elapsedMs);
-        if (idleSummary.appliedSeconds <= 0) return;
-        useGameStore.getState().setIdleSummary(idleSummary);
-        useGameStore.getState().setSimulationTime(engine.simulationTime);
-        saveWorldSession(engine, sessionId);
+      const restartBotIfReady = () => {
+        if (!destroyed && restartBot && offline?.active && !document.hidden) {
+          restartBot = false;
+          useGameStore.getState().botControls?.start();
+        }
       };
+      offline = new OfflineSession(engine, {
+        checkpoint(since) {
+          worldSaver?.cancel();
+          if (!saveWorldSession(engine, sessionId)) return;
+          viewSaver?.flush();
+          if (since === null) clearIdleSidecar();
+          else writeIdleSidecar(sessionId, since);
+        },
+        busy(replaying) {
+          const dialog = replayDialog.current;
+          if (replaying) {
+            keyboardHandler?.destroy();
+            if (dialog && !dialog.open) dialog.showModal();
+          } else {
+            dialog?.close();
+            if (!destroyed) keyboardHandler?.initialize();
+            restartBotIfReady();
+          }
+        },
+        completed(summary) {
+          const state = useGameStore.getState();
+          state.setIdleSummary(summary);
+          state.setSimulationTime(engine.simulationTime);
+          state.bumpWorldVersion();
+        },
+      });
 
       gridRenderer = new GridRenderer(app, engine);
       terrainDecalRenderer = new TerrainDecalRenderer(app, engine);
@@ -339,7 +355,11 @@ export function GameCanvas() {
         }
       });
 
-      currentInputHandler.setHoverCallback(useGameStore.getState().setHoverTile);
+      inputHandler = currentInputHandler;
+      currentInputHandler.setHoverCallback(
+        useGameStore.getState().setHoverTile,
+        (x, y) => currentBeltToolController.onPointerMove(x, y),
+      );
       currentInputHandler.setBuildingSelectedCallback((buildingId) => {
         const state = useGameStore.getState();
         state.setSelectedBuilding(buildingId);
@@ -393,7 +413,6 @@ export function GameCanvas() {
         mouseScreenPos.y = e.offsetY;
         mouseScreenPos.valid = true;
         currentInputHandler.onPointerMove(e.offsetX, e.offsetY);
-        currentBeltToolController.onPointerMove(e.offsetX, e.offsetY);
       };
       handlePointerUp = (e) => {
         currentInputHandler.onPointerUp();
@@ -432,44 +451,22 @@ export function GameCanvas() {
         }
       };
       handleVisibilityChange = () => {
-        if (document.visibilityState === 'hidden') {
-          if (simState === 'PAUSED') return;
-          worldSaver?.flush();
-          viewSaver?.flush();
-          pausedAtWallClockMs = Date.now();
-          writeIdleSidecar(sessionId, pausedAtWallClockMs);
-          simState = 'PAUSED';
-          return;
-        }
-        if (document.visibilityState === 'visible') {
-          if (simState !== 'PAUSED' || pausedAtWallClockMs === null) return;
-          const elapsedMs = Math.max(0, Date.now() - pausedAtWallClockMs);
-          simState = 'ACTIVE';
-          pausedAtWallClockMs = null;
-          clearIdleSidecar();
-          applyIdleBatchCatchup(elapsedMs);
+        const state = useGameStore.getState();
+        if (document.hidden) {
+          if (state.bot.active) {
+            restartBot = true;
+            state.botControls?.stop();
+          }
+          offline?.suspend(state.simulationSpeed > 0);
+        } else {
+          offline?.resume();
+          restartBotIfReady();
         }
       };
       handleBeforeUnload = () => {
-        if (hasPendingScenarioInstall()) {
-          return;
-        }
-        worldSaver?.flush();
-        viewSaver?.flush();
-        if (simState !== 'PAUSED') {
-          writeIdleSidecar(sessionId, Date.now());
-        }
+        if (!hasPendingScenarioInstall()) offline?.checkpointForExit(useGameStore.getState().simulationSpeed > 0);
       };
-      handlePageHide = () => {
-        if (hasPendingScenarioInstall()) {
-          return;
-        }
-        worldSaver?.flush();
-        viewSaver?.flush();
-        if (simState !== 'PAUSED') {
-          writeIdleSidecar(sessionId, Date.now());
-        }
-      };
+      handlePageHide = handleBeforeUnload;
 
       canvas.addEventListener('pointerdown', handlePointerDown);
       canvas.addEventListener('pointermove', handlePointerMove);
@@ -482,6 +479,9 @@ export function GameCanvas() {
       window.addEventListener('beforeunload', handleBeforeUnload);
       window.addEventListener('pagehide', handlePageHide);
 
+      if (sidecar) offline.restore(sidecar.pausedAtWallClockMs);
+      handleVisibilityChange();
+
       resizeObserver = new ResizeObserver(() => {
         if (app) engine.viewport.resize(app.screen.width, app.screen.height);
       });
@@ -489,7 +489,7 @@ export function GameCanvas() {
 
       app.ticker.add((ticker) => {
         const state = useGameStore.getState();
-        if (simState === 'PAUSED' || (typeof document !== 'undefined' && document.hidden)) {
+        if (!offline?.active || document.hidden) {
           return;
         }
         const dtSeconds = ticker.deltaMS / 1000;
@@ -583,18 +583,21 @@ export function GameCanvas() {
 
     return () => {
       destroyed = true;
+      unsubscribeTakeover?.();
       if (initCompleted) {
         const shouldPersistOnCleanup = useGameStore.getState().engine === currentEngine;
         if (shouldPersistOnCleanup && !hasPendingScenarioInstall()) {
-          worldSaver?.flush();
-          viewSaver?.flush();
+          offline?.checkpointForExit(useGameStore.getState().simulationSpeed > 0);
         }
+        offline?.destroy();
         botSession?.destroy();
         worldSaver?.cancel();
         viewSaver?.cancel();
         unsubscribeTool?.();
         unsubscribeEngine?.();
         unsubscribeActions?.();
+        unbindLogAutoSave?.();
+
         resizeObserver?.disconnect();
         if (app?.canvas && handlePointerDown) app.canvas.removeEventListener('pointerdown', handlePointerDown);
         if (app?.canvas && handlePointerMove) app.canvas.removeEventListener('pointermove', handlePointerMove);
@@ -616,6 +619,7 @@ export function GameCanvas() {
         dayNightOverlayRenderer?.destroy();
         minimapRenderer?.destroy();
         keyboardHandler?.destroy();
+        inputHandler?.destroy();
         buildingRenderer?.destroy();
         resourceRenderer?.destroy();
         terrainDecalRenderer?.destroy();
@@ -631,5 +635,23 @@ export function GameCanvas() {
     setSeedInput,
   ]);
 
-  return <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />;
+  return (
+    <>
+      <div ref={containerRef} className={`w-full h-full ${CURSOR_CLASS[selectedToolKind]}`} />
+      {saveFailed && (
+        <p role="alert" className="absolute inset-x-0 top-0 z-50 mx-auto w-fit border border-accent-warm bg-surface px-3 py-2 text-sm text-ink">
+          Sauvegarde indisponible. Gardez cet onglet ouvert pour conserver votre progression.
+        </p>
+      )}
+      <dialog
+        ref={replayDialog}
+        aria-label="Progression hors ligne"
+        onCancel={(event) => event.preventDefault()}
+        onKeyDown={(event) => event.stopPropagation()}
+        className="m-auto rounded-md border border-border bg-surface px-4 py-3 text-sm text-ink backdrop:bg-bg/75"
+      >
+        Calcul de la progression hors ligne…
+      </dialog>
+    </>
+  );
 }

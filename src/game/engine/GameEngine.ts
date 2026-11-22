@@ -76,6 +76,8 @@ import type { GameSfxEvent, GameSfxListener } from '@/game/audio/sfxEvents';
 import {
   resolveDownstreamTerminalFromOutput,
   resolveProcessorLogisticsStatus,
+  resolveUpstreamProvidersForInputPort,
+  type DownstreamTerminal,
   type ProcessorLogisticsStatus,
 } from '@/game/flow/processorLogistics';
 
@@ -142,6 +144,9 @@ export interface SerializedGameWorld {
   readonly connections: SerializedConnectionRegistry;
   readonly energyLinks?: readonly { readonly a: BuildingId; readonly b: BuildingId }[];
   readonly simulationTime?: number;
+  readonly simulationRemainder?: number;
+  readonly extractionAccumulator?: number;
+  readonly dayNightCycleSeconds?: number;
   readonly batteryCharges?: readonly { readonly id: BuildingId; readonly charge: number }[];
   readonly processorStates?: readonly { readonly id: BuildingId; readonly recipeId: RecipeId | null; readonly cycleProgress: number }[];
   readonly storageInventories?: readonly { readonly id: BuildingId; readonly inventory: ResourceInventory }[];
@@ -164,6 +169,14 @@ interface GameEngineOptions {
 
 const SERIALIZE_VERSION = 3;
 
+interface SimulationNetwork {
+  readonly consumers: BuildingId[];
+  readonly batteries: BuildingId[];
+  readonly solar: number;
+  readonly generation: number;
+  readonly demand: number;
+}
+
 interface BatteryBuildingRef {
   readonly id: BuildingId;
   readonly charge: number;
@@ -173,6 +186,8 @@ interface BatteryBuildingRef {
 }
 
 export class GameEngine {
+  // The clock, production and battery integration use identical quanta at any frame rate.
+  private static readonly STEP_SECONDS = 0.1;
   private static readonly EXTRACTION_INTERVAL_S = 60 / EXTRACTOR_RATE_PER_MIN;
   private static readonly EMPTY_RESOURCE_STOCK = (): ResourceStock => ({
     regolith: 0, hydrogen: 0, oxygen: 0,
@@ -186,7 +201,8 @@ export class GameEngine {
   readonly connections: ConnectionRegistry;
   readonly energyNetwork: EnergyNetwork;
   readonly dayNightCycleSeconds: number;
-  simulationTime = 0;
+  private stepTime = 0;
+  private simulationRemainder = 0;
   mapSeed: number;
   /** Fixed for the lifetime of the world. */
   readonly gameMode: GameMode;
@@ -202,6 +218,12 @@ export class GameEngine {
   private hasPendingWorldNotification = false;
   private hasPendingViewportNotification = false;
   private extractionAccumulator = 0;
+  private energyTopologyVersion = -1;
+  private simulationNetworks: SimulationNetwork[] = [];
+  private logisticsVersion = -1;
+  private readonly downstream = new Map<BuildingId, DownstreamTerminal | null>();
+  private readonly providersByPort = new Map<BuildingId, Map<PortId, readonly BuildingId[]>>();
+  private readonly logisticsByProcessor = new Map<BuildingId, ProcessorLogisticsStatus | null>();
   private readonly poweredExtractors = new Set<BuildingId>();
   private readonly poweredConsumers = new Set<BuildingId>();
   private hubIdCache: BuildingId | null = null;
@@ -213,7 +235,11 @@ export class GameEngine {
   constructor(screenWidth: number, screenHeight: number, options: GameEngineOptions = {}) {
     validateCatalog();
     this.grid = options.grid ?? new TileGrid();
-    this.grid.setOnChange(() => this.notify('world'));
+    this.grid.setOnChange(() => {
+      this.logisticsByProcessor.clear();
+      this.providersByPort.clear();
+      this.notify('world');
+    });
     this.viewport = new Viewport(screenWidth, screenHeight, () => this.notify('viewport'));
     this.buildings = options.buildings ?? new BuildingRegistry();
     this.connections = options.connections ?? new ConnectionRegistry();
@@ -221,13 +247,23 @@ export class GameEngine {
     this.mapSeed = options.mapSeed ?? DEFAULT_MAP_SEED;
     this.gameMode = options.gameMode ?? DEFAULT_GAME_MODE;
     this.dayNightCycleSeconds =
-      options.dayNightCycleSeconds && options.dayNightCycleSeconds > 0
+      typeof options.dayNightCycleSeconds === 'number' && Number.isFinite(options.dayNightCycleSeconds) && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
         : 120;
   }
 
+  get simulationTime(): number {
+    return (this.stepTime + this.simulationRemainder / this.dayNightCycleSeconds) % 1;
+  }
+
+  set simulationTime(value: number) {
+    this.setSimulationTime(value);
+  }
+
   setSimulationTime(value: number): void {
-    this.simulationTime = ((value % 1) + 1) % 1;
+    const stepTime = value - this.simulationRemainder / this.dayNightCycleSeconds;
+    this.stepTime = ((stepTime % 1) + 1) % 1;
+    if (this.syncPowerState()) this.notify('world');
   }
 
   setActionListener(listener: (action: { kind: string; payload: Record<string, unknown> }) => void): () => void {
@@ -241,43 +277,38 @@ export class GameEngine {
     }
   }
 
-  update(dt: number): void {
+  update(dt: number, { emitSfx = true }: { emitSfx?: boolean } = {}): void {
     if (!Number.isFinite(dt) || dt <= 0) return;
 
-    // Day/night cycle
-    const cycleSeconds = this.dayNightCycleSeconds;
-    if (Number.isFinite(cycleSeconds) && cycleSeconds > 0) {
-      const next = this.simulationTime + dt / cycleSeconds;
-      this.simulationTime = ((next % 1) + 1) % 1;
+    const step = GameEngine.STEP_SECONDS;
+    const accumulated = this.simulationRemainder + dt;
+    // Absorb roundoff when repeated frame deltas land exactly on a tick.
+    const ticks = Math.floor((accumulated + 1e-10) / step);
+    this.simulationRemainder = 0;
+    for (let tick = 0; tick < ticks; tick++) {
+      this.stepTime = ((this.stepTime + step / this.dayNightCycleSeconds) % 1 + 1) % 1;
+      let powerChanged = this.syncPowerState(emitSfx);
+      // Advance work already supplied during this interval before the next extraction arrives.
+      this.processProcessors(step);
+      this.extractionAccumulator += step;
+      if (this.extractionAccumulator + 1e-10 >= GameEngine.EXTRACTION_INTERVAL_S) {
+        this.extractionAccumulator = Math.max(0, this.extractionAccumulator - GameEngine.EXTRACTION_INTERVAL_S);
+        this.processExtraction();
+      }
+      if (this.batteryCharges.size > 0) {
+        this.updateBatteries(step);
+        powerChanged = this.syncPowerState(emitSfx) || powerChanged;
+      }
+      if (powerChanged) this.notify('world');
     }
-
-    // Resource extraction
-    this.extractionAccumulator += dt;
-    if (this.extractionAccumulator >= GameEngine.EXTRACTION_INTERVAL_S) {
-      this.extractionAccumulator -= GameEngine.EXTRACTION_INTERVAL_S;
-      this.processExtraction();
-    }
-
-    // Processor production
-    this.processProcessors(dt);
-
-    // Battery charge/discharge
-    this.updateBatteries(dt);
-
-    // Power can change with time alone (night, empty batteries): views such as
-    // the belt flow animation only refresh on world notifications.
-    if (this.syncPowerState()) {
-      this.notify('world');
-    }
+    this.simulationRemainder = Math.max(0, accumulated - ticks * step);
   }
 
   private processExtraction(): void {
     let changed = false;
-    for (const [id, building] of this.buildings.getAll().entries()) {
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
+    for (const id of this.poweredExtractors) {
       if (!this.releaseHeldOutput(id)) continue;
-      const { x, y } = building.origin;
+      const { x, y } = this.buildings.get(id)!.origin;
       const idx = toIndex(x, y);
       const resourceType = this.grid.resourceType[idx] as ResourceTypeT;
       if (resourceType === ResourceType.None) continue;
@@ -295,7 +326,7 @@ export class GameEngine {
     let changed = false;
     for (const [id, state] of this.processorStates) {
       if (!state.recipeId) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
+      if (!this.poweredConsumers.has(id)) continue;
       if (!this.releaseHeldOutput(id)) continue;
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
@@ -308,8 +339,8 @@ export class GameEngine {
       }
 
       state.cycleProgress += dt;
-      if (state.cycleProgress >= recipe.cycleSeconds) {
-        state.cycleProgress -= recipe.cycleSeconds;
+      if (state.cycleProgress + 1e-10 >= recipe.cycleSeconds) {
+        state.cycleProgress = 0;
         this.processorReservations.delete(id);
         this.producerOutputBuffers.set(id, {
           resourceType: recipe.output.resourceType,
@@ -327,7 +358,7 @@ export class GameEngine {
     if (!state) return false;
     const building = this.buildings.get(buildingId);
     if (!building) return false;
-    if (!this.isProcessorIdle(buildingId, state)) return false;
+    if (!this.isProcessorIdle(buildingId)) return false;
 
     if (recipeId !== null) {
       const recipe = getRecipe(recipeId);
@@ -337,6 +368,8 @@ export class GameEngine {
       if (!this.isRecipeUnlocked(recipeId)) return false;
     }
 
+    this.logisticsByProcessor.clear();
+    this.providersByPort.clear();
     state.recipeId = recipeId;
     state.cycleProgress = 0;
     this.processorReservations.delete(buildingId);
@@ -384,14 +417,15 @@ export class GameEngine {
 
     // 1 day-night cycle = 1 sim-hour. Catalog values (kW, kWh) scale with cycle length.
     const dtHours = dt / this.dayNightCycleSeconds;
-    for (const network of this.getEnergyNetworkBalances()) {
-      const netPower = network.remaining;
-      const batteries = this.collectBatteries(network.buildingIds);
-      if (batteries.length === 0) continue;
+    const daylight = getDaylightFactor(this.stepTime);
+    for (const network of this.getSimulationNetworks()) {
+      if (network.batteries.length === 0) continue;
+      const netPower = network.generation + network.solar * daylight - network.demand;
+      const batteries = this.collectBatteries(network.batteries);
 
       if (netPower > 0) {
         this.distributeBatteryCharge(batteries, netPower, dtHours);
-      } else if (netPower < 0 && this.isNetworkPowered(network)) {
+      } else if (netPower < 0 && this.getNetworkDischargeRate(network.batteries) >= -netPower) {
         this.distributeBatteryDischarge(batteries, -netPower, dtHours);
       }
     }
@@ -600,6 +634,8 @@ export class GameEngine {
 
     this.connections.unregisterAllFor(id);
     this.energyNetwork.unregisterBuilding(id);
+    this.poweredConsumers.delete(id);
+    this.poweredExtractors.delete(id);
     this.batteryCharges.delete(id);
     this.storageInventories.delete(id);
     this.producerOutputBuffers.delete(id);
@@ -807,7 +843,11 @@ export class GameEngine {
   }
 
   getProcessorLogisticsStatus(buildingId: BuildingId): ProcessorLogisticsStatus | null {
-    return resolveProcessorLogisticsStatus(this, buildingId);
+    this.refreshLogisticsCache();
+    if (!this.logisticsByProcessor.has(buildingId)) {
+      this.logisticsByProcessor.set(buildingId, resolveProcessorLogisticsStatus(this, buildingId));
+    }
+    return this.logisticsByProcessor.get(buildingId) ?? null;
   }
 
   getBuildingTypeDefinition(typeId: BuildingTypeId) {
@@ -1366,7 +1406,10 @@ export class GameEngine {
       buildings: this.buildings.serialize(),
       connections: this.connections.serialize(),
       energyLinks,
-      simulationTime: this.simulationTime,
+      simulationTime: this.stepTime,
+      simulationRemainder: this.simulationRemainder,
+      extractionAccumulator: this.extractionAccumulator,
+      dayNightCycleSeconds: this.dayNightCycleSeconds,
       batteryCharges,
       processorStates,
       storageInventories,
@@ -1387,6 +1430,7 @@ export class GameEngine {
       connections: ConnectionRegistry.deserialize(snapshot.connections),
       mapSeed: snapshot.mapSeed,
       gameMode: resolveGameMode(snapshot.gameMode),
+      dayNightCycleSeconds: snapshot.dayNightCycleSeconds,
     });
 
     for (const connection of engine.connections.getAll().values()) {
@@ -1421,8 +1465,14 @@ export class GameEngine {
     }
 
     if (typeof snapshot.simulationTime === 'number' && Number.isFinite(snapshot.simulationTime)) {
-      engine.simulationTime = ((snapshot.simulationTime % 1) + 1) % 1;
+      engine.stepTime = snapshot.simulationTime >= 0 && snapshot.simulationTime < 1
+        ? snapshot.simulationTime
+        : ((snapshot.simulationTime % 1) + 1) % 1;
     }
+    const remainder = snapshot.simulationRemainder ?? 0;
+    if (Number.isFinite(remainder) && remainder >= 0 && remainder < GameEngine.STEP_SECONDS) engine.simulationRemainder = remainder;
+    const extraction = snapshot.extractionAccumulator ?? 0;
+    if (Number.isFinite(extraction) && extraction >= 0 && extraction < GameEngine.EXTRACTION_INTERVAL_S) engine.extractionAccumulator = extraction;
     for (const entry of snapshot.batteryCharges ?? []) {
       if (engine.batteryCharges.has(entry.id)) {
         const building = engine.buildings.get(entry.id);
@@ -1482,21 +1532,33 @@ export class GameEngine {
     return this.viewport.getSnapshot();
   }
 
-  private isProcessorIdle(buildingId: BuildingId, state: ProcessorState): boolean {
+  private isProcessorIdle(buildingId: BuildingId): boolean {
     return (
-      state.cycleProgress === 0 &&
       !this.producerOutputBuffers.get(buildingId) &&
       (this.processorReservations.get(buildingId)?.length ?? 0) === 0
     );
   }
 
-  private hasValidDownstream(buildingId: BuildingId): boolean {
+  private refreshLogisticsCache(): void {
+    if (this.connections.version === this.logisticsVersion) return;
+    this.logisticsVersion = this.connections.version;
+    this.downstream.clear();
+    this.providersByPort.clear();
+    this.logisticsByProcessor.clear();
+  }
+
+  private getOutputTerminal(buildingId: BuildingId): DownstreamTerminal | null {
+    this.refreshLogisticsCache();
+    if (this.downstream.has(buildingId)) return this.downstream.get(buildingId) ?? null;
     const building = this.buildings.get(buildingId);
-    if (!building) return false;
-    const type = getBuildingType(building.typeId);
-    const outputPort = type?.ports.find((port) => port.kind === PortKind.Output);
-    if (!outputPort) return false;
-    return resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id) !== null;
+    const outputPort = building && getBuildingType(building.typeId)?.ports.find((port) => port.kind === PortKind.Output);
+    const terminal = outputPort ? resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id) : null;
+    this.downstream.set(buildingId, terminal);
+    return terminal;
+  }
+
+  private hasValidDownstream(buildingId: BuildingId): boolean {
+    return this.getOutputTerminal(buildingId) !== null;
   }
 
   /**
@@ -1515,13 +1577,7 @@ export class GameEngine {
     const buffer = this.producerOutputBuffers.get(buildingId);
     if (!buffer) return false;
 
-    const building = this.buildings.get(buildingId);
-    if (!building) return false;
-    const type = getBuildingType(building.typeId);
-    const outputPort = type?.ports.find((port) => port.kind === PortKind.Output);
-    if (!outputPort) return false;
-
-    const terminal = resolveDownstreamTerminalFromOutput(this, buildingId, outputPort.id);
+    const terminal = this.getOutputTerminal(buildingId);
     if (!terminal || terminal.kind !== 'storage') return false;
 
     const inventory = this.storageInventories.get(terminal.buildingId);
@@ -1559,7 +1615,6 @@ export class GameEngine {
         const providerId = providers[index]!;
         const buffer = this.producerOutputBuffers.get(providerId);
         if (!buffer || buffer.amount <= 0) return null;
-        this.producerOutputBuffers.set(providerId, null);
         usedProviders.add(providerId);
         reservations.push({
           resourceType: assignment.requiredResourceType,
@@ -1569,62 +1624,33 @@ export class GameEngine {
       }
     }
 
+    // Commit only once all inputs are available. An empty second port must leave the first intact.
+    for (const { providerId } of reservations) this.producerOutputBuffers.set(providerId, null);
     return reservations;
   }
 
-  private resolveReachableProviders(buildingId: BuildingId, portId: PortId): BuildingId[] {
-    const visited = new Set<BuildingId>();
-    const queue = this
-      .getConnectionsOf(buildingId)
-      .filter((connection) => connection.to.building === buildingId && connection.to.port === portId)
-      .map((connection) => connection.from.building);
-    const providers: BuildingId[] = [];
-
-    while (queue.length > 0) {
-      const currentId = queue.shift()!;
-      if (visited.has(currentId)) continue;
-      visited.add(currentId);
-      const building = this.buildings.get(currentId);
-      if (!building) continue;
-      if (building.typeId === EXTRACTOR_BUILDING_TYPE_ID || isProcessorTypeId(building.typeId)) {
-        providers.push(currentId);
-        continue;
-      }
-      if (isStorageTypeId(building.typeId)) continue;
-      for (const connection of this.getConnectionsOf(currentId)) {
-        if (connection.to.building !== currentId) continue;
-        queue.push(connection.from.building);
-      }
+  private resolveReachableProviders(buildingId: BuildingId, portId: PortId): readonly BuildingId[] {
+    this.refreshLogisticsCache();
+    let byPort = this.providersByPort.get(buildingId);
+    if (!byPort) {
+      byPort = new Map();
+      this.providersByPort.set(buildingId, byPort);
     }
-
-    providers.sort((a, b) => a - b);
-    return providers;
+    const cached = byPort.get(portId);
+    if (cached) return cached;
+    const { reachableProviders } = resolveUpstreamProvidersForInputPort(this, buildingId, portId);
+    byPort.set(portId, reachableProviders);
+    return reachableProviders;
   }
 
   private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {
-    let production = 0;
-    let consumption = 0;
-    const daylightFactor = getDaylightFactor(this.simulationTime);
-
-    for (const buildingId of buildingIds) {
-      const building = this.buildings.get(buildingId);
-      if (!building) continue;
-      const type = getBuildingType(building.typeId);
-      if (!type?.energy) continue;
-      const baseProduction = type.energy.production ?? 0;
-      if (baseProduction > 0 && building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
-        production += baseProduction * daylightFactor;
-      } else {
-        production += baseProduction;
-      }
-      consumption += type.energy.consumption ?? 0;
-    }
-
+    const network = this.describeEnergyNetwork(buildingIds);
+    const production = network.generation + network.solar * getDaylightFactor(this.simulationTime);
     return {
       buildingIds: [...buildingIds].sort((a, b) => a - b),
       production,
-      consumption,
-      remaining: production - consumption,
+      consumption: network.demand,
+      remaining: production - network.demand,
     };
   }
 
@@ -1634,38 +1660,60 @@ export class GameEngine {
     return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
 
-  /**
-   * Refresh which consumers are powered. Returns true when any consumer gained
-   * or lost power since the last sync, so time-driven changes (nightfall, a
-   * battery running dry) can be reported to the views.
-   */
-  private syncPowerState(emitSfx = true): boolean {
-    const nextExtractors = new Set<BuildingId>();
-    const nextConsumers = new Set<BuildingId>();
-    for (const [id, building] of this.buildings.getAll().entries()) {
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
-      nextConsumers.add(id);
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
-      nextExtractors.add(id);
-      if (emitSfx && !this.poweredExtractors.has(id)) {
-        this.publishSfx({ type: 'extractor_on' });
-      }
+  /** Electrical topology is stable between edits, including during a long offline replay. */
+  private getSimulationNetworks(): readonly SimulationNetwork[] {
+    if (this.energyTopologyVersion === this.energyNetwork.version) return this.simulationNetworks;
+    this.energyTopologyVersion = this.energyNetwork.version;
+    this.simulationNetworks = [];
+    for (const ids of this.energyNetwork.getComponents()) {
+      const network = this.describeEnergyNetwork(ids);
+      if (network.consumers.length || network.batteries.length) this.simulationNetworks.push(network);
     }
+    return this.simulationNetworks;
+  }
 
-    let changed = nextConsumers.size !== this.poweredConsumers.size;
-    if (!changed) {
-      for (const id of nextConsumers) {
-        if (!this.poweredConsumers.has(id)) {
-          changed = true;
-          break;
+  private describeEnergyNetwork(ids: readonly BuildingId[]): SimulationNetwork {
+    const consumers: BuildingId[] = [];
+    const batteries: BuildingId[] = [];
+    let solar = 0;
+    let generation = 0;
+    let demand = 0;
+    for (const id of ids) {
+      const building = this.buildings.get(id);
+      const energy = building && getBuildingType(building.typeId)?.energy;
+      if (!energy) continue;
+      if (energy.battery) batteries.push(id);
+      if (energy.consumption) {
+        consumers.push(id);
+        demand += energy.consumption;
+      }
+      if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) solar += energy.production ?? 0;
+      else generation += energy.production ?? 0;
+    }
+    return { consumers, batteries, solar, generation, demand };
+  }
+
+  private syncPowerState(emitSfx = true): boolean {
+    const daylight = getDaylightFactor(this.stepTime);
+    let changed = false;
+    for (const network of this.getSimulationNetworks()) {
+      const deficit = network.demand - (network.generation + network.solar * daylight);
+      const powered = deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
+      for (const id of network.consumers) {
+        if (this.poweredConsumers.has(id) === powered) continue;
+        changed = true;
+        if (powered) {
+          this.poweredConsumers.add(id);
+          if (this.buildings.get(id)?.typeId === EXTRACTOR_BUILDING_TYPE_ID) {
+            this.poweredExtractors.add(id);
+            if (emitSfx) this.publishSfx({ type: 'extractor_on' });
+          }
+        } else {
+          this.poweredConsumers.delete(id);
+          this.poweredExtractors.delete(id);
         }
       }
     }
-
-    this.poweredExtractors.clear();
-    for (const id of nextExtractors) this.poweredExtractors.add(id);
-    this.poweredConsumers.clear();
-    for (const id of nextConsumers) this.poweredConsumers.add(id);
     return changed;
   }
 

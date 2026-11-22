@@ -8,9 +8,9 @@ import { runScenario } from './runScenario';
 import type { PreparedScenarioResult } from './types';
 
 function applyPreparedScenarioToLiveSession(result: PreparedScenarioResult, logMessage: string): void {
-  markPendingScenarioInstall();
   const state = useGameStore.getState();
-  installPersistedSession({
+  state.actionLogger?.flush();
+  const installed = installPersistedSession({
     engine: result.engine,
     selectedTool: result.selectedTool,
     selectedBotProfileId: state.selectedBotProfileId,
@@ -19,6 +19,11 @@ function applyPreparedScenarioToLiveSession(result: PreparedScenarioResult, logM
     viewport: result.viewport,
   });
 
+  if (!installed) {
+    window.alert("Le navigateur n’a pas pu enregistrer le scénario. La partie en cours est conservée.");
+    return;
+  }
+  markPendingScenarioInstall();
   state.activateScenarioSession({
     engine: result.engine,
     selectedTool: result.selectedTool,

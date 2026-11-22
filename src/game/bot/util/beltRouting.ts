@@ -151,7 +151,8 @@ export function routeProcessorOutputToStorage(
   const storage = engine.getBuildings().get(storageId);
   if (!storage) return { success: false, segmentsPlaced: 0, error: 'storage_not_found' };
 
-  const outputPort = 'out_east' as PortId;
+  const outputPort = getBuildingType(processor.typeId)?.ports.find((port) => port.kind === PortKind.Output)?.id;
+  if (!outputPort) return { success: false, segmentsPlaced: 0, error: 'no_output_port' };
   const approachDirection = calculateApproachDirection(processor.origin, storage.origin);
   const inputPort = findBestPortForApproach(storageId, approachDirection, engine);
 

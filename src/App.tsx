@@ -21,7 +21,7 @@ function App() {
           <GameHUD />
         </>
       )}
-      {startScreenOpen && <StartScreen />}
+      {startScreenOpen && <StartScreen key={sessionStarted ? 'live' : 'boot'} />}
     </div>
   );
 }

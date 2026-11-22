@@ -136,7 +136,7 @@ Each phase ends with a **playtest among the team** and a short written debrief. 
 - **Automated balancing bench**: the Master bot plays seeded runs in accelerated time and reports time-to-milestone; runs in CI to catch balance regressions.
 - Performance target: late-game factory (≈ 2 000 buildings) at 60 fps, simulation tick budget documented.
 - Save robustness: versioned migrations, several save slots, export/import.
-- Fix known generator issues (medium scenario leaves ~30 % of extractors unconnected; ~1/300 complex generations fail the visible-deposit check).
+- Medium and complex generator routing is covered by seeded regressions across mirrored layouts and viewport sizes.
 
 ### 1.0 — Release
 

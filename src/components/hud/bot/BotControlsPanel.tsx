@@ -1,5 +1,6 @@
 import { Play, Square } from 'lucide-react';
-import { applySeedAndResetSession } from '@/game/session/seedSession';
+import { parseSeedInput } from '@/game/bot/seedInput';
+import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { Icon, Panel } from '@/components/ui';
 import { BotProfileSelect } from './BotProfileSelect';
@@ -13,7 +14,14 @@ export function BotControlsPanel() {
   const seedInput = useGameStore((s) => s.seedInput);
   const setSelectedBotProfileId = useGameStore((s) => s.setSelectedBotProfileId);
   const setSeedInput = useGameStore((s) => s.setSeedInput);
-  const resetSession = useGameStore((s) => s.resetSession);
+  const engine = useGameStore((s) => s.engine);
+  const startNewGame = useGameStore((s) => s.startNewGame);
+  const seed = parseSeedInput(seedInput);
+  const canApplySeed = engine !== null && seed !== null && seed !== engine.mapSeed;
+  const applySeed = () => {
+    if (!canApplySeed || !confirmWorldReplacement(engine, `recommencer avec la graine ${seed}`)) return;
+    startNewGame(engine.gameMode, String(seed));
+  };
 
   return (
     <Panel className="pointer-events-auto flex max-w-[320px] flex-col gap-2 px-3 py-2.5 text-ink">
@@ -46,7 +54,8 @@ export function BotControlsPanel() {
         <BotSeedControls
           value={seedInput}
           onChange={setSeedInput}
-          onApply={() => applySeedAndResetSession({ seedInput, setSeedInput, resetSession })}
+          canApply={canApplySeed}
+          onApply={applySeed}
         />
       </div>
     </Panel>

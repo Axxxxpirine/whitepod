@@ -20,6 +20,7 @@ import { getRecipesForBuilding, type Recipe } from '@/game/data/recipeCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { cn } from '@/lib/utils';
+import { useGameStore } from '@/store/useGameStore';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -33,6 +34,9 @@ interface BuildingStatsPanelProps {
 }
 
 export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, engine }: BuildingStatsPanelProps) {
+  const showsTimeDependentEnergy =
+    building.typeId === BATTERY_BASIC_BUILDING_TYPE_ID || building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID;
+  useGameStore((s) => showsTimeDependentEnergy ? s.simulationTime : null);
   if (isBeltTypeId(building.typeId)) return <BeltFlowStats building={building} engine={engine} />;
 
   let rows: React.ReactNode = null;
@@ -149,7 +153,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
     rows = (
       <>
-        <StatRow icon={Sun} label="Production" value={`+${production} kW`} />
+        <StatRow icon={Sun} label="Puissance nominale" value={`${production} kW`} />
         <StatRow
           icon={Zap}
           label={network !== null && network.surplusPower < 0 ? 'Deficit reseau' : 'Surplus reseau'}

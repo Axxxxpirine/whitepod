@@ -82,8 +82,10 @@ export class Viewport {
   }
 
   resize(width: number, height: number): void {
+    if (width === this.screenWidth && height === this.screenHeight) return;
     this.screenWidth = width;
     this.screenHeight = height;
+    this.onChange?.();
   }
 
   getSnapshot(): ViewportSnapshot {

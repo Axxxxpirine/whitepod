@@ -49,7 +49,7 @@ export function runExactCatchup(
   engine.runWithoutNotifications(() => {
     while (remaining > 0) {
       const dt = remaining >= step ? step : remaining;
-      engine.update(dt);
+      engine.update(dt, { emitSfx: false });
       remaining -= dt;
     }
   });

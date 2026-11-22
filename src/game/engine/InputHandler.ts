@@ -8,6 +8,9 @@ export class InputHandler {
   private readonly getSelectedTool: () => SelectedTool;
   private readonly getBuildingRotation: () => Direction;
   private isPanning = false;
+  private readonly unsubscribeViewport: () => void;
+  private pointer: { x: number; y: number } | null = null;
+  private onPointerHover: ((screenX: number, screenY: number) => void) | null = null;
   private lastPanX = 0;
   private lastPanY = 0;
   private onHoverChange: ((tile: { x: number; y: number } | null) => void) | null = null;
@@ -28,10 +31,21 @@ export class InputHandler {
     this.engine = engine;
     this.getSelectedTool = getSelectedTool;
     this.getBuildingRotation = getBuildingRotation;
+    this.unsubscribeViewport = engine.subscribe((kind) => {
+      if (kind === 'viewport' && !this.isPanning) this.updateHover();
+    });
   }
 
-  setHoverCallback(cb: (tile: { x: number; y: number } | null) => void): void {
+  destroy(): void {
+    this.unsubscribeViewport();
+  }
+
+  setHoverCallback(
+    cb: (tile: TileCoord | null) => void,
+    onPointerHover?: (screenX: number, screenY: number) => void,
+  ): void {
     this.onHoverChange = cb;
+    this.onPointerHover = onPointerHover ?? null;
   }
 
   setBuildingPlacedCallback(cb: ((buildingId: BuildingId) => void) | null): void {
@@ -78,6 +92,11 @@ export class InputHandler {
 
     const selectedTool = this.getSelectedTool();
     if (selectedTool.kind === 'select') {
+      if (!this.engine.grid.isRevealed(coord.x, coord.y)) {
+        this.onBuildingSelected?.(null);
+        this.onResourceSelected?.(null);
+        return;
+      }
       const building = this.engine.getBuildingAt(coord.x, coord.y);
       if (building) {
         this.onBuildingSelected?.(building.id);
@@ -135,14 +154,16 @@ export class InputHandler {
       this.lastPanY = screenY;
     }
 
-    if (this.onHoverChange) {
-      const coord = screenToGrid(this.engine.viewport, screenX, screenY);
-      if (isInBounds(coord.x, coord.y)) {
-        this.onHoverChange(coord);
-      } else {
-        this.onHoverChange(null);
-      }
-    }
+    this.pointer = { x: screenX, y: screenY };
+    this.updateHover();
+  }
+
+  private updateHover(): void {
+    if (!this.pointer) return;
+    const { x, y } = this.pointer;
+    const coord = screenToGrid(this.engine.viewport, x, y);
+    this.onHoverChange?.(isInBounds(coord.x, coord.y) ? coord : null);
+    this.onPointerHover?.(x, y);
   }
 
   onPointerUp(): void {
@@ -150,6 +171,7 @@ export class InputHandler {
   }
 
   onPointerLeave(): void {
+    this.pointer = null;
     this.isPanning = false;
     this.onHoverChange?.(null);
   }

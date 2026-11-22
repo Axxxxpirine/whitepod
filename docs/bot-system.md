@@ -580,7 +580,7 @@ As of this revision, the bot system has been simplified to two profiles with dis
 
 Both bots now include:
 - Belt routing (`routeExtractorToStorage`, `routeProcessorOutputToStorage`, `routeExtractorToMerger`, `routeToProcessorInput`)
-- Processor configuration (`configureConverterForResource`, `checkProcessorLogisticsReadiness`)
+- Processor configuration (`configureConnectedConverter`, `checkProcessorLogisticsReadiness`)
 - Resource rate monitoring (`shouldThrottleExtractorPlacement`)
 - Bounded energy sizing (`calculateRequiredSolar`, `calculateRequiredBatteries`, full-sun peak vs demand)
 - Frontier-based exploration for MasterBot (`shouldTriggerExploration` at 10% density, `findFrontierWatchtowerPosition`)

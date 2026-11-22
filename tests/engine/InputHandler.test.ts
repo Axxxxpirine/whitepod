@@ -80,6 +80,32 @@ describe('InputHandler', () => {
     expect(onResourceSelected).toHaveBeenCalledWith({ x: 0, y: 0 });
   });
 
+  it('keeps deposits under the fog hidden when selecting a tile', () => {
+    engine.grid.fill(TileType.Ground);
+    engine.placeResource(0, 0, ResourceType.Hydrogen);
+    const selected = vi.fn();
+    const handler = new InputHandler(engine, () => ({ kind: 'select' }), () => Direction.North);
+    handler.setResourceSelectedCallback(selected);
+    handler.onPointerDown(320, 240, 0);
+    expect(selected).toHaveBeenCalledWith(null);
+  });
+
+  it('keeps a stationary pointer aligned with the camera and clears tracking on exit', () => {
+    const hover = vi.fn();
+    const handler = new InputHandler(engine, () => ({ kind: 'select' }), () => Direction.North);
+    handler.setHoverCallback(hover);
+    handler.onPointerMove(320, 240);
+    handler.onWheel(320, 240, TILE_SIZE, 0, false, 0);
+    expect(hover).toHaveBeenLastCalledWith({ x: 1, y: 0 });
+    engine.viewport.pan(0, TILE_SIZE);
+    expect(hover).toHaveBeenLastCalledWith({ x: 1, y: 1 });
+    engine.viewport.resize(704, 480);
+    expect(hover).toHaveBeenLastCalledWith({ x: 0, y: 1 });
+    handler.onPointerLeave();
+    engine.viewport.pan(0, TILE_SIZE);
+    expect(hover).toHaveBeenLastCalledWith(null);
+  });
+
   it('places the selected building when the selected tool is building', () => {
     const getSelectedTool = (): SelectedTool => ({ kind: 'building', buildingType: 'extractor_basic' });
     const placeBuilding = vi.spyOn(engine, 'placeBuilding');

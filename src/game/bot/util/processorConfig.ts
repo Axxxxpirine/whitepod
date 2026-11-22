@@ -2,7 +2,8 @@ import {
   CONVERTER_BUILDING_TYPE_ID,
   isProcessorTypeId,
 } from '@/game/data/buildingCatalog';
-import { ResourceType, type BuildingId, type ResourceType as ResourceTypeT } from '@/game/types';
+import { type BuildingId, type ResourceType as ResourceTypeT } from '@/game/types';
+import { resolveProcessorLogisticsStatus } from '@/game/flow/processorLogistics';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { getRecipe, getRecipesForBuilding, type RecipeId } from '@/game/data/recipeCatalog';
 
@@ -12,29 +13,15 @@ export interface ProcessorConfigResult {
   error?: string;
 }
 
-const CONVERTER_RECIPES_BY_INPUT: Partial<Record<ResourceTypeT, RecipeId[]>> = {
-  [ResourceType.Regolith]: ['iron_oxide', 'aluminum_oxide', 'silicon_dioxide'],
-  [ResourceType.Oxygen]: ['nitrogen_gas'],
-};
-
-export function configureConverterForResource(
+export function configureConnectedConverter(
   engine: GameEngine,
   converterId: BuildingId,
-  resourceType: ResourceTypeT,
 ): RecipeId | null {
-  const recipes = CONVERTER_RECIPES_BY_INPUT[resourceType] || [];
-
-  const status = engine.getProcessorLogisticsStatus(converterId);
-  if (status?.badInput || status?.missingInput || status?.blockedOutput) {
-    return null;
+  for (const recipe of getRecipesForBuilding('converter')) {
+    const logistics = resolveProcessorLogisticsStatus(engine, converterId, recipe.id);
+    if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
+    if (engine.setProcessorRecipe(converterId, recipe.id)) return recipe.id;
   }
-
-  for (const recipeId of recipes) {
-    if (engine.setProcessorRecipe(converterId, recipeId)) {
-      return recipeId;
-    }
-  }
-
   return null;
 }
 

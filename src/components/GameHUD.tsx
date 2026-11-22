@@ -3,6 +3,8 @@ import { Settings, Shuffle, Zap } from 'lucide-react';
 import { getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
+import type { ScenarioGeneratorListEntry } from '@/game/scenarios/types';
+import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { BotControlsPanel } from './hud/bot/BotControlsPanel';
@@ -69,13 +71,15 @@ export function GameHUD() {
   const globalEnergy = useMemo(() => {
     void energyVersion;
     void worldTick;
+    void simulationTime;
     return engine ? engine.getEnergyGlobalStats() : null;
-  }, [engine, energyVersion, worldTick]);
+  }, [engine, energyVersion, worldTick, simulationTime]);
   const energyStorage = useMemo(() => {
     void energyVersion;
     void worldTick;
+    void simulationTime;
     return engine ? engine.getEnergyStorageTotals() : null;
-  }, [engine, energyVersion, worldTick]);
+  }, [engine, energyVersion, worldTick, simulationTime]);
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
   const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
@@ -165,9 +169,9 @@ export function GameHUD() {
   );
 
   const applyScenarioGenerator = useCallback(
-    (scenarioId: string) => {
-      if (!engine) return;
-      applyScenarioGeneratorToLiveSession(engine, scenarioId);
+    (scenario: ScenarioGeneratorListEntry) => {
+      if (!engine || !confirmWorldReplacement(engine, `ouvrir le scénario « ${scenario.label} » en bac à sable`)) return;
+      applyScenarioGeneratorToLiveSession(engine, scenario.id);
     },
     [engine],
   );
@@ -176,11 +180,16 @@ export function GameHUD() {
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {idleSummaryText && (
         <div className="pointer-events-auto absolute top-3 right-3">
-          <div className="rounded-xl border border-emerald-300/25 bg-black/75 px-3 py-2 text-xs text-white/90 shadow-xl backdrop-blur-md">
-            <div className="font-semibold text-emerald-300">Progression hors ligne: {idleSummaryText.durationLabel}</div>
-            <div className="mt-1 text-white/75">{idleSummaryText.deltaLabel}</div>
-            {idleSummaryText.capped && <div className="mt-0.5 text-[11px] text-amber-300/90">Cap offline appliqué (8h).</div>}
-          </div>
+          <Panel role="status" className="px-3 py-2 text-xs text-ink">
+            <div className="flex items-baseline gap-2">
+              <PanelHeading>Progression hors ligne</PanelHeading>
+              <span className="tabular-nums">{idleSummaryText.durationLabel}</span>
+            </div>
+            <div className="mt-1 tabular-nums text-ink-muted">{idleSummaryText.deltaLabel}</div>
+            {idleSummaryText.capped && (
+              <div className="mt-1 text-accent-warm">Limite de <span className="tabular-nums">8 h</span> atteinte.</div>
+            )}
+          </Panel>
         </div>
       )}
 
@@ -348,7 +357,7 @@ export function GameHUD() {
                       <button
                         key={scenario.id}
                         type="button"
-                        onClick={() => applyScenarioGenerator(scenario.id)}
+                        onClick={() => applyScenarioGenerator(scenario)}
                         className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-sm bg-surface-2 px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink active:bg-accent active:text-bg"
                       >
                         <Shuffle size={9} strokeWidth={1.5} className="shrink-0" />

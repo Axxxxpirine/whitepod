@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { parseSeedInput } from '@/game/bot/seedInput';
 import { GameMode } from '@/game/data/gameMode';
 import { readSavedSessionSummary } from '@/game/persistence/sessionStorage';
+import { isWorldStorageEvent } from '@/game/persistence/sessionSlots';
 import { describeSession, gameModeLabel, summarizeEngine } from '@/game/ui/sessionPresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { cn } from '@/lib/utils';
@@ -46,12 +47,21 @@ function MenuItem({ title, detail, onClick, autoFocus }: MenuItemProps) {
 export function StartScreen() {
   const sessionStarted = useGameStore((s) => s.sessionStarted);
   const engine = useGameStore((s) => s.engine);
+  const saveTakenOver = useGameStore((s) => s.saveTakenOver);
   const storedSeed = useGameStore((s) => s.seedInput);
   const resumeSession = useGameStore((s) => s.resumeSession);
   const startNewGame = useGameStore((s) => s.startNewGame);
 
   // At boot the save is the only game; in play, the live engine is fresher.
-  const [savedAtBoot] = useState(() => (sessionStarted ? null : readSavedSessionSummary()));
+  const [savedAtBoot, setSavedAtBoot] = useState(() => (sessionStarted ? null : readSavedSessionSummary()));
+  useEffect(() => {
+    if (sessionStarted) return;
+    const refreshSave = (event: StorageEvent) => {
+      if (isWorldStorageEvent(event.key)) setSavedAtBoot(readSavedSessionSummary());
+    };
+    window.addEventListener('storage', refreshSave);
+    return () => window.removeEventListener('storage', refreshSave);
+  }, [sessionStarted]);
   const current = sessionStarted && engine ? summarizeEngine(engine) : savedAtBoot;
   const [seed, setSeed] = useState(storedSeed);
   const [pendingMode, setPendingMode] = useState<GameMode | null>(null);
@@ -107,6 +117,10 @@ export function StartScreen() {
           Whitepod
         </h1>
         <p className="mt-1 text-[11px] text-ink-muted">Architecte d'un système automatisé</p>
+
+        {saveTakenOver && (
+          <p role="status" className="mt-2 text-xs text-ink-muted">La partie a été ouverte dans un autre onglet.</p>
+        )}
 
         {pendingMode ? (
           <div role="alertdialog" aria-labelledby="start-screen-confirm" className="mt-8 border-t border-border pt-4">

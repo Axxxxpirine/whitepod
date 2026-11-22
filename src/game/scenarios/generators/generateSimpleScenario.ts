@@ -19,7 +19,7 @@ import type { PreparedScenarioResult } from '../types';
 import {
   advanceSimulation,
   clampTile,
-  countVisibleUncoveredDeposits,
+  countRevealedUncoveredDeposits,
   createScenarioSeed,
   makeViewport,
   mustConnect,
@@ -122,8 +122,8 @@ export function generateSimpleScenario(screenWidth: number, screenHeight: number
   engine.setSimulationTime(0.45);
   advanceSimulation(engine, 18, 0.2);
 
-  if (countVisibleUncoveredDeposits(engine) < 3) {
-    throw new Error('Generated simple scenario did not preserve enough visible deposits');
+  if (countRevealedUncoveredDeposits(engine, visibleDeposits.map(({ coord }) => coord)) < 3) {
+    throw new Error('Generated simple scenario did not preserve enough revealed deposits');
   }
 
   return {

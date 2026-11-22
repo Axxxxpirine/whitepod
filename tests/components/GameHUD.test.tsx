@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { GameHUD } from '@/components/GameHUD';
 import { useGameStore } from '@/store/useGameStore';
@@ -32,6 +32,8 @@ function countUncoveredResources(engine: GameEngine): number {
 }
 
 describe('GameHUD', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   beforeEach(() => {
     useGameStore.setState({
       engine: null,
@@ -340,8 +342,11 @@ describe('GameHUD', () => {
     expect(stop).toHaveBeenCalled();
   });
 
-  it('updates the bot profile and seed before reset', () => {
-    useGameStore.setState({ selectedBotProfileId: 'master', seedInput: '42' });
+  it('replaces a continued campaign with a new seed only after confirmation and keeps its mode', () => {
+    const engine = new GameEngine(640, 480, { gameMode: 'campaign' });
+    engine.generateMap(42);
+    useGameStore.setState({ engine, newGameMode: 'sandbox', selectedBotProfileId: 'master', seedInput: '42' });
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
 
     render(<GameHUD />);
 
@@ -349,9 +354,24 @@ describe('GameHUD', () => {
     fireEvent.change(screen.getByLabelText('Seed input'), { target: { value: '77' } });
     fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
 
+    expect(useGameStore.getState().engine).toBe(engine);
+    expect(useGameStore.getState().sessionEpoch).toBe(0);
+    fireEvent.keyDown(screen.getByLabelText('Seed input'), { key: 'Enter' });
+    expect(useGameStore.getState().newGameMode).toBe('campaign');
     expect(useGameStore.getState().selectedBotProfileId).toBe('connector');
     expect(useGameStore.getState().seedInput).toBe('77');
     expect(useGameStore.getState().sessionEpoch).toBe(1);
+  });
+
+  it('keeps the active world when Apply is used with the same seed', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, seedInput: String(engine.mapSeed) });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<GameHUD />);
+    fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
+    fireEvent.keyDown(screen.getByLabelText('Seed input'), { key: 'Enter' });
+    expect(useGameStore.getState().engine).toBe(engine);
+    expect(useGameStore.getState().sessionEpoch).toBe(0);
   });
 
   it('updates SFX volume from the settings popover', () => {
@@ -392,6 +412,24 @@ describe('GameHUD', () => {
     expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
     expect(screen.queryByText('Non servie 0 kW')).not.toBeInTheDocument();
     expect(screen.getByText('Stockage 1.7 / 10 kWh')).toBeInTheDocument();
+  });
+
+  it('updates solar production and battery charge when only the simulation clock changes', () => {
+    const engine = makeEngine();
+    engine.setSimulationTime(0.25);
+    const solar = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    const battery = engine.placeBuilding(BATTERY_BASIC_BUILDING_TYPE_ID, { x: 10, y: 8 })!;
+    engine.connectBuildings(solar, battery);
+    useGameStore.setState({ engine, simulationTime: 0.25, selectedBuildingId: battery, selectedBuildingAnchor: { x: 120, y: 160 } });
+    render(<GameHUD />);
+    expect(screen.getByText('Prod. 0 kW')).toBeInTheDocument();
+    act(() => {
+      for (let i = 0; i < 1800; i++) engine.update(1 / 60);
+      useGameStore.getState().setSimulationTime(engine.simulationTime);
+    });
+    expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
+    expect(screen.getByText('Stockage 1.9 / 10 kWh')).toBeInTheDocument();
+    expect(screen.getByText('Reserve 1.9 / 10 kWh')).toBeInTheDocument();
   });
 
   it('shows deficit and unmet demand without ambiguous energy labels', () => {
@@ -481,15 +519,22 @@ describe('GameHUD', () => {
     expect(screen.getByRole('button', { name: /Complex/i })).toBeInTheDocument();
   });
 
-  it('generates a playable starter scenario from the debug panel', () => {
-    const engine = makeEngine();
+  it('only replaces the current campaign with a generated sandbox after confirmation', () => {
+    const engine = new GameEngine(640, 480, { gameMode: 'campaign' });
+    engine.generateMap(42);
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
     useGameStore.setState({ engine, simulationTime: 0 });
     render(<GameHUD />);
 
     fireEvent.click(screen.getByRole('button', { name: '▼' }));
     fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
 
+    expect(useGameStore.getState().engine).toBe(engine);
+    expect(useGameStore.getState().sessionEpoch).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
+
     const state = useGameStore.getState();
+    expect(state.engine?.gameMode).toBe('sandbox');
     expect(state.engine?.getBuildings().size).toBeGreaterThanOrEqual(9);
     expect(state.selectedTool).toEqual({ kind: 'select' });
     expect(state.simulationTime).toBeGreaterThan(0);

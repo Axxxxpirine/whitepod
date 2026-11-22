@@ -7,14 +7,13 @@ import {
   CONVERTER_BUILDING_TYPE_ID,
   STORAGE_BUILDING_TYPE_ID,
   getBuildingType,
-  isProcessorTypeId,
   resourceTypeLabel,
 } from '@/game/data/buildingCatalog';
 import { Direction, ResourceType, type BuildingId, type BuildingTypeId, type ResourceType as ResourceTypeT, type TileCoord } from '@/game/types';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import type { BotLifecycle, BotStatus } from './botTypes';
 import { routeExtractorToStorage } from './util/beltRouting';
-import { configureConverterForResource, checkProcessorLogisticsReadiness, shouldConfigureProcessor } from './util/processorConfig';
+import { configureConnectedConverter, shouldConfigureProcessor } from './util/processorConfig';
 import { calculateRequiredSolar, calculateRequiredBatteries } from './util/energyPlanning';
 import { shouldThrottleExtractorPlacement } from './util/resourceAnalysis';
 
@@ -344,38 +343,14 @@ export class MasterBot implements BotLifecycle {
 
   private configureProcessors(): boolean {
     for (const [id, building] of this.engine.getBuildings()) {
-      if (!isProcessorTypeId(building.typeId)) continue;
-
-      if (!shouldConfigureProcessor(this.engine, id)) continue;
-
-      if (!checkProcessorLogisticsReadiness(this.engine, id)) continue;
-
-      const resourceType = this.findResourceForProcessor(id);
-      if (!resourceType) continue;
-
-      if (building.typeId === CONVERTER_BUILDING_TYPE_ID) {
-        const recipeId = configureConverterForResource(this.engine, id, resourceType);
-        if (recipeId) {
-          this.setStatus({ active: true, phase: 'processing', target: `recipe: ${recipeId}` });
-          return true;
-        }
+      if (building.typeId !== CONVERTER_BUILDING_TYPE_ID || !shouldConfigureProcessor(this.engine, id)) continue;
+      const recipeId = configureConnectedConverter(this.engine, id);
+      if (recipeId) {
+        this.setStatus({ active: true, phase: 'processing', target: `recipe: ${recipeId}` });
+        return true;
       }
     }
-
     return false;
-  }
-
-  private findResourceForProcessor(_processorId: BuildingId): ResourceTypeT | null {
-    for (const [, building] of this.engine.getBuildings()) {
-      if (building.typeId !== EXTRACTOR_BUILDING_TYPE_ID) continue;
-
-      const extractorResource = this.engine.getResourceAt(building.origin.x, building.origin.y);
-      if (extractorResource !== 0) {
-        return extractorResource;
-      }
-    }
-
-    return ResourceType.Regolith;
   }
 
   private ensureEnergySupply(): boolean {

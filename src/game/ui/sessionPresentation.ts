@@ -24,3 +24,8 @@ export function describeSession(summary: SavedSessionSummary): string {
   }
   return parts.join(' · ');
 }
+
+/** The HUD can replace the only save via a new seed or a generated scenario. */
+export function confirmWorldReplacement(engine: GameEngine, replacement: string): boolean {
+  return window.confirm(`Effacer la partie en cours et ${replacement} ?\n\n${describeSession(summarizeEngine(engine))}`);
+}

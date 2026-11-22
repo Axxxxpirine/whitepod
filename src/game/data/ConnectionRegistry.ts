@@ -81,6 +81,11 @@ export class ConnectionRegistry {
   private readonly byBuilding: Map<BuildingId, ConnectionId[]>;
   private readonly byEndpoint: Map<BuildingId, Map<string, ConnectionId>>;
   private nextId: ConnectionId;
+  private revision = 0;
+
+  get version(): number {
+    return this.revision;
+  }
 
   constructor() {
     this.instances = new Map();
@@ -114,6 +119,7 @@ export class ConnectionRegistry {
     this.setEndpoint(to.building, to.port, id);
     this.addToBuilding(from.building, id);
     this.addToBuilding(to.building, id);
+    this.revision++;
     return id;
   }
 
@@ -125,6 +131,7 @@ export class ConnectionRegistry {
     this.removeFromBuilding(conn.from.building, id);
     this.removeFromBuilding(conn.to.building, id);
     this.instances.delete(id);
+    this.revision++;
     return true;
   }
 

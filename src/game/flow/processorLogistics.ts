@@ -131,14 +131,12 @@ export function resolveDownstreamTerminalFromOutput(
 export function resolveProcessorLogisticsStatus(
   engine: GameEngine,
   buildingId: BuildingId,
+  recipeId = engine.getProcessorState(buildingId)?.recipeId,
 ): ProcessorLogisticsStatus | null {
   const building = engine.getBuildings().get(buildingId);
   if (!building || !isProcessorTypeId(building.typeId)) return null;
 
-  const state = engine.getProcessorState(buildingId);
-  if (!state?.recipeId) return null;
-
-  const recipe = getRecipe(state.recipeId);
+  const recipe = recipeId ? getRecipe(recipeId) : undefined;
   if (!recipe) return null;
 
   const buildingType = engine.getBuildingTypeDefinition(building.typeId);

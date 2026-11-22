@@ -173,3 +173,13 @@ describe('StartScreen over a running game', () => {
     expect(useGameStore.getState().startScreenOpen).toBe(true);
   });
 });
+
+it('explains a takeover and allows continuing the current save', () => {
+  bootState();
+  saveCampaign(13);
+  useGameStore.getState().leaveSupersededSession();
+  render(<App />);
+  expect(screen.getByRole('status')).toHaveTextContent('autre onglet');
+  fireEvent.click(screen.getByRole('button', { name: /^Continuer.*graine 13/ }));
+  expect(useGameStore.getState().saveTakenOver).toBe(false);
+});

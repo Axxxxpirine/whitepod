@@ -51,6 +51,42 @@ describe('IdleCatchup', () => {
     expect(idleResult.resourceDelta.regolith).toBeGreaterThan(0);
   });
 
+  it('preserves the extraction phase through a snapshot taken between deliveries', () => {
+    const active = makePoweredExtractorEngine();
+    active.update(1.95);
+    const restored = GameEngine.fromSnapshot(active.serializeWorld(), 640, 480);
+    active.update(0.05);
+    restored.update(0.05);
+
+    expect(active.getResourceCounts().regolith).toBe(1);
+    expect(restored.getResourceCounts()).toEqual(active.getResourceCounts());
+  });
+
+  it('advances a battery-backed production line identically at frame rate and offline', () => {
+    const active = makePoweredExtractorEngine();
+    const storage = active.getBuildingAt(9, 4)!;
+    active.removeBuilding(storage.id);
+    const extractor = active.getBuildingAt(5, 5)!;
+    const converter = active.placeBuilding('converter_basic', { x: 9, y: 4 })!;
+    const solar = active.placeBuilding('solar_panel', { x: 9, y: 2 })!;
+    const battery = active.placeBuilding('battery_basic', { x: 5, y: 2 })!;
+    active.connectBuildings(extractor.id, solar);
+    active.connectBuildings(solar, converter);
+    active.connectBuildings(solar, battery);
+    active.setProcessorRecipe(converter, 'iron_oxide');
+    const sink = active.placeBuilding('storage_basic', { x: 15, y: 4 })!;
+    expect(active.placeBelt({ building: extractor.id, port: 'out_east' }, { building: converter, port: 'in' }).ok).toBe(true);
+    expect(active.placeBelt({ building: converter, port: 'out' }, { building: sink, port: 'in_west' }).ok).toBe(true);
+
+    const offline = GameEngine.fromSnapshot(active.serializeWorld(), 640, 480);
+    for (let i = 0; i < 600 * 60; i++) active.update(1 / 60);
+    applyIdleCatchup(offline, 600_000);
+    expect(active.getResourceCounts().ironOxide).toBeGreaterThan(0);
+    expect(offline.getResourceCounts()).toEqual(active.getResourceCounts());
+    expect(offline.getEnergyStorageTotals()).toEqual(active.getEnergyStorageTotals());
+    expect(offline.getProcessorState(converter)).toEqual(active.getProcessorState(converter));
+  });
+
   it('caps catchup to 8h', () => {
     const engine = makePoweredExtractorEngine();
 

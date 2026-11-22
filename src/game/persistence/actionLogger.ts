@@ -1,4 +1,4 @@
-import { getLocalStorage } from './browserStorage';
+import { ACTION_LOG_KEY, getActiveSaveStorage, type SaveStorage } from './sessionSlots';
 
 export type ActionKind = 
   | 'place_building'
@@ -25,14 +25,18 @@ export interface ActionLogSession {
 }
 
 export class ActionLogger {
+  private readonly storage: SaveStorage | null;
+  private readonly canWrite: () => boolean;
   private sessionId: string;
   private sequence: number;
   private actions: LoggedAction[];
 
-  constructor(sessionId: string) {
+  constructor(sessionId: string, canWrite: () => boolean = () => true, storage = getActiveSaveStorage()) {
+    this.storage = storage;
+    this.canWrite = canWrite;
     this.sessionId = sessionId;
-    this.sequence = 0;
-    this.actions = [];
+    this.actions = loadActionLog(sessionId, storage) ?? [];
+    this.sequence = (this.actions.at(-1)?.sequence ?? -1) + 1;
   }
 
   log(kind: ActionKind, payload: Record<string, unknown>): void {
@@ -49,7 +53,7 @@ export class ActionLogger {
   }
 
   flush(): void {
-    saveActionLog(this.sessionId, this.actions);
+    if (this.canWrite()) saveActionLog(this.sessionId, this.actions, this.storage);
   }
 
   getActions(): LoggedAction[] {
@@ -72,7 +76,7 @@ export class ActionLogger {
   clear(): void {
     this.actions = [];
     this.sequence = 0;
-    clearSessionLog(this.sessionId);
+    if (this.canWrite()) clearSessionLog(this.sessionId, this.storage);
   }
 
   bindAutoSave(): () => void {
@@ -87,18 +91,17 @@ export class ActionLogger {
       this.flush();
     };
     window.addEventListener('beforeunload', unloadHandler);
+    window.addEventListener('pagehide', unloadHandler);
 
     return () => {
       document.removeEventListener('visibilitychange', handler);
       window.removeEventListener('beforeunload', unloadHandler);
+      window.removeEventListener('pagehide', unloadHandler);
     };
   }
 }
 
-const ACTION_LOG_KEY = 'whitepod:actions:v1';
-
-function saveActionLog(sessionId: string, actions: LoggedAction[]): void {
-  const storage = getLocalStorage();
+function saveActionLog(sessionId: string, actions: LoggedAction[], storage: SaveStorage | null): void {
   if (!storage) return;
 
   try {
@@ -120,8 +123,7 @@ function saveActionLog(sessionId: string, actions: LoggedAction[]): void {
   }
 }
 
-export function loadActionLog(sessionId: string): LoggedAction[] | null {
-  const storage = getLocalStorage();
+export function loadActionLog(sessionId: string, storage = getActiveSaveStorage()): LoggedAction[] | null {
   if (!storage) return null;
 
   try {
@@ -129,14 +131,17 @@ export function loadActionLog(sessionId: string): LoggedAction[] | null {
     if (!raw) return null;
 
     const allLogs: Record<string, LoggedAction[]> = JSON.parse(raw);
-    return allLogs[sessionId] ?? null;
+    const entries = allLogs[sessionId];
+    if (!Array.isArray(entries)) return null;
+    return entries.filter((action) => action && Number.isSafeInteger(action.sequence) &&
+      Number.isFinite(action.timestampMs) && typeof action.kind === 'string' &&
+      typeof action.payload === 'object' && action.payload !== null);
   } catch {
     return null;
   }
 }
 
-function clearSessionLog(sessionId: string): void {
-  const storage = getLocalStorage();
+function clearSessionLog(sessionId: string, storage: SaveStorage | null): void {
   if (!storage) return;
 
   try {
@@ -152,12 +157,12 @@ function clearSessionLog(sessionId: string): void {
 }
 
 export function clearAllActionLogs(): void {
-  const storage = getLocalStorage();
+  const storage = getActiveSaveStorage();
   storage?.removeItem(ACTION_LOG_KEY);
 }
 
 export function loadAllActionLogs(): Record<string, LoggedAction[]> {
-  const storage = getLocalStorage();
+  const storage = getActiveSaveStorage();
   if (!storage) return {};
 
   try {

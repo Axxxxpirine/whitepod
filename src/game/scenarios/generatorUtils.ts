@@ -1,7 +1,9 @@
 import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE } from '@/game/constants';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { getBuildingType, STORAGE_BUILDING_TYPE_ID } from '@/game/data/buildingCatalog';
+import { oppositeSide, worldSideOf } from '@/game/data/ConnectionRegistry';
 import { GameMode } from '@/game/data/gameMode';
-import { Direction, ResourceType, TileType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
+import { Direction, PortKind, ResourceType, TileType, type BuildingId, type BuildingTypeId, type PortId, type TileCoord } from '@/game/types';
 
 export interface PreparedEngine {
   readonly engine: GameEngine;
@@ -92,13 +94,34 @@ export function mustPlaceBuilding(
   return buildingId;
 }
 
-/**
- * Rotation that points a building's East-side output toward a target column.
- * Catalog outputs face East at rotation North; rotating to South flips them West,
- * which keeps mirrored layouts routable instead of facing away from their target.
- */
-export function rotationFacingX(fromX: number, toX: number): Direction {
-  return toX >= fromX ? Direction.North : Direction.South;
+export function placeScenarioStorage(engine: GameEngine, center: TileCoord, rng: () => number): BuildingId {
+  const { w, h } = getBuildingType(STORAGE_BUILDING_TYPE_ID)!.footprint;
+  const origin = { x: center.x - Math.floor(w / 2), y: center.y - Math.floor(h / 2) };
+  return mustPlaceBuilding(engine, STORAGE_BUILDING_TYPE_ID, origin, 0, rng);
+}
+
+/** Place a producer facing the physical input on its side of a storage or merger. */
+export function placeScenarioFeeder(
+  engine: GameEngine,
+  typeId: BuildingTypeId,
+  origin: TileCoord,
+  targetId: BuildingId,
+  rng: () => number,
+): BuildingId {
+  const target = engine.getBuildings().get(targetId)!;
+  const type = getBuildingType(target.typeId)!;
+  const dx = origin.x - (target.origin.x + Math.floor(type.footprint.w / 2));
+  const dy = origin.y - (target.origin.y + Math.floor(type.footprint.h / 2));
+  const targetSide = Math.abs(dx) >= Math.abs(dy)
+    ? (dx < 0 ? Direction.West : Direction.East)
+    : (dy < 0 ? Direction.North : Direction.South);
+  const input = type.ports.find((port) => port.kind === PortKind.Input && worldSideOf(port, target.rotation) === targetSide);
+  if (!input) throw new Error(`Missing scenario input on ${targetId} facing ${targetSide}`);
+  const rotation = ((oppositeSide(targetSide) - Direction.East + 4) % 4) as Direction;
+  const id = mustPlaceBuilding(engine, typeId, origin, 0, rng, rotation);
+  const result = engine.placeBelt({ building: id, port: 'out_east' }, { building: targetId, port: input.id });
+  if (!result.ok) throw new Error(`Cannot route scenario feeder ${id} to ${targetId}: ${result.reason}`);
+  return id;
 }
 
 export function mustConnect(engine: GameEngine, a: BuildingId, b: BuildingId): void {
@@ -126,17 +149,12 @@ export function advanceSimulation(engine: GameEngine, totalSeconds: number, step
   }
 }
 
-export function countVisibleUncoveredDeposits(engine: GameEngine): number {
-  let total = 0;
-  const visible = engine.getVisibleTiles();
-  for (let y = visible.y0; y <= visible.y1; y++) {
-    for (let x = visible.x0; x <= visible.x1; x++) {
-      if (engine.getResourceAt(x, y) === ResourceType.None) continue;
-      if (engine.getBuildingAt(x, y) !== null) continue;
-      total += 1;
-    }
-  }
-  return total;
+export function countRevealedUncoveredDeposits(engine: GameEngine, deposits: readonly TileCoord[]): number {
+  return deposits.filter(({ x, y }) =>
+    engine.grid.isRevealed(x, y) &&
+    engine.getResourceAt(x, y) !== ResourceType.None &&
+    engine.getBuildingAt(x, y) === null,
+  ).length;
 }
 
 /** Count how many distinct energy networks the engine currently has (connected components). */

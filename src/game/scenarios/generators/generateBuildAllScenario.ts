@@ -21,7 +21,7 @@ import type { PreparedScenarioResult } from '../types';
 import {
   advanceSimulation,
   clampTile,
-  countVisibleUncoveredDeposits,
+  countRevealedUncoveredDeposits,
   createScenarioSeed,
   makeViewport,
   mustConnect,
@@ -314,18 +314,19 @@ export function generateBuildAllScenario(screenWidth: number, screenHeight: numb
     [30, 22, ResourceType.Hydrogen],
     [8, 34, ResourceType.Oxygen],
   ];
-  for (const [dx, dy, type] of decorativeDeposits) {
+  const depositTiles = decorativeDeposits.map(([dx, dy, type]) => {
     const coord = toWorld(dx, dy);
     engine.placeResource(coord.x, coord.y, type);
-  }
+    return coord;
+  });
 
   engine.setSimulationTime(0.5);
   advanceSimulation(engine, 24, 0.2);
 
   const viewport = makeViewport(engine, { x: baseAnchor.x - 10, y: baseAnchor.y - 4 }, 0.18);
 
-  if (countVisibleUncoveredDeposits(engine) < 4) {
-    throw new Error('Generated Build All scenario did not preserve enough visible deposits');
+  if (countRevealedUncoveredDeposits(engine, depositTiles) < 4) {
+    throw new Error('Generated Build All scenario did not preserve enough revealed deposits');
   }
 
   return {

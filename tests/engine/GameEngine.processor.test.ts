@@ -259,6 +259,42 @@ describe('connected processor logistics', () => {
     expect(engine.getStorageInventory(storage)?.water).toBeGreaterThan(0);
   });
 
+  it('keeps every input buffered until a complete batch can be reserved', () => {
+    const engine = makeEngine();
+    const hydrogen = placeExtractor(engine, 2, 36, ResourceType.Hydrogen);
+    const oxygen = placeExtractor(engine, 2, 44, ResourceType.Oxygen);
+    powerBuilding(engine, hydrogen, 1, 2, 33);
+    const synth = placeSynth(engine, 14, 38, 'carbon_dioxide');
+    const storage = placeStorage(engine, 22, 39);
+    belt(engine, { building: hydrogen, port: 'out_east' }, { building: synth, port: 'in_1' });
+    belt(engine, { building: oxygen, port: 'out_east' }, { building: synth, port: 'in_2' });
+    belt(engine, { building: synth, port: 'out' }, { building: storage, port: 'in_west' });
+
+    simulate(engine, 3);
+    expect(engine.getProducerOutputBuffer(hydrogen)).toEqual({ resourceType: ResourceType.Hydrogen, amount: 1 });
+    expect(engine.processorReservations.has(synth)).toBe(false);
+    powerBuilding(engine, oxygen, 1, 4, 33);
+    simulate(engine, 7);
+    expect(engine.getStorageInventory(storage)?.carbonDioxide).toBeGreaterThan(0);
+  });
+
+  it('accepts a recipe change after the last unit is delivered and input is disconnected', () => {
+    const engine = makeEngine();
+    const extractor = placeExtractor(engine, 2, 16, ResourceType.Regolith);
+    powerBuilding(engine, extractor, 1, 2, 13);
+    const converter = placeConverter(engine, 8, 15, 'iron_oxide');
+    const storage = placeStorage(engine, 14, 14);
+    const input = engine.placeBelt({ building: extractor, port: 'out_east' }, { building: converter, port: 'in' });
+    expect(input.ok).toBe(true);
+    belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    simulate(engine, 2.21, 0.13);
+    engine.removeBelt(input.ok ? input.segmentIds[0]! : 0);
+    simulate(engine, 5.2, 0.13);
+
+    expect(engine.getStorageInventory(storage)?.ironOxide).toBe(1);
+    expect(engine.setProcessorRecipe(converter, 'aluminum_oxide')).toBe(true);
+  });
+
   it('flags mixed per-port input on a synthesizer as bad input', () => {
     const engine = makeEngine();
     const hydrogen = placeExtractor(engine, 2, 52, ResourceType.Hydrogen);

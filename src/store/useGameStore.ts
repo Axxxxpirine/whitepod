@@ -41,6 +41,8 @@ interface GameState {
   startScreenOpen: boolean;
   /** A game is mounted (canvas + HUD); false until the player leaves the boot start screen. */
   sessionStarted: boolean;
+  saveTakenOver: boolean;
+  leaveSupersededSession: () => void;
   /** Mode of the next world created from scratch (new game, reset). */
   newGameMode: GameMode;
   pendingEnergyLinkSource: BuildingId | null;
@@ -117,6 +119,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   worldVersion: 0,
   startScreenOpen: true,
   sessionStarted: false,
+  saveTakenOver: false,
   newGameMode: DEFAULT_GAME_MODE,
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
@@ -165,6 +168,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentBuildingRotation: ((state.currentBuildingRotation + 1) % 4) as Direction,
     })),
   resetSession: () => {
+    get().actionLogger?.flush();
     clearPersistedSession();
     set((state) => ({
       engine: null,
@@ -189,7 +193,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     }));
   },
   openStartScreen: () => set({ startScreenOpen: true }),
-  resumeSession: () => set({ startScreenOpen: false, sessionStarted: true }),
+  leaveSupersededSession: () => set({
+    sessionStarted: false,
+    startScreenOpen: true,
+    saveTakenOver: true,
+    engine: null,
+    actionLogger: null,
+    botControls: null,
+    bot: { active: false, phase: 'idle', target: null },
+    simulationSpeed: 1,
+    selectedResourceTile: null,
+    selectedResourceAnchor: null,
+  }),
+  resumeSession: () => set({ startScreenOpen: false, sessionStarted: true, saveTakenOver: false }),
   startNewGame: (gameMode, seedInput) => {
     const started = applySeedAndResetSession({
       seedInput,
