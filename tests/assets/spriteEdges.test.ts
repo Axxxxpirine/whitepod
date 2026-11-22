@@ -4,15 +4,22 @@ import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 
 /**
- * A sprite whose art reaches the edge of its file was cut when it was taken
- * from its sheet (part of the object is missing, or a piece of the next one
- * shows up). Re-cut it with scripts/sprites/recut_sprites.py.
+ * A sprite whose art reaches the edge of its file, or ends in a straight line
+ * inside it, was cut when it was taken from its sheet (part of the object is
+ * missing, or a piece of the next one shows up). Re-cut it with
+ * scripts/sprites/recut_sprites.py.
  */
 
 const SPRITES = join(process.cwd(), 'public', 'sprites', 'rts');
 const FOLDERS = ['buildings', 'resources', 'terrain'];
 /** Alpha above which a pixel counts as art. */
 const OPAQUE = 16;
+/**
+ * Share of the art width the two outermost rows of a top or bottom span, on
+ * average, above which that side is a straight cut (intact sprites stay under
+ * 0.28; same rule as FLAT_CUT_SHARE in recut_sprites.py).
+ */
+const FLAT_CUT_SHARE = 0.3;
 
 interface Rgba {
   readonly width: number;
@@ -81,6 +88,35 @@ function edgesTouched({ width, height, alpha }: Rgba): string[] {
   return touched;
 }
 
+/** Sides where the art ends in a straight cut inside the file. */
+function flatCuts({ width, height, alpha }: Rgba): string[] {
+  const rows: number[] = [];
+  let left = width;
+  let right = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (alpha(x, y) <= OPAQUE) continue;
+      rows.push(y);
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+    }
+  }
+  if (rows.length === 0) return [];
+  const top = Math.min(...rows);
+  const bottom = Math.max(...rows);
+  const span = right - left + 1;
+  const opaqueIn = (y: number) => {
+    let count = 0;
+    for (let x = left; x <= right; x++) if (alpha(x, y) > OPAQUE) count++;
+    return count;
+  };
+  const share = (a: number, b: number) => (opaqueIn(a) + opaqueIn(b)) / (2 * span);
+  const cuts: string[] = [];
+  if (share(top, top + 1) > FLAT_CUT_SHARE) cuts.push('top');
+  if (share(bottom, bottom - 1) > FLAT_CUT_SHARE) cuts.push('bottom');
+  return cuts;
+}
+
 const sprites = FOLDERS.flatMap((folder) =>
   readdirSync(join(SPRITES, folder))
     .filter((name) => name.endsWith('.png'))
@@ -94,5 +130,9 @@ describe('RTS sprites', () => {
 
   it.each(sprites)('%s keeps its art inside the file (not cut from its sheet)', (sprite) => {
     expect(edgesTouched(readRgbaPng(join(SPRITES, sprite)))).toEqual([]);
+  });
+
+  it.each(sprites)('%s ends in drawn edges, not a straight cut', (sprite) => {
+    expect(flatCuts(readRgbaPng(join(SPRITES, sprite)))).toEqual([]);
   });
 });
