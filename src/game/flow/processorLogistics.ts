@@ -4,6 +4,7 @@ import {
   getBuildingType,
   isExtractorTypeId,
   isProcessorTypeId,
+  pullsInputs,
   isStorageTypeId,
 } from '@/game/data/buildingCatalog';
 import { getRecipe } from '@/game/data/recipeCatalog';
@@ -124,7 +125,7 @@ export function resolveRoutesFromOutput(engine: GameEngine, buildingId: Building
         routes.push({ terminal: { kind: 'storage', buildingId: nextId, portId: connection.to.port }, nodes, choices });
         continue;
       }
-      if (isProcessorTypeId(building.typeId)) {
+      if (pullsInputs(building.typeId)) {
         routes.push({ terminal: { kind: 'processor', buildingId: nextId, portId: connection.to.port }, nodes, choices });
         continue;
       }
@@ -166,17 +167,18 @@ export function resolveProcessorLogisticsStatus(
   recipeId = engine.getProcessorState(buildingId)?.recipeId,
 ): ProcessorLogisticsStatus | null {
   const building = engine.getBuildings().get(buildingId);
-  if (!building || !isProcessorTypeId(building.typeId)) return null;
-
-  const recipe = recipeId ? getRecipe(recipeId) : undefined;
-  if (!recipe) return null;
+  if (!building || !pullsInputs(building.typeId)) return null;
 
   const buildingType = engine.getBuildingTypeDefinition(building.typeId);
   if (!buildingType) return null;
 
+  // Machines pull their recipe's inputs; a fuel cell pulls its fuel.
+  const ingredients = buildingType.fuel?.inputs ?? (recipeId ? getRecipe(recipeId)?.inputs : undefined);
+  if (!ingredients) return null;
+
   const inputPorts = buildingType.ports.filter((port) => port.kind === PortKind.Input);
   const supplies = inputPorts.map((port) => resolveUpstreamProvidersForInputPort(engine, buildingId, port.id));
-  const evaluations = evaluateAssignments(engine, recipe.inputs, supplies);
+  const evaluations = evaluateAssignments(engine, ingredients, supplies);
   const best = chooseBestEvaluation(evaluations);
   const outputPort = buildingType.ports.find((port) => port.kind === PortKind.Output);
   const downstreamTerminal = outputPort
@@ -186,7 +188,8 @@ export function resolveProcessorLogisticsStatus(
   return {
     badInput: best.badInput,
     missingInput: best.missingInput,
-    blockedOutput: downstreamTerminal === null,
+    // Nothing to deliver, nothing to block (fuel cell).
+    blockedOutput: outputPort !== undefined && downstreamTerminal === null,
     assignments: best.assignments,
   };
 }

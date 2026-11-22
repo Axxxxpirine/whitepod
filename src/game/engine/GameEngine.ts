@@ -172,6 +172,8 @@ export interface SerializedGameWorld {
   readonly depositModel?: number;
   /** Extraction beats elapsed, so each extractor tier keeps its cadence across a reload. */
   readonly extractionBeat?: number;
+  /** Seconds left in each fuel cell's current load. */
+  readonly fuelBurn?: readonly { readonly id: BuildingId; readonly remaining: number }[];
   /** Completed campaign milestones; absent in saves written before milestones existed. */
   readonly completedMilestones?: readonly MilestoneId[];
 }
@@ -194,6 +196,8 @@ const DEPOSIT_MODEL = 1;
 interface SimulationNetwork {
   readonly consumers: BuildingId[];
   readonly batteries: BuildingId[];
+  /** Produce only while burning fuel: added per tick by `fuelPower`. */
+  readonly fuelCells: BuildingId[];
   readonly solar: number;
   readonly generation: number;
   readonly demand: number;
@@ -254,6 +258,8 @@ export class GameEngine {
   private logisticsVersion = -1;
   /** Routes from a building output, by `id:port` (flow/processorLogistics resolveRoutesFromOutput). */
   private readonly routes = new Map<string, readonly FlowRoute[]>();
+  /** Seconds left in each fuel cell's current load (0: waiting for fuel). */
+  private readonly fuelBurn = new Map<BuildingId, number>();
   /** Index, in catalog port order, of the output each splitter serves next. */
   private readonly splitterTurns = new Map<BuildingId, number>();
   private readonly providersByPort = new Map<BuildingId, Map<PortId, readonly BuildingId[]>>();
@@ -331,6 +337,7 @@ export class GameEngine {
       let powerChanged = this.syncPowerState(emitSfx);
       // Advance work already supplied during this interval before the next extraction arrives.
       this.processProcessors(step);
+      if (this.fuelBurn.size > 0 && this.processFuelCells(step)) powerChanged = this.syncPowerState(emitSfx) || powerChanged;
       this.extractionAccumulator += step;
       if (this.extractionAccumulator + 1e-10 >= GameEngine.EXTRACTION_INTERVAL_S) {
         this.extractionAccumulator = Math.max(0, this.extractionAccumulator - GameEngine.EXTRACTION_INTERVAL_S);
@@ -469,7 +476,7 @@ export class GameEngine {
     const daylight = getDaylightFactor(this.stepTime);
     for (const network of this.getSimulationNetworks()) {
       if (network.batteries.length === 0) continue;
-      const netPower = network.generation + network.solar * daylight - network.demand;
+      const netPower = network.generation + network.solar * daylight + this.fuelPower(network) - network.demand;
       const batteries = this.collectBatteries(network.batteries);
 
       if (netPower > 0) {
@@ -630,6 +637,7 @@ export class GameEngine {
       if (isProcessorTypeId(typeId)) {
         this.processorStates.set(id, { recipeId: null, cycleProgress: 0 });
       }
+      if (type.fuel) this.fuelBurn.set(id, 0);
       if (typeId === WATCHTOWER_BUILDING_TYPE_ID) {
         const cx = origin.x + Math.floor(type.footprint.w / 2);
         const cy = origin.y + Math.floor(type.footprint.h / 2);
@@ -687,6 +695,7 @@ export class GameEngine {
     this.poweredExtractors.delete(id);
     this.batteryCharges.delete(id);
     this.splitterTurns.delete(id);
+    this.fuelBurn.delete(id);
     this.storageInventories.delete(id);
     this.producerOutputBuffers.delete(id);
     this.processorStates.delete(id);
@@ -904,23 +913,25 @@ export class GameEngine {
     return getBuildingType(typeId);
   }
 
+  /**
+   * How fast the stock grows: what reaches storages per minute. Machines and
+   * fuel cells pull straight from the producers before them, so a unit headed
+   * for one never counts; a machine counts by what it sends on to a storage.
+   */
   getResourceRates(): ResourceStock {
     const rates = GameEngine.EMPTY_RESOURCE_STOCK();
     // What each source would send, then what the belts let through.
     const nominal = new Map<BuildingId, number>();
     const output = new Map<BuildingId, ResourceTypeT>();
 
-    // Extractors: add production rate for base resources
     for (const [id, building] of this.buildings.getAll().entries()) {
       if (!isExtractorTypeId(building.typeId)) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (!this.hasValidDownstream(id)) continue;
       if (this.getDepositRemaining(id) === 0) continue;
       nominal.set(id, extractorRatePerMinute(building.typeId));
       output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
     }
 
-    // Processors: add output rate, subtract input rates (net flow)
     for (const [id, state] of this.processorStates) {
       if (!state.recipeId) continue;
       if (this.getBuildingPowerState(id) !== 'powered') continue;
@@ -928,22 +939,18 @@ export class GameEngine {
       if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
       const recipe = getRecipe(state.recipeId);
       if (!recipe) continue;
-
       nominal.set(id, (recipe.output.amount / recipe.cycleSeconds) * 60);
       output.set(id, recipe.output.resourceType);
-
-      // Input consumption rates (negative)
-      for (const input of recipe.inputs) {
-        const inKey = RESOURCE_STOCK_KEY[input.resourceType];
-        if (inKey) rates[inKey] -= (input.amount / recipe.cycleSeconds) * 60;
-      }
     }
 
-    // A producer behind splitters shares its output evenly among its routes.
+    // A producer behind splitters shares its output evenly among its routes;
+    // only the share headed for a storage adds to the stock.
     const flows: { readonly producer: BuildingId; readonly path: readonly BuildingId[]; readonly perMinute: number }[] = [];
     for (const [producer, perMinute] of nominal) {
       const routes = this.producerRoutes(producer);
-      for (const route of routes) flows.push({ producer, path: route.nodes, perMinute: perMinute / routes.length });
+      for (const route of routes) {
+        if (route.terminal.kind === 'storage') flows.push({ producer, path: route.nodes, perMinute: perMinute / routes.length });
+      }
     }
     this.beltThroughput.cappedRates(flows).forEach((perMinute, index) => {
       const key = RESOURCE_STOCK_KEY[output.get(flows[index]!.producer)!];
@@ -952,6 +959,7 @@ export class GameEngine {
 
     return rates;
   }
+
 
   canConnect(from: PortEndpoint, to: PortEndpoint): ConnectionResult {
     if (from.building === to.building) return { ok: false, reason: 'self_connection' };
@@ -1310,6 +1318,11 @@ export class GameEngine {
     return this.gameMode === GameModes.Campaign;
   }
 
+  /** Seconds left in a fuel cell's current load (0 when out of fuel), or null for another building. */
+  getFuelBurnRemaining(buildingId: BuildingId): number | null {
+    return this.fuelBurn.get(buildingId) ?? null;
+  }
+
   /** Units left in the deposit under an extractor, or null for another building. */
   getDepositRemaining(buildingId: BuildingId): number | null {
     const building = this.buildings.get(buildingId);
@@ -1587,6 +1600,7 @@ export class GameEngine {
       splitterTurns: [...this.splitterTurns].map(([id, turn]) => ({ id, turn })),
       depositModel: DEPOSIT_MODEL,
       extractionBeat: this.extractionBeat,
+      fuelBurn: [...this.fuelBurn].map(([id, remaining]) => ({ id, remaining })),
     };
   }
 
@@ -1690,6 +1704,13 @@ export class GameEngine {
     engine.unlockCache = null;
     engine.beltThroughput.restore(snapshot.beltTokens);
     if (Number.isInteger(snapshot.extractionBeat) && snapshot.extractionBeat! >= 0) engine.extractionBeat = snapshot.extractionBeat!;
+    for (const [id, building] of engine.buildings.getAll()) {
+      if (getBuildingType(building.typeId)?.fuel) engine.fuelBurn.set(id, 0);
+    }
+    for (const { id, remaining } of snapshot.fuelBurn ?? []) {
+      if (engine.fuelBurn.has(id) && Number.isFinite(remaining) && remaining >= 0) engine.fuelBurn.set(id, remaining);
+    }
+    engine.syncPowerState(false);
     if (snapshot.depositModel !== DEPOSIT_MODEL) {
       // Saved while deposits were endless: give every remaining deposit its generated amount.
       const { grid } = engine;
@@ -1751,10 +1772,6 @@ export class GameEngine {
     return outputPort ? this.routesFrom(buildingId, outputPort.id) : [];
   }
 
-  private hasValidDownstream(buildingId: BuildingId): boolean {
-    return this.producerRoutes(buildingId).length > 0;
-  }
-
   /**
    * The route a producer's next unit takes: at each splitter, the output whose
    * turn it is, skipping outputs that cannot take a unit now. Null when no
@@ -1796,6 +1813,8 @@ export class GameEngine {
   }
 
   private processorReadyForInputs(buildingId: BuildingId): boolean {
+    // A fuel cell wants its next load once the current one is burnt.
+    if (this.fuelBurn.has(buildingId)) return (this.fuelBurn.get(buildingId) ?? 0) <= 1e-9;
     return (
       !!this.processorStates.get(buildingId)?.recipeId &&
       this.poweredConsumers.has(buildingId) &&
@@ -1911,7 +1930,7 @@ export class GameEngine {
 
   private computeEnergyBalance(buildingIds: readonly BuildingId[]): EnergyNetworkBalance {
     const network = this.describeEnergyNetwork(buildingIds);
-    const production = network.generation + network.solar * getDaylightFactor(this.simulationTime);
+    const production = network.generation + network.solar * getDaylightFactor(this.simulationTime) + this.fuelPower(network);
     return {
       buildingIds: [...buildingIds].sort((a, b) => a - b),
       production,
@@ -1922,6 +1941,7 @@ export class GameEngine {
 
   private isEnergyLinkableBuilding(typeId: BuildingTypeId): boolean {
     const type = getBuildingType(typeId);
+    if (type?.fuel) return true;
     if (!type?.energy) return false;
     return (type.energy.production ?? 0) > 0 || (type.energy.consumption ?? 0) > 0 || !!type.energy.battery;
   }
@@ -1933,7 +1953,7 @@ export class GameEngine {
     this.simulationNetworks = [];
     for (const ids of this.energyNetwork.getComponents()) {
       const network = this.describeEnergyNetwork(ids);
-      if (network.consumers.length || network.batteries.length) this.simulationNetworks.push(network);
+      if (network.consumers.length || network.batteries.length || network.fuelCells.length) this.simulationNetworks.push(network);
     }
     return this.simulationNetworks;
   }
@@ -1941,13 +1961,16 @@ export class GameEngine {
   private describeEnergyNetwork(ids: readonly BuildingId[]): SimulationNetwork {
     const consumers: BuildingId[] = [];
     const batteries: BuildingId[] = [];
+    const fuelCells: BuildingId[] = [];
     let solar = 0;
     let generation = 0;
     let demand = 0;
     for (const id of ids) {
       const building = this.buildings.get(id);
-      const energy = building && getBuildingType(building.typeId)?.energy;
-      if (!energy) continue;
+      const type = building && getBuildingType(building.typeId);
+      if (type?.fuel) fuelCells.push(id);
+      const energy = type?.energy;
+      if (!building || !energy) continue;
       if (energy.battery) batteries.push(id);
       if (energy.consumption) {
         consumers.push(id);
@@ -1956,14 +1979,42 @@ export class GameEngine {
       if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) solar += energy.production ?? 0;
       else generation += energy.production ?? 0;
     }
-    return { consumers, batteries, solar, generation, demand };
+    return { consumers, batteries, fuelCells, solar, generation, demand };
+  }
+
+  /** Power the network's fuel cells give right now: those burning a load of fuel. */
+  private fuelPower(network: SimulationNetwork): number {
+    let power = 0;
+    for (const id of network.fuelCells) {
+      if ((this.fuelBurn.get(id) ?? 0) <= 0) continue;
+      power += getBuildingType(this.buildings.get(id)!.typeId)?.fuel?.powerKw ?? 0;
+    }
+    return power;
+  }
+
+  /**
+   * Fuel cells: each burns one load for `burnSeconds`, then pulls the next one
+   * from its providers right away, so a fed cell gives steady power.
+   */
+  private processFuelCells(dt: number): boolean {
+    let changed = false;
+    for (const [id, remaining] of this.fuelBurn) {
+      const left = Math.max(0, remaining - dt);
+      this.fuelBurn.set(id, left);
+      if (left > 1e-9) continue;
+      const fuel = getBuildingType(this.buildings.get(id)!.typeId)?.fuel;
+      if (!fuel || this.reserveProcessorInputs(id, fuel.inputs) === null) continue;
+      this.fuelBurn.set(id, fuel.burnSeconds);
+      changed = true;
+    }
+    return changed;
   }
 
   private syncPowerState(emitSfx = true): boolean {
     const daylight = getDaylightFactor(this.stepTime);
     let changed = false;
     for (const network of this.getSimulationNetworks()) {
-      const deficit = network.demand - (network.generation + network.solar * daylight);
+      const deficit = network.demand - (network.generation + network.solar * daylight + this.fuelPower(network));
       const powered = deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
       for (const id of network.consumers) {
         if (this.poweredConsumers.has(id) === powered) continue;

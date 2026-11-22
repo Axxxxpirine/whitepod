@@ -10,6 +10,7 @@ import {
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
   EXTRACTOR_MK2_BUILDING_TYPE_ID,
+  FUEL_CELL_BUILDING_TYPE_ID,
   getBuildingType,
   isBeltTypeId,
   isExtractorTypeId,
@@ -55,10 +56,12 @@ export function getPowerIndicatorColor(state: PowerState): number | null {
 
 /**
  * Tints over a shared sprite, for tiers without art of their own yet (sprite
- * pass in 0.4): the extractor mk2 reads as the extractor, in the accent colour.
+ * pass in 0.4): the extractor mk2 reads as the extractor in the accent colour,
+ * the fuel cell as the battery in green.
  */
 const SPRITE_TINTS: Readonly<Record<string, number>> = {
   [EXTRACTOR_MK2_BUILDING_TYPE_ID]: PIXI.accent,
+  [FUEL_CELL_BUILDING_TYPE_ID]: PIXI.ok,
 };
 
 export function getBuildingIndicatorColor(state: PowerState, hasBadInput: boolean, exhausted = false): number | null {
