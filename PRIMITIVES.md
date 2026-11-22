@@ -617,6 +617,13 @@ engine.simulationTime // normalized to [0, 1)
 
 Useful for scenario evaluation at fixed times of day.
 
+### Lunar night (#92)
+
+- A day-night cycle lasts `DAY_NIGHT_CYCLE_SECONDS` = **240 s** (constants.ts), half of it night: solar output follows `√cos` of the time of day and is zero from 18:00 to 06:00, so a night is **2 minutes** of darkness. Worlds save their cycle length (`dayNightCycleSeconds`), so older worlds keep 120 s.
+- One cycle is one simulated hour for energy: battery kWh, charge and discharge rates scale with it, so the batteries a line needs do not depend on the cycle length. One `battery_basic` (10 kWh) carries about four extractors through a night.
+- A line without batteries or fuel cells stops for the whole night; with enough of them it keeps running.
+- `engine.getNightOutlook()` → `{ secondsToNight, uncoveredKw }`: seconds until dusk (null at night) and the demand no reserve covers (batteries by charge and rate over half an hour, supplied fuel cells, other non-solar generation). The HUD shows "Nuit dans 25 s" next to the clock in the last 30 s before dusk (`NIGHT_WARNING_SECONDS`), with "· 4 kW sans réserve" in amber when some demand is uncovered.
+
 ### Resource economy inspection
 
 ```ts

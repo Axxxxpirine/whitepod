@@ -1,3 +1,4 @@
+import { DAY_NIGHT_CYCLE_SECONDS } from '@/game/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { applyScenarioGeneratorToLiveSession, applyScenarioToLiveSession } from '@/game/scenarios/applyScenario';
@@ -51,7 +52,8 @@ describe('applyScenarioToLiveSession', () => {
     const state = useGameStore.getState();
     expect(state.engine?.getBuildings().size).toBeGreaterThan(6);
     expect(state.selectedTool).toEqual({ kind: 'building', buildingType: 'solar_panel' });
-    expect(state.simulationTime).toBeCloseTo(0.6);
+    // The scenario starts at noon and simulates 12 s.
+    expect(state.simulationTime).toBeCloseTo(0.5 + 12 / DAY_NIGHT_CYCLE_SECONDS);
     expect(state.sessionEpoch).toBe(1);
     expect(state.hoverTile).toBeNull();
     expect(state.selectedBuildingId).toBeNull();

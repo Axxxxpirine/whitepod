@@ -71,7 +71,7 @@ import {
   type TileCoord,
   type TileType,
 } from '../types';
-import { DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
+import { DAY_NIGHT_CYCLE_SECONDS, DEFAULT_MAP_SEED, INITIAL_FOG_REVEAL_RADIUS, MAP_CENTER, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { isInBounds, toCoord, toIndex } from '../data/coords';
 import { depositAmountAt } from '../data/depositAmounts';
 import { screenToGrid } from './CoordinateTransform';
@@ -190,6 +190,8 @@ interface GameEngineOptions {
 }
 
 const SERIALIZE_VERSION = 3;
+/** Night lasts half a day-night cycle, which is one simulated hour for energy. */
+const NIGHT_HOURS = 0.5;
 /** Finite deposits with generated amounts (data/depositAmounts.ts). */
 const DEPOSIT_MODEL = 1;
 
@@ -295,7 +297,7 @@ export class GameEngine {
     this.dayNightCycleSeconds =
       typeof options.dayNightCycleSeconds === 'number' && Number.isFinite(options.dayNightCycleSeconds) && options.dayNightCycleSeconds > 0
         ? options.dayNightCycleSeconds
-        : 120;
+        : DAY_NIGHT_CYCLE_SECONDS;
   }
 
   get simulationTime(): number {
@@ -1316,6 +1318,37 @@ export class GameEngine {
   /** True when extraction uses up deposits (campaign); sandbox deposits are endless. */
   get depletesDeposits(): boolean {
     return this.gameMode === GameModes.Campaign;
+  }
+
+  /**
+   * What the coming night looks like: seconds until dusk (null at night) and
+   * the power demand no reserve covers at night — batteries (by charge and
+   * discharge rate), supplied fuel cells and other non-solar generation.
+   */
+  getNightOutlook(): { readonly secondsToNight: number | null; readonly uncoveredKw: number } {
+    const t = this.simulationTime;
+    const secondsToNight = t > 0.25 && t < 0.75 ? (0.75 - t) * this.dayNightCycleSeconds : null;
+    let uncoveredKw = 0;
+    for (const network of this.getSimulationNetworks()) {
+      if (network.demand <= 0) continue;
+      let fuel = 0;
+      for (const id of network.fuelCells) {
+        const logistics = this.getProcessorLogisticsStatus(id);
+        if (logistics && !logistics.badInput && !logistics.missingInput) {
+          fuel += getBuildingType(this.buildings.get(id)!.typeId)?.fuel?.powerKw ?? 0;
+        }
+      }
+      let stored = 0;
+      let rate = 0;
+      for (const battery of this.collectBatteries(network.batteries)) {
+        stored += battery.charge;
+        rate += battery.dischargeRate;
+      }
+      // A night is half a cycle: half a simulated hour.
+      const fromBatteries = Math.min(rate, stored / NIGHT_HOURS);
+      uncoveredKw += Math.max(0, network.demand - network.generation - fuel - fromBatteries);
+    }
+    return { secondsToNight, uncoveredKw };
   }
 
   /** Seconds left in a fuel cell's current load (0 when out of fuel), or null for another building. */
