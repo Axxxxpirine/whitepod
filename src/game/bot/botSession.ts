@@ -17,22 +17,28 @@ export function createBotSession({ engine, initialProfileId = DEFAULT_BOT_PROFIL
   useGameStore.getState().setSelectedBotProfileId(initialProfileId);
   const setBot = useGameStore.getState().setBot;
   const setBotControls = useGameStore.getState().setBotControls;
-  const controller = new BotController(engine, setBot, initialProfileId);
+  const controller = new BotController(engine, setBot, initialProfileId, () => useGameStore.getState().botsInCampaign);
 
-  // Without controls the HUD disables the bot button (campaign worlds).
-  setBotControls(
-    controller.isAvailable
-      ? {
-          start: () => controller.start(),
-          stop: () => controller.stop(),
-        }
-      : null,
-  );
+  // Without controls the HUD disables the bot button (campaign worlds, unless the dev setting allows it).
+  const publishControls = () => {
+    if (!controller.isAvailable) controller.stop();
+    setBotControls(
+      controller.isAvailable
+        ? {
+            start: () => controller.start(),
+            stop: () => controller.stop(),
+          }
+        : null,
+    );
+  };
+  publishControls();
 
   const unsubscribe = useGameStore.subscribe((nextState, previousState) => {
     if (nextState.selectedBotProfileId !== previousState.selectedBotProfileId) {
       controller.setProfile(nextState.selectedBotProfileId);
+      publishControls();
     }
+    if (nextState.botsInCampaign !== previousState.botsInCampaign) publishControls();
   });
 
   return {

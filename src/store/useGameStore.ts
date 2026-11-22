@@ -25,6 +25,8 @@ interface GameState {
   engine: GameEngine | null;
   simulationTime: number;
   simulationSpeed: number;
+  /** Dev setting (not saved): lets campaign-ready bots run in campaign worlds, for balancing. */
+  botsInCampaign: boolean;
   musicVolume: number;
   sfxVolume: number;
   selectedTool: SelectedTool;
@@ -61,6 +63,7 @@ interface GameState {
   initEngine: (engine: GameEngine) => void;
   setSimulationTime: (value: number) => void;
   setSimulationSpeed: (value: number) => void;
+  setBotsInCampaign: (value: boolean) => void;
   setMusicVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
   setSelectedTool: (tool: SelectedTool) => void;
@@ -105,6 +108,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   engine: null,
   simulationTime: 0,
   simulationSpeed: 1,
+  botsInCampaign: false,
   musicVolume: loadedSettings.musicVolume ?? defaultSettings.musicVolume,
   sfxVolume: loadedSettings.sfxVolume ?? defaultSettings.sfxVolume,
   selectedTool: { kind: 'select' },
@@ -137,6 +141,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   initEngine: (engine) => set({ engine }),
   setSimulationTime: (value) => set({ simulationTime: value }),
   setSimulationSpeed: (value) => set({ simulationSpeed: Math.max(0, value) }),
+  setBotsInCampaign: (value) => set({ botsInCampaign: value }),
   setMusicVolume: (value) =>
     set((state) => {
       const musicVolume = Math.min(1, Math.max(0, value));

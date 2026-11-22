@@ -9,6 +9,7 @@ export const BOT_PROFILES: readonly BotProfileDefinition[] = [
     id: DEFAULT_BOT_PROFILE_ID,
     label: 'Master',
     description: 'Cluster-based bot with distributed storage, local energy hubs, and belt routing.',
+    campaignReady: true,
     create: (args: BotFactoryArgs) => new MasterBot(args.engine, args.onStatusChange),
   },
   {
