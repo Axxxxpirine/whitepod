@@ -84,6 +84,7 @@ describe('lunar night', () => {
     expect(nightWarning({ secondsToNight: null, uncoveredKw: 4 })).toBeNull();
     expect(nightWarning({ secondsToNight: 12.2, uncoveredKw: 0 })).toEqual({ text: 'Nuit dans 13 s', short: false });
     expect(nightWarning({ secondsToNight: 12.2, uncoveredKw: 4 })).toEqual({ text: 'Nuit dans 13 s · 4 kW sans réserve', short: true });
+    expect(nightWarning({ secondsToNight: 12.2, uncoveredKw: 2.5 })?.text).toBe('Nuit dans 13 s · 2,5 kW sans réserve');
   });
 
   it('shows the warning in the HUD before dusk', () => {

@@ -28,7 +28,7 @@ function BotControlsPanelView() {
   };
 
   return (
-    <Panel className="pointer-events-auto flex max-w-[320px] flex-col gap-2 px-3 py-2.5 text-ink">
+    <Panel className="pointer-events-auto flex max-w-[320px] flex-col gap-2 px-3 py-2 text-ink">
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -38,7 +38,7 @@ function BotControlsPanelView() {
             else botControls.start();
           }}
           disabled={!botControls}
-          className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs transition-colors ${botControls ? 'cursor-pointer bg-accent text-bg hover:bg-accent/90' : 'bg-surface-2 text-ink-muted'}`}
+          className={`inline-flex items-center gap-1 rounded-sm px-2 py-1 text-xs transition-colors ${botControls ? 'cursor-pointer bg-accent text-bg hover:bg-accent/90' : 'bg-surface-2 text-ink-muted'}`}
         >
           <Icon icon={bot.active ? Square : Play} className="h-3.5 w-3.5" />
           <span>{bot.active ? 'Arrêter' : 'Démarrer'}</span>
@@ -65,7 +65,7 @@ function BotControlsPanelView() {
 
       {engine?.gameMode === GameMode.Campaign && (
         // Dev setting: bots build by campaign rules (costs, unlocks), to measure the balance.
-        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-ink-muted">
+        <label className="flex cursor-pointer items-center gap-1 text-[11px] text-ink-muted">
           <input
             type="checkbox"
             checked={botsInCampaign}

@@ -31,17 +31,29 @@
   --duration-tab:     100ms;
   --duration-popover: 120ms;
   --duration-panel:   180ms;
+  /* Every `transition-*` utility without its own duration is a hover (DESIGN.md "Motion"). */
+  --default-transition-duration: var(--duration-hover);
+  --default-transition-timing-function: var(--ease-out);
 }
 
 @layer base {
+  /* 16px root: DESIGN.md counts its type scale and its 4px spacing unit in rem at 16px. */
+  html {
+    font-size: 16px;
+  }
+
   html,
   body,
   #root {
     background: var(--color-bg);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 14px;
     line-height: 1.5;
+  }
+
+  /* `body` of the type scale. */
+  body {
+    font-size: 14px;
   }
 
   h1,

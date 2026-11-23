@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CLOCK_HOURS_PER_CYCLE } from '@/game/constants';
 import { Settings, Shuffle, Zap } from 'lucide-react';
 import { getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import type { ScenarioGeneratorListEntry } from '@/game/scenarios/types';
 import { nightWarning } from '@/game/ui/nightPresentation';
-import { formatDuration, formatRate } from '@/game/ui/numberPresentation';
+import { energyInClockHours, formatDuration, formatEnergy, formatPower, formatRate } from '@/game/ui/numberPresentation';
 import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
@@ -100,7 +101,7 @@ export function GameHUD() {
     return engine ? nightWarning(engine.getNightOutlook()) : null;
   }, [engine, simulationTime, worldTick]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
-  const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
+  const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * CLOCK_HOURS_PER_CYCLE);
   const simulationPhase =
     simulationHour < 6 ? 'Nuit' : simulationHour < 12 ? 'Matin' : simulationHour < 18 ? 'Jour' : 'Soir';
 
@@ -210,11 +211,11 @@ export function GameHUD() {
 
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
-          <Panel className="min-w-[180px] px-3 py-2.5 text-sm text-ink">
+          <Panel className="min-w-[180px] max-w-[380px] px-3 py-2 text-sm text-ink">
             {resourceCounts && (
               <>
-                <div className="label mb-1.5 text-ink-muted">Ressources</div>
-                <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+                <div className="label mb-1 text-ink-muted">Ressources</div>
+                <div className="grid grid-cols-3 gap-x-3 gap-y-1">
                   {RESOURCE_ENTRIES.filter(
                     (r) => resourceCounts[r.key] > 0 || (resourceRates?.[r.key] ?? 0) !== 0,
                   ).map((r) => {
@@ -222,7 +223,7 @@ export function GameHUD() {
                     const rateSign = rate > 0 ? '+' : '';
                     return (
                       <HoverTooltip key={r.key} content={resourceTypeLabel(r.type)}>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <img src={r.sprite} className="h-4 w-4 object-contain" alt={resourceTypeLabel(r.type)} />
                           <span className="font-bold tabular-nums">{resourceCounts[r.key]}</span>
                           <span className={`text-xs tabular-nums ${rate < 0 ? 'text-accent-warm' : 'text-ink-muted'}`}>
@@ -240,7 +241,7 @@ export function GameHUD() {
 
             {globalEnergy && (
               <>
-                <div className="label mb-1.5 text-ink-muted">Énergie</div>
+                <div className="label mb-1 text-ink-muted">Énergie</div>
                 <div className="flex items-center gap-1">
                   <span className="label text-ink-muted">{energyHeadline >= 0 ? 'Surplus' : 'Déficit'}</span>
                   <div className="flex items-center gap-1">
@@ -253,34 +254,31 @@ export function GameHUD() {
                       className={`font-bold tabular-nums ${energyHeadline >= 0 ? 'text-ok' : 'text-error'}`}
                     >
                       {energyHeadline >= 0 ? '+' : ''}
-                      {Math.round(energyHeadline * 10) / 10} kW
+                      {formatPower(energyHeadline)}
                     </span>
                   </div>
                 </div>
-                <div className="mt-1 text-xs tabular-nums text-ink-muted">
-                  <span>Prod. {Math.round(globalEnergy.production * 10) / 10} kW</span>
-                  <span className="mx-2">|</span>
-                  <span>Utilisée {Math.round(globalEnergy.servedConsumption * 10) / 10} kW</span>
-                  <span className="mx-2">|</span>
-                  <span>Demande {Math.round(globalEnergy.demandedConsumption * 10) / 10} kW</span>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
+                  <span>Prod. {formatPower(globalEnergy.production)}</span>
+                  <span>Utilisée {formatPower(globalEnergy.servedConsumption)}</span>
+                  <span>Demande {formatPower(globalEnergy.demandedConsumption)}</span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
                   {globalEnergy.unservedLoad > 0 && (
                     <span className="text-accent-warm">
-                      Non servie {Math.round(globalEnergy.unservedLoad * 10) / 10} kW
+                      Non servie {formatPower(globalEnergy.unservedLoad)}
                     </span>
                   )}
                   {energyStorage && energyStorage.capacity > 0 && (
                     <span>
-                      Réserve {Math.round(energyStorage.stored * 10) / 10} /{' '}
-                      {Math.round(energyStorage.capacity * 10) / 10} kWh
+                      Réserve {energyInClockHours(energyStorage.stored)} / {formatEnergy(energyStorage.capacity)}
                     </span>
                   )}
                 </div>
               </>
             )}
 
-            <div className="mt-2 border-t border-border pt-1.5 text-xs text-ink-muted">
+            <div className="mt-2 border-t border-border pt-1 text-xs text-ink-muted">
               <span className="tabular-nums">{simulationClockLabel}</span> ({isDaylight ? 'Jour' : 'Nuit'})
               {nightAlert && (
                 <span role="status" className={cn('ml-2 tabular-nums', nightAlert.short ? 'text-accent-warm' : 'text-ink-muted')}>
@@ -300,7 +298,7 @@ export function GameHUD() {
                 aria-expanded={debugOpen}
                 aria-label="Outils de simulation"
                 title="Outils de simulation"
-                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
+                className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
               >
                 {debugOpen ? '▲' : '▼'}
               </button>
@@ -422,13 +420,13 @@ export function GameHUD() {
             ))}
           </div>
           <div className="flex border-t border-border">
-            <span className="px-2 py-1.5 text-ink-muted">&gt;</span>
+            <span className="px-2 py-1 text-ink-muted">&gt;</span>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent py-1.5 pr-2 text-ink outline-none"
+              className="flex-1 bg-transparent py-1 pr-2 text-ink outline-none"
               placeholder="engine.placeResource(10, 10, 1)"
               autoFocus
             />
@@ -449,7 +447,7 @@ export function GameHUD() {
           </div>
 
           <div className="pointer-events-auto justify-self-center">
-            <Panel className="flex flex-col items-center gap-2 px-3 py-2.5 text-ink">
+            <Panel className="flex flex-col items-center gap-2 px-3 py-2 text-ink">
               <PanelHeading className="text-xs text-ink-muted">Construction</PanelHeading>
               <BuildingPicker />
             </Panel>
@@ -472,21 +470,21 @@ export function GameHUD() {
                   aria-expanded={settingsOpen}
                   aria-label="Paramètres"
                   title="Paramètres"
-                  className={`cursor-pointer rounded-sm px-2.5 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                  className={`cursor-pointer rounded-sm px-2 py-2 transition-colors ${settingsOpen ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
                 >
                   <Icon icon={Settings} className="h-4 w-4" />
                 </button>
 
                 {settingsOpen && (
                   <Panel elevated className="absolute bottom-full right-0 mb-2 min-w-48 p-2">
-                    <p className="label mb-1.5 px-2 text-ink-muted">Paramètres</p>
+                    <p className="label mb-1 px-2 text-ink-muted">Paramètres</p>
 
                     <button
                       type="button"
                       onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
                       aria-pressed={linkSolarOnPlacement}
                       title="Après pose d'un panneau solaire, passe en mode lien"
-                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Lier après pose</span>
                       <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
@@ -494,7 +492,7 @@ export function GameHUD() {
                       </Chip>
                     </button>
 
-                    <div className="space-y-1 px-2 py-1.5">
+                    <div className="space-y-1 px-2 py-1">
                       <div className="label text-ink-muted">Volume musique</div>
                       <input
                         aria-label="Volume de la musique"
@@ -513,7 +511,7 @@ export function GameHUD() {
                       </div>
                     </div>
 
-                    <div className="space-y-1 px-2 py-1.5">
+                    <div className="space-y-1 px-2 py-1">
                       <div className="label text-ink-muted">Volume effets</div>
                       <input
                         aria-label="Volume des effets"
@@ -543,13 +541,13 @@ export function GameHUD() {
                         })
                       }
                       aria-pressed={consoleOpen}
-                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Console</span>
                       <span className="ml-3 tabular-nums text-[11px] text-ink-muted">&gt;_</span>
                     </button>
 
-                    <div className="my-1.5 border-t border-border" />
+                    <div className="my-1 border-t border-border" />
 
                     <button
                       type="button"
@@ -567,7 +565,7 @@ export function GameHUD() {
 
                         engine?.emitSfx({ type: 'ui_confirm', context: 'export_actions' });
                       }}
-                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Exporter les actions</span>
                       <span className="tabular-nums text-[11px] text-ink-muted">
@@ -581,7 +579,7 @@ export function GameHUD() {
                         setSettingsOpen(false);
                         openStartScreen();
                       }}
-                      className="flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center rounded-sm px-2 py-1 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       Menu principal
                     </button>
@@ -609,7 +607,7 @@ function HoverCoordinates() {
 
 function formatSimulationTime(simulationTime: number): string {
   const wrapped = ((simulationTime % 1) + 1) % 1;
-  const totalMinutes = Math.floor(wrapped * 24 * 60);
+  const totalMinutes = Math.floor(wrapped * CLOCK_HOURS_PER_CYCLE * 60);
   const hours = Math.floor(totalMinutes / 60)
     .toString()
     .padStart(2, '0');

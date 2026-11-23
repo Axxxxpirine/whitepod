@@ -438,7 +438,7 @@ describe('GameHUD', () => {
     expect(screen.getByText('Utilisée 4 kW')).toBeInTheDocument();
     expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
     expect(screen.queryByText('Non servie 0 kW')).not.toBeInTheDocument();
-    expect(screen.getByText('Réserve 1.7 / 10 kWh')).toBeInTheDocument();
+    expect(screen.getByText('Réserve 41 / 240 kWh')).toBeInTheDocument();
   });
 
   it('updates solar production and battery charge when only the simulation clock changes', () => {
@@ -457,7 +457,9 @@ describe('GameHUD', () => {
     });
     expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
     // Global HUD line and selected battery panel use the same word for stored energy.
-    expect(screen.getAllByText('Réserve 1.9 / 10 kWh')).toHaveLength(2);
+    expect(screen.getByText('Réserve 46 / 240 kWh')).toBeInTheDocument();
+    expect(screen.getByText('Réserve')).toBeInTheDocument();
+    expect(screen.getByText('46 / 240 kWh')).toBeInTheDocument();
   });
 
   it('shows deficit and unmet demand without ambiguous energy labels', () => {

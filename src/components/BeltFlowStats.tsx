@@ -23,7 +23,7 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
     return (
       <div className="flex flex-col gap-1 pt-0.5">
         <div className="h-px bg-border" />
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Icon icon={Activity} size={11} className="text-ink-muted" />
           <span className="label text-ink-muted">Aucun flux actif</span>
         </div>
@@ -49,7 +49,7 @@ function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT;
   const rateText = formatRate(ratePerMinute);
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       {sprite ? (
         <img src={sprite} className="h-3.5 w-3.5 shrink-0 object-contain" alt={label} />
       ) : (
@@ -68,7 +68,7 @@ function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT;
 function LoadRow({ demand, capacity, saturated }: { demand: number; capacity: number; saturated: boolean }) {
   const over = saturated || demand > capacity;
   return (
-    <div role="status" className="flex items-center gap-1.5">
+    <div role="status" className="flex items-center gap-1">
       <Icon icon={Gauge} size={11} className={over ? 'text-accent-warm' : 'text-ink-muted'} />
       <span className={cn('label', over ? 'text-accent-warm' : 'text-ink-muted')}>{over ? 'Saturé' : 'Débit max'}</span>
       <span className={cn('ml-auto text-xs font-medium tabular-nums', over ? 'text-accent-warm' : 'text-ink')}>

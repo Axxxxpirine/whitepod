@@ -1,11 +1,15 @@
 import type { LucideIcon } from 'lucide-react';
-import { Eye, Factory, Hammer, Merge, MoveRight, Zap } from 'lucide-react';
+import { ChevronsUp, Eye, Factory, Flame, Hammer, Merge, MoveRight, Split, Zap } from 'lucide-react';
 import {
   CONVERTER_BUILDING_TYPE_ID,
+  EXTRACTOR_MK2_BUILDING_TYPE_ID,
+  FUEL_CELL_BUILDING_TYPE_ID,
   MERGER_BASIC_BUILDING_TYPE_ID,
+  SPLITTER_BASIC_BUILDING_TYPE_ID,
   SYNTHESIZER_BUILDING_TYPE_ID,
   WATCHTOWER_BUILDING_TYPE_ID,
 } from '../data/buildingCatalog';
+import type { SelectedTool } from '../types';
 import type { ToolbarEntry } from './buildingPresentation';
 import { BUILDING_SPRITE_PATHS } from './spritePaths';
 
@@ -42,4 +46,22 @@ export function getToolbarIcon(entry: ToolbarEntry): ToolbarIcon {
   }
   // Last-resort fallback
   return { kind: 'lucide', Icon: MoveRight };
+}
+
+/**
+ * Variants that share the art of their toolbar slot: a small mark tells which
+ * one is in hand. An upgraded tier (extractor mk2, fast belt) gets the same
+ * mark; the others get the icon of what they do.
+ */
+const VARIANT_MARKS: ReadonlyMap<string, LucideIcon> = new Map([
+  [EXTRACTOR_MK2_BUILDING_TYPE_ID, ChevronsUp],
+  [FUEL_CELL_BUILDING_TYPE_ID, Flame],
+  [SPLITTER_BASIC_BUILDING_TYPE_ID, Split],
+]);
+
+/** The mark of the variant the tool holds, null for a slot's first variant and for other tools. */
+export function getVariantMark(tool: SelectedTool): LucideIcon | null {
+  if (tool.kind === 'building') return VARIANT_MARKS.get(tool.buildingType) ?? null;
+  if (tool.kind === 'belt') return tool.tier === 'fast' ? ChevronsUp : null;
+  return null;
 }

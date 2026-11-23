@@ -13,7 +13,7 @@ import {
 } from '@/game/ui/buildingPresentation';
 import { costLines, type CostLine } from '@/game/ui/costPresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
-import { getToolbarIcon } from '@/game/ui/toolbarIcons';
+import { getToolbarIcon, getVariantMark } from '@/game/ui/toolbarIcons';
 import type { BeltTier, SelectedTool } from '@/game/types';
 import { digitOf } from '@/game/input/keyboardShortcuts';
 import { useGameStore } from '@/store/useGameStore';
@@ -152,6 +152,7 @@ function BuildingPickerView() {
         const tooltipId = `${key.replace(/[^a-z0-9_-]/gi, '-')}-tooltip`;
         const icon = getToolbarIcon(entry);
         const IconComponent = icon.kind === 'lucide' ? icon.Icon : null;
+        const variantMark = active ? getVariantMark(selectedTool) : null;
 
         return (
           <HoverTooltip key={key} content={tooltip} id={tooltipId}>
@@ -200,6 +201,16 @@ function BuildingPickerView() {
                   <Icon icon={Lock} size={11} className="absolute left-1 top-1 text-ink-muted" aria-hidden="true" />
                 )}
 
+                {variantMark && (
+                  <Icon
+                    icon={variantMark}
+                    size={11}
+                    className="absolute bottom-1 left-1 text-accent"
+                    data-testid="variant-mark"
+                    aria-hidden="true"
+                  />
+                )}
+
                 {/* Shortcut badge — top-right corner */}
                 <span className="absolute right-1 top-0.5 tabular-nums text-[11px] text-ink-muted">
                   {entry.shortcut.toUpperCase()}
@@ -218,7 +229,7 @@ function BuildingPickerView() {
                     label={cost.perSegment ? `Coût par segment de ${label}` : `Coût de ${label}`}
                   />
                   {cost.perSegment && (
-                    <span aria-hidden="true" className="text-[10px] leading-none text-ink-muted">
+                    <span aria-hidden="true" className="text-[11px] leading-none text-ink-muted">
                       /seg
                     </span>
                   )}

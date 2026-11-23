@@ -145,14 +145,14 @@ export function StartScreen() {
                 type="button"
                 autoFocus
                 onClick={() => confirmNewGame(pendingMode)}
-                className="label cursor-pointer rounded-sm border border-error bg-error/10 px-3 py-1.5 text-error transition-colors hover:bg-error/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-error"
+                className="label cursor-pointer rounded-sm border border-error bg-error/10 px-3 py-1 text-error transition-colors hover:bg-error/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-error"
               >
                 Effacer et commencer
               </button>
               <button
                 type="button"
                 onClick={cancelNewGame}
-                className="label cursor-pointer rounded-sm border border-border bg-surface px-3 py-1.5 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                className="label cursor-pointer rounded-sm border border-border bg-surface px-3 py-1 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
               >
                 Annuler
               </button>

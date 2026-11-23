@@ -23,7 +23,7 @@ export function CostList({ lines, size = 'regular', label = 'Coût', className }
     <span
       role="group"
       aria-label={`${label} : ${costText(lines)}${short ? ', ressources insuffisantes' : ''}`}
-      className={cn('inline-flex items-center', compact ? 'gap-1.5' : 'gap-2', className)}
+      className={cn('inline-flex items-center', compact ? 'gap-1' : 'gap-2', className)}
     >
       {lines.map((line) => (
         <span
@@ -31,7 +31,7 @@ export function CostList({ lines, size = 'regular', label = 'Coût', className }
           data-short={line.missing > 0 || undefined}
           className={cn(
             'inline-flex items-center gap-0.5 tabular-nums',
-            compact ? 'text-[10px] leading-none' : 'text-xs',
+            compact ? 'text-[11px] leading-none' : 'text-xs',
             line.missing > 0 ? 'text-accent-warm' : 'text-ink',
           )}
         >

@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { useGameStore } from '@/store/useGameStore';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
 import { formatAmount } from '@/game/ui/depositPresentation';
-import { formatRate } from '@/game/ui/numberPresentation';
+import { energyInClockHours, formatEnergy, formatRate } from '@/game/ui/numberPresentation';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -95,21 +95,15 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
       const lowCharge = percent < 20;
       rows = (
         <>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Icon icon={Battery} size={11} className="text-ink-muted" />
-              <span className="text-xs font-medium tabular-nums text-ink">{percent}%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Icon icon={Zap} size={11} className="text-ink-muted" />
-              <span className="text-xs font-medium tabular-nums text-ink">
-                Réserve {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
-              </span>
-            </div>
-          </div>
+          <StatRow icon={Battery} label="Charge" value={`${percent}%`} />
+          <StatRow
+            icon={Zap}
+            label="Réserve"
+            value={`${energyInClockHours(charge)} / ${formatEnergy(batterySpec.capacity)}`}
+          />
           <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-sm bg-surface-2">
             <div
-              className={`h-full rounded-sm transition-all duration-300 ${lowCharge ? 'bg-accent-warm' : 'bg-accent'}`}
+              className={`h-full rounded-sm transition-[width] duration-[var(--duration-panel)] ${lowCharge ? 'bg-accent-warm' : 'bg-accent'}`}
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -141,7 +135,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
   } else if (isFuelCellTypeId(building.typeId)) {
     const fuel = getBuildingType(building.typeId)!.fuel!;
     const burning = (engine.getFuelBurnRemaining(building.id) ?? 0) > 0;
-    const perMinute = (60 / fuel.burnSeconds).toLocaleString('fr-CH', { maximumFractionDigits: 1 });
+    
     const fuelList = fuel.inputs.map((input) => resourceTypeLabel(input.resourceType)).join(', ');
 
     rows = (
@@ -159,7 +153,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
           value={burning ? 'En marche' : 'À court'}
           valueClass={burning ? 'text-ink' : 'text-accent-warm'}
         />
-        <StatRow icon={Activity} label="Consomme" value={`${fuelList} · ${perMinute}/min`} />
+        <StatRow icon={Activity} label="Consomme" value={`${fuelList} · ${formatRate(60 / fuel.burnSeconds)}`} />
       </>
     );
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
@@ -255,7 +249,7 @@ function StatRow({
   valueClass?: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       <Icon icon={icon} size={11} className="text-ink-muted" />
       <span className="label text-ink-muted">{label}</span>
       <span className={`ml-auto text-xs font-medium tabular-nums ${valueClass ?? 'text-ink'}`}>{value}</span>
@@ -265,9 +259,9 @@ function StatRow({
 
 function ResourceStockCard({ sprite, alt, count }: { sprite: string; alt: string; count: number }) {
   return (
-    <div className="rounded-sm border border-border bg-surface-2/60 px-1.5 py-1.5">
+    <div className="rounded-sm border border-border bg-surface-2/60 px-1 py-1">
       <div className="relative flex min-h-11 items-center justify-center">
-        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[10px] tabular-nums text-ink">
+        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[11px] tabular-nums text-ink">
           {count}
         </span>
         <img src={sprite} className="h-8 w-8 object-contain" alt={alt} />
@@ -303,7 +297,7 @@ function RecipeCard({
       aria-disabled={locked || undefined}
       title={lockHint ?? undefined}
       className={cn(
-        'rounded-sm border px-1.5 py-1.5 text-left transition-colors',
+        'rounded-sm border px-1 py-1 text-left transition-colors',
         locked
           ? 'cursor-not-allowed border-border bg-surface text-ink-muted'
           : active
@@ -312,7 +306,7 @@ function RecipeCard({
       )}
     >
       <div className={cn('relative flex min-h-11 items-center justify-center', locked && 'opacity-30 grayscale')}>
-        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[10px] tabular-nums text-ink">
+        <span className="absolute top-0 left-0 rounded-sm border border-border bg-surface px-1 text-[11px] tabular-nums text-ink">
           {recipe.output.amount}x
         </span>
         {sprite ? (
@@ -322,7 +316,7 @@ function RecipeCard({
         )}
       </div>
       <div className="mt-1 text-center text-[11px] leading-tight text-ink">{outputLabel}</div>
-      <div className="mt-1 text-[10px] leading-snug text-ink-muted">
+      <div className="mt-1 text-[11px] leading-snug text-ink-muted">
         {locked ? (
           <span className="flex items-start gap-1">
             <Icon icon={Lock} size={10} className="mt-px" aria-hidden="true" />

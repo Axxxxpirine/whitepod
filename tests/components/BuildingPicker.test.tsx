@@ -213,4 +213,25 @@ describe('BuildingPicker shared slots', () => {
     fireEvent.keyDown(window, { key: '1' });
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
   });
+
+  it('marks the variant in hand when it shares the art of its slot', () => {
+    const engine = new GameEngine(800, 600);
+    engine.generateMap(42);
+    useGameStore.setState({ engine });
+    render(<BuildingPicker />);
+    const marks = () => screen.queryAllByTestId('variant-mark').map((mark) => mark.closest('button')!.getAttribute('aria-label'));
+
+    expect(marks()).toEqual([]);
+    fireEvent.keyDown(window, { key: '1' });
+    expect(marks()).toEqual([]);
+    fireEvent.keyDown(window, { key: '1' });
+    expect(marks()).toEqual([getBuildingType(EXTRACTOR_MK2_BUILDING_TYPE_ID)!.name]);
+    fireEvent.keyDown(window, { key: '6' });
+    fireEvent.keyDown(window, { key: '6' });
+    expect(marks()).toEqual(['Répartiteur']);
+    fireEvent.keyDown(window, { key: '3' });
+    expect(marks()).toEqual([]);
+    fireEvent.keyDown(window, { key: '3' });
+    expect(marks()).toEqual(['Convoyeur rapide']);
+  });
 });

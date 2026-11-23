@@ -3,8 +3,10 @@ import { worldSideOf, worldTileOf } from '../data/ConnectionRegistry';
 import { Direction, PortKind, type Building, type BuildingType, type TileCoord } from '../types';
 import { PIXI } from '@/design/tokens';
 
+// DESIGN.md keeps amber for warnings and never pairs it with cyan: what comes
+// in is cyan (data), what goes out is ivory.
 const INPUT_COLOR = PIXI.accent;
-const OUTPUT_COLOR = PIXI.accentWarm;
+const OUTPUT_COLOR = PIXI.ink;
 
 export function drawBuildingPortMarkers(
   draw: {
