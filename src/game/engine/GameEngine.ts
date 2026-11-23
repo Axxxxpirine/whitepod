@@ -918,6 +918,61 @@ export class GameEngine {
     return null;
   }
 
+  /**
+   * What a producer makes per minute as things stand, 0 when it is stopped:
+   * an extractor needs power and a deposit, a machine needs power, a recipe, a
+   * working line, and enough running producers behind each input. A machine
+   * fed slower than its recipe runs at the pace of its inputs.
+   */
+  getProducerRatePerMinute(buildingId: BuildingId): number {
+    return this.producerRate(buildingId, new Map());
+  }
+
+  private producerRate(buildingId: BuildingId, memo: Map<BuildingId, number>): number {
+    const known = memo.get(buildingId);
+    if (known !== undefined) return known;
+    // Guards a loop of machines feeding each other: a producer being worked out counts for nothing.
+    memo.set(buildingId, 0);
+    const rate = this.computeProducerRate(buildingId, memo);
+    memo.set(buildingId, rate);
+    return rate;
+  }
+
+  private computeProducerRate(buildingId: BuildingId, memo: Map<BuildingId, number>): number {
+    const building = this.buildings.get(buildingId);
+    if (!building || this.getBuildingPowerState(buildingId) !== 'powered') return 0;
+    if (isExtractorTypeId(building.typeId)) {
+      const { x, y } = building.origin;
+      if (this.grid.getResource(x, y) === ResourceType.None || this.grid.getResourceAmount(x, y) === 0) return 0;
+      return extractorRatePerMinute(building.typeId);
+    }
+
+    const recipeId = this.processorStates.get(buildingId)?.recipeId;
+    const recipe = recipeId ? getRecipe(recipeId) : undefined;
+    if (!recipe) return 0;
+    const logistics = this.getProcessorLogisticsStatus(buildingId);
+    if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) return 0;
+
+    let batches = 60 / recipe.cycleSeconds;
+    for (const assignment of logistics.assignments) {
+      const input = recipe.inputs.find((entry) => entry.resourceType === assignment.requiredResourceType);
+      if (!input) return 0;
+      // What each running provider sends this way (a provider behind a splitter shares its output).
+      const supplies = this.resolveReachableProviders(buildingId, assignment.portId)
+        .filter((providerId) => this.getProducerResourceType(providerId) === assignment.requiredResourceType)
+        .map((providerId) => this.producerRate(providerId, memo) / Math.max(1, this.producerRoutes(providerId).length))
+        .filter((perMinute) => perMinute > 0);
+      if (supplies.length < input.amount) return 0;
+      // A batch takes one unit from each of `amount` distinct providers.
+      for (let pass = 0; pass < 8; pass++) {
+        const reachable = supplies.reduce((sum, perMinute) => sum + Math.min(perMinute, batches), 0) / input.amount;
+        if (reachable >= batches - 1e-9) break;
+        batches = reachable;
+      }
+    }
+    return batches * recipe.output.amount;
+  }
+
   getProcessorLogisticsStatus(buildingId: BuildingId): ProcessorLogisticsStatus | null {
     this.refreshLogisticsCache();
     if (!this.logisticsByProcessor.has(buildingId)) {
@@ -940,24 +995,14 @@ export class GameEngine {
     // What each source would send, then what the belts let through.
     const nominal = new Map<BuildingId, number>();
     const output = new Map<BuildingId, ResourceTypeT>();
+    const memo = new Map<BuildingId, number>();
 
-    for (const [id, building] of this.buildings.getAll().entries()) {
-      if (!isExtractorTypeId(building.typeId)) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (this.getDepositRemaining(id) === 0) continue;
-      nominal.set(id, extractorRatePerMinute(building.typeId));
-      output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
-    }
-
-    for (const [id, state] of this.processorStates) {
-      if (!state.recipeId) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
-      const logistics = this.getProcessorLogisticsStatus(id);
-      if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
-      const recipe = getRecipe(state.recipeId);
-      if (!recipe) continue;
-      nominal.set(id, (recipe.output.amount / recipe.cycleSeconds) * 60);
-      output.set(id, recipe.output.resourceType);
+    for (const id of this.producerOutputBuffers.keys()) {
+      const perMinute = this.producerRate(id, memo);
+      const resourceType = perMinute > 0 ? this.getProducerResourceType(id) : null;
+      if (resourceType === null) continue;
+      nominal.set(id, perMinute);
+      output.set(id, resourceType);
     }
 
     // A producer behind splitters shares its output evenly among its routes;
