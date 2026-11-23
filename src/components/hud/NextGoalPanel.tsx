@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { HUB_BUILDING_TYPE_ID, getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { GameMode } from '@/game/data/gameMode';
 import type { Milestone } from '@/game/data/milestoneCatalog';
@@ -21,7 +21,7 @@ const HUB_NAME = getBuildingType(HUB_BUILDING_TYPE_ID)?.name ?? 'hub';
  * resource (counted in the hub only), what it unlocks, and the action that
  * completes it once everything is delivered. Hidden in sandbox.
  */
-export function NextGoalPanel() {
+function NextGoalPanelView() {
   const engine = useGameStore((s) => s.engine);
   // Hub deliveries and completions both arrive as world changes.
   const worldVersion = useGameStore((s) => s.worldVersion);
@@ -135,3 +135,6 @@ export function NextGoalPanel() {
     </section>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const NextGoalPanel = memo(NextGoalPanelView);

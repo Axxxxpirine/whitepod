@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { beltTierOf, getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
 import { beltToolLabel } from '@/game/ui/buildingPresentation';
@@ -6,7 +6,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
 import { Panel, PanelHeading, Icon } from '../ui';
 
-export function SelectedBuildingPanel() {
+function SelectedBuildingPanelView() {
   const engine = useGameStore((s) => s.engine);
   const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
   const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
@@ -83,3 +83,6 @@ export function SelectedBuildingPanel() {
     </div>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const SelectedBuildingPanel = memo(SelectedBuildingPanelView);

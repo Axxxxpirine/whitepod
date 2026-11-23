@@ -384,6 +384,32 @@ describe('GameHUD', () => {
     expect(useGameStore.getState().sfxVolume).toBeCloseTo(0.42);
   });
 
+  it('does not re-render the toolbar when the pointer moves or the clock ticks', () => {
+    const engine = makeEngine();
+    useGameStore.setState({ engine, simulationTime: 0.5 });
+    render(<GameHUD />);
+    // The toolbar prices every entry each time it renders.
+    const priced = vi.spyOn(engine, 'getBuildingCost');
+
+    act(() => {
+      useGameStore.getState().setHoverTile({ x: 3, y: 4 });
+    });
+    expect(screen.getByText('3, 4')).toBeInTheDocument();
+    act(() => {
+      useGameStore.getState().setHoverTile({ x: 5, y: 4 });
+      useGameStore.getState().setSimulationTime(0.51);
+    });
+    expect(screen.getByText('5, 4')).toBeInTheDocument();
+    expect(screen.getByText(/12:14/)).toBeInTheDocument();
+    expect(priced).not.toHaveBeenCalled();
+
+    // A world change (stock, unlocks) still refreshes it.
+    act(() => {
+      useGameStore.getState().bumpWorldVersion();
+    });
+    expect(priced).toHaveBeenCalled();
+  });
+
   it('shows simulation time in the HUD panel', () => {
     const engine = makeEngine();
     useGameStore.setState({ engine, simulationTime: 0.5 });
