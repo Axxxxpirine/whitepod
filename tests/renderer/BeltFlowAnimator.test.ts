@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Container, type Application, type Sprite } from 'pixi.js';
 import { GameEngine } from '@/game/engine/GameEngine';
 import { BeltFlowAnimator } from '@/game/renderer/BeltFlowAnimator';
@@ -558,6 +558,67 @@ describe('BeltFlowAnimator', () => {
 
     expect(highRateMaxRate).toBeGreaterThan(lowRateMaxRate);
     expect(highRateMaxVisualCount).toBeGreaterThanOrEqual(lowRateMaxVisualCount);
+
+    animator.destroy();
+  });
+
+  function poweredLine(engine: GameEngine, y: number): { solarId: BuildingId; extractorId: BuildingId } {
+    engine.placeResource(2, y, ResourceType.Regolith);
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 1, y })!;
+    const extractorId = engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x: 2, y })!;
+    expect(engine.connectBuildings(solarId, extractorId)).toBe(true);
+    const targetId = engine.placeBuilding('placeholder_node_1x1', { x: 7, y })!;
+    const belt = engine.placeBelt({ building: extractorId, port: 'out_east' }, { building: targetId, port: 'in_west' });
+    if (!belt.ok) throw new Error(`belt placement failed: ${belt.reason}`);
+    return { solarId, extractorId };
+  }
+
+  it('keeps the belt paths when only production changes, and still follows the new rate', () => {
+    const engine = makeEngine();
+    const { solarId, extractorId } = poweredLine(engine, 1);
+    const animator = createAnimator(engine);
+    animator.update(0);
+    const component = () => internals(animator).flowComponents.values().next().value!;
+    const paths = component().orderedBeltIds;
+    expect(component().totalRatePerMinute).toBeGreaterThan(0);
+
+    const walksOfTheNetwork = vi.spyOn(engine, 'getConnections');
+    // The power link goes: production stops, no belt has moved.
+    expect(engine.disconnectBuildings(solarId, extractorId)).toBe(true);
+    animator.update(0);
+
+    expect(walksOfTheNetwork).not.toHaveBeenCalled();
+    expect(component().orderedBeltIds).toBe(paths);
+    expect(component().totalRatePerMinute).toBe(0);
+
+    // A second line: the network changed, the paths are rebuilt.
+    poweredLine(engine, 5);
+    animator.update(0);
+    expect(walksOfTheNetwork).toHaveBeenCalled();
+    expect(internals(animator).flowComponents.size).toBe(2);
+
+    animator.destroy();
+  });
+
+  it('draws nothing for a line out of view, and draws it again when the camera comes back', () => {
+    const engine = makeEngine();
+    poweredLine(engine, 1);
+    const animator = createAnimator(engine);
+    focusViewportOnBelts(engine);
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBeGreaterThan(0);
+
+    engine.viewport.centerX = 200 * TILE_SIZE;
+    engine.viewport.centerY = 200 * TILE_SIZE;
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBe(0);
+
+    focusViewportOnBelts(engine);
+    animator.update(16);
+    animator.render();
+    expect(internals(animator).activeSprites.size).toBeGreaterThan(0);
 
     animator.destroy();
   });
