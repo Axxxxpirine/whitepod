@@ -87,7 +87,7 @@ function ToolModeIndicatorView() {
         : 'Mode · Tracé en attente';
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-border bg-surface/90 px-2 py-1.5 text-xs text-ink backdrop-blur-md">
+    <div className="flex flex-col gap-1 rounded-md border border-border bg-surface/90 px-2 py-1 text-xs text-ink backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 whitespace-nowrap">
         <Chip tone={tone}>{chipLabel}</Chip>
         <span className="text-[11px] text-ink-muted">

@@ -48,14 +48,14 @@ function SelectedBuildingPanelView() {
       className="pointer-events-auto absolute"
       style={{ left: anchorX, top: anchorY + 12, transform: 'translateX(-50%)' }}
     >
-      <Panel className={`flex ${panelWidthClass} flex-col gap-1.5 px-3 py-2 text-ink`}>
+      <Panel className={`flex ${panelWidthClass} flex-col gap-1 px-3 py-2 text-ink`}>
         <div className="flex items-center gap-2">
           <PanelHeading className="whitespace-nowrap">{title}</PanelHeading>
           {!type.permanent && (
             <button
               type="button"
               onClick={() => deleteSelectedBuilding(useGameStore)}
-              className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
+              className="ml-auto cursor-pointer rounded-sm border border-transparent p-1 text-error transition-colors hover:border-error hover:bg-error/10"
               aria-label={beltTier ? 'Supprimer le convoyeur' : 'Supprimer le bâtiment'}
               title={beltTier ? 'Supprimer tout le convoyeur (Suppr)' : 'Supprimer le bâtiment (Suppr)'}
             >

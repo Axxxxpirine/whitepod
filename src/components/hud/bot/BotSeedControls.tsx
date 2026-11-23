@@ -18,13 +18,13 @@ export function BotSeedControls({ value, onChange, canApply, onApply }: BotSeedC
         onKeyDown={(e) => {
           if (e.key === 'Enter') onApply();
         }}
-        className="w-20 rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-xs tabular-nums text-ink outline-none focus-visible:border-accent"
+        className="w-20 rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs tabular-nums text-ink outline-none focus-visible:border-accent"
       />
       <button
         type="button"
         disabled={!canApply}
         onClick={onApply}
-        className="cursor-pointer rounded-sm border border-border bg-surface px-2 py-1.5 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+        className="cursor-pointer rounded-sm border border-border bg-surface px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-border hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
       >
         Appliquer
       </button>

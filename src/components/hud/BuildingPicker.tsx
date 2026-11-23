@@ -218,7 +218,7 @@ function BuildingPickerView() {
                     label={cost.perSegment ? `Coût par segment de ${label}` : `Coût de ${label}`}
                   />
                   {cost.perSegment && (
-                    <span aria-hidden="true" className="text-[10px] leading-none text-ink-muted">
+                    <span aria-hidden="true" className="text-[11px] leading-none text-ink-muted">
                       /seg
                     </span>
                   )}

@@ -57,7 +57,7 @@ function NextGoalPanelView() {
       className="pointer-events-auto absolute w-60"
       style={{ top: MINIMAP_SCREEN_BOTTOM + GAP_BELOW_MINIMAP, right: MINIMAP_MARGIN }}
     >
-      <Panel className="flex flex-col gap-2 px-3 py-2.5 text-ink">
+      <Panel className="flex flex-col gap-2 px-3 py-2 text-ink">
         {reached && (
           <div role="status" className="border-b border-border pb-2 text-xs">
             <div className="text-ok">Palier atteint · {reached.title}</div>
@@ -71,18 +71,18 @@ function NextGoalPanelView() {
           <>
             <div>
               <div className="label text-ink-muted">{chapterLabel(progress.milestone.chapter)}</div>
-              <PanelHeading className="text-base">{progress.milestone.title}</PanelHeading>
+              <PanelHeading className="text-lg">{progress.milestone.title}</PanelHeading>
             </div>
 
             <div className="text-[11px] text-ink-muted">À livrer au {HUB_NAME}</div>
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-1">
               {progress.requirements.map((requirement) => {
                 const label = resourceTypeLabel(requirement.resourceType);
                 const done = requirement.available >= requirement.required;
                 const sprite = getResourceSprite(requirement.resourceType);
                 return (
                   <li key={requirement.resourceType} className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-xs">
+                    <div className="flex items-center gap-1 text-xs">
                       {sprite && <img src={sprite} alt="" className="h-3.5 w-3.5 object-contain" draggable={false} />}
                       <span className="min-w-0 flex-1 truncate">{label}</span>
                       <span className={cn('tabular-nums', done ? 'text-ok' : 'text-ink')}>
@@ -118,7 +118,7 @@ function NextGoalPanelView() {
               onClick={complete}
               disabled={!progress.ready}
               className={cn(
-                'label rounded-sm border px-2 py-1.5 transition-colors',
+                'label rounded-sm border px-2 py-1 transition-colors',
                 'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent',
                 progress.ready
                   ? 'cursor-pointer border-accent bg-accent/10 text-accent hover:bg-accent/20'

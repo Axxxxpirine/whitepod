@@ -457,7 +457,9 @@ describe('GameHUD', () => {
     });
     expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
     // Global HUD line and selected battery panel use the same word for stored energy.
-    expect(screen.getAllByText('Réserve 46 / 240 kWh')).toHaveLength(2);
+    expect(screen.getByText('Réserve 46 / 240 kWh')).toBeInTheDocument();
+    expect(screen.getByText('Réserve')).toBeInTheDocument();
+    expect(screen.getByText('46 / 240 kWh')).toBeInTheDocument();
   });
 
   it('shows deficit and unmet demand without ambiguous energy labels', () => {
