@@ -1,4 +1,5 @@
 import { Container, Graphics, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
@@ -33,7 +34,7 @@ export class BuildingHighlightRenderer {
   constructor(app: Application, engine: GameEngine, getState: () => HighlightState) {
     this.engine = engine;
     this.getState = getState;
-    this.container = new Container();
+    this.container = createWorldLayer();
     this.graphics = new Graphics();
     this.container.addChild(this.graphics);
     app.stage.addChild(this.container);

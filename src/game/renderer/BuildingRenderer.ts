@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import {
   CONVERTER_BUILDING_TYPE_ID,
@@ -107,12 +108,12 @@ export class BuildingRenderer {
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.buildingContainer = new Container();
+    this.buildingContainer = createWorldLayer();
     this.buildingContainer.sortableChildren = true;
-    this.shadowContainer = new Container();
+    this.shadowContainer = createWorldLayer();
     this.shadowContainer.sortableChildren = true;
-    this.indicatorContainer = new Container();
-    this.portMarkerContainer = new Container();
+    this.indicatorContainer = createWorldLayer();
+    this.portMarkerContainer = createWorldLayer();
     app.stage.addChild(this.shadowContainer);
     app.stage.addChild(this.buildingContainer);
     app.stage.addChild(this.portMarkerContainer);

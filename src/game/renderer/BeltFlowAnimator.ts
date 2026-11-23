@@ -1,4 +1,5 @@
 import { Container, Sprite, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import { getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
@@ -51,7 +52,7 @@ export class BeltFlowAnimator {
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.particleContainer = new Container();
+    this.particleContainer = createWorldLayer();
     app.stage.addChild(this.particleContainer);
     this.unsubscribeEngine = engine.subscribe((kind) => {
       if (kind === 'world') this.worldDirty = true;

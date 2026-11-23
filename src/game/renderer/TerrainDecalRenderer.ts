@@ -1,4 +1,5 @@
 import { Container, Sprite, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { GRID_WIDTH, TILE_SIZE } from '../constants';
 import type { GameEngine } from '../engine/GameEngine';
 import { TileType } from '../types';
@@ -44,7 +45,7 @@ export class TerrainDecalRenderer {
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.container = new Container();
+    this.container = createWorldLayer();
     app.stage.addChild(this.container);
   }
 

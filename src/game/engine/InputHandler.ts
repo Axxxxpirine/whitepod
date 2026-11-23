@@ -10,6 +10,7 @@ export class InputHandler {
   private isPanning = false;
   private readonly unsubscribeViewport: () => void;
   private pointer: { x: number; y: number } | null = null;
+  private hoveredTile: TileCoord | null = null;
   private onPointerHover: ((screenX: number, screenY: number) => void) | null = null;
   private lastPanX = 0;
   private lastPanY = 0;
@@ -169,7 +170,12 @@ export class InputHandler {
     if (!this.pointer) return;
     const { x, y } = this.pointer;
     const coord = screenToGrid(this.engine.viewport, x, y);
-    this.onHoverChange?.(isInBounds(coord.x, coord.y) ? coord : null);
+    const hovered = isInBounds(coord.x, coord.y) ? coord : null;
+    // The pointer moves many times within a tile: only a change of tile is news for the HUD.
+    if (hovered?.x !== this.hoveredTile?.x || hovered?.y !== this.hoveredTile?.y) {
+      this.hoveredTile = hovered;
+      this.onHoverChange?.(hovered);
+    }
     this.onPointerHover?.(x, y);
   }
 
@@ -180,6 +186,7 @@ export class InputHandler {
   onPointerLeave(): void {
     this.pointer = null;
     this.isPanning = false;
+    this.hoveredTile = null;
     this.onHoverChange?.(null);
   }
 

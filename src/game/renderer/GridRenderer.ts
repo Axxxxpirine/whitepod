@@ -1,4 +1,5 @@
 import { Container, Sprite, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import type { GameEngine } from '../engine/GameEngine';
 import { TILE_SIZE, GRID_WIDTH } from '../constants';
 import type { TileType } from '../types';
@@ -13,7 +14,7 @@ export class GridRenderer {
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.tileContainer = new Container();
+    this.tileContainer = createWorldLayer();
     app.stage.addChild(this.tileContainer);
   }
 

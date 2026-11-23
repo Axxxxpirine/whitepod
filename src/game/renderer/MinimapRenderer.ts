@@ -66,10 +66,8 @@ export class MinimapRenderer {
   private readonly image: ImageData;
   private readonly pixels: Uint32Array;
   private readonly texture: Texture;
-  private readonly unsubscribe: () => void;
-  private worldDirty = true;
+  private drawnWorldKey: string | null = null;
   private lastRebuildAt = -Infinity;
-  private lastFogVersion = -1;
   private lastViewportKey = '';
   private isDragging = false;
 
@@ -126,10 +124,6 @@ export class MinimapRenderer {
     this.container.on('pointerup', this.onPointerUp, this);
     this.container.on('pointerupoutside', this.onPointerUp, this);
 
-    this.unsubscribe = engine.subscribe((kind) => {
-      if (kind === 'world') this.worldDirty = true;
-    });
-
     this.updatePosition();
     this.rebuildTexture();
     this.updateViewportBorder();
@@ -143,13 +137,10 @@ export class MinimapRenderer {
   render(): void {
     this.updatePosition();
 
-    const { grid, viewport } = this.engine;
-    const now = performance.now();
-    if (grid.fogVersion !== this.lastFogVersion) {
-      this.worldDirty = true;
-      this.lastFogVersion = grid.fogVersion;
-    }
-    if (this.worldDirty && now - this.lastRebuildAt >= REBUILD_INTERVAL_MS) {
+    const { viewport } = this.engine;
+    // Rebuilt only when the map itself changes (tiles, fog, deposits, buildings):
+    // the simulation's own notifications, several a second, show nothing here.
+    if (this.worldKey() !== this.drawnWorldKey && performance.now() - this.lastRebuildAt >= REBUILD_INTERVAL_MS) {
       this.rebuildTexture();
     }
 
@@ -186,6 +177,10 @@ export class MinimapRenderer {
     this.watchtowerPreview.visible = true;
   }
 
+  private worldKey(): string {
+    return `${this.engine.grid.revision}:${this.engine.buildings.revision}`;
+  }
+
   private rebuildTexture(): void {
     const { grid } = this.engine;
     const { pixels } = this;
@@ -195,7 +190,7 @@ export class MinimapRenderer {
         const idx = y * GRID_WIDTH + x;
         if (!grid.isRevealed(x, y)) {
           pixels[idx] = COLOR_HIDDEN;
-        } else if (this.engine.getResourceAt(x, y) !== ResourceType.None) {
+        } else if (grid.resourceType[idx] !== ResourceType.None && grid.resourceAmount[idx] > 0) {
           pixels[idx] = COLOR_RESOURCE;
         } else {
           pixels[idx] = COLOR_REVEALED;
@@ -219,7 +214,7 @@ export class MinimapRenderer {
 
     this.ctx.putImageData(this.image, 0, 0);
     this.texture.source.update();
-    this.worldDirty = false;
+    this.drawnWorldKey = this.worldKey();
     this.lastRebuildAt = performance.now();
   }
 
@@ -255,7 +250,6 @@ export class MinimapRenderer {
   }
 
   destroy(): void {
-    this.unsubscribe();
     this.container.destroy({ children: true });
     this.texture.destroy(true);
   }

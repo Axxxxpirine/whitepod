@@ -15,6 +15,12 @@ export class BuildingRegistry {
   private readonly occupancy: Uint16Array;
   private readonly instances: Map<BuildingId, Building>;
   private nextId: BuildingId;
+  private revisionValue = 0;
+
+  /** Changes whenever a building is added, removed or changes type: what the map layers redraw on. */
+  get revision(): number {
+    return this.revisionValue;
+  }
 
   constructor() {
     this.occupancy = new Uint16Array(GRID_SIZE);
@@ -69,6 +75,7 @@ export class BuildingRegistry {
     for (const { idx } of this.footprintTiles(building.origin, footprint)) {
       this.occupancy[idx] = id;
     }
+    this.revisionValue += 1;
     return id;
   }
 
@@ -79,6 +86,7 @@ export class BuildingRegistry {
       if (inBounds) this.occupancy[idx] = 0;
     }
     this.instances.delete(id);
+    this.revisionValue += 1;
     return true;
   }
 
@@ -87,6 +95,7 @@ export class BuildingRegistry {
     const building = this.instances.get(id);
     if (!building) return false;
     this.instances.set(id, { ...building, typeId });
+    this.revisionValue += 1;
     return true;
   }
 
