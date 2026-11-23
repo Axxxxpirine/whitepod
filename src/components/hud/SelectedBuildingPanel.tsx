@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { beltTierOf, getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
+import { beltTierOf, getBuildingType, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
+import { deleteSelectedBuilding } from '@/game/input/deleteSelection';
 import { beltToolLabel } from '@/game/ui/buildingPresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
@@ -10,10 +11,6 @@ function SelectedBuildingPanelView() {
   const engine = useGameStore((s) => s.engine);
   const selectedBuildingId = useGameStore((s) => s.selectedBuildingId);
   const selectedBuildingAnchor = useGameStore((s) => s.selectedBuildingAnchor);
-  const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
-  const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
-  const setSelectedBuildingAnchor = useGameStore((s) => s.setSelectedBuildingAnchor);
-  const setPendingEnergyLinkSource = useGameStore((s) => s.setPendingEnergyLinkSource);
   const selectedTool = useGameStore((s) => s.selectedTool);
   const energyVersion = useGameStore((s) => s.engine?.energyNetwork.version ?? 0);
 
@@ -46,18 +43,6 @@ function SelectedBuildingPanelView() {
     anchorY <= engine.viewport.screenHeight;
   if (!onScreen) return null;
 
-  const handleDelete = () => {
-    const removed = isBeltTypeId(building.typeId)
-      ? engine.removeBelt(selectedBuildingId)
-      : engine.removeBuilding(selectedBuildingId);
-    if (!removed) return;
-    if (pendingEnergyLinkSource === selectedBuildingId) {
-      setPendingEnergyLinkSource(null);
-    }
-    setSelectedBuilding(null);
-    setSelectedBuildingAnchor(null);
-  };
-
   return (
     <div
       className="pointer-events-auto absolute"
@@ -69,10 +54,10 @@ function SelectedBuildingPanelView() {
           {!type.permanent && (
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => deleteSelectedBuilding(useGameStore)}
               className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
               aria-label={beltTier ? 'Supprimer le convoyeur' : 'Supprimer le bâtiment'}
-              title={beltTier ? 'Supprimer tout le convoyeur' : 'Supprimer le bâtiment'}
+              title={beltTier ? 'Supprimer tout le convoyeur (Suppr)' : 'Supprimer le bâtiment (Suppr)'}
             >
               <Icon icon={Trash2} size={16} />
             </button>

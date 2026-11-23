@@ -16,6 +16,7 @@ import { FogOfWarRenderer } from '@/game/renderer/FogOfWarRenderer';
 import { InputHandler } from '@/game/engine/InputHandler';
 import { BeltToolController } from '@/game/engine/BeltToolController';
 import { popCancelStack } from '@/game/input/CancelStack';
+import { deleteSelectedBuilding } from '@/game/input/deleteSelection';
 import {
   acquireSessionWriter,
   createSessionId,
@@ -459,6 +460,12 @@ export function GameCanvas() {
           if (popCancelStack(useGameStore, currentBeltToolController)) {
             engine.emitSfx({ type: 'cancel_pop' });
           }
+          return;
+        }
+        // Same action as the trash button of the selected building's panel.
+        // Only while its panel is showing: link mode also selects a building, as the link's source.
+        if ((e.key === 'Delete' || e.key === 'Backspace') && useGameStore.getState().selectedTool.kind === 'select') {
+          if (deleteSelectedBuilding(useGameStore)) e.preventDefault();
         }
       };
       handleVisibilityChange = () => {
