@@ -435,10 +435,12 @@ export function GameCanvas() {
         if (
           target instanceof HTMLInputElement ||
           target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
           (target instanceof HTMLElement && target.isContentEditable)
         ) {
           return;
         }
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
         if ((e.key === 'r' || e.key === 'R') && useGameStore.getState().selectedTool.kind === 'building') {
           useGameStore.getState().rotateBuildingRotation();
           engine.emitSfx({ type: 'rotate_click' });

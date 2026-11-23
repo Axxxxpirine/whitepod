@@ -15,6 +15,7 @@ import { costLines, type CostLine } from '@/game/ui/costPresentation';
 import { lockedHint } from '@/game/ui/unlockPresentation';
 import { getToolbarIcon } from '@/game/ui/toolbarIcons';
 import type { BeltTier, SelectedTool } from '@/game/types';
+import { digitOf } from '@/game/input/keyboardShortcuts';
 import { useGameStore } from '@/store/useGameStore';
 import { HoverTooltip, Icon } from '@/components/ui';
 import { CostList } from './CostList';
@@ -117,12 +118,14 @@ export function BuildingPicker() {
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
         (target instanceof HTMLElement && target.isContentEditable)
       ) {
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const entry = toolbarEntries.find((t) => t.shortcut === e.key.toLowerCase());
+      const shortcut = digitOf(e) ?? e.key.toLowerCase();
+      const entry = toolbarEntries.find((t) => t.shortcut === shortcut);
       if (!entry) return;
       e.preventDefault();
       selectEntry(entry);

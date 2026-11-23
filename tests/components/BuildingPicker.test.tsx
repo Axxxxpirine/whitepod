@@ -46,6 +46,21 @@ describe('BuildingPicker unlocks', () => {
     expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
   });
 
+  it('answers the top-row keys on an AZERTY keyboard, which types punctuation there', () => {
+    useGameStore.setState({ engine: campaign() });
+    render(<BuildingPicker />);
+
+    // AZERTY: the "2" key types "é" without Shift.
+    fireEvent.keyDown(window, { key: 'é', code: 'Digit2' });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'building', buildingType: STORAGE_BUILDING_TYPE_ID });
+
+    // Swiss QWERTZ: Shift+1 types "+", which zooms; it is not the toolbar's "1".
+    fireEvent.keyDown(window, { key: 'Escape' });
+    useGameStore.setState({ selectedTool: { kind: 'select' } });
+    fireEvent.keyDown(window, { key: '+', code: 'Digit1', shiftKey: true });
+    expect(useGameStore.getState().selectedTool).toEqual({ kind: 'select' });
+  });
+
   it('enables the building once its milestone is completed', () => {
     const engine = campaign();
     useGameStore.setState({ engine });
