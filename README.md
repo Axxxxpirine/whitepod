@@ -187,6 +187,16 @@ window.engine.scenarios.generate('tier-build-all') // all 4 converters + 5 synth
 // Reload the page to boot through the normal persisted-session restore path.
 ```
 
+### Frame bench
+
+```js
+pixiApp                        // The Pixi Application (dev only)
+pixiApp.ticker.stop()
+pixiApp.ticker.update(t)       // Runs one frame by hand: simulation, every map layer, the Pixi render
+```
+
+Timing `ticker.update` over a few hundred frames, still and while calling `engine.viewport.pan`, gives the main-thread cost of a frame even in a hidden tab, where `requestAnimationFrame` is paused. Reference on an M3 Pro, 1 765 buildings, 1024×768: 0.5 ms still and 1.9 ms panning at minimum zoom (GPU time not included).
+
 ### Map generation
 
 ```js
