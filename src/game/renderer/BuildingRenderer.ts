@@ -99,6 +99,8 @@ export class BuildingRenderer {
   private readonly shadowPool: Graphics[] = [];
   private readonly activeSprites: Map<number, Sprite> = new Map();
   private readonly activeShadows: Map<number, Graphics> = new Map();
+  /** Geometry each active shadow was last drawn with. */
+  private readonly shadowShapes: Map<number, string> = new Map();
   private readonly activeIndicators: Map<number, Graphics> = new Map();
   private readonly activePortMarkers: Map<number, Graphics> = new Map();
   private readonly indicatorPool: Graphics[] = [];
@@ -271,8 +273,14 @@ export class BuildingRenderer {
     const centerX = (building.origin.x + type.footprint.w / 2) * TILE_SIZE;
     const centerY = (building.origin.y + type.footprint.h) * TILE_SIZE - height / 2 - 2;
 
-    shadow.clear();
-    shadow.ellipse(centerX, centerY, width / 2, height / 2).fill({ color: PIXI.bg, alpha: SHADOW_ALPHA });
+    // A shadow only changes with its building: redrawing it every frame made
+    // Pixi re-tessellate one ellipse per visible building, 60 times a second.
+    const shape = `${centerX}:${centerY}:${width}:${height}`;
+    if (this.shadowShapes.get(buildingId) !== shape) {
+      shadow.clear();
+      shadow.ellipse(centerX, centerY, width / 2, height / 2).fill({ color: PIXI.bg, alpha: SHADOW_ALPHA });
+      this.shadowShapes.set(buildingId, shape);
+    }
     shadow.zIndex = zIndex - 0.01;
     shadow.visible = true;
   }
@@ -306,6 +314,7 @@ export class BuildingRenderer {
     shadow.visible = false;
     this.shadowPool.push(shadow);
     this.activeShadows.delete(id);
+    this.shadowShapes.delete(id);
   }
 
   destroy(): void {
@@ -319,6 +328,7 @@ export class BuildingRenderer {
     this.indicatorPool.length = 0;
     this.activeSprites.clear();
     this.activeShadows.clear();
+    this.shadowShapes.clear();
     this.activePortMarkers.clear();
     this.activeIndicators.clear();
     this.indicatorColorCache.clear();
