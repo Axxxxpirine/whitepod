@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CLOCK_HOURS_PER_CYCLE } from '@/game/constants';
 import { Settings, Shuffle, Zap } from 'lucide-react';
 import { getBuildingType, resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScenario';
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import type { ScenarioGeneratorListEntry } from '@/game/scenarios/types';
 import { nightWarning } from '@/game/ui/nightPresentation';
-import { formatDuration, formatRate } from '@/game/ui/numberPresentation';
+import { energyInClockHours, formatDuration, formatEnergy, formatPower, formatRate } from '@/game/ui/numberPresentation';
 import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
@@ -100,7 +101,7 @@ export function GameHUD() {
     return engine ? nightWarning(engine.getNightOutlook()) : null;
   }, [engine, simulationTime, worldTick]);
   const isDaylight = simulationTime >= 0.25 && simulationTime < 0.75;
-  const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * 24);
+  const simulationHour = Math.floor((((simulationTime % 1) + 1) % 1) * CLOCK_HOURS_PER_CYCLE);
   const simulationPhase =
     simulationHour < 6 ? 'Nuit' : simulationHour < 12 ? 'Matin' : simulationHour < 18 ? 'Jour' : 'Soir';
 
@@ -253,27 +254,26 @@ export function GameHUD() {
                       className={`font-bold tabular-nums ${energyHeadline >= 0 ? 'text-ok' : 'text-error'}`}
                     >
                       {energyHeadline >= 0 ? '+' : ''}
-                      {Math.round(energyHeadline * 10) / 10} kW
+                      {formatPower(energyHeadline)}
                     </span>
                   </div>
                 </div>
                 <div className="mt-1 text-xs tabular-nums text-ink-muted">
-                  <span>Prod. {Math.round(globalEnergy.production * 10) / 10} kW</span>
+                  <span>Prod. {formatPower(globalEnergy.production)}</span>
                   <span className="mx-2">|</span>
-                  <span>Utilisée {Math.round(globalEnergy.servedConsumption * 10) / 10} kW</span>
+                  <span>Utilisée {formatPower(globalEnergy.servedConsumption)}</span>
                   <span className="mx-2">|</span>
-                  <span>Demande {Math.round(globalEnergy.demandedConsumption * 10) / 10} kW</span>
+                  <span>Demande {formatPower(globalEnergy.demandedConsumption)}</span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
                   {globalEnergy.unservedLoad > 0 && (
                     <span className="text-accent-warm">
-                      Non servie {Math.round(globalEnergy.unservedLoad * 10) / 10} kW
+                      Non servie {formatPower(globalEnergy.unservedLoad)}
                     </span>
                   )}
                   {energyStorage && energyStorage.capacity > 0 && (
                     <span>
-                      Réserve {Math.round(energyStorage.stored * 10) / 10} /{' '}
-                      {Math.round(energyStorage.capacity * 10) / 10} kWh
+                      Réserve {energyInClockHours(energyStorage.stored)} / {formatEnergy(energyStorage.capacity)}
                     </span>
                   )}
                 </div>
@@ -609,7 +609,7 @@ function HoverCoordinates() {
 
 function formatSimulationTime(simulationTime: number): string {
   const wrapped = ((simulationTime % 1) + 1) % 1;
-  const totalMinutes = Math.floor(wrapped * 24 * 60);
+  const totalMinutes = Math.floor(wrapped * CLOCK_HOURS_PER_CYCLE * 60);
   const hours = Math.floor(totalMinutes / 60)
     .toString()
     .padStart(2, '0');

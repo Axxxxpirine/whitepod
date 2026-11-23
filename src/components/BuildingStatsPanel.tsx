@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { useGameStore } from '@/store/useGameStore';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
 import { formatAmount } from '@/game/ui/depositPresentation';
-import { formatRate } from '@/game/ui/numberPresentation';
+import { energyInClockHours, formatEnergy, formatRate } from '@/game/ui/numberPresentation';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -103,7 +103,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
             <div className="flex items-center gap-1.5">
               <Icon icon={Zap} size={11} className="text-ink-muted" />
               <span className="text-xs font-medium tabular-nums text-ink">
-                Réserve {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
+                Réserve {energyInClockHours(charge)} / {formatEnergy(batterySpec.capacity)}
               </span>
             </div>
           </div>
@@ -141,7 +141,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
   } else if (isFuelCellTypeId(building.typeId)) {
     const fuel = getBuildingType(building.typeId)!.fuel!;
     const burning = (engine.getFuelBurnRemaining(building.id) ?? 0) > 0;
-    const perMinute = (60 / fuel.burnSeconds).toLocaleString('fr-CH', { maximumFractionDigits: 1 });
+    
     const fuelList = fuel.inputs.map((input) => resourceTypeLabel(input.resourceType)).join(', ');
 
     rows = (
@@ -159,7 +159,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
           value={burning ? 'En marche' : 'À court'}
           valueClass={burning ? 'text-ink' : 'text-accent-warm'}
         />
-        <StatRow icon={Activity} label="Consomme" value={`${fuelList} · ${perMinute}/min`} />
+        <StatRow icon={Activity} label="Consomme" value={`${fuelList} · ${formatRate(60 / fuel.burnSeconds)}`} />
       </>
     );
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
