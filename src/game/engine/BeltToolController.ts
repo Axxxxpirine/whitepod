@@ -222,7 +222,9 @@ export class BeltToolController {
 
     for (const candidate of rankedPorts) {
       const endpoint = { building: building.id, port: candidate.id };
-      const result = this.engine.canPlaceBelt(source, endpoint);
+      // Priced in the tool's tier and without refusing for cost: a route the
+      // player cannot pay yet still goes to the nearest reachable port.
+      const result = this.engine.quoteBelt(source, endpoint, this.tier());
       if (!result.ok) continue;
       if (result.plan.segments.length < bestSegmentCount) {
         bestPort = endpoint;
