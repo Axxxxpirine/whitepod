@@ -19,6 +19,7 @@ import { popCancelStack } from '@/game/input/CancelStack';
 import {
   acquireSessionWriter,
   createSessionId,
+  hasSavedWorld,
   loadPersistedSession,
 } from '@/game/persistence/sessionStorage';
 import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
@@ -165,6 +166,13 @@ export function GameCanvas() {
       // Cleanup owns the initialized Pixi app while texture loading is in flight.
       if (destroyed || writer.isSuperseded()) return;
       const loadedSession = loadPersistedSession(app.screen.width, app.screen.height, writer.storage);
+      if (!loadedSession && hasSavedWorld(writer.storage)) {
+        // The save is there but cannot be rebuilt: creating a world here would
+        // overwrite it. Back to the start screen, which says so; only a new
+        // game the player confirms replaces it.
+        useGameStore.getState().leaveUnreadableSave();
+        return;
+      }
       const engine =
         loadedSession?.engine ??
         new GameEngine(app.screen.width, app.screen.height, { gameMode: useGameStore.getState().newGameMode });

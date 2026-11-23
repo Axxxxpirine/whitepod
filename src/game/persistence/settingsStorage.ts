@@ -107,7 +107,11 @@ export function savePersistedSettings(settings: PersistedSettings): void {
     sfxVolume: clampSfxVolume(settings.sfxVolume),
   };
 
-  storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+  try {
+    storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // Full or restricted storage: the setting still applies for this session.
+  }
 }
 
 export function getDefaultSettings(): PersistedSettings {

@@ -604,12 +604,13 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number, 
     return null;
   }
 
+  // From here on the payload is a save of this format. If the world cannot be
+  // rebuilt from it (damaged content, a building retired from the catalog) it
+  // stays on disk: the caller tells the player instead of starting a new world
+  // over it (see hasSavedWorld).
   try {
     const grid = base64ToArrayBuffer(worldState.gridBase64);
-    if (grid.byteLength < GRID_MIN_BYTE_LENGTH) {
-      clearSessionData(worldStorage);
-      return null;
-    }
+    if (grid.byteLength < GRID_MIN_BYTE_LENGTH) return null;
 
     const engine = GameEngine.fromSnapshot(
       toSnapshotInput(worldState),
@@ -655,7 +656,15 @@ export function loadPersistedSession(screenWidth: number, screenHeight: number, 
       idleSidecar,
     };
   } catch {
-    clearSessionData(worldStorage);
     return null;
   }
+}
+
+/**
+ * True when a world save is on disk. After loadPersistedSession returned
+ * null, it means the save is recognised but could not be rebuilt: payloads of
+ * another format are purged by the load, a save of this one never is.
+ */
+export function hasSavedWorld(storage = getActiveSaveStorage()): boolean {
+  return !!storage?.getItem(WORLD_STORAGE_KEY);
 }

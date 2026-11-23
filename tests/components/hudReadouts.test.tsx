@@ -136,6 +136,14 @@ describe('HUD readouts', () => {
     expect(useGameStore.getState().sessionStarted).toBe(false);
   });
 
+  it('says on the start screen when the saved game could not be read back', () => {
+    useGameStore.setState({ saveUnreadable: true });
+    render(<StartScreen />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent("La partie enregistrée n'a pas pu être relue. Elle est conservée");
+    useGameStore.setState({ saveUnreadable: false });
+  });
+
   it('treats the basic and the fast belt tools as different tools', () => {
     expect(selectedToolsEqual({ kind: 'belt' }, { kind: 'belt', tier: 'basic' })).toBe(true);
     expect(selectedToolsEqual({ kind: 'belt', tier: 'basic' }, { kind: 'belt', tier: 'fast' })).toBe(false);

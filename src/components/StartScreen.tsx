@@ -53,6 +53,7 @@ export function StartScreen() {
   const sessionStarted = useGameStore((s) => s.sessionStarted);
   const engine = useGameStore((s) => s.engine);
   const saveTakenOver = useGameStore((s) => s.saveTakenOver);
+  const saveUnreadable = useGameStore((s) => s.saveUnreadable);
   const storedSeed = useGameStore((s) => s.seedInput);
   const resumeSession = useGameStore((s) => s.resumeSession);
   const startNewGame = useGameStore((s) => s.startNewGame);
@@ -125,6 +126,12 @@ export function StartScreen() {
 
         {saveTakenOver && (
           <p role="status" className="mt-2 text-xs text-ink-muted">La partie a été ouverte dans un autre onglet.</p>
+        )}
+
+        {saveUnreadable && (
+          <p role="alert" className="mt-2 text-xs text-accent-warm">
+            La partie enregistrée n'a pas pu être relue. Elle est conservée ; une nouvelle partie la remplacera.
+          </p>
         )}
 
         {pendingMode ? (

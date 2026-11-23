@@ -1762,30 +1762,42 @@ export class GameEngine {
       }
     }
 
-    // Restore processor states from snapshot
+    // Values are restored one by one and brought back into range, like the
+    // battery charges above: a damaged number must not load as a world that
+    // looks fine and is stuck (a machine at minus a billion seconds of its cycle).
     for (const entry of snapshot.processorStates ?? []) {
-      if (engine.processorStates.has(entry.id)) {
-        engine.processorStates.set(entry.id, {
-          recipeId: entry.recipeId,
-          cycleProgress: entry.cycleProgress,
-        });
-      }
+      if (!entry || !engine.processorStates.has(entry.id)) continue;
+      const recipe = typeof entry.recipeId === 'string' ? getRecipe(entry.recipeId) : undefined;
+      const progress = Number.isFinite(entry.cycleProgress) ? entry.cycleProgress : 0;
+      engine.processorStates.set(entry.id, {
+        recipeId: recipe ? recipe.id : null,
+        cycleProgress: recipe ? Math.max(0, Math.min(progress, recipe.cycleSeconds)) : 0,
+      });
     }
 
     for (const entry of snapshot.storageInventories ?? []) {
-      if (engine.storageInventories.has(entry.id)) {
-        engine.storageInventories.set(entry.id, { ...GameEngine.EMPTY_RESOURCE_STOCK(), ...entry.inventory });
+      if (!entry || !engine.storageInventories.has(entry.id)) continue;
+      const inventory = GameEngine.EMPTY_RESOURCE_STOCK();
+      for (const key of Object.keys(inventory) as (keyof ResourceStock)[]) {
+        const amount: unknown = entry.inventory?.[key];
+        if (typeof amount === 'number' && Number.isFinite(amount) && amount > 0) inventory[key] = Math.floor(amount);
       }
+      engine.storageInventories.set(entry.id, inventory);
     }
 
     for (const entry of snapshot.producerOutputBuffers ?? []) {
-      if (engine.producerOutputBuffers.has(entry.id)) {
-        engine.producerOutputBuffers.set(entry.id, { ...entry.buffer });
+      if (!entry || !engine.producerOutputBuffers.has(entry.id)) continue;
+      const buffer = entry.buffer;
+      // A unit of a known resource, or nothing: anything else would block the producer for good.
+      if (buffer && buffer.amount === 1 && RESOURCE_STOCK_KEY[buffer.resourceType] !== undefined) {
+        engine.producerOutputBuffers.set(entry.id, { resourceType: buffer.resourceType, amount: 1 });
       }
     }
 
     for (const entry of snapshot.processorReservations ?? []) {
-      if (engine.processorStates.has(entry.id)) {
+      if (!entry || !Array.isArray(entry.reservations)) continue;
+      // Reservations only mean something for a machine still running its recipe.
+      if (engine.processorStates.get(entry.id)?.recipeId) {
         engine.processorReservations.set(entry.id, entry.reservations.map((reservation) => ({ ...reservation })));
       }
     }
