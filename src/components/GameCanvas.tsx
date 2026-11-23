@@ -24,6 +24,7 @@ import {
 import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
 import { OfflineSession } from '@/game/idle/OfflineSession';
 import { PIXI } from '@/design/tokens';
+import { createDebouncedTask, type DebouncedTask } from '@/lib/debouncedTask';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures, loadTerrainDecalTextures } from '@/game/renderer/TileSprite';
 import { ResourceType, type SelectedTool } from '@/game/types';
@@ -40,36 +41,22 @@ import {
 import { MinimapRenderer } from '@/game/renderer/MinimapRenderer';
 import { KeyboardHandler } from '@/game/input/KeyboardHandler';
 
+/** Pause after the player's last edit before the world is saved. */
 const WORLD_SAVE_DELAY_MS = 150;
+/** A stream of edits (a bot, fast-forward) still saves this often. */
+const WORLD_SAVE_MAX_WAIT_MS = 2000;
+/**
+ * The simulation alone changes the world on every extraction beat: saving
+ * 150 ms after each one cost a frame every second at 1x, and never ran at 20x
+ * (the next beat always came first). Production is saved on this interval;
+ * leaving the page checkpoints anyway.
+ */
+const SIMULATION_SAVE_INTERVAL_MS = 5000;
 const VIEW_SAVE_DELAY_MS = 100;
 
-function createDebouncedTask(task: () => void, delayMs: number) {
-  let timeoutId: number | null = null;
-
-  return {
-    schedule() {
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
-      timeoutId = window.setTimeout(() => {
-        timeoutId = null;
-        task();
-      }, delayMs);
-    },
-    flush() {
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      task();
-    },
-    cancel() {
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-    },
-  };
+/** What the player builds or decides, as opposed to what the simulation produces. */
+function playerEditKey(engine: GameEngine): string {
+  return `${engine.getBuildings().size}:${engine.connections.version}:${engine.energyNetwork.version}:${engine.getCompletedMilestoneIds().length}`;
 }
 
 const CURSOR_CLASS: Record<SelectedTool['kind'], string> = {
@@ -133,8 +120,8 @@ export function GameCanvas() {
     let unsubscribeTakeover: (() => void) | null = null;
     let unbindLogAutoSave: (() => void) | null = null;
     let unsubscribeActions: (() => void) | null = null;
-    let worldSaver: ReturnType<typeof createDebouncedTask> | null = null;
-    let viewSaver: ReturnType<typeof createDebouncedTask> | null = null;
+    let worldSaver: DebouncedTask | null = null;
+    let viewSaver: DebouncedTask | null = null;
     let currentEngine: GameEngine | null = null;
     let botSession: ReturnType<typeof createBotSession> | null = null;
 
@@ -208,7 +195,7 @@ export function GameCanvas() {
 
       worldSaver = createDebouncedTask(() => {
         saveWorldSession(engine, sessionId);
-      }, WORLD_SAVE_DELAY_MS);
+      }, WORLD_SAVE_DELAY_MS, WORLD_SAVE_MAX_WAIT_MS);
       viewSaver = createDebouncedTask(() => {
         const viewState = useGameStore.getState();
         saveViewSession({
@@ -233,12 +220,21 @@ export function GameCanvas() {
       // Register action logger with engine to capture all actions
       unsubscribeActions = engine.setActionListener((action) => {
         actionLogger.log(action.kind as ActionKind, action.payload);
+        // Decisions that leave the layout as it is (recipe, upgrade) are edits too.
+        if (!offline || offline.active) worldSaver?.schedule();
       });
 
+      let savedEditKey = playerEditKey(engine);
       unsubscribeEngine = engine.subscribe((kind) => {
         if (kind === 'world') {
           if (offline && !offline.active) return;
-          worldSaver?.schedule();
+          const editKey = playerEditKey(engine);
+          if (editKey !== savedEditKey) {
+            savedEditKey = editKey;
+            worldSaver?.schedule();
+          } else {
+            worldSaver?.scheduleWithin(SIMULATION_SAVE_INTERVAL_MS);
+          }
           useGameStore.getState().bumpWorldVersion();
           return;
         }
