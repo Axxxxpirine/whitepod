@@ -258,6 +258,8 @@ export class GameEngine {
   private beltTypeRevision = 0;
   private energyTopologyVersion = -1;
   private simulationNetworks: SimulationNetwork[] = [];
+  /** The cached network each consumer belongs to (rebuilt with `simulationNetworks`). */
+  private readonly networkOfConsumer = new Map<BuildingId, SimulationNetwork>();
   private logisticsVersion = -1;
   /** Routes from a building output, by `id:port` (flow/processorLogistics resolveRoutesFromOutput). */
   private readonly routes = new Map<string, readonly FlowRoute[]>();
@@ -370,10 +372,13 @@ export class GameEngine {
       // Slower tiers make a unit every few beats (a held unit above is still released every beat).
       const beatsPerUnit = Math.max(1, Math.round(60 / extractorRatePerMinute(this.buildings.get(id)!.typeId) / GameEngine.EXTRACTION_INTERVAL_S));
       if (this.extractionBeat % beatsPerUnit !== 0) continue;
-      if (this.depletesDeposits) this.grid.resourceAmount[idx] -= 1;
+      if (this.depletesDeposits) {
+        this.grid.resourceAmount[idx] -= 1;
+        // The only extraction the map shows: a deposit running out is no longer drawn.
+        if (this.grid.resourceAmount[idx] === 0) this.grid.noteDepositExhausted(x, y);
+      }
       this.producerOutputBuffers.set(id, { resourceType, amount: 1 });
       changed = this.flushProducerOutput(id) || changed;
-      this.grid.markDirty(x, y);
       changed = true;
     }
     if (changed) {
@@ -417,7 +422,6 @@ export class GameEngine {
     if (!state) return false;
     const building = this.buildings.get(buildingId);
     if (!building) return false;
-    if (!this.isProcessorIdle(buildingId)) return false;
 
     if (recipeId !== null) {
       const recipe = getRecipe(recipeId);
@@ -427,11 +431,18 @@ export class GameEngine {
       if (!this.isRecipeUnlocked(recipeId)) return false;
     }
 
+    // Choosing the recipe already running changes nothing: the batch goes on.
+    if (recipeId === state.recipeId) return true;
+
     this.logisticsByProcessor.clear();
     this.providersByPort.clear();
     state.recipeId = recipeId;
     state.cycleProgress = 0;
+    // A recipe change empties the machine: the batch in progress and a unit
+    // still waiting at its output are dropped, so nothing made by the old
+    // recipe is left blocking a line that no longer takes it.
     this.processorReservations.delete(buildingId);
+    this.producerOutputBuffers.set(buildingId, null);
     this.notify('world');
     this.emitAction('set_processor_recipe', { buildingId, recipeId });
     return true;
@@ -791,9 +802,12 @@ export class GameEngine {
       return 'neutral';
     }
 
-    const network = this.getEnergyNetworkForBuilding(buildingId);
+    // Asked per building and per frame by the renderers: read the cached
+    // network instead of rebuilding and sorting its member list each time.
+    this.getSimulationNetworks();
+    const network = this.networkOfConsumer.get(buildingId);
     if (!network) return 'unpowered';
-    return this.isNetworkPowered(network) ? 'powered' : 'unpowered';
+    return this.isSimulationNetworkPowered(network, getDaylightFactor(this.simulationTime)) ? 'powered' : 'unpowered';
   }
 
   private getNetworkDischargeRate(buildingIds: readonly BuildingId[]): number {
@@ -904,6 +918,61 @@ export class GameEngine {
     return null;
   }
 
+  /**
+   * What a producer makes per minute as things stand, 0 when it is stopped:
+   * an extractor needs power and a deposit, a machine needs power, a recipe, a
+   * working line, and enough running producers behind each input. A machine
+   * fed slower than its recipe runs at the pace of its inputs.
+   */
+  getProducerRatePerMinute(buildingId: BuildingId): number {
+    return this.producerRate(buildingId, new Map());
+  }
+
+  private producerRate(buildingId: BuildingId, memo: Map<BuildingId, number>): number {
+    const known = memo.get(buildingId);
+    if (known !== undefined) return known;
+    // Guards a loop of machines feeding each other: a producer being worked out counts for nothing.
+    memo.set(buildingId, 0);
+    const rate = this.computeProducerRate(buildingId, memo);
+    memo.set(buildingId, rate);
+    return rate;
+  }
+
+  private computeProducerRate(buildingId: BuildingId, memo: Map<BuildingId, number>): number {
+    const building = this.buildings.get(buildingId);
+    if (!building || this.getBuildingPowerState(buildingId) !== 'powered') return 0;
+    if (isExtractorTypeId(building.typeId)) {
+      const { x, y } = building.origin;
+      if (this.grid.getResource(x, y) === ResourceType.None || this.grid.getResourceAmount(x, y) === 0) return 0;
+      return extractorRatePerMinute(building.typeId);
+    }
+
+    const recipeId = this.processorStates.get(buildingId)?.recipeId;
+    const recipe = recipeId ? getRecipe(recipeId) : undefined;
+    if (!recipe) return 0;
+    const logistics = this.getProcessorLogisticsStatus(buildingId);
+    if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) return 0;
+
+    let batches = 60 / recipe.cycleSeconds;
+    for (const assignment of logistics.assignments) {
+      const input = recipe.inputs.find((entry) => entry.resourceType === assignment.requiredResourceType);
+      if (!input) return 0;
+      // What each running provider sends this way (a provider behind a splitter shares its output).
+      const supplies = this.resolveReachableProviders(buildingId, assignment.portId)
+        .filter((providerId) => this.getProducerResourceType(providerId) === assignment.requiredResourceType)
+        .map((providerId) => this.producerRate(providerId, memo) / Math.max(1, this.producerRoutes(providerId).length))
+        .filter((perMinute) => perMinute > 0);
+      if (supplies.length < input.amount) return 0;
+      // A batch takes one unit from each of `amount` distinct providers.
+      for (let pass = 0; pass < 8; pass++) {
+        const reachable = supplies.reduce((sum, perMinute) => sum + Math.min(perMinute, batches), 0) / input.amount;
+        if (reachable >= batches - 1e-9) break;
+        batches = reachable;
+      }
+    }
+    return batches * recipe.output.amount;
+  }
+
   getProcessorLogisticsStatus(buildingId: BuildingId): ProcessorLogisticsStatus | null {
     this.refreshLogisticsCache();
     if (!this.logisticsByProcessor.has(buildingId)) {
@@ -926,24 +995,14 @@ export class GameEngine {
     // What each source would send, then what the belts let through.
     const nominal = new Map<BuildingId, number>();
     const output = new Map<BuildingId, ResourceTypeT>();
+    const memo = new Map<BuildingId, number>();
 
-    for (const [id, building] of this.buildings.getAll().entries()) {
-      if (!isExtractorTypeId(building.typeId)) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
-      if (this.getDepositRemaining(id) === 0) continue;
-      nominal.set(id, extractorRatePerMinute(building.typeId));
-      output.set(id, this.grid.getResource(building.origin.x, building.origin.y));
-    }
-
-    for (const [id, state] of this.processorStates) {
-      if (!state.recipeId) continue;
-      if (this.getBuildingPowerState(id) !== 'powered') continue;
-      const logistics = this.getProcessorLogisticsStatus(id);
-      if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
-      const recipe = getRecipe(state.recipeId);
-      if (!recipe) continue;
-      nominal.set(id, (recipe.output.amount / recipe.cycleSeconds) * 60);
-      output.set(id, recipe.output.resourceType);
+    for (const id of this.producerOutputBuffers.keys()) {
+      const perMinute = this.producerRate(id, memo);
+      const resourceType = perMinute > 0 ? this.getProducerResourceType(id) : null;
+      if (resourceType === null) continue;
+      nominal.set(id, perMinute);
+      output.set(id, resourceType);
     }
 
     // A producer behind splitters shares its output evenly among its routes;
@@ -1703,30 +1762,42 @@ export class GameEngine {
       }
     }
 
-    // Restore processor states from snapshot
+    // Values are restored one by one and brought back into range, like the
+    // battery charges above: a damaged number must not load as a world that
+    // looks fine and is stuck (a machine at minus a billion seconds of its cycle).
     for (const entry of snapshot.processorStates ?? []) {
-      if (engine.processorStates.has(entry.id)) {
-        engine.processorStates.set(entry.id, {
-          recipeId: entry.recipeId,
-          cycleProgress: entry.cycleProgress,
-        });
-      }
+      if (!entry || !engine.processorStates.has(entry.id)) continue;
+      const recipe = typeof entry.recipeId === 'string' ? getRecipe(entry.recipeId) : undefined;
+      const progress = Number.isFinite(entry.cycleProgress) ? entry.cycleProgress : 0;
+      engine.processorStates.set(entry.id, {
+        recipeId: recipe ? recipe.id : null,
+        cycleProgress: recipe ? Math.max(0, Math.min(progress, recipe.cycleSeconds)) : 0,
+      });
     }
 
     for (const entry of snapshot.storageInventories ?? []) {
-      if (engine.storageInventories.has(entry.id)) {
-        engine.storageInventories.set(entry.id, { ...GameEngine.EMPTY_RESOURCE_STOCK(), ...entry.inventory });
+      if (!entry || !engine.storageInventories.has(entry.id)) continue;
+      const inventory = GameEngine.EMPTY_RESOURCE_STOCK();
+      for (const key of Object.keys(inventory) as (keyof ResourceStock)[]) {
+        const amount: unknown = entry.inventory?.[key];
+        if (typeof amount === 'number' && Number.isFinite(amount) && amount > 0) inventory[key] = Math.floor(amount);
       }
+      engine.storageInventories.set(entry.id, inventory);
     }
 
     for (const entry of snapshot.producerOutputBuffers ?? []) {
-      if (engine.producerOutputBuffers.has(entry.id)) {
-        engine.producerOutputBuffers.set(entry.id, { ...entry.buffer });
+      if (!entry || !engine.producerOutputBuffers.has(entry.id)) continue;
+      const buffer = entry.buffer;
+      // A unit of a known resource, or nothing: anything else would block the producer for good.
+      if (buffer && buffer.amount === 1 && RESOURCE_STOCK_KEY[buffer.resourceType] !== undefined) {
+        engine.producerOutputBuffers.set(entry.id, { resourceType: buffer.resourceType, amount: 1 });
       }
     }
 
     for (const entry of snapshot.processorReservations ?? []) {
-      if (engine.processorStates.has(entry.id)) {
+      if (!entry || !Array.isArray(entry.reservations)) continue;
+      // Reservations only mean something for a machine still running its recipe.
+      if (engine.processorStates.get(entry.id)?.recipeId) {
         engine.processorReservations.set(entry.id, entry.reservations.map((reservation) => ({ ...reservation })));
       }
     }
@@ -1985,9 +2056,11 @@ export class GameEngine {
     if (this.energyTopologyVersion === this.energyNetwork.version) return this.simulationNetworks;
     this.energyTopologyVersion = this.energyNetwork.version;
     this.simulationNetworks = [];
+    this.networkOfConsumer.clear();
     for (const ids of this.energyNetwork.getComponents()) {
       const network = this.describeEnergyNetwork(ids);
       if (network.consumers.length || network.batteries.length || network.fuelCells.length) this.simulationNetworks.push(network);
+      for (const id of network.consumers) this.networkOfConsumer.set(id, network);
     }
     return this.simulationNetworks;
   }
@@ -2044,12 +2117,17 @@ export class GameEngine {
     return changed;
   }
 
+  /** A network runs when its generation, or failing that its charged batteries, covers the whole demand. */
+  private isSimulationNetworkPowered(network: SimulationNetwork, daylight: number): boolean {
+    const deficit = network.demand - (network.generation + network.solar * daylight + this.fuelPower(network));
+    return deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
+  }
+
   private syncPowerState(emitSfx = true): boolean {
     const daylight = getDaylightFactor(this.stepTime);
     let changed = false;
     for (const network of this.getSimulationNetworks()) {
-      const deficit = network.demand - (network.generation + network.solar * daylight + this.fuelPower(network));
-      const powered = deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
+      const powered = this.isSimulationNetworkPowered(network, daylight);
       for (const id of network.consumers) {
         if (this.poweredConsumers.has(id) === powered) continue;
         changed = true;

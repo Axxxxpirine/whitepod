@@ -22,6 +22,8 @@ export class TileGrid {
   private dirtyRegion: DirtyRegion | null = null;
   private onChange: TileGridChangeListener | null;
   fogVersion = 0;
+  /** Changes whenever what a tile shows changes (type, deposit, fog): what the minimap redraws on. */
+  revision = 0;
 
   constructor(onChange: TileGridChangeListener | null = null) {
     this.tileType = new Uint8Array(GRID_SIZE);
@@ -45,6 +47,7 @@ export class TileGrid {
     if (!isInBounds(x, y)) return;
     this.tileType[toIndex(x, y)] = type;
     this.markDirty(x, y);
+    this.revision++;
     this.onChange?.();
   }
 
@@ -58,6 +61,7 @@ export class TileGrid {
     this.resourceType[idx] = resource;
     this.resourceAmount[idx] = resource === ResourceType.None ? 0 : amount;
     this.markDirty(x, y);
+    this.revision++;
     this.onChange?.();
   }
 
@@ -69,6 +73,7 @@ export class TileGrid {
     this.tileType.fill(type);
     this.markDirty(0, 0);
     this.markDirty(GRID_WIDTH - 1, GRID_HEIGHT - 1);
+    this.revision++;
     this.onChange?.();
   }
 
@@ -83,7 +88,8 @@ export class TileGrid {
     if (w > 0 && h > 0) {
       this.markDirty(x0, y0);
       this.markDirty(x0 + w - 1, y0 + h - 1);
-      this.onChange?.();
+      this.revision++;
+    this.onChange?.();
     }
   }
 
@@ -111,6 +117,7 @@ export class TileGrid {
     this.markDirty(x0, y0);
     this.markDirty(x1, y1);
     this.fogVersion++;
+    this.revision++;
     this.onChange?.();
   }
 
@@ -119,6 +126,7 @@ export class TileGrid {
     this.markDirty(0, 0);
     this.markDirty(GRID_WIDTH - 1, GRID_HEIGHT - 1);
     this.fogVersion++;
+    this.revision++;
     this.onChange?.();
   }
 
@@ -138,6 +146,12 @@ export class TileGrid {
       if (x > this.dirtyRegion.x1) this.dirtyRegion.x1 = x;
       if (y > this.dirtyRegion.y1) this.dirtyRegion.y1 = y;
     }
+  }
+
+  /** A deposit just ran out: it is no longer drawn (the amounts are written directly, without a change event). */
+  noteDepositExhausted(x: number, y: number): void {
+    this.markDirty(x, y);
+    this.revision++;
   }
 
   getDirtyRegion(): DirtyRegion | null {

@@ -1,4 +1,5 @@
 import { Container, Graphics, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
@@ -40,7 +41,7 @@ export class PlacementPreviewRenderer {
   constructor(app: Application, engine: GameEngine, getPreviewState: () => PreviewState) {
     this.engine = engine;
     this.getPreviewState = getPreviewState;
-    this.previewContainer = new Container();
+    this.previewContainer = createWorldLayer();
     this.previewGraphic = new Graphics();
     this.previewGraphic.visible = false;
     this.flashGraphic = new Graphics();

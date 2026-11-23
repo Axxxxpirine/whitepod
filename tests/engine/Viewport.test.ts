@@ -82,6 +82,17 @@ describe('Viewport', () => {
       expect(vp.zoom).toBe(0.25);
     });
 
+    it('keeps the camera on the map when zooming on a screen corner at the edge', () => {
+      const vp = new Viewport(1280, 720);
+      vp.restore({ centerX: 0, centerY: 0, zoom: 0.25 });
+
+      vp.zoomAt(0, 0, 1.1);
+
+      expect(vp.centerX).toBe(0);
+      expect(vp.centerY).toBe(0);
+      expect(vp.zoom).toBeCloseTo(0.275);
+    });
+
     it('keeps the point under the cursor fixed in world space', () => {
       const vp = new Viewport(640, 480);
       vp.centerX = 0;

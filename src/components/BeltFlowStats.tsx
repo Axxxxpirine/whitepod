@@ -2,6 +2,7 @@ import { Activity, Gauge } from 'lucide-react';
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
 import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
+import { formatRate } from '@/game/ui/numberPresentation';
 import { getResourceSprite } from '@/game/ui/resourcePresentation';
 import { type Building, type ResourceType as ResourceTypeT } from '@/game/types';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,7 @@ export function BeltFlowStats({ building, engine }: BeltFlowStatsProps) {
 function FlowRow({ resourceType, ratePerMinute }: { resourceType: ResourceTypeT; ratePerMinute: number }) {
   const sprite = getResourceSprite(resourceType);
   const label = resourceTypeLabel(resourceType);
-  const rateText = `${ratePerMinute}/min`;
+  const rateText = formatRate(ratePerMinute);
 
   return (
     <div className="flex items-center gap-1.5">

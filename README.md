@@ -39,6 +39,7 @@ npm run dev   # → http://localhost:5173
 | `npm run test` | Run test suite with Vitest |
 | `npm run test:ui` | Run tests with Vitest UI (browser interface) |
 | `BALANCE_REPORT=1 npx vitest run tests/balance` | Play chapters 1–2 with a scripted player and print the milestone timings |
+| `npx vitest run tests/playtest` | Playtest batteries: a chaos player (seeded random actions, world invariants) and player profiles (tinkerer, accountant, explorer, beginner, absent player) |
 
 ## Browser console (dev only)
 
@@ -206,7 +207,7 @@ engine.screenToTile(screenX, screenY)               // → { x, y }
 
 ## Session persistence
 
-- The world state is saved automatically in `localStorage` and restored when you reopen the game, including buildings, connections, stocks, simulation clock, and batteries.
+- The world state is saved automatically in `localStorage` and restored when you reopen the game, including buildings, connections, stocks, simulation clock, and batteries. A player edit is saved after a 150 ms pause (2 s at most under a stream of edits); what the simulation produces on its own is saved every 5 s, and on leaving the page.
 - Campaign worlds also save their game mode and completed milestones (unlocks are derived from them, the hub is a saved building and its stock a saved inventory). Both fields are optional in the v3 world format: a save without them (written before campaigns) loads as a sandbox world. `tests/persistence/campaignSave.test.ts` checks that a campaign in progress reloads identically and keeps running the same, live and through the offline catch-up.
 - Offline progression (IDLE) is applied only on a real pause→resume: when the tab transitions from hidden to visible, and on cross-session reopen via a small `localStorage` sidecar holding the pause timestamp.
 - The latest tab to start or continue a game owns its autosave. An older tab returns to the start screen when another takes over.
@@ -248,5 +249,5 @@ src/
 ├── lib/              # Shared utilities
 ├── store/            # Zustand game store
 └── test/             # Test setup
-tests/                # Vitest test suites (engine, components, data, renderer, persistence, audio, balance)
+tests/                # Vitest test suites (engine, components, data, renderer, persistence, audio, balance, playtest)
 ```

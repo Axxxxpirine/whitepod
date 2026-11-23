@@ -44,6 +44,9 @@ interface GameState {
   /** A game is mounted (canvas + HUD); false until the player leaves the boot start screen. */
   sessionStarted: boolean;
   saveTakenOver: boolean;
+  /** The save on disk could not be rebuilt: it is kept, and the start screen says so. */
+  saveUnreadable: boolean;
+  leaveUnreadableSave: () => void;
   leaveSupersededSession: () => void;
   /** Mode of the next world created from scratch (new game, reset). */
   newGameMode: GameMode;
@@ -124,6 +127,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   startScreenOpen: true,
   sessionStarted: false,
   saveTakenOver: false,
+  saveUnreadable: false,
   newGameMode: DEFAULT_GAME_MODE,
   pendingEnergyLinkSource: null,
   linkSolarOnPlacement: true,
@@ -210,7 +214,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     selectedResourceTile: null,
     selectedResourceAnchor: null,
   }),
-  resumeSession: () => set({ startScreenOpen: false, sessionStarted: true, saveTakenOver: false }),
+  leaveUnreadableSave: () => set({
+    sessionStarted: false,
+    startScreenOpen: true,
+    saveUnreadable: true,
+    engine: null,
+    actionLogger: null,
+    botControls: null,
+    bot: { active: false, phase: 'idle', target: null },
+    simulationSpeed: 1,
+  }),
+  resumeSession: () => set({ startScreenOpen: false, sessionStarted: true, saveTakenOver: false, saveUnreadable: false }),
   startNewGame: (gameMode, seedInput) => {
     const started = applySeedAndResetSession({
       seedInput,

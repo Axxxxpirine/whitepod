@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
+import { beltTierOf, getBuildingType, isBeltTypeId, isProcessorTypeId, isStorageTypeId } from '@/game/data/buildingCatalog';
+import { beltToolLabel } from '@/game/ui/buildingPresentation';
 import { useGameStore } from '@/store/useGameStore';
 import { BuildingStatsPanel } from '../BuildingStatsPanel';
 import { Panel, PanelHeading, Icon } from '../ui';
@@ -28,6 +29,9 @@ export function SelectedBuildingPanel() {
   if (!building) return null;
   const type = getBuildingType(building.typeId);
   if (!type) return null;
+  // A belt is one thing to the player, whatever the shape of the piece clicked.
+  const beltTier = beltTierOf(building.typeId);
+  const title = beltTier ? beltToolLabel(beltTier) : type.name;
   const panelWidthClass = isProcessorTypeId(building.typeId)
     ? 'w-[280px]'
     : isStorageTypeId(building.typeId)
@@ -61,14 +65,14 @@ export function SelectedBuildingPanel() {
     >
       <Panel className={`flex ${panelWidthClass} flex-col gap-1.5 px-3 py-2 text-ink`}>
         <div className="flex items-center gap-2">
-          <PanelHeading className="whitespace-nowrap">{type.name}</PanelHeading>
+          <PanelHeading className="whitespace-nowrap">{title}</PanelHeading>
           {!type.permanent && (
             <button
               type="button"
               onClick={handleDelete}
               className="ml-auto cursor-pointer rounded-sm border border-transparent p-1.5 text-error transition-colors hover:border-error hover:bg-error/10"
-              aria-label="Supprimer le bâtiment"
-              title="Supprimer le bâtiment"
+              aria-label={beltTier ? 'Supprimer le convoyeur' : 'Supprimer le bâtiment'}
+              title={beltTier ? 'Supprimer tout le convoyeur' : 'Supprimer le bâtiment'}
             >
               <Icon icon={Trash2} size={16} />
             </button>

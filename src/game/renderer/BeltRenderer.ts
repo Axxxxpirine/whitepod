@@ -1,4 +1,5 @@
 import { Container, Graphics, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import { beltTierOf, getBuildingType, isBeltTypeId } from '../data/buildingCatalog';
 import { worldSideOf } from '../data/ConnectionRegistry';
@@ -21,11 +22,12 @@ export class BeltRenderer {
   private readonly engine: GameEngine;
   private readonly unsubscribeEngine: () => void;
   private worldDirty = true;
+  private lastDrawnKey: string | null = null;
   private lastVisibleRange = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.beltContainer = new Container();
+    this.beltContainer = createWorldLayer();
     this.graphics = new Graphics();
     this.beltContainer.addChild(this.graphics);
     app.stage.addChild(this.beltContainer);
@@ -50,13 +52,18 @@ export class BeltRenderer {
 
     if (!this.worldDirty && !rangeChanged) return;
 
+    // The simulation notifies on every extraction beat: belts only look
+    // different when one is built, removed, upgraded, or changes saturation.
+    const saturatedSegments = this.engine.getSaturatedBeltSegments();
+    const drawnKey = `${this.engine.buildings.revision}:${saturatedSegments.join(',')}`;
     this.worldDirty = false;
+    if (!rangeChanged && drawnKey === this.lastDrawnKey) return;
+    this.lastDrawnKey = drawnKey;
     this.lastVisibleRange = { ...visibleRange };
 
     this.graphics.clear();
 
-    // Saturation is refreshed with the world notifications extraction sends every couple of seconds.
-    const saturated = new Set(this.engine.getSaturatedBeltSegments());
+    const saturated = new Set(saturatedSegments);
     for (const building of this.engine.getBuildings().values()) {
       if (!isBeltTypeId(building.typeId)) continue;
       if (!this.isVisible(building, visibleRange)) continue;

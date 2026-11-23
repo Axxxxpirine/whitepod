@@ -13,7 +13,9 @@ import { TooltipBubble } from '../ui';
 function depositLabel(engine: GameEngine, tile: TileCoord): string {
   const label = resourceTypeLabel(engine.getResourceAt(tile.x, tile.y));
   if (!engine.depletesDeposits) return label;
-  const parts = [label, `${formatAmount(engine.grid.getResourceAmount(tile.x, tile.y))} unités`];
+  const amount = engine.grid.getResourceAmount(tile.x, tile.y);
+  if (amount === 0) return `${label} · épuisé`;
+  const parts = [label, `${formatAmount(amount)} ${amount < 2 ? 'unité' : 'unités'}`];
   if (isRichVein(tile.x, tile.y, engine.mapSeed)) parts.push('filon riche');
   return parts.join(' · ');
 }

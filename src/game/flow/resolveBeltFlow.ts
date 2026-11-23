@@ -1,13 +1,11 @@
 import {
-  extractorRatePerMinute,
   isExtractorTypeId,
   SPLITTER_BASIC_BUILDING_TYPE_ID,
   carriesFlowThrough,
   isProcessorTypeId,
 } from '../data/buildingCatalog';
-import { getRecipe } from '../data/recipeCatalog';
 import type { GameEngine } from '../engine/GameEngine';
-import { ResourceType, type BuildingId, type ResourceType as ResourceTypeT } from '../types';
+import type { BuildingId, ResourceType as ResourceTypeT } from '../types';
 
 export interface BeltFlowEntry {
   readonly resourceType: ResourceTypeT;
@@ -16,8 +14,8 @@ export interface BeltFlowEntry {
 }
 
 /**
- * Walk upstream from a belt through belts, mergers and splitters, collect every powered
- * extractor reachable, and aggregate their throughput per resource type.
+ * Walk upstream from a belt through belts, mergers and splitters, collect every running
+ * producer reachable (extractor or machine), and aggregate their throughput per resource type.
  *
  * Returns entries in insertion order (deterministic) with deduplicated sources.
  */
@@ -39,34 +37,12 @@ export function resolveBeltFlow(engine: GameEngine, beltId: BuildingId): BeltFlo
       const upstream = engine.getBuildings().get(connection.from.building);
       if (!upstream) continue;
 
-      if (isExtractorTypeId(upstream.typeId)) {
-        if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
-        if (engine.getDepositRemaining(upstream.id) === 0) continue;
-        const resource = engine.getResourceAt(upstream.origin.x, upstream.origin.y);
-        if (resource === ResourceType.None) continue;
-        let entry = byResource.get(resource);
-        if (!entry) {
-          entry = { rate: 0, sources: new Set() };
-          byResource.set(resource, entry);
-        }
-        if (!entry.sources.has(upstream.id)) {
-          entry.sources.add(upstream.id);
-          entry.rate += extractorRatePerMinute(upstream.typeId) * share;
-        }
-        continue;
-      }
-
-      // Processors (converter/synthesizer) act as sources — do NOT traverse upstream through them
-      if (isProcessorTypeId(upstream.typeId)) {
-        if (engine.getBuildingPowerState(upstream.id) !== 'powered') continue;
-        const state = engine.getProcessorState(upstream.id);
-        if (!state?.recipeId) continue;
-        const logistics = engine.getProcessorLogisticsStatus(upstream.id);
-        if (!logistics || logistics.badInput || logistics.missingInput || logistics.blockedOutput) continue;
-        const recipe = getRecipe(state.recipeId);
-        if (!recipe) continue;
-        const resource = recipe.output.resourceType;
-        const rate = (recipe.output.amount / recipe.cycleSeconds) * 60;
+      // Producers are sources: the walk never goes upstream through a machine,
+      // which counts by what it makes (0 when it or its own inputs are stopped).
+      if (isExtractorTypeId(upstream.typeId) || isProcessorTypeId(upstream.typeId)) {
+        const rate = engine.getProducerRatePerMinute(upstream.id);
+        const resource = rate > 0 ? engine.getProducerResourceType(upstream.id) : null;
+        if (resource === null) continue;
         let entry = byResource.get(resource);
         if (!entry) {
           entry = { rate: 0, sources: new Set() };

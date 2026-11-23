@@ -101,6 +101,9 @@ export class ActionLogger {
   }
 }
 
+/** Actions kept on disk across all sessions (about 150 characters each). */
+export const MAX_STORED_ACTIONS = 2000;
+
 function saveActionLog(sessionId: string, actions: LoggedAction[], storage: SaveStorage | null): void {
   if (!storage) return;
 
@@ -116,8 +119,22 @@ function saveActionLog(sessionId: string, actions: LoggedAction[], storage: Save
       }
     }
 
-    allLogs[sessionId] = actions;
-    storage.setItem(ACTION_LOG_KEY, JSON.stringify(allLogs));
+    // The log shares localStorage with the save: unbounded, a few campaigns
+    // of it left no room for the world. Keep the latest actions of this
+    // session, then older sessions (most recent first) while the budget lasts.
+    const kept: Record<string, LoggedAction[]> = {};
+    let budget = MAX_STORED_ACTIONS;
+    const current = actions.slice(-budget);
+    budget -= current.length;
+    const older: [string, LoggedAction[]][] = [];
+    for (const [id, log] of Object.entries(allLogs).reverse()) {
+      if (id === sessionId || !Array.isArray(log) || log.length > budget) continue;
+      budget -= log.length;
+      older.push([id, log]);
+    }
+    for (const [id, log] of older.reverse()) kept[id] = log;
+    kept[sessionId] = current;
+    storage.setItem(ACTION_LOG_KEY, JSON.stringify(kept));
   } catch {
     // quota exceeded or private mode
   }

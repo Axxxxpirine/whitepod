@@ -1,4 +1,5 @@
 import { Container, Graphics, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import { TILE_SIZE } from '../constants';
 import { getBuildingType } from '../data/buildingCatalog';
 import type { GameEngine } from '../engine/GameEngine';
@@ -340,6 +341,8 @@ export class EnergyLinkRenderer {
   private fromStyle: EnergyLinkStyle;
   private toStyle: EnergyLinkStyle;
   private transitionStartedAt: number | null = null;
+  /** What the dashes drawn at rest depend on; null while the layer is animated. */
+  private lastRestKey: string | null = null;
   // Test-observable metric: how many animated dots were rendered in last frame.
   private flowDotCountLastFrame = 0;
   private flowDotCountToConsumersLastFrame = 0;
@@ -348,7 +351,7 @@ export class EnergyLinkRenderer {
   constructor(app: Application, engine: GameEngine, getState: () => LinkPreviewState) {
     this.engine = engine;
     this.getState = getState;
-    this.container = new Container();
+    this.container = createWorldLayer();
     this.graphics = new Graphics();
     this.container.addChild(this.graphics);
     app.stage.addChild(this.container);
@@ -366,6 +369,23 @@ export class EnergyLinkRenderer {
     this.container.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.container.scale.set(viewport.zoom);
 
+    const now = performance.now();
+    const previewState = this.getState();
+    this.syncMode(previewState.mode, now);
+    const style = this.getCurrentStyle(now);
+    const visibleRange = this.engine.getVisibleTiles();
+
+    // Outside the link tool the dashes are still: redraw them only when a
+    // link, a building or the visible area changes, not on every frame and
+    // every simulation beat.
+    const atRest =
+      this.currentMode === 'normal' && this.transitionStartedAt === null && previewState.pendingSourceId === null;
+    const restKey = atRest
+      ? `${this.engine.energyNetwork.version}:${this.engine.buildings.revision}:${visibleRange.x0},${visibleRange.y0},${visibleRange.x1},${visibleRange.y1}`
+      : null;
+    if (restKey !== null && restKey === this.lastRestKey) return;
+    this.lastRestKey = restKey;
+
     this.graphics.clear();
     this.flowDotCountLastFrame = 0;
     this.flowDotCountToConsumersLastFrame = 0;
@@ -377,11 +397,6 @@ export class EnergyLinkRenderer {
       this.worldDirty = false;
     }
 
-    const now = performance.now();
-    this.syncMode(this.getState().mode, now);
-    const style = this.getCurrentStyle(now);
-
-    const visibleRange = this.engine.getVisibleTiles();
     const wx0 = visibleRange.x0 * TILE_SIZE;
     const wy0 = visibleRange.y0 * TILE_SIZE;
     const wx1 = (visibleRange.x1 + 1) * TILE_SIZE;
@@ -411,7 +426,6 @@ export class EnergyLinkRenderer {
       this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
     }
 
-    const previewState = this.getState();
     if (previewState.pendingSourceId !== null && previewState.mouseWorldPos !== null) {
       const src = this.engine.getBuildings().get(previewState.pendingSourceId);
       if (src) {

@@ -41,6 +41,7 @@ import {
   type PendingConnection,
   type PortId,
   type TileCoord,
+  type TileType,
 } from '../types';
 import {
   BELT_STRAIGHT_BUILDING_TYPE_ID,
@@ -54,7 +55,7 @@ import {
   worldSideOf,
   worldTileOf,
 } from '../data/ConnectionRegistry';
-import { REVEALED_FLAG } from '../constants';
+import { GRID_SIZE, GRID_WIDTH, REVEALED_FLAG } from '../constants';
 import { isInBounds, toIndex } from '../data/coords';
 import type { TileGrid } from '../data/TileGrid';
 import type { BuildingRegistry } from '../data/BuildingRegistry';
@@ -134,6 +135,16 @@ export function planBelt(
 
 // ─── BFS ──────────────────────────────────────────────────────────────────
 
+/** One step in each direction of `NEIGHBOR_ORDER`, in that order. */
+const NEIGHBOR_STEPS: readonly TileCoord[] = NEIGHBOR_ORDER.map(unitVector);
+
+/** Search buffers shared by every route: a search runs on each pointer move while a belt is being drawn. */
+const searchParent = new Int32Array(GRID_SIZE);
+const searchQueue = new Int32Array(GRID_SIZE);
+/** Tiles reached by the search numbered `searchStamp`; avoids clearing the buffers between searches. */
+const searchVisited = new Uint32Array(GRID_SIZE);
+let searchStamp = 0;
+
 function bfs(
   view: BeltRouterView,
   start: TileCoord,
@@ -143,54 +154,62 @@ function bfs(
   if (start.x === goal.x && start.y === goal.y) return [start];
   if (!isTraversable(view, goal)) return null;
 
-  const startKey = key(start);
-  const parents = new Map<string, string | null>();
-  parents.set(startKey, null);
-  const queue: TileCoord[] = [start];
-  const keyToCoord = new Map<string, TileCoord>();
-  keyToCoord.set(startKey, start);
+  searchStamp += 1;
+  if (searchStamp === 0xffffffff) {
+    searchVisited.fill(0);
+    searchStamp = 1;
+  }
+  const startIndex = toIndex(start.x, start.y);
+  const goalIndex = toIndex(goal.x, goal.y);
+  searchVisited[startIndex] = searchStamp;
+  searchParent[startIndex] = -1;
+  let head = 0;
+  let tail = 0;
+  searchQueue[tail++] = startIndex;
 
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    for (const side of NEIGHBOR_ORDER) {
-      const next = stepFrom(current, side);
-      const nextKey = key(next);
-      if (parents.has(nextKey)) continue;
-      if (!isTraversable(view, next)) continue;
-      parents.set(nextKey, key(current));
-      keyToCoord.set(nextKey, next);
-      if (next.x === goal.x && next.y === goal.y) {
-        return reconstruct(parents, keyToCoord, nextKey);
-      }
-      queue.push(next);
+  while (head < tail) {
+    const current = searchQueue[head++]!;
+    const x = current % GRID_WIDTH;
+    const y = (current - x) / GRID_WIDTH;
+    for (const step of NEIGHBOR_STEPS) {
+      const nx = x + step.x;
+      const ny = y + step.y;
+      if (!isInBounds(nx, ny)) continue;
+      const next = toIndex(nx, ny);
+      if (searchVisited[next] === searchStamp) continue;
+      if (!isTraversableIndex(view, next)) continue;
+      searchVisited[next] = searchStamp;
+      searchParent[next] = current;
+      if (next === goalIndex) return reconstruct(next);
+      searchQueue[tail++] = next;
     }
   }
   return null;
 }
 
-function reconstruct(
-  parents: Map<string, string | null>,
-  keyToCoord: Map<string, TileCoord>,
-  endKey: string,
-): readonly TileCoord[] {
+function reconstruct(endIndex: number): readonly TileCoord[] {
   const path: TileCoord[] = [];
-  let cursor: string | null = endKey;
-  while (cursor !== null) {
-    path.push(keyToCoord.get(cursor)!);
-    cursor = parents.get(cursor) ?? null;
+  for (let cursor = endIndex; cursor !== -1; cursor = searchParent[cursor]!) {
+    const x = cursor % GRID_WIDTH;
+    path.push({ x, y: (cursor - x) / GRID_WIDTH });
   }
   return path.reverse();
 }
 
+/** Belts require Ground — both belt tiers declare allowedTiles=[Ground]. */
+function beltAllowedTiles(): readonly TileType[] {
+  return getBuildingType(BELT_STRAIGHT_BUILDING_TYPE_ID)!.allowedTiles;
+}
+
 function isTraversable(view: BeltRouterView, tile: TileCoord): boolean {
-  if (!isInBounds(tile.x, tile.y)) return false;
-  const idx = toIndex(tile.x, tile.y);
+  return isInBounds(tile.x, tile.y) && isTraversableIndex(view, toIndex(tile.x, tile.y));
+}
+
+function isTraversableIndex(view: BeltRouterView, idx: number): boolean {
   if (view.buildings.occupantIdAt(idx) !== 0) return false;
   // Same rule as placement: nothing is built in the fog, so no route goes through it.
   if (!(view.grid.flags[idx] & REVEALED_FLAG)) return false;
-  // Belts require Ground — both allowed belt types declare allowedTiles=[Ground].
-  const straight = getBuildingType(BELT_STRAIGHT_BUILDING_TYPE_ID)!;
-  return straight.allowedTiles.includes(view.grid.getType(tile.x, tile.y));
+  return beltAllowedTiles().includes(view.grid.tileType[idx] as TileType);
 }
 
 // ─── Segmentation ─────────────────────────────────────────────────────────
@@ -314,10 +333,6 @@ function stepDir(a: TileCoord, b: TileCoord): Direction {
   if (dx === 0 && dy === 1) return Direction.South;
   if (dx === 0 && dy === -1) return Direction.North;
   throw new Error(`stepDir: tiles are not 4-connex neighbors (${a.x},${a.y}) → (${b.x},${b.y})`);
-}
-
-function key(tile: TileCoord): string {
-  return `${tile.x},${tile.y}`;
 }
 
 function fail(reason: BeltFailure): BeltResult {

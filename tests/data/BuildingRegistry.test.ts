@@ -92,18 +92,45 @@ describe('BuildingRegistry', () => {
     expect(id2).toBeGreaterThan(id1);
   });
 
-  it('hasIdCapacity flips false at overflow threshold', () => {
-    const reg = new BuildingRegistry();
-    // cheat: simulate a near-full registry via serialize roundtrip path
-    const data = reg.serialize();
-    const inflated = { ...data, nextId: 65536 };
-    const reg2 = BuildingRegistry.deserialize(inflated, () => FP_1x1);
-    expect(reg2.hasIdCapacity()).toBe(false);
-    const id = reg2.register(
+  it('reuses freed ids once every id has been handed out, instead of refusing forever', () => {
+    // A long game: every id used once, almost nothing left standing (saved as nextId past the max).
+    const reg = BuildingRegistry.deserialize(
+      {
+        version: 1,
+        nextId: 65536,
+        buildings: [{ id: 1, typeId: 'placeholder_1x1', origin: { x: 5, y: 5 }, rotation: Direction.North }],
+      },
+      () => FP_1x1,
+    );
+    expect(reg.hasIdCapacity()).toBe(true);
+    const id = reg.register(
       { typeId: 'placeholder_1x1', origin: { x: 0, y: 0 }, rotation: Direction.North },
       FP_1x1,
     );
-    expect(id).toBeNull();
+    // Id 1 still stands: the count wraps past it.
+    expect(id).toBe(2);
+    expect(reg.getAt(0, 0)?.id).toBe(2);
+    expect(reg.getAt(5, 5)?.id).toBe(1);
+    expect(reg.serialize().nextId).toBe(3);
+  });
+
+  it('refuses a building only when every id stands on the map at once', () => {
+    const reg = new BuildingRegistry();
+    for (let i = 0; i < 65535; i++) {
+      expect(
+        reg.register({ typeId: 'placeholder_1x1', origin: { x: i % 256, y: Math.floor(i / 256) }, rotation: Direction.North }, FP_1x1),
+      ).not.toBeNull();
+    }
+    expect(reg.hasIdCapacity()).toBe(false);
+    expect(
+      reg.register({ typeId: 'placeholder_1x1', origin: { x: 255, y: 255 }, rotation: Direction.North }, FP_1x1),
+    ).toBeNull();
+
+    reg.unregister(40000, FP_1x1);
+    expect(reg.hasIdCapacity()).toBe(true);
+    expect(
+      reg.register({ typeId: 'placeholder_1x1', origin: { x: 255, y: 255 }, rotation: Direction.North }, FP_1x1),
+    ).toBe(40000);
   });
 
   it('serialize/deserialize roundtrip restores occupancy and instances', () => {

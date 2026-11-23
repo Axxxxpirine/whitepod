@@ -333,13 +333,13 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
     expect(start).toHaveBeenCalled();
 
     act(() => {
       useGameStore.setState({ bot: { active: true, phase: 'mining', target: 'scan' } });
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Arrêter' }));
     expect(stop).toHaveBeenCalled();
   });
 
@@ -351,13 +351,13 @@ describe('GameHUD', () => {
 
     render(<GameHUD />);
 
-    fireEvent.change(screen.getByLabelText('Bot profile'), { target: { value: 'connector' } });
-    fireEvent.change(screen.getByLabelText('Seed input'), { target: { value: '77' } });
-    fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
+    fireEvent.change(screen.getByLabelText('Profil du bot'), { target: { value: 'connector' } });
+    fireEvent.change(screen.getByLabelText('Graine de la carte'), { target: { value: '77' } });
+    fireEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
 
     expect(useGameStore.getState().engine).toBe(engine);
     expect(useGameStore.getState().sessionEpoch).toBe(0);
-    fireEvent.keyDown(screen.getByLabelText('Seed input'), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByLabelText('Graine de la carte'), { key: 'Enter' });
     expect(useGameStore.getState().newGameMode).toBe('campaign');
     expect(useGameStore.getState().selectedBotProfileId).toBe('connector');
     expect(useGameStore.getState().seedInput).toBe('77');
@@ -369,8 +369,8 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine, seedInput: String(engine.mapSeed) });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<GameHUD />);
-    fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
-    fireEvent.keyDown(screen.getByLabelText('Seed input'), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+    fireEvent.keyDown(screen.getByLabelText('Graine de la carte'), { key: 'Enter' });
     expect(useGameStore.getState().engine).toBe(engine);
     expect(useGameStore.getState().sessionEpoch).toBe(0);
   });
@@ -379,7 +379,7 @@ describe('GameHUD', () => {
     render(<GameHUD />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
-    fireEvent.change(screen.getByLabelText('SFX volume'), { target: { value: '0.42' } });
+    fireEvent.change(screen.getByLabelText('Volume des effets'), { target: { value: '0.42' } });
 
     expect(useGameStore.getState().sfxVolume).toBeCloseTo(0.42);
   });
@@ -412,7 +412,7 @@ describe('GameHUD', () => {
     expect(screen.getByText('Utilisée 4 kW')).toBeInTheDocument();
     expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
     expect(screen.queryByText('Non servie 0 kW')).not.toBeInTheDocument();
-    expect(screen.getByText('Stockage 1.7 / 10 kWh')).toBeInTheDocument();
+    expect(screen.getByText('Réserve 1.7 / 10 kWh')).toBeInTheDocument();
   });
 
   it('updates solar production and battery charge when only the simulation clock changes', () => {
@@ -430,8 +430,8 @@ describe('GameHUD', () => {
       useGameStore.getState().setSimulationTime(engine.simulationTime);
     });
     expect(screen.getByText('Prod. 10 kW')).toBeInTheDocument();
-    expect(screen.getByText('Stockage 1.9 / 10 kWh')).toBeInTheDocument();
-    expect(screen.getByText('Reserve 1.9 / 10 kWh')).toBeInTheDocument();
+    // Global HUD line and selected battery panel use the same word for stored energy.
+    expect(screen.getAllByText('Réserve 1.9 / 10 kWh')).toHaveLength(2);
   });
 
   it('shows deficit and unmet demand without ambiguous energy labels', () => {
@@ -464,6 +464,26 @@ describe('GameHUD', () => {
     expect(screen.queryByText('↓')).not.toBeInTheDocument();
   });
 
+  it('reads as a deficit, not a surplus, when a network cannot carry its machines', () => {
+    const engine = makeEngine();
+    engine.simulationTime = 0.5;
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    for (const [x, resource] of [[13, ResourceType.Regolith], [15, ResourceType.Hydrogen], [17, ResourceType.Oxygen]] as const) {
+      engine.placeResource(x, 8, resource);
+      engine.connectBuildings(solarId, engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x, y: 8 })!);
+    }
+
+    useGameStore.setState({ engine, simulationTime: 0.5 });
+    render(<GameHUD />);
+
+    // 10 kW for 12 kW of extractors and no battery: everything is stopped.
+    expect(screen.getByText('Déficit')).toBeInTheDocument();
+    expect(screen.getByText('-2 kW')).toBeInTheDocument();
+    expect(screen.getByText('Utilisée 0 kW')).toBeInTheDocument();
+    expect(screen.getByText('Non servie 12 kW')).toBeInTheDocument();
+    expect(screen.queryByText('Surplus')).not.toBeInTheDocument();
+  });
+
   it('uses explicit solar network wording in the selected building panel', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
@@ -480,9 +500,9 @@ describe('GameHUD', () => {
     });
     render(<GameHUD />);
 
-    expect(screen.getByText('Surplus reseau')).toBeInTheDocument();
+    expect(screen.getByText('Surplus réseau')).toBeInTheDocument();
     expect(screen.getByText('Demande 4 kW')).toBeInTheDocument();
-    expect(screen.queryByText('Bilan reseau')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bilan réseau')).not.toBeInTheDocument();
   });
 
   it('opens debug panel and allows simulation presets', () => {
@@ -490,7 +510,7 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine, simulationTime: 0 });
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Outils de simulation' }));
     fireEvent.click(screen.getByRole('button', { name: 'Midi' }));
 
     expect(useGameStore.getState().simulationTime).toBe(0.5);
@@ -502,7 +522,7 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine, simulationSpeed: 1 });
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Outils de simulation' }));
     fireEvent.click(screen.getByRole('button', { name: '4x' }));
 
     expect(useGameStore.getState().simulationSpeed).toBe(4);
@@ -513,12 +533,12 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine, simulationTime: 0 });
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Outils de simulation' }));
 
-    expect(screen.getByText('Scenario Generator')).toBeInTheDocument();
+    expect(screen.getByText('Générateur de scénarios')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Simple/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Medium/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Complex/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Moyen/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Complexe/i })).toBeInTheDocument();
   });
 
   it('only replaces the current campaign with a generated sandbox after confirmation', () => {
@@ -528,7 +548,7 @@ describe('GameHUD', () => {
     useGameStore.setState({ engine, simulationTime: 0 });
     render(<GameHUD />);
 
-    fireEvent.click(screen.getByRole('button', { name: '▼' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Outils de simulation' }));
     fireEvent.click(screen.getByRole('button', { name: /Simple/i }));
 
     expect(useGameStore.getState().engine).toBe(engine);

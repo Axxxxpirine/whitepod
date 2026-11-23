@@ -37,10 +37,10 @@ export function BotControlsPanel() {
             else botControls.start();
           }}
           disabled={!botControls}
-          className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs transition-colors ${botControls ? 'bg-accent text-bg hover:bg-accent/90' : 'bg-surface-2 text-ink-muted'}`}
+          className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs transition-colors ${botControls ? 'cursor-pointer bg-accent text-bg hover:bg-accent/90' : 'bg-surface-2 text-ink-muted'}`}
         >
           <Icon icon={bot.active ? Square : Play} className="h-3.5 w-3.5" />
-          <span>{bot.active ? 'Stop' : 'Start'}</span>
+          <span>{bot.active ? 'Arrêter' : 'Démarrer'}</span>
         </button>
 
         <BotProfileSelect value={selectedBotProfileId} onChange={setSelectedBotProfileId} />

@@ -23,7 +23,9 @@ import type { GameEngine } from '@/game/engine/GameEngine';
 import { PortKind, type Building } from '@/game/types';
 import { cn } from '@/lib/utils';
 import { useGameStore } from '@/store/useGameStore';
+import { resolveBeltFlow } from '@/game/flow/resolveBeltFlow';
 import { formatAmount } from '@/game/ui/depositPresentation';
+import { formatRate } from '@/game/ui/numberPresentation';
 import { BeltFlowStats } from './BeltFlowStats';
 import { Icon } from './ui';
 
@@ -46,10 +48,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
 
   if (isExtractorTypeId(building.typeId)) {
     const resource = engine.getResourceAt(building.origin.x, building.origin.y);
-    const powerState = engine.getBuildingPowerState(building.id);
-    const isPowered = powerState === 'powered';
-    const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
-    const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
+    const { isPowered, label: powerLabel, className: powerClass } = powerStatus(engine, building.id);
     const remaining = engine.getDepositRemaining(building.id) ?? 0;
     const exhausted = remaining === 0;
     const rate = isPowered && !exhausted ? extractorRatePerMinute(building.typeId) : 0;
@@ -65,11 +64,11 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
           value={depositValue}
           valueClass={exhausted ? 'text-accent-warm' : 'text-ink'}
         />
-        <StatRow icon={Zap} label="Energie" value={powerLabel} valueClass={powerClass} />
+        <StatRow icon={Zap} label="Énergie" value={powerLabel} valueClass={powerClass} />
         <StatRow
           icon={Activity}
-          label="Debit"
-          value={`${rate}/min`}
+          label="Débit"
+          value={formatRate(rate)}
           valueClass={isPowered ? 'text-ink' : 'text-ink-muted'}
         />
       </>
@@ -104,7 +103,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
             <div className="flex items-center gap-1.5">
               <Icon icon={Zap} size={11} className="text-ink-muted" />
               <span className="text-xs font-medium tabular-nums text-ink">
-                Reserve {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
+                Réserve {Math.round(charge * 10) / 10} / {batterySpec.capacity} kWh
               </span>
             </div>
           </div>
@@ -128,36 +127,14 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
       isSplitter ? c.from.building === building.id : c.to.building === building.id,
     ).length;
 
-    // Collect resource types from powered extractors upstream of each connected input.
-    const resourceSet = new Set<string>();
-    for (const connection of connections) {
-      if (connection.to.building !== building.id) continue;
-      // Trace upstream through the incoming belt chain to find the extractor.
-      const visited = new Set<number>();
-      const queue: number[] = [connection.from.building];
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        if (visited.has(current)) continue;
-        visited.add(current);
-        const upstream = engine.getBuildings().get(current);
-        if (!upstream) continue;
-        if (isExtractorTypeId(upstream.typeId)) {
-          if (engine.getBuildingPowerState(upstream.id) === 'powered') {
-            resourceSet.add(resourceTypeLabel(engine.getResourceAt(upstream.origin.x, upstream.origin.y)));
-          }
-          break;
-        }
-        for (const conn of engine.getConnectionsOf(current)) {
-          if (conn.to.building === current) queue.push(conn.from.building);
-        }
-      }
-    }
+    // What flows through: the same upstream walk as the belt panel (machines count by their output).
+    const resourceSet = new Set(resolveBeltFlow(engine, building.id).map((entry) => resourceTypeLabel(entry.resourceType)));
 
     const resourceList = resourceSet.size > 0 ? [...resourceSet].join(', ') : 'Aucune';
 
     rows = (
       <>
-        <StatRow icon={GitMerge} label={isSplitter ? 'Sorties' : 'Entrees'} value={`${connectedSide}/${totalSide}`} />
+        <StatRow icon={GitMerge} label={isSplitter ? 'Sorties' : 'Entrées'} value={`${connectedSide}/${totalSide}`} />
         <StatRow icon={Activity} label="Ressources" value={resourceList} />
       </>
     );
@@ -188,7 +165,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
   } else if (building.typeId === SOLAR_PANEL_BUILDING_TYPE_ID) {
     const production = getBuildingType(building.typeId)?.energy?.production ?? 0;
     const network = engine.getEnergyStatsForBuilding(building.id);
-    const surplusValue = network !== null ? `${Math.round(network.surplusPower)} kW` : 'Reseau isole';
+    const surplusValue = network !== null ? `${Math.round(network.surplusPower)} kW` : 'Réseau isolé';
     const surplusClass =
       network === null ? 'text-ink-muted' : network.surplusPower >= 0 ? 'text-ok' : 'text-error';
     const demandValue = network !== null ? `${Math.round(network.demandedConsumption)} kW` : '0 kW';
@@ -198,7 +175,7 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
         <StatRow icon={Sun} label="Puissance nominale" value={`${production} kW`} />
         <StatRow
           icon={Zap}
-          label={network !== null && network.surplusPower < 0 ? 'Deficit reseau' : 'Surplus reseau'}
+          label={network !== null && network.surplusPower < 0 ? 'Déficit réseau' : 'Surplus réseau'}
           value={surplusValue}
           valueClass={surplusClass}
         />
@@ -212,17 +189,14 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     const recipes = getRecipesForBuilding(buildingKind as 'converter' | 'synthesizer');
     const state = engine.getProcessorState(building.id);
     const activeRecipeId = state?.recipeId ?? null;
-    const powerState = engine.getBuildingPowerState(building.id);
     const logistics = engine.getProcessorLogisticsStatus(building.id);
-    const isPowered = powerState === 'powered';
-    const powerLabel = isPowered ? 'Alimente' : powerState === 'unpowered' ? 'Non alimente' : 'Non connecte';
-    const powerClass = isPowered ? 'text-ok' : powerState === 'unpowered' ? 'text-error' : undefined;
+    const { label: powerLabel, className: powerClass } = powerStatus(engine, building.id);
 
     rows = (
       <>
-        <StatRow icon={Zap} label="Energie" value={powerLabel} valueClass={powerClass} />
+        <StatRow icon={Zap} label="Énergie" value={powerLabel} valueClass={powerClass} />
         {logistics?.badInput ? (
-          <StatRow icon={Activity} label="Erreur" value="mauvais input" valueClass="text-error" />
+          <StatRow icon={Activity} label="Erreur" value="Entrée incompatible" valueClass="text-error" />
         ) : null}
         <div className="mt-1">
           <span className="label text-ink-muted">Recette</span>
@@ -256,6 +230,18 @@ export const BuildingStatsPanel = memo(function BuildingStatsPanel({ building, e
     </div>
   );
 });
+
+/**
+ * Power line of a consumer: a machine nothing is linked to reads "Non relié"
+ * (link it), one on a network that cannot feed it "Non alimenté" (add power).
+ */
+function powerStatus(engine: GameEngine, buildingId: number): { isPowered: boolean; label: string; className: string | undefined } {
+  const powerState = engine.getBuildingPowerState(buildingId);
+  if (powerState === 'powered') return { isPowered: true, label: 'Alimenté', className: 'text-ok' };
+  if (powerState === 'neutral') return { isPowered: false, label: 'Non connecté', className: undefined };
+  const linked = engine.getEnergyLinkedBuildings(buildingId).length > 0;
+  return { isPowered: false, label: linked ? 'Non alimenté' : 'Non relié', className: 'text-error' };
+}
 
 function StatRow({
   icon,

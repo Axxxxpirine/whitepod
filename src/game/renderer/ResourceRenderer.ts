@@ -1,4 +1,5 @@
 import { Container, Sprite, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import type { GameEngine } from '../engine/GameEngine';
 import { TILE_SIZE, GRID_WIDTH } from '../constants';
 import { ResourceType } from '../types';
@@ -19,7 +20,7 @@ export class ResourceRenderer {
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
-    this.resourceContainer = new Container();
+    this.resourceContainer = createWorldLayer();
     app.stage.addChild(this.resourceContainer);
   }
 

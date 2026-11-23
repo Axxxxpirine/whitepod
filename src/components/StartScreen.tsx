@@ -19,18 +19,23 @@ interface MenuItemProps {
   readonly detail: ReactNode;
   readonly onClick: () => void;
   readonly autoFocus?: boolean;
+  /** Shown but inert (e.g. a new game while the seed is not a number). */
+  readonly disabled?: boolean;
 }
 
-function MenuItem({ title, detail, onClick, autoFocus }: MenuItemProps) {
+function MenuItem({ title, detail, onClick, autoFocus, disabled = false }: MenuItemProps) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       autoFocus={autoFocus}
+      aria-disabled={disabled || undefined}
       className={cn(
-        'flex w-full cursor-pointer flex-col items-start gap-0.5 border-b border-l-2 border-b-border border-l-transparent',
-        'px-3 py-3 text-left transition-colors duration-[var(--duration-hover)]',
-        'hover:border-l-accent hover:bg-surface focus-visible:border-l-accent focus-visible:bg-surface focus-visible:outline-none',
+        'flex w-full flex-col items-start gap-0.5 border-b border-l-2 border-b-border border-l-transparent',
+        'px-3 py-3 text-left transition-colors duration-[var(--duration-hover)] focus-visible:outline-none',
+        disabled
+          ? 'cursor-not-allowed opacity-50 focus-visible:border-l-border'
+          : 'cursor-pointer hover:border-l-accent hover:bg-surface focus-visible:border-l-accent focus-visible:bg-surface',
       )}
     >
       <span className="text-sm font-medium text-ink">{title}</span>
@@ -48,6 +53,7 @@ export function StartScreen() {
   const sessionStarted = useGameStore((s) => s.sessionStarted);
   const engine = useGameStore((s) => s.engine);
   const saveTakenOver = useGameStore((s) => s.saveTakenOver);
+  const saveUnreadable = useGameStore((s) => s.saveUnreadable);
   const storedSeed = useGameStore((s) => s.seedInput);
   const resumeSession = useGameStore((s) => s.resumeSession);
   const startNewGame = useGameStore((s) => s.startNewGame);
@@ -122,6 +128,12 @@ export function StartScreen() {
           <p role="status" className="mt-2 text-xs text-ink-muted">La partie a été ouverte dans un autre onglet.</p>
         )}
 
+        {saveUnreadable && (
+          <p role="alert" className="mt-2 text-xs text-accent-warm">
+            La partie enregistrée n'a pas pu être relue. Elle est conservée ; une nouvelle partie la remplacera.
+          </p>
+        )}
+
         {pendingMode ? (
           <div role="alertdialog" aria-labelledby="start-screen-confirm" className="mt-8 border-t border-border pt-4">
             <p id="start-screen-confirm" className="text-sm text-ink">
@@ -162,11 +174,13 @@ export function StartScreen() {
                 detail="La base réclame des livraisons, chaque palier débloque la suite"
                 onClick={() => choose(GameMode.Campaign)}
                 autoFocus={!current}
+                disabled={!seedValid}
               />
               <MenuItem
                 title="Bac à sable"
                 detail="Tout est débloqué, construire est gratuit"
                 onClick={() => choose(GameMode.Sandbox)}
+                disabled={!seedValid}
               />
             </nav>
 

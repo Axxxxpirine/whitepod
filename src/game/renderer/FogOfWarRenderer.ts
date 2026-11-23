@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Texture, type Application } from 'pixi.js';
+import { createWorldLayer } from './worldLayer';
 import type { GameEngine } from '../engine/GameEngine';
 import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE, REVEALED_FLAG, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
@@ -41,7 +42,7 @@ export class FogOfWarRenderer {
   ) {
     this.engine = engine;
     this.getPreviewState = getPreviewState;
-    this.container = new Container();
+    this.container = createWorldLayer();
     this.container.eventMode = 'none';
     app.stage.addChild(this.container);
 

@@ -15,6 +15,12 @@ export class BuildingRegistry {
   private readonly occupancy: Uint16Array;
   private readonly instances: Map<BuildingId, Building>;
   private nextId: BuildingId;
+  private revisionValue = 0;
+
+  /** Changes whenever a building is added, removed or changes type: what the map layers redraw on. */
+  get revision(): number {
+    return this.revisionValue;
+  }
 
   constructor() {
     this.occupancy = new Uint16Array(GRID_SIZE);
@@ -44,16 +50,32 @@ export class BuildingRegistry {
     return true;
   }
 
-  register(building: Omit<Building, 'id'>, footprint: Footprint): BuildingId | null {
-    if (this.nextId > MAX_BUILDING_ID) return null;
-    if (!this.isFree(building.origin, footprint)) return null;
+  /**
+   * The next free id, counting up from the last one handed out. Ids are not
+   * reused until every one has been used once; from then on the count wraps
+   * and skips the ids still on the map, so a long game never runs out while
+   * fewer than `MAX_BUILDING_ID` buildings stand.
+   */
+  private allocateId(): BuildingId | null {
+    if (!this.hasIdCapacity()) return null;
+    for (;;) {
+      const id = this.nextId > MAX_BUILDING_ID ? 1 : this.nextId;
+      this.nextId = id + 1;
+      if (!this.instances.has(id)) return id;
+    }
+  }
 
-    const id = this.nextId++;
+  register(building: Omit<Building, 'id'>, footprint: Footprint): BuildingId | null {
+    if (!this.isFree(building.origin, footprint)) return null;
+    const id = this.allocateId();
+    if (id === null) return null;
+
     const stored: Building = { ...building, id };
     this.instances.set(id, stored);
     for (const { idx } of this.footprintTiles(building.origin, footprint)) {
       this.occupancy[idx] = id;
     }
+    this.revisionValue += 1;
     return id;
   }
 
@@ -64,6 +86,7 @@ export class BuildingRegistry {
       if (inBounds) this.occupancy[idx] = 0;
     }
     this.instances.delete(id);
+    this.revisionValue += 1;
     return true;
   }
 
@@ -72,6 +95,7 @@ export class BuildingRegistry {
     const building = this.instances.get(id);
     if (!building) return false;
     this.instances.set(id, { ...building, typeId });
+    this.revisionValue += 1;
     return true;
   }
 
@@ -86,8 +110,9 @@ export class BuildingRegistry {
     return this.occupancy[idx];
   }
 
+  /** False only when `MAX_BUILDING_ID` buildings stand at once (occupancy stores ids as Uint16). */
   hasIdCapacity(): boolean {
-    return this.nextId <= MAX_BUILDING_ID;
+    return this.instances.size < MAX_BUILDING_ID;
   }
 
   get(id: BuildingId): Building | null {

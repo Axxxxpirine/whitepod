@@ -7,6 +7,7 @@ import {
   type Application,
   type FederatedPointerEvent,
 } from 'pixi.js';
+import { PIXI } from '@/design/tokens';
 import type { GameEngine } from '../engine/GameEngine';
 import { GRID_WIDTH, GRID_HEIGHT, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
@@ -39,10 +40,10 @@ function rgba(hex: number): number {
   return ((0xff << 24) | (b << 16) | (g << 8) | r) >>> 0;
 }
 
-const COLOR_HIDDEN = rgba(0x0b0d10);
-const COLOR_REVEALED = rgba(0x181a1f);
-const COLOR_RESOURCE = rgba(0x6ee7ff);
-const COLOR_BUILDING = rgba(0xf2b36b);
+const COLOR_HIDDEN = rgba(PIXI.bg);
+const COLOR_REVEALED = rgba(PIXI.gridTile);
+const COLOR_RESOURCE = rgba(PIXI.accent);
+const COLOR_BUILDING = rgba(PIXI.accentWarm);
 
 /**
  * Minimap in the top-right corner: one canvas pixel per tile, scaled down by
@@ -65,10 +66,8 @@ export class MinimapRenderer {
   private readonly image: ImageData;
   private readonly pixels: Uint32Array;
   private readonly texture: Texture;
-  private readonly unsubscribe: () => void;
-  private worldDirty = true;
+  private drawnWorldKey: string | null = null;
   private lastRebuildAt = -Infinity;
-  private lastFogVersion = -1;
   private lastViewportKey = '';
   private isDragging = false;
 
@@ -105,7 +104,7 @@ export class MinimapRenderer {
     this.frame = new Graphics();
     this.frame
       .poly(outline)
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.25 });
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.25 });
     this.container.addChild(this.frame);
 
     this.viewportMask = new Graphics();
@@ -125,10 +124,6 @@ export class MinimapRenderer {
     this.container.on('pointerup', this.onPointerUp, this);
     this.container.on('pointerupoutside', this.onPointerUp, this);
 
-    this.unsubscribe = engine.subscribe((kind) => {
-      if (kind === 'world') this.worldDirty = true;
-    });
-
     this.updatePosition();
     this.rebuildTexture();
     this.updateViewportBorder();
@@ -142,13 +137,10 @@ export class MinimapRenderer {
   render(): void {
     this.updatePosition();
 
-    const { grid, viewport } = this.engine;
-    const now = performance.now();
-    if (grid.fogVersion !== this.lastFogVersion) {
-      this.worldDirty = true;
-      this.lastFogVersion = grid.fogVersion;
-    }
-    if (this.worldDirty && now - this.lastRebuildAt >= REBUILD_INTERVAL_MS) {
+    const { viewport } = this.engine;
+    // Rebuilt only when the map itself changes (tiles, fog, deposits, buildings):
+    // the simulation's own notifications, several a second, show nothing here.
+    if (this.worldKey() !== this.drawnWorldKey && performance.now() - this.lastRebuildAt >= REBUILD_INTERVAL_MS) {
       this.rebuildTexture();
     }
 
@@ -181,8 +173,12 @@ export class MinimapRenderer {
     const radius = minimapCircleRadius(this.layout, WATCHTOWER_REVEAL_RADIUS);
     this.watchtowerPreview
       .circle(center.x, center.y, radius)
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.7 });
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.7 });
     this.watchtowerPreview.visible = true;
+  }
+
+  private worldKey(): string {
+    return `${this.engine.grid.revision}:${this.engine.buildings.revision}`;
   }
 
   private rebuildTexture(): void {
@@ -194,7 +190,7 @@ export class MinimapRenderer {
         const idx = y * GRID_WIDTH + x;
         if (!grid.isRevealed(x, y)) {
           pixels[idx] = COLOR_HIDDEN;
-        } else if (this.engine.getResourceAt(x, y) !== ResourceType.None) {
+        } else if (grid.resourceType[idx] !== ResourceType.None && grid.resourceAmount[idx] > 0) {
           pixels[idx] = COLOR_RESOURCE;
         } else {
           pixels[idx] = COLOR_REVEALED;
@@ -218,7 +214,7 @@ export class MinimapRenderer {
 
     this.ctx.putImageData(this.image, 0, 0);
     this.texture.source.update();
-    this.worldDirty = false;
+    this.drawnWorldKey = this.worldKey();
     this.lastRebuildAt = performance.now();
   }
 
@@ -227,8 +223,8 @@ export class MinimapRenderer {
     this.viewportBorder.clear();
     this.viewportBorder
       .poly(outline.flatMap((p) => [p.x, p.y]))
-      .fill({ color: 0xffffff, alpha: 0.1 })
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.6 });
+      .fill({ color: PIXI.ink, alpha: 0.1 })
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.6 });
   }
 
   private moveCameraTo(event: FederatedPointerEvent): void {
@@ -254,7 +250,6 @@ export class MinimapRenderer {
   }
 
   destroy(): void {
-    this.unsubscribe();
     this.container.destroy({ children: true });
     this.texture.destroy(true);
   }

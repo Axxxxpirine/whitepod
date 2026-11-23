@@ -54,9 +54,16 @@ export class OfflineSession {
   resume(): void {
     if (!this.suspended) return;
     this.suspended = false;
-    const { elapsedMs, capped } = computeElapsedMs(Date.now(), this.pausedSince);
+    const since = this.pausedSince;
+    const { elapsedMs, capped } = computeElapsedMs(Date.now(), since);
     this.pausedSince = null;
-    if (!elapsedMs) return;
+    if (!elapsedMs) {
+      // Nothing to replay (the clock moved back while away): play resumes, so
+      // the saved "paused since" must go, or a reload without a clean exit
+      // would replay time that was already played live.
+      if (since !== null) this.hooks.checkpoint(null);
+      return;
+    }
 
     this.remainingMs = elapsedMs;
     const summary = this.summary ??= { before: this.engine.getResourceCounts(), appliedMs: 0, capped: false };
