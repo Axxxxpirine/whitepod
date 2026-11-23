@@ -211,7 +211,7 @@ export function GameHUD() {
 
       {engine && (
         <div className="pointer-events-auto absolute top-3 left-3">
-          <Panel className="min-w-[180px] px-3 py-2 text-sm text-ink">
+          <Panel className="min-w-[180px] max-w-[380px] px-3 py-2 text-sm text-ink">
             {resourceCounts && (
               <>
                 <div className="label mb-1 text-ink-muted">Ressources</div>
@@ -258,11 +258,9 @@ export function GameHUD() {
                     </span>
                   </div>
                 </div>
-                <div className="mt-1 text-xs tabular-nums text-ink-muted">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
                   <span>Prod. {formatPower(globalEnergy.production)}</span>
-                  <span className="mx-2">|</span>
                   <span>Utilisée {formatPower(globalEnergy.servedConsumption)}</span>
-                  <span className="mx-2">|</span>
                   <span>Demande {formatPower(globalEnergy.demandedConsumption)}</span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums text-ink-muted">
