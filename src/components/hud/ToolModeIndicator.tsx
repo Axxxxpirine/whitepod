@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { getBuildingType } from '@/game/data/buildingCatalog';
 import { getPlacementPreviewModel } from '@/game/renderer/placementPreviewModel';
 import { beltToolLabel } from '@/game/ui/buildingPresentation';
@@ -65,7 +65,7 @@ function usePlacementReadout(): PlacementReadout | null {
   }, [engine, selectedTool, hoverTile, rotation, beltPreview, worldVersion]);
 }
 
-export function ToolModeIndicator() {
+function ToolModeIndicatorView() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const beltPreview = useGameStore((s) => s.beltPreview);
   const pendingEnergyLinkSource = useGameStore((s) => s.pendingEnergyLinkSource);
@@ -118,3 +118,6 @@ export function ToolModeIndicator() {
     </div>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const ToolModeIndicator = memo(ToolModeIndicatorView);

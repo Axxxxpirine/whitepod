@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { resourceTypeLabel } from '@/game/data/buildingCatalog';
 import { isRichVein } from '@/game/data/depositAmounts';
 import type { GameEngine } from '@/game/engine/GameEngine';
@@ -20,11 +21,13 @@ function depositLabel(engine: GameEngine, tile: TileCoord): string {
   return parts.join(' · ');
 }
 
-export function SelectedResourceTooltip() {
+function SelectedResourceTooltipView() {
   const engine = useGameStore((s) => s.engine);
   const selectedTool = useGameStore((s) => s.selectedTool);
   const selectedResourceTile = useGameStore((s) => s.selectedResourceTile);
   const selectedResourceAnchor = useGameStore((s) => s.selectedResourceAnchor);
+  // The amount left goes down with every unit extracted next door.
+  useGameStore((s) => s.worldVersion);
 
   if (!engine || selectedTool.kind !== 'select' || !selectedResourceTile || !selectedResourceAnchor) return null;
 
@@ -53,3 +56,6 @@ export function SelectedResourceTooltip() {
     </div>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const SelectedResourceTooltip = memo(SelectedResourceTooltipView);

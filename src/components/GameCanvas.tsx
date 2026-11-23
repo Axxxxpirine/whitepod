@@ -54,6 +54,8 @@ const WORLD_SAVE_MAX_WAIT_MS = 2000;
  */
 const SIMULATION_SAVE_INTERVAL_MS = 5000;
 const VIEW_SAVE_DELAY_MS = 100;
+/** Least time between two updates of the HUD clock. */
+const CLOCK_UPDATE_INTERVAL_MS = 100;
 
 /** What the player builds or decides, as opposed to what the simulation produces. */
 function playerEditKey(engine: GameEngine): string {
@@ -253,6 +255,8 @@ export function GameCanvas() {
         const devEngine = engine as DevEngine;
         devEngine.scenarios = createDevScenarioApi(engine);
         (window as unknown as { engine: DevEngine }).engine = devEngine;
+        // Lets a bench drive frames by hand (`pixiApp.ticker.update(t)`), e.g. in a hidden tab where rAF is paused.
+        (window as unknown as { pixiApp: Application }).pixiApp = app;
       }
 
       botSession = createBotSession({ engine, initialProfileId: initialBotProfileId });
@@ -494,6 +498,7 @@ export function GameCanvas() {
       });
       resizeObserver.observe(container);
 
+      let lastClockUpdateAt = Number.NEGATIVE_INFINITY;
       app.ticker.add((ticker) => {
         const state = useGameStore.getState();
         if (!offline?.active || document.hidden) {
@@ -507,7 +512,9 @@ export function GameCanvas() {
         // Quantize to in-game minutes so the store only updates when the displayed clock changes
         const SIM_MINUTE = 1 / (24 * 60);
         const quantized = Math.floor(engine.simulationTime / SIM_MINUTE) * SIM_MINUTE;
-        if (state.simulationTime !== quantized) {
+        // An in-game minute lasts under a frame at 20x: the HUD clock follows at ten updates a second at most.
+        if (state.simulationTime !== quantized && ticker.lastTime - lastClockUpdateAt >= CLOCK_UPDATE_INTERVAL_MS) {
+          lastClockUpdateAt = ticker.lastTime;
           state.setSimulationTime(quantized);
         }
         const {

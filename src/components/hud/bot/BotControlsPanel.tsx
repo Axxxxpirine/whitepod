@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Play, Square } from 'lucide-react';
 import { parseSeedInput } from '@/game/bot/seedInput';
 import { GameMode } from '@/game/data/gameMode';
@@ -8,7 +9,7 @@ import { BotProfileSelect } from './BotProfileSelect';
 import { BotSeedControls } from './BotSeedControls';
 import { BotStatusIndicator } from './BotStatusIndicator';
 
-export function BotControlsPanel() {
+function BotControlsPanelView() {
   const bot = useGameStore((s) => s.bot);
   const botControls = useGameStore((s) => s.botControls);
   const selectedBotProfileId = useGameStore((s) => s.selectedBotProfileId);
@@ -77,3 +78,6 @@ export function BotControlsPanel() {
     </Panel>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const BotControlsPanel = memo(BotControlsPanelView);

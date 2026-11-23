@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { beltTypeId, getBuildingType } from '@/game/data/buildingCatalog';
 import type { GameEngine } from '@/game/engine/GameEngine';
@@ -84,7 +84,7 @@ function ringStyle(color: number): React.CSSProperties {
   return { boxShadow: `0 0 0 1px ${hexColor(color)}` };
 }
 
-export function BuildingPicker() {
+function BuildingPickerView() {
   const selectedTool = useGameStore((s) => s.selectedTool);
   const setSelectedTool = useGameStore((s) => s.setSelectedTool);
   const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding);
@@ -231,3 +231,6 @@ export function BuildingPicker() {
     </div>
   );
 }
+
+/** Renders from its own subscriptions: the HUD around it re-renders several times a second. */
+export const BuildingPicker = memo(BuildingPickerView);

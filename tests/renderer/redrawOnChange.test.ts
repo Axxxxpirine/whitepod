@@ -118,6 +118,29 @@ describe('map layers redraw on change only', () => {
     renderer.destroy();
   });
 
+  it('moves belts and power links with the camera without redrawing them', () => {
+    const { engine } = runningLine();
+    const belts = new BeltRenderer(app(), engine);
+    const links = new EnergyLinkRenderer(app(), engine, () => ({ mode: 'normal', pendingSourceId: null, mouseWorldPos: null }));
+    belts.render();
+    links.render();
+    const clearBelts = vi.spyOn(graphicsOf(belts), 'clear');
+    const clearLinks = vi.spyOn(graphicsOf(links), 'clear');
+
+    // Across the map and back, zoomed out and in: what is drawn does not depend on the view.
+    for (const [dx, dy, zoom] of [[4000, 0, 0.5], [-8000, 3000, 0.5], [2000, -2000, 2]] as const) {
+      engine.viewport.pan(dx, dy);
+      engine.viewport.zoomAt(400, 300, zoom);
+      belts.render();
+      links.render();
+    }
+
+    expect(clearBelts).not.toHaveBeenCalled();
+    expect(clearLinks).not.toHaveBeenCalled();
+    belts.destroy();
+    links.destroy();
+  });
+
   it('reports a hovered tile once, however many times the pointer moves inside it', () => {
     const { engine } = runningLine();
     const hover = vi.fn();

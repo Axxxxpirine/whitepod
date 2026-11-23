@@ -22,7 +22,6 @@ import { Chip, HoverTooltip, Icon, Panel, PanelHeading } from './ui';
 const IDLE_SUMMARY_MIN_SECONDS = 60;
 
 export function GameHUD() {
-  const hoverTile = useGameStore((s) => s.hoverTile);
   const engine = useGameStore((s) => s.engine);
   const selectedTool = useGameStore((s) => s.selectedTool);
   const simulationTime = useGameStore((s) => s.simulationTime);
@@ -445,11 +444,7 @@ export function GameHUD() {
               <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 text-xs text-ink-muted backdrop-blur-md">
                 Molette : zoom · Clic droit ou WASD : déplacer · Espace : recentrer
               </div>
-              {hoverTile && (
-                <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
-                  {hoverTile.x}, {hoverTile.y}
-                </div>
-              )}
+              <HoverCoordinates />
             </div>
           </div>
 
@@ -597,6 +592,17 @@ export function GameHUD() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Tile under the pointer. On its own so that moving the mouse does not re-render the whole HUD. */
+function HoverCoordinates() {
+  const hoverTile = useGameStore((s) => s.hoverTile);
+  if (!hoverTile) return null;
+  return (
+    <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
+      {hoverTile.x}, {hoverTile.y}
     </div>
   );
 }
