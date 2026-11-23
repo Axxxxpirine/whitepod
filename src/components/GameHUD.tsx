@@ -5,6 +5,7 @@ import { applyScenarioGeneratorToLiveSession } from '@/game/scenarios/applyScena
 import { listScenarioGenerators } from '@/game/scenarios/generatorCatalog';
 import type { ScenarioGeneratorListEntry } from '@/game/scenarios/types';
 import { nightWarning } from '@/game/ui/nightPresentation';
+import { formatDuration, formatRate } from '@/game/ui/numberPresentation';
 import { confirmWorldReplacement } from '@/game/ui/sessionPresentation';
 import { RESOURCE_ENTRIES } from '@/game/ui/resourcePresentation';
 import { useGameStore } from '@/store/useGameStore';
@@ -16,6 +17,9 @@ import { BuildingPicker } from './hud/BuildingPicker';
 import { NextGoalPanel } from './hud/NextGoalPanel';
 import { ToolModeIndicator } from './hud/ToolModeIndicator';
 import { Chip, HoverTooltip, Icon, Panel, PanelHeading } from './ui';
+
+/** A shorter absence is not worth a summary (switching tabs for a moment). */
+const IDLE_SUMMARY_MIN_SECONDS = 60;
 
 export function GameHUD() {
   const hoverTile = useGameStore((s) => s.hoverTile);
@@ -55,7 +59,7 @@ export function GameHUD() {
   const scenarioGenerators = useMemo(() => listScenarioGenerators(), []);
 
   useEffect(() => {
-    if (!idleSummary || idleSummary.appliedSeconds <= 0) return;
+    if (!idleSummary || idleSummary.appliedSeconds < IDLE_SUMMARY_MIN_SECONDS) return;
     const timeoutId = window.setTimeout(() => {
       setIdleSummary(null);
     }, 7000);
@@ -104,11 +108,8 @@ export function GameHUD() {
     return engine?.getResourceRates() ?? null;
   }, [engine, worldTick, energyVersion]);
   const idleSummaryText = useMemo(() => {
-    if (!idleSummary || idleSummary.appliedSeconds <= 0) return null;
-    const totalSeconds = Math.floor(idleSummary.appliedSeconds);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const durationLabel = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    if (!idleSummary || idleSummary.appliedSeconds < IDLE_SUMMARY_MIN_SECONDS) return null;
+    const durationLabel = formatDuration(idleSummary.appliedSeconds);
     const delta = idleSummary.resourceDelta;
     const deltaEntries = RESOURCE_ENTRIES
       .filter((r) => delta[r.key] !== 0)
@@ -123,7 +124,7 @@ export function GameHUD() {
   const executeCommand = useCallback(
     (cmd: string) => {
       if (!engine) {
-        setHistory((h) => [...h, { text: cmd, type: 'input' }, { text: 'Engine not initialized', type: 'error' }]);
+        setHistory((h) => [...h, { text: cmd, type: 'input' }, { text: 'Moteur non initialisé', type: 'error' }]);
         return;
       }
 
@@ -186,7 +187,7 @@ export function GameHUD() {
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {idleSummaryText && (
-        <div className="pointer-events-auto absolute top-3 right-3">
+        <div className="pointer-events-auto absolute top-3 left-1/2 -translate-x-1/2">
           <Panel role="status" className="px-3 py-2 text-xs text-ink">
             <div className="flex items-baseline gap-2">
               <PanelHeading>Progression hors ligne</PanelHeading>
@@ -218,7 +219,7 @@ export function GameHUD() {
                           <img src={r.sprite} className="h-4 w-4 object-contain" alt={resourceTypeLabel(r.type)} />
                           <span className="font-bold tabular-nums">{resourceCounts[r.key]}</span>
                           <span className={`text-xs tabular-nums ${rate < 0 ? 'text-accent-warm' : 'text-ink-muted'}`}>
-                            {rateSign}{Math.round(rate)}/min
+                            {rateSign}{formatRate(rate)}
                           </span>
                         </div>
                       </HoverTooltip>
@@ -264,7 +265,7 @@ export function GameHUD() {
                   )}
                   {energyStorage && energyStorage.capacity > 0 && (
                     <span>
-                      Stockage {Math.round(energyStorage.stored * 10) / 10} /{' '}
+                      Réserve {Math.round(energyStorage.stored * 10) / 10} /{' '}
                       {Math.round(energyStorage.capacity * 10) / 10} kWh
                     </span>
                   )}
@@ -290,6 +291,8 @@ export function GameHUD() {
                   })
                 }
                 aria-expanded={debugOpen}
+                aria-label="Outils de simulation"
+                title="Outils de simulation"
                 className="ml-2 cursor-pointer rounded-sm bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-muted transition-colors hover:bg-border"
               >
                 {debugOpen ? '▲' : '▼'}
@@ -306,7 +309,7 @@ export function GameHUD() {
                   <div className="rounded-sm bg-surface-2 px-2 py-1">
                     <div className="label text-ink-muted">Consommateurs</div>
                     <div className="font-medium tabular-nums text-ink">
-                      {globalEnergy?.onlineConsumers ?? 0} ON / {globalEnergy?.offlineConsumers ?? 0} OFF
+                      {globalEnergy?.onlineConsumers ?? 0} en marche / {globalEnergy?.offlineConsumers ?? 0} à l'arrêt
                     </div>
                   </div>
                 </div>
@@ -314,7 +317,7 @@ export function GameHUD() {
                 <div className="space-y-1">
                   <div className="label text-ink-muted">Temps (0h-24h)</div>
                   <input
-                    aria-label="Simulation time"
+                    aria-label="Heure de la simulation"
                     type="range"
                     min={0}
                     max={1}
@@ -350,6 +353,7 @@ export function GameHUD() {
                         key={speed}
                         type="button"
                         onClick={() => setSimulationSpeed(speed)}
+                        aria-pressed={simulationSpeed === speed}
                         className={
                           simulationSpeed === speed
                             ? 'cursor-pointer rounded-sm bg-accent px-2 py-1 text-xs font-semibold tabular-nums text-bg'
@@ -363,7 +367,7 @@ export function GameHUD() {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="label text-ink-muted">Scenario Generator</div>
+                  <div className="label text-ink-muted">Générateur de scénarios</div>
                   <div className="flex items-center gap-1">
                     {scenarioGenerators.map((scenario) => (
                       <button
@@ -393,7 +397,7 @@ export function GameHUD() {
         <Panel elevated className="pointer-events-auto absolute right-3 bottom-20 w-96 max-w-[calc(100vw-1.5rem)] overflow-hidden tabular-nums text-xs">
           <div ref={scrollRef} className="h-48 space-y-0.5 overflow-y-auto p-2">
             {history.length === 0 && (
-              <div className="text-ink-muted">Use engine.placeResource(x, y, type), engine.removeResource(x, y), ...</div>
+              <div className="text-ink-muted">Exemples : engine.placeResource(x, y, type), engine.removeResource(x, y)…</div>
             )}
             {history.map((entry, i) => (
               <div
@@ -430,8 +434,8 @@ export function GameHUD() {
           <div className="flex min-w-0 items-end justify-self-start">
             <div className="pointer-events-auto flex flex-col items-start gap-2">
               <ToolModeIndicator />
-              <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
-                Zoom: Shift+Wheel | Pan: Wheel/WASD/Arrows
+              <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 text-xs text-ink-muted backdrop-blur-md">
+                Zoom : molette ou +/− · Déplacer : clic droit glissé, flèches, WASD · Recentrer : Espace · Pivoter : R
               </div>
               {hoverTile && (
                 <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">
@@ -479,7 +483,7 @@ export function GameHUD() {
                       onClick={() => setLinkSolarOnPlacement(!linkSolarOnPlacement)}
                       aria-pressed={linkSolarOnPlacement}
                       title="Après pose d'un panneau solaire, passe en mode lien"
-                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Lier après pose</span>
                       <Chip tone={linkSolarOnPlacement ? 'accent' : 'muted'} className="ml-3">
@@ -490,7 +494,7 @@ export function GameHUD() {
                     <div className="space-y-1 px-2 py-1.5">
                       <div className="label text-ink-muted">Volume musique</div>
                       <input
-                        aria-label="Music volume"
+                        aria-label="Volume de la musique"
                         type="range"
                         min={0}
                         max={1}
@@ -499,7 +503,7 @@ export function GameHUD() {
                         onChange={(e) => setMusicVolume(Number(e.target.value))}
                         className="w-full accent-accent"
                       />
-                      <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                      <div className="flex items-center justify-between text-[11px] tabular-nums text-ink-muted">
                         <span>0%</span>
                         <span>{Math.round(musicVolume * 100)}%</span>
                         <span>100%</span>
@@ -509,7 +513,7 @@ export function GameHUD() {
                     <div className="space-y-1 px-2 py-1.5">
                       <div className="label text-ink-muted">Volume effets</div>
                       <input
-                        aria-label="SFX volume"
+                        aria-label="Volume des effets"
                         type="range"
                         min={0}
                         max={1}
@@ -518,7 +522,7 @@ export function GameHUD() {
                         onChange={(e) => setSfxVolume(Number(e.target.value))}
                         className="w-full accent-accent"
                       />
-                      <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                      <div className="flex items-center justify-between text-[11px] tabular-nums text-ink-muted">
                         <span>0%</span>
                         <span>{Math.round(sfxVolume * 100)}%</span>
                         <span>100%</span>
@@ -536,7 +540,7 @@ export function GameHUD() {
                         })
                       }
                       aria-pressed={consoleOpen}
-                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       <span>Console</span>
                       <span className="ml-3 tabular-nums text-[11px] text-ink-muted">&gt;_</span>
@@ -560,9 +564,9 @@ export function GameHUD() {
 
                         engine?.emitSfx({ type: 'ui_confirm', context: 'export_actions' });
                       }}
-                      className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
-                      <span>Export actions</span>
+                      <span>Exporter les actions</span>
                       <span className="tabular-nums text-[11px] text-ink-muted">
                         {useGameStore.getState().actionLogger?.getActions().length ?? 0}
                       </span>
@@ -574,7 +578,7 @@ export function GameHUD() {
                         setSettingsOpen(false);
                         openStartScreen();
                       }}
-                      className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
+                      className="flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-xs text-ink transition-colors hover:bg-surface-2"
                     >
                       Menu principal
                     </button>

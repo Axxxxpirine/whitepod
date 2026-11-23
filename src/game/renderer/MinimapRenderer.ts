@@ -7,6 +7,7 @@ import {
   type Application,
   type FederatedPointerEvent,
 } from 'pixi.js';
+import { PIXI } from '@/design/tokens';
 import type { GameEngine } from '../engine/GameEngine';
 import { GRID_WIDTH, GRID_HEIGHT, WATCHTOWER_REVEAL_RADIUS } from '../constants';
 import { WATCHTOWER_BUILDING_TYPE_ID, getBuildingType } from '../data/buildingCatalog';
@@ -39,10 +40,10 @@ function rgba(hex: number): number {
   return ((0xff << 24) | (b << 16) | (g << 8) | r) >>> 0;
 }
 
-const COLOR_HIDDEN = rgba(0x0b0d10);
-const COLOR_REVEALED = rgba(0x181a1f);
-const COLOR_RESOURCE = rgba(0x6ee7ff);
-const COLOR_BUILDING = rgba(0xf2b36b);
+const COLOR_HIDDEN = rgba(PIXI.bg);
+const COLOR_REVEALED = rgba(PIXI.gridTile);
+const COLOR_RESOURCE = rgba(PIXI.accent);
+const COLOR_BUILDING = rgba(PIXI.accentWarm);
 
 /**
  * Minimap in the top-right corner: one canvas pixel per tile, scaled down by
@@ -105,7 +106,7 @@ export class MinimapRenderer {
     this.frame = new Graphics();
     this.frame
       .poly(outline)
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.25 });
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.25 });
     this.container.addChild(this.frame);
 
     this.viewportMask = new Graphics();
@@ -181,7 +182,7 @@ export class MinimapRenderer {
     const radius = minimapCircleRadius(this.layout, WATCHTOWER_REVEAL_RADIUS);
     this.watchtowerPreview
       .circle(center.x, center.y, radius)
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.7 });
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.7 });
     this.watchtowerPreview.visible = true;
   }
 
@@ -227,8 +228,8 @@ export class MinimapRenderer {
     this.viewportBorder.clear();
     this.viewportBorder
       .poly(outline.flatMap((p) => [p.x, p.y]))
-      .fill({ color: 0xffffff, alpha: 0.1 })
-      .stroke({ color: 0xffffff, width: 1, alpha: 0.6 });
+      .fill({ color: PIXI.ink, alpha: 0.1 })
+      .stroke({ color: PIXI.ink, width: 1, alpha: 0.6 });
   }
 
   private moveCameraTo(event: FederatedPointerEvent): void {

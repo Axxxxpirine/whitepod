@@ -417,7 +417,6 @@ export class GameEngine {
     if (!state) return false;
     const building = this.buildings.get(buildingId);
     if (!building) return false;
-    if (!this.isProcessorIdle(buildingId)) return false;
 
     if (recipeId !== null) {
       const recipe = getRecipe(recipeId);
@@ -427,11 +426,18 @@ export class GameEngine {
       if (!this.isRecipeUnlocked(recipeId)) return false;
     }
 
+    // Choosing the recipe already running changes nothing: the batch goes on.
+    if (recipeId === state.recipeId) return true;
+
     this.logisticsByProcessor.clear();
     this.providersByPort.clear();
     state.recipeId = recipeId;
     state.cycleProgress = 0;
+    // A recipe change empties the machine: the batch in progress and a unit
+    // still waiting at its output are dropped, so nothing made by the old
+    // recipe is left blocking a line that no longer takes it.
     this.processorReservations.delete(buildingId);
+    this.producerOutputBuffers.set(buildingId, null);
     this.notify('world');
     this.emitAction('set_processor_recipe', { buildingId, recipeId });
     return true;

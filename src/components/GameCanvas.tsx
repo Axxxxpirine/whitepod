@@ -23,6 +23,7 @@ import {
 } from '@/game/persistence/sessionStorage';
 import { ActionLogger, type ActionKind } from '@/game/persistence/actionLogger';
 import { OfflineSession } from '@/game/idle/OfflineSession';
+import { PIXI } from '@/design/tokens';
 import { useGameStore } from '@/store/useGameStore';
 import { loadBuildingTextures, loadResourceTextures, loadTerrainDecalTextures } from '@/game/renderer/TileSprite';
 import { ResourceType, type SelectedTool } from '@/game/types';
@@ -155,7 +156,7 @@ export function GameCanvas() {
       app = new Application();
       await app.init({
         resizeTo: container,
-        backgroundColor: 0x0b0d10,
+        backgroundColor: PIXI.bg,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,

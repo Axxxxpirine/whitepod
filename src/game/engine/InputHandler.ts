@@ -188,7 +188,10 @@ export class InputHandler {
       const factor = Math.pow(1.01, -deltaY);
       this.engine.viewport.zoomAt(screenX, screenY, factor);
     } else if (shiftKey) {
-      const factor = deltaY < 0 ? 1.1 : 0.9;
+      // With Shift held, macOS and Chrome turn a vertical wheel into a horizontal one (deltaY 0).
+      const delta = deltaY !== 0 ? deltaY : deltaX;
+      if (delta === 0) return;
+      const factor = delta < 0 ? 1.1 : 0.9;
       this.engine.viewport.zoomAt(screenX, screenY, factor);
     } else if (deltaMode !== 0 || Math.abs(deltaY) >= 50) {
       const factor = deltaY < 0 ? 1.1 : 0.9;

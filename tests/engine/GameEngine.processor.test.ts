@@ -71,6 +71,7 @@ function placeMerger(engine: GameEngine, x: number, y: number) {
 function belt(engine: GameEngine, from: { building: number; port: string }, to: { building: number; port: string }) {
   const result = engine.placeBelt(from, to);
   expect(result.ok).toBe(true);
+  return result.ok ? result.segmentIds : [];
 }
 
 describe('connected processor logistics', () => {
@@ -340,7 +341,7 @@ describe('connected processor logistics', () => {
     expect(engine.getProducerOutputBuffer(converter)).toBeNull();
   });
 
-  it('rejects recipe changes while a processor is mid-cycle', () => {
+  it('changes the recipe of a running processor, dropping the batch in progress', () => {
     const engine = makeEngine();
     const extractor = placeExtractor(engine, 2, 74, ResourceType.Regolith);
     powerBuilding(engine, extractor, 1, 2, 71);
@@ -350,9 +351,61 @@ describe('connected processor logistics', () => {
     belt(engine, { building: extractor, port: 'out_east' }, { building: converter, port: 'in' });
     belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
     simulate(engine, 2.5);
-
     expect(engine.getProcessorState(converter)?.cycleProgress).toBeGreaterThan(0);
-    expect(engine.setProcessorRecipe(converter, 'aluminum_oxide')).toBe(false);
+    const ironBefore = engine.getStorageInventory(storage)!.ironOxide;
+
+    // A fed machine is mid-cycle almost all the time: the player must still be able to switch it.
+    expect(engine.setProcessorRecipe(converter, 'carbon')).toBe(true);
+    expect(engine.getProcessorState(converter)).toEqual({ recipeId: 'carbon', cycleProgress: 0 });
+    expect(engine.processorReservations.get(converter)).toBeUndefined();
+
+    // The dropped batch makes nothing, of either recipe; clearing is always allowed too.
+    expect(engine.getStorageInventory(storage)!.ironOxide).toBe(ironBefore);
+    expect(engine.setProcessorRecipe(converter, null)).toBe(true);
+    expect(engine.getProcessorState(converter)?.recipeId).toBeNull();
+  });
+
+  it('keeps the batch going when the running recipe is chosen again', () => {
+    const engine = makeEngine();
+    const extractor = placeExtractor(engine, 2, 74, ResourceType.Regolith);
+    powerBuilding(engine, extractor, 1, 2, 71);
+    const converter = placeConverter(engine, 8, 73, 'iron_oxide');
+    const storage = placeStorage(engine, 14, 72);
+
+    belt(engine, { building: extractor, port: 'out_east' }, { building: converter, port: 'in' });
+    belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    simulate(engine, 2.5);
+    const progress = engine.getProcessorState(converter)!.cycleProgress;
+    expect(progress).toBeGreaterThan(0);
+
+    expect(engine.setProcessorRecipe(converter, 'iron_oxide')).toBe(true);
+    expect(engine.getProcessorState(converter)?.cycleProgress).toBe(progress);
+  });
+
+  it('does not leave a unit of the old recipe blocking the machine after a change', () => {
+    const engine = makeEngine();
+    const extractor = placeExtractor(engine, 2, 74, ResourceType.Regolith);
+    powerBuilding(engine, extractor, 1, 2, 71);
+    const converter = placeConverter(engine, 8, 73, 'iron_oxide');
+    const storage = placeStorage(engine, 14, 72);
+
+    belt(engine, { building: extractor, port: 'out_east' }, { building: converter, port: 'in' });
+    const output = belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    simulate(engine, 2.5);
+    expect(engine.getProcessorState(converter)?.cycleProgress).toBeGreaterThan(0);
+    // The output line goes away mid-cycle: the finished unit stays in the machine.
+    engine.removeBelt(output[0]!);
+    simulate(engine, 3);
+    expect(engine.getProducerOutputBuffer(converter)?.resourceType).toBe(ResourceType.IronOxide);
+
+    expect(engine.setProcessorRecipe(converter, 'carbon')).toBe(true);
+    expect(engine.getProducerOutputBuffer(converter)).toBeNull();
+
+    // Emptied, the machine takes a recipe again and runs as soon as its output is back.
+    expect(engine.setProcessorRecipe(converter, 'iron_oxide')).toBe(true);
+    belt(engine, { building: converter, port: 'out' }, { building: storage, port: 'in_west' });
+    simulate(engine, 10);
+    expect(engine.getStorageInventory(storage)!.ironOxide).toBeGreaterThan(0);
   });
 
   it('supports processor-to-processor chains through producer output buffers', () => {

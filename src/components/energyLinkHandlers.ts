@@ -11,6 +11,9 @@ export function selectedToolsEqual(left: SelectedTool, right: SelectedTool): boo
   if (left.kind === 'building' && right.kind === 'building') {
     return left.buildingType === right.buildingType;
   }
+  if (left.kind === 'belt' && right.kind === 'belt') {
+    return (left.tier ?? 'basic') === (right.tier ?? 'basic');
+  }
   return true;
 }
 

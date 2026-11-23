@@ -13,19 +13,19 @@ const generators = [
   },
   {
     id: 'tier-medium',
-    label: 'Medium',
+    label: 'Moyen',
     description: 'Mid-complexity: storage, belts, 2 resource types, branched energy network.',
     generate: generateMediumScenario,
   },
   {
     id: 'tier-complex',
-    label: 'Complex',
+    label: 'Complexe',
     description: 'Full complexity: 2 subnets, mergers, watchtower, all 3 resource types.',
     generate: generateComplexScenario,
   },
   {
     id: 'tier-build-all',
-    label: 'Build All',
+    label: 'Tout construire',
     description: 'Complete pipeline: all 4 converters + all 5 synthesizers. All 12 resource types produced.',
     generate: generateBuildAllScenario,
   },
