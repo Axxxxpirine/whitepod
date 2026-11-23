@@ -62,10 +62,12 @@ export function getEnergyLinkStyle(mode: EnergyLinkMode): EnergyLinkStyle {
     };
   }
 
+  // At rest the network stays readable without competing with the belts: the
+  // cyan of energy lines (DESIGN.md), as a faint hairline.
   return {
-    color: PIXI.border,
+    color: PIXI.accent,
     width: 1,
-    alpha: 0.4,
+    alpha: 0.35,
   };
 }
 

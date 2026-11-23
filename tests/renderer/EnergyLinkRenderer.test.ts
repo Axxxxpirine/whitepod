@@ -62,12 +62,15 @@ afterEach(() => {
 });
 
 describe('EnergyLinkRenderer helpers', () => {
-  it('returns the expected default style in normal mode', () => {
-    expect(getEnergyLinkStyle('normal')).toEqual({
-      color: PIXI.border,
-      width: 1,
-      alpha: 0.4,
-    });
+  it('keeps a link at rest readable: a thin cyan line, fainter than in link mode', () => {
+    const rest = getEnergyLinkStyle('normal');
+    const linking = getEnergyLinkStyle('energy_link');
+
+    // DESIGN.md: energy lines are cyan. The border token at 40% vanished on the ground.
+    expect(rest.color).toBe(PIXI.accent);
+    expect(rest.width).toBe(1);
+    expect(rest.alpha).toBeGreaterThanOrEqual(0.3);
+    expect(rest.alpha).toBeLessThan(linking.alpha);
   });
 
   it('returns the highlighted style in energy-link mode', () => {
@@ -90,8 +93,11 @@ describe('EnergyLinkRenderer helpers', () => {
     expect(mid.width).toBeLessThan(to.width);
     expect(mid.alpha).toBeGreaterThan(from.alpha);
     expect(mid.alpha).toBeLessThan(to.alpha);
-    expect(mid.color).not.toBe(from.color);
-    expect(mid.color).not.toBe(to.color);
+
+    // Both modes are cyan now: the colour blend is checked between two distinct colours.
+    const blended = interpolateEnergyLinkStyle({ ...from, color: PIXI.border }, to, 0.5);
+    expect(blended.color).not.toBe(PIXI.border);
+    expect(blended.color).not.toBe(to.color);
   });
 
   it('classifies network flow phases using energy stats', () => {
