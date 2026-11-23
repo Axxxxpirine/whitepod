@@ -86,6 +86,14 @@ export function GameHUD() {
     void simulationTime;
     return engine ? engine.getEnergyStorageTotals() : null;
   }, [engine, energyVersion, worldTick, simulationTime]);
+  // A network that cannot carry its demand serves nothing: production minus
+  // what is served would then read as a green surplus while every machine is
+  // stopped. Short of power overall, the headline is what is missing.
+  const energyHeadline = !globalEnergy
+    ? 0
+    : globalEnergy.unservedLoad > 0 && globalEnergy.demandBalance < 0
+      ? globalEnergy.demandBalance
+      : globalEnergy.surplusPower;
   const simulationClockLabel = useMemo(() => formatSimulationTime(simulationTime), [simulationTime]);
   const nightAlert = useMemo(() => {
     void simulationTime;
@@ -235,18 +243,18 @@ export function GameHUD() {
               <>
                 <div className="label mb-1.5 text-ink-muted">Énergie</div>
                 <div className="flex items-center gap-1">
-                  <span className="label text-ink-muted">{globalEnergy.surplusPower >= 0 ? 'Surplus' : 'Déficit'}</span>
+                  <span className="label text-ink-muted">{energyHeadline >= 0 ? 'Surplus' : 'Déficit'}</span>
                   <div className="flex items-center gap-1">
                     <Icon
                       icon={Zap}
                       size={13}
-                      className={globalEnergy.surplusPower >= 0 ? 'text-ok' : 'text-error'}
+                      className={energyHeadline >= 0 ? 'text-ok' : 'text-error'}
                     />
                     <span
-                      className={`font-bold tabular-nums ${globalEnergy.surplusPower >= 0 ? 'text-ok' : 'text-error'}`}
+                      className={`font-bold tabular-nums ${energyHeadline >= 0 ? 'text-ok' : 'text-error'}`}
                     >
-                      {globalEnergy.surplusPower >= 0 ? '+' : ''}
-                      {Math.round(globalEnergy.surplusPower * 10) / 10} kW
+                      {energyHeadline >= 0 ? '+' : ''}
+                      {Math.round(energyHeadline * 10) / 10} kW
                     </span>
                   </div>
                 </div>
@@ -435,7 +443,7 @@ export function GameHUD() {
             <div className="pointer-events-auto flex flex-col items-start gap-2">
               <ToolModeIndicator />
               <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 text-xs text-ink-muted backdrop-blur-md">
-                Zoom : molette ou +/− · Déplacer : clic droit glissé, flèches, WASD · Recentrer : Espace · Pivoter : R
+                Molette : zoom · Clic droit ou WASD : déplacer · Espace : recentrer
               </div>
               {hoverTile && (
                 <div className="inline-flex rounded-sm border border-border bg-surface/90 px-2 py-1 tabular-nums text-xs text-ink-muted backdrop-blur-md">

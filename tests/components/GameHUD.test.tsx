@@ -464,6 +464,26 @@ describe('GameHUD', () => {
     expect(screen.queryByText('↓')).not.toBeInTheDocument();
   });
 
+  it('reads as a deficit, not a surplus, when a network cannot carry its machines', () => {
+    const engine = makeEngine();
+    engine.simulationTime = 0.5;
+    const solarId = engine.placeBuilding(SOLAR_PANEL_BUILDING_TYPE_ID, { x: 8, y: 8 })!;
+    for (const [x, resource] of [[13, ResourceType.Regolith], [15, ResourceType.Hydrogen], [17, ResourceType.Oxygen]] as const) {
+      engine.placeResource(x, 8, resource);
+      engine.connectBuildings(solarId, engine.placeBuilding(EXTRACTOR_BUILDING_TYPE_ID, { x, y: 8 })!);
+    }
+
+    useGameStore.setState({ engine, simulationTime: 0.5 });
+    render(<GameHUD />);
+
+    // 10 kW for 12 kW of extractors and no battery: everything is stopped.
+    expect(screen.getByText('Déficit')).toBeInTheDocument();
+    expect(screen.getByText('-2 kW')).toBeInTheDocument();
+    expect(screen.getByText('Utilisée 0 kW')).toBeInTheDocument();
+    expect(screen.getByText('Non servie 12 kW')).toBeInTheDocument();
+    expect(screen.queryByText('Surplus')).not.toBeInTheDocument();
+  });
+
   it('uses explicit solar network wording in the selected building panel', () => {
     const engine = makeEngine();
     engine.simulationTime = 0.5;
