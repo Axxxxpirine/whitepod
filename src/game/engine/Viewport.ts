@@ -75,8 +75,10 @@ export class Viewport {
     const worldX = this.centerX + (screenX - this.screenWidth / 2) / this.zoom;
     const worldY = this.centerY + (screenY - this.screenHeight / 2) / this.zoom;
 
-    this.centerX = worldX - (screenX - this.screenWidth / 2) / newZoom;
-    this.centerY = worldY - (screenY - this.screenHeight / 2) / newZoom;
+    // Clamped like pan(): zooming on a corner of the screen at the edge of the
+    // map must not carry the camera outside it.
+    this.centerX = clamp(worldX - (screenX - this.screenWidth / 2) / newZoom, 0, GRID_WIDTH * TILE_SIZE);
+    this.centerY = clamp(worldY - (screenY - this.screenHeight / 2) / newZoom, 0, GRID_HEIGHT * TILE_SIZE);
     this.zoom = newZoom;
     this.onChange?.();
   }
