@@ -230,6 +230,8 @@ Current placement failure reasons:
 - `id_overflow`
 - `tile_fogged`
 
+`id_overflow` only happens with 65 535 buildings standing at once (belt segments included; same limit for connections): ids are handed out in increasing order and, once all have been used, reused from the ones removed buildings freed.
+
 Placement rules enforced by the engine:
 
 - every tile of the footprint must be inside the grid
@@ -332,6 +334,8 @@ A catalog entry's `upgradesTo` names the building it can become in place; `valid
 `pullsInputs(typeId)` (machines and fuel cells) marks the buildings routes end at as pulling terminals.
 
 `getResourceRates()` reports **stock growth**: what reaches storages per minute. Units headed for a machine or a fuel cell never count; a machine counts by what it sends on to a storage.
+
+`engine.getProducerRatePerMinute(buildingId)` is what a producer makes as things stand, shared by the HUD rates and the belt panel: an extractor needs power and a deposit; a machine needs power, a recipe, a working line and enough **running** producers behind each input, and runs at the pace of its inputs when they are slower than its recipe. A machine whose extractors are unpowered or exhausted counts for 0.
 
 #### `storage_basic`
 
