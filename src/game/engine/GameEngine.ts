@@ -258,6 +258,8 @@ export class GameEngine {
   private beltTypeRevision = 0;
   private energyTopologyVersion = -1;
   private simulationNetworks: SimulationNetwork[] = [];
+  /** The cached network each consumer belongs to (rebuilt with `simulationNetworks`). */
+  private readonly networkOfConsumer = new Map<BuildingId, SimulationNetwork>();
   private logisticsVersion = -1;
   /** Routes from a building output, by `id:port` (flow/processorLogistics resolveRoutesFromOutput). */
   private readonly routes = new Map<string, readonly FlowRoute[]>();
@@ -370,10 +372,13 @@ export class GameEngine {
       // Slower tiers make a unit every few beats (a held unit above is still released every beat).
       const beatsPerUnit = Math.max(1, Math.round(60 / extractorRatePerMinute(this.buildings.get(id)!.typeId) / GameEngine.EXTRACTION_INTERVAL_S));
       if (this.extractionBeat % beatsPerUnit !== 0) continue;
-      if (this.depletesDeposits) this.grid.resourceAmount[idx] -= 1;
+      if (this.depletesDeposits) {
+        this.grid.resourceAmount[idx] -= 1;
+        // The only extraction the map shows: a deposit running out is no longer drawn.
+        if (this.grid.resourceAmount[idx] === 0) this.grid.noteDepositExhausted(x, y);
+      }
       this.producerOutputBuffers.set(id, { resourceType, amount: 1 });
       changed = this.flushProducerOutput(id) || changed;
-      this.grid.markDirty(x, y);
       changed = true;
     }
     if (changed) {
@@ -797,9 +802,12 @@ export class GameEngine {
       return 'neutral';
     }
 
-    const network = this.getEnergyNetworkForBuilding(buildingId);
+    // Asked per building and per frame by the renderers: read the cached
+    // network instead of rebuilding and sorting its member list each time.
+    this.getSimulationNetworks();
+    const network = this.networkOfConsumer.get(buildingId);
     if (!network) return 'unpowered';
-    return this.isNetworkPowered(network) ? 'powered' : 'unpowered';
+    return this.isSimulationNetworkPowered(network, getDaylightFactor(this.simulationTime)) ? 'powered' : 'unpowered';
   }
 
   private getNetworkDischargeRate(buildingIds: readonly BuildingId[]): number {
@@ -1991,9 +1999,11 @@ export class GameEngine {
     if (this.energyTopologyVersion === this.energyNetwork.version) return this.simulationNetworks;
     this.energyTopologyVersion = this.energyNetwork.version;
     this.simulationNetworks = [];
+    this.networkOfConsumer.clear();
     for (const ids of this.energyNetwork.getComponents()) {
       const network = this.describeEnergyNetwork(ids);
       if (network.consumers.length || network.batteries.length || network.fuelCells.length) this.simulationNetworks.push(network);
+      for (const id of network.consumers) this.networkOfConsumer.set(id, network);
     }
     return this.simulationNetworks;
   }
@@ -2050,12 +2060,17 @@ export class GameEngine {
     return changed;
   }
 
+  /** A network runs when its generation, or failing that its charged batteries, covers the whole demand. */
+  private isSimulationNetworkPowered(network: SimulationNetwork, daylight: number): boolean {
+    const deficit = network.demand - (network.generation + network.solar * daylight + this.fuelPower(network));
+    return deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
+  }
+
   private syncPowerState(emitSfx = true): boolean {
     const daylight = getDaylightFactor(this.stepTime);
     let changed = false;
     for (const network of this.getSimulationNetworks()) {
-      const deficit = network.demand - (network.generation + network.solar * daylight + this.fuelPower(network));
-      const powered = deficit <= 0 || this.getNetworkDischargeRate(network.batteries) >= deficit;
+      const powered = this.isSimulationNetworkPowered(network, daylight);
       for (const id of network.consumers) {
         if (this.poweredConsumers.has(id) === powered) continue;
         changed = true;
