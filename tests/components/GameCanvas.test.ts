@@ -126,4 +126,45 @@ describe('GameCanvas helpers', () => {
     expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(42);
     expect(setSelectedTool).toHaveBeenCalledWith({ kind: 'energy_link' });
   });
+
+  it('keeps the building tool in hand after a placement, to build in series', () => {
+    const setPendingEnergyLinkSource = vi.fn();
+    const setSelectedBuilding = vi.fn();
+    const setSelectedBuildingAnchor = vi.fn();
+    const setSelectedTool = vi.fn();
+
+    handleBuildingPlaced(
+      {
+        selectedTool: { kind: 'building', buildingType: 'extractor_basic' },
+        linkSolarOnPlacement: true,
+        setPendingEnergyLinkSource,
+        setSelectedBuilding,
+        setSelectedBuildingAnchor,
+        setSelectedTool,
+      },
+      7,
+    );
+
+    expect(setSelectedTool).not.toHaveBeenCalled();
+    expect(setSelectedBuilding).toHaveBeenCalledWith(null);
+    expect(setPendingEnergyLinkSource).toHaveBeenCalledWith(null);
+  });
+
+  it('keeps the solar panel in hand when auto-link is off', () => {
+    const setSelectedTool = vi.fn();
+
+    handleBuildingPlaced(
+      {
+        selectedTool: { kind: 'building', buildingType: SOLAR_PANEL_BUILDING_TYPE_ID },
+        linkSolarOnPlacement: false,
+        setPendingEnergyLinkSource: vi.fn(),
+        setSelectedBuilding: vi.fn(),
+        setSelectedBuildingAnchor: vi.fn(),
+        setSelectedTool,
+      },
+      7,
+    );
+
+    expect(setSelectedTool).not.toHaveBeenCalled();
+  });
 });

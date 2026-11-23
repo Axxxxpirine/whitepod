@@ -82,6 +82,6 @@ export function handleBuildingPlaced(state: BuildingPlacedState, buildingId: Bui
     return;
   }
 
+  // The tool stays in hand: buildings are placed in series, like belts, until Escape.
   state.setPendingEnergyLinkSource(null);
-  state.setSelectedTool({ kind: 'select' });
 }
