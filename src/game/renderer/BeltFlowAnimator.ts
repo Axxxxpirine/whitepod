@@ -25,14 +25,26 @@ interface BeltGeometry {
   readonly outPoint: Point;
 }
 
+/** Inclusive tile rectangle. */
+interface TileBounds {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+
 interface FlowComponent {
   readonly componentId: BuildingId;
+  /** The belt whose upstream flow the whole component shows. */
+  readonly sinkId: BuildingId;
   readonly orderedBeltIds: readonly BuildingId[];
   readonly orderedPathPoints: readonly Point[];
   readonly cumulativeLengths: readonly number[];
   readonly pathLength: number;
-  readonly totalRatePerMinute: number;
-  readonly resourceTypes: ReadonlyArray<ResourceTypeT>;
+  /** Tiles the path crosses: a component out of view is skipped as a whole. */
+  readonly bounds: TileBounds;
+  totalRatePerMinute: number;
+  resourceTypes: ReadonlyArray<ResourceTypeT>;
   visualCount: number;
   phase: number;
   textureIndex: number;
@@ -48,6 +60,8 @@ export class BeltFlowAnimator {
   private flowComponents: Map<BuildingId, FlowComponent> = new Map();
   private readonly positionScratch: Point = { x: 0, y: 0 };
   private worldDirty = true;
+  /** Revisions of the buildings and connections the paths were built from. */
+  private pathsKey = '';
   private readonly unsubscribeEngine: () => void;
 
   constructor(app: Application, engine: GameEngine) {
@@ -61,13 +75,12 @@ export class BeltFlowAnimator {
 
   update(deltaMS: number): void {
     if (this.worldDirty) {
-      this.rebuildFlowComponents();
+      this.refreshFlowComponents();
       this.worldDirty = false;
     }
 
     const step = deltaMS * SPEED_TILES_PER_MS * TILE_SIZE;
     for (const component of this.flowComponents.values()) {
-      component.visualCount = this.computeVisualCount(component.pathLength, component.totalRatePerMinute);
       if (component.pathLength <= 0 || component.resourceTypes.length === 0 || component.visualCount <= 0) continue;
 
       component.phase += step;
@@ -92,6 +105,15 @@ export class BeltFlowAnimator {
 
     for (const component of this.flowComponents.values()) {
       if (component.resourceTypes.length === 0 || component.pathLength <= 0 || component.visualCount <= 0) continue;
+      const { bounds } = component;
+      if (
+        bounds.x1 < visibleRange.x0 ||
+        bounds.x0 > visibleRange.x1 ||
+        bounds.y1 < visibleRange.y0 ||
+        bounds.y0 > visibleRange.y1
+      ) {
+        continue;
+      }
       const spacing = component.pathLength / component.visualCount;
 
       for (let slot = 0; slot < component.visualCount; slot++) {
@@ -142,6 +164,25 @@ export class BeltFlowAnimator {
     this.spritePool.length = 0;
     this.activeSprites.clear();
     this.flowComponents.clear();
+  }
+
+  /**
+   * The world changed. Paths depend only on which belts stand where: they are
+   * rebuilt when a building or a connection changed. Production starting or
+   * stopping, far more frequent, only changes what flows along them.
+   */
+  private refreshFlowComponents(): void {
+    const pathsKey = `${this.engine.buildings.revision}:${this.engine.connections.version}`;
+    if (pathsKey !== this.pathsKey) {
+      this.rebuildFlowComponents();
+      this.pathsKey = pathsKey;
+    }
+    for (const component of this.flowComponents.values()) {
+      const entries = resolveBeltFlow(this.engine, component.sinkId);
+      component.resourceTypes = entries.map((entry) => entry.resourceType);
+      component.totalRatePerMinute = entries.reduce((sum, entry) => sum + entry.ratePerMinute, 0);
+      component.visualCount = this.computeVisualCount(component.pathLength, component.totalRatePerMinute);
+    }
   }
 
   private rebuildFlowComponents(): void {
@@ -243,9 +284,18 @@ export class BeltFlowAnimator {
 
       const orderedBeltIds = reversePath.reverse();
       const orderedPathPoints: Point[] = [];
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -Infinity;
+      let y1 = -Infinity;
       for (const beltId of orderedBeltIds) {
         const geometry = beltGeometry.get(beltId);
         if (!geometry) continue;
+        const { origin } = buildings.get(beltId)!;
+        x0 = Math.min(x0, origin.x);
+        y0 = Math.min(y0, origin.y);
+        x1 = Math.max(x1, origin.x);
+        y1 = Math.max(y1, origin.y);
         orderedPathPoints.push(
           { x: geometry.inPoint.x, y: geometry.inPoint.y },
           { x: geometry.center.x, y: geometry.center.y },
@@ -262,24 +312,23 @@ export class BeltFlowAnimator {
       }
 
       const pathLength = cumulativeLengths[cumulativeLengths.length - 1] ?? 0;
-      const sinkFlowEntries = resolveBeltFlow(this.engine, sinkId);
-      const resourceTypes = sinkFlowEntries.map((entry) => entry.resourceType);
-      const totalRatePerMinute = sinkFlowEntries.reduce((sum, entry) => sum + entry.ratePerMinute, 0);
 
       const prev = previous.get(componentId);
       const phase = prev && pathLength > 0 ? prev.phase % pathLength : 0;
       const textureIndex = prev?.textureIndex ?? 0;
-      const visualCount = this.computeVisualCount(pathLength, totalRatePerMinute);
 
+      // What flows along the path is filled in by refreshFlowComponents.
       next.set(componentId, {
         componentId,
+        sinkId,
         orderedBeltIds,
         orderedPathPoints,
         cumulativeLengths,
         pathLength,
-        totalRatePerMinute,
-        resourceTypes,
-        visualCount,
+        bounds: { x0, y0, x1, y1 },
+        totalRatePerMinute: 0,
+        resourceTypes: [],
+        visualCount: 0,
         phase,
         textureIndex,
       });

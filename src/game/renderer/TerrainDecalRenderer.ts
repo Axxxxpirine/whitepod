@@ -5,6 +5,7 @@ import type { GameEngine } from '../engine/GameEngine';
 import { TileType } from '../types';
 import { getTerrainDecalTexture } from './TileSprite';
 import { TERRAIN_DECAL_SPECS } from '../ui/spritePaths';
+import { forEachTileEntering } from './visibleTiles';
 
 type TerrainDecalKey = keyof typeof TERRAIN_DECAL_SPECS;
 
@@ -76,27 +77,25 @@ export class TerrainDecalRenderer {
       }
     }
 
-    for (let ty = range.y0; ty <= range.y1; ty++) {
-      for (let tx = range.x0; tx <= range.x1; tx++) {
-        const index = ty * GRID_WIDTH + tx;
-        if (this.activeSprites.has(index)) continue;
+    forEachTileEntering(this.lastRange, range, (tx, ty) => {
+      const index = ty * GRID_WIDTH + tx;
+      if (this.activeSprites.has(index)) return;
 
-        const decalKey = chooseDecal(grid.tileType[index] as TileType, tx, ty);
-        if (!decalKey) continue;
+      const decalKey = chooseDecal(grid.tileType[index] as TileType, tx, ty);
+      if (!decalKey) return;
 
-        const texture = getTerrainDecalTexture(decalKey);
-        if (!texture) continue;
+      const texture = getTerrainDecalTexture(decalKey);
+      if (!texture) return;
 
-        const sprite = this.acquireSprite();
-        sprite.texture = texture;
-        sprite.x = tx * TILE_SIZE + TILE_SIZE / 2;
-        sprite.y = ty * TILE_SIZE + TILE_SIZE / 2;
-        sprite.rotation = (hashTile(tx, ty, 41) - 0.5) * 0.18;
-        sprite.alpha = DECAL_ALPHA;
-        this.container.addChild(sprite);
-        this.activeSprites.set(index, sprite);
-      }
-    }
+      const sprite = this.acquireSprite();
+      sprite.texture = texture;
+      sprite.x = tx * TILE_SIZE + TILE_SIZE / 2;
+      sprite.y = ty * TILE_SIZE + TILE_SIZE / 2;
+      sprite.rotation = (hashTile(tx, ty, 41) - 0.5) * 0.18;
+      sprite.alpha = DECAL_ALPHA;
+      this.container.addChild(sprite);
+      this.activeSprites.set(index, sprite);
+    });
 
     this.lastRange = { ...range };
   }

@@ -6,6 +6,7 @@ import { ResourceType } from '../types';
 import type { ResourceType as ResourceTypeT } from '../types';
 import { getResourceTexture } from './TileSprite';
 import { isRichVein } from '../data/depositAmounts';
+import { forEachTileEntering } from './visibleTiles';
 
 const RESOURCE_SPRITE_SIZE = TILE_SIZE - 2;
 /** Rich veins read a size larger than ordinary deposits, so exploring finds them. */
@@ -52,24 +53,22 @@ export class ResourceRenderer {
         }
       }
 
-      // Create sprites for newly visible tiles with resources
-      for (let ty = range.y0; ty <= range.y1; ty++) {
-        for (let tx = range.x0; tx <= range.x1; tx++) {
-          const index = ty * GRID_WIDTH + tx;
-          if (this.activeSprites.has(index)) continue;
+      // Create sprites for the deposits on the tiles that came into view
+      forEachTileEntering(this.lastRange, range, (tx, ty) => {
+        const index = ty * GRID_WIDTH + tx;
+        if (this.activeSprites.has(index)) return;
 
-          const resourceType = this.visibleResource(index);
-          if (resourceType === ResourceType.None) continue;
+        const resourceType = this.visibleResource(index);
+        if (resourceType === ResourceType.None) return;
 
-          const texture = getResourceTexture(resourceType);
-          if (!texture) continue;
+        const texture = getResourceTexture(resourceType);
+        if (!texture) return;
 
-          const sprite = this.acquireSprite(resourceType);
-          this.placeSprite(sprite, tx, ty);
-          this.resourceContainer.addChild(sprite);
-          this.activeSprites.set(index, sprite);
-        }
-      }
+        const sprite = this.acquireSprite(resourceType);
+        this.placeSprite(sprite, tx, ty);
+        this.resourceContainer.addChild(sprite);
+        this.activeSprites.set(index, sprite);
+      });
 
       this.lastRange = { ...range };
     }
