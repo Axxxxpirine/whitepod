@@ -57,6 +57,18 @@ describe('ConnectionRegistry', () => {
     expect(reg.register({ building: 1, port: 'x' }, { building: 2, port: 'x' })).toBeNull();
   });
 
+  it('reuses freed ids once every id has been handed out', () => {
+    const reg = new ConnectionRegistry();
+    for (let i = 0; i < 65535; i++) {
+      reg.register({ building: 1, port: `p${i}` }, { building: 2, port: `p${i}` });
+    }
+    reg.unregister(1234);
+    expect(reg.hasIdCapacity()).toBe(true);
+    expect(reg.register({ building: 1, port: 'x' }, { building: 2, port: 'x' })).toBe(1234);
+    expect(reg.isPortConnected(1, 'x')).toBe(true);
+    expect(reg.hasIdCapacity()).toBe(false);
+  });
+
   it('isPortConnected tracks both endpoints', () => {
     const reg = new ConnectionRegistry();
     reg.register({ building: 1, port: 'out' }, { building: 2, port: 'in' });

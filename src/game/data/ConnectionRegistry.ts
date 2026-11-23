@@ -94,8 +94,23 @@ export class ConnectionRegistry {
     this.nextId = 1;
   }
 
+  /** False only when `MAX_CONNECTION_ID` connections exist at once. */
   hasIdCapacity(): boolean {
-    return this.nextId <= MAX_CONNECTION_ID;
+    return this.instances.size < MAX_CONNECTION_ID;
+  }
+
+  /**
+   * The next free id, counting up from the last one handed out; once every id
+   * has been used the count wraps and skips the ids still in use (same rule
+   * as BuildingRegistry), so rebuilding belts never exhausts them.
+   */
+  private allocateId(): ConnectionId | null {
+    if (!this.hasIdCapacity()) return null;
+    for (;;) {
+      const id = this.nextId > MAX_CONNECTION_ID ? 1 : this.nextId;
+      this.nextId = id + 1;
+      if (!this.instances.has(id)) return id;
+    }
   }
 
   isPortConnected(buildingId: BuildingId, portId: string): boolean {
@@ -106,9 +121,8 @@ export class ConnectionRegistry {
     from: { building: BuildingId; port: string },
     to: { building: BuildingId; port: string },
   ): ConnectionId | null {
-    if (this.nextId > MAX_CONNECTION_ID) return null;
-
-    const id = this.nextId++;
+    const id = this.allocateId();
+    if (id === null) return null;
     const connection: Connection = {
       id,
       from: { building: from.building, port: from.port },
