@@ -23,7 +23,6 @@ export class BeltRenderer {
   private readonly unsubscribeEngine: () => void;
   private worldDirty = true;
   private lastDrawnKey: string | null = null;
-  private lastVisibleRange = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
   constructor(app: Application, engine: GameEngine) {
     this.engine = engine;
@@ -38,35 +37,28 @@ export class BeltRenderer {
 
   render(): void {
     const { viewport } = this.engine;
-    const visibleRange = this.engine.getVisibleTiles();
 
     this.beltContainer.x = -viewport.centerX * viewport.zoom + viewport.screenWidth / 2;
     this.beltContainer.y = -viewport.centerY * viewport.zoom + viewport.screenHeight / 2;
     this.beltContainer.scale.set(viewport.zoom);
 
-    const rangeChanged =
-      visibleRange.x0 !== this.lastVisibleRange.x0 ||
-      visibleRange.y0 !== this.lastVisibleRange.y0 ||
-      visibleRange.x1 !== this.lastVisibleRange.x1 ||
-      visibleRange.y1 !== this.lastVisibleRange.y1;
-
-    if (!this.worldDirty && !rangeChanged) return;
+    if (!this.worldDirty) return;
 
     // The simulation notifies on every extraction beat: belts only look
     // different when one is built, removed, upgraded, or changes saturation.
     const saturatedSegments = this.engine.getSaturatedBeltSegments();
     const drawnKey = `${this.engine.buildings.revision}:${saturatedSegments.join(',')}`;
     this.worldDirty = false;
-    if (!rangeChanged && drawnKey === this.lastDrawnKey) return;
+    if (drawnKey === this.lastDrawnKey) return;
     this.lastDrawnKey = drawnKey;
-    this.lastVisibleRange = { ...visibleRange };
 
+    // Every belt of the map goes into this one geometry, on screen or not: the
+    // camera then moves it for free. Drawing only the visible belts meant
+    // rebuilding all of them on each tile the camera crossed.
     this.graphics.clear();
-
     const saturated = new Set(saturatedSegments);
     for (const building of this.engine.getBuildings().values()) {
       if (!isBeltTypeId(building.typeId)) continue;
-      if (!this.isVisible(building, visibleRange)) continue;
       this.drawBelt(building, saturated.has(building.id));
     }
   }
@@ -133,17 +125,5 @@ export class BeltRenderer {
       case Direction.West:
         return { x: centerX - edgeOffset, y: centerY };
     }
-  }
-
-  private isVisible(
-    building: Building,
-    visibleRange: { x0: number; y0: number; x1: number; y1: number },
-  ): boolean {
-    return (
-      building.origin.x >= visibleRange.x0 &&
-      building.origin.x <= visibleRange.x1 &&
-      building.origin.y >= visibleRange.y0 &&
-      building.origin.y <= visibleRange.y1
-    );
   }
 }

@@ -375,14 +375,12 @@ export class EnergyLinkRenderer {
     const style = this.getCurrentStyle(now);
     const visibleRange = this.engine.getVisibleTiles();
 
-    // Outside the link tool the dashes are still: redraw them only when a
-    // link, a building or the visible area changes, not on every frame and
-    // every simulation beat.
+    // Outside the link tool the dashes are still: every link of the map is
+    // drawn once, on screen or not, and redrawn only when a link or a building
+    // changes, not on every frame, simulation beat or camera move.
     const atRest =
       this.currentMode === 'normal' && this.transitionStartedAt === null && previewState.pendingSourceId === null;
-    const restKey = atRest
-      ? `${this.engine.energyNetwork.version}:${this.engine.buildings.revision}:${visibleRange.x0},${visibleRange.y0},${visibleRange.x1},${visibleRange.y1}`
-      : null;
+    const restKey = atRest ? `${this.engine.energyNetwork.version}:${this.engine.buildings.revision}` : null;
     if (restKey !== null && restKey === this.lastRestKey) return;
     this.lastRestKey = restKey;
 
@@ -402,6 +400,7 @@ export class EnergyLinkRenderer {
     const wx1 = (visibleRange.x1 + 1) * TILE_SIZE;
     const wy1 = (visibleRange.y1 + 1) * TILE_SIZE;
 
+    let dashed = false;
     for (const segment of this.linkSegments) {
       const fv =
         segment.fromCenter.x >= wx0 &&
@@ -413,14 +412,17 @@ export class EnergyLinkRenderer {
         segment.toCenter.x <= wx1 &&
         segment.toCenter.y >= wy0 &&
         segment.toCenter.y <= wy1;
-      if (!fv && !tv) continue;
+      if (!atRest && !fv && !tv) continue;
 
       if (this.currentMode === 'energy_link') {
         this.drawSolidLine(segment.fromCenter.x, segment.fromCenter.y, segment.toCenter.x, segment.toCenter.y, style);
       } else {
-        this.drawDashedLine(segment.fromCenter.x, segment.fromCenter.y, segment.toCenter.x, segment.toCenter.y, style);
+        this.traceDashedLine(segment.fromCenter.x, segment.fromCenter.y, segment.toCenter.x, segment.toCenter.y);
+        dashed = true;
       }
     }
+    // One stroke for every dash of every link, instead of one per dash.
+    if (dashed) this.graphics.stroke(style);
 
     if (this.currentMode === 'energy_link') {
       this.drawFlowByComponent(style, now, wx0, wy0, wx1, wy1);
@@ -431,13 +433,8 @@ export class EnergyLinkRenderer {
       if (src) {
         const srcCenter = getBuildingCenter(src);
         if (srcCenter) {
-          this.drawDashedLine(
-            srcCenter.x,
-            srcCenter.y,
-            previewState.mouseWorldPos.x,
-            previewState.mouseWorldPos.y,
-            { color: PIXI.accent, width: 2, alpha: 0.55 },
-          );
+          this.traceDashedLine(srcCenter.x, srcCenter.y, previewState.mouseWorldPos.x, previewState.mouseWorldPos.y);
+          this.graphics.stroke({ color: PIXI.accent, width: 2, alpha: 0.55 });
         }
       }
     }
@@ -571,7 +568,8 @@ export class EnergyLinkRenderer {
     this.graphics.moveTo(x0, y0).lineTo(x1, y1).stroke(style);
   }
 
-  private drawDashedLine(x0: number, y0: number, x1: number, y1: number, style: EnergyLinkStyle): void {
+  /** Adds the dashes of a line to the current path; the caller strokes them. */
+  private traceDashedLine(x0: number, y0: number, x1: number, y1: number): void {
     const dx = x1 - x0;
     const dy = y1 - y0;
     const length = Math.hypot(dx, dy);
@@ -587,7 +585,7 @@ export class EnergyLinkRenderer {
       const fromY = y0 + uy * cursor;
       const toX = x0 + ux * dashEnd;
       const toY = y0 + uy * dashEnd;
-      this.graphics.moveTo(fromX, fromY).lineTo(toX, toY).stroke(style);
+      this.graphics.moveTo(fromX, fromY).lineTo(toX, toY);
       cursor = dashEnd + NORMAL_DASH_GAP;
     }
   }
